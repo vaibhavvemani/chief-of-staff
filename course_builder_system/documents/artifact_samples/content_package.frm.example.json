@@ -1,0 +1,55 @@
+{
+  "course_id": "frm",
+  "artifact_type": "content_package",
+  "produced_by_step": "student_content",
+  "schema_version": "0.1",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": ["blueprint", "domain_model"],
+  "updated_at": "2026-06-03T00:00:00+00:00",
+  "body": {
+    "asset_vocabulary": [
+      "learning_objectives", "course_content", "summary", "case_study",
+      "important_person", "did_you_know", "assessment", "activities", "resources"
+    ],
+    "subtopics": [
+      {
+        "subtopic_id": "m1_s1",
+        "assets": [
+          {
+            "id": "m1_s1_lo",
+            "type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "content": "Understand the concept of financial risk and how it arises...",
+            "sources": [],
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s1_case",
+            "type": "case_study",
+            "title": "The Lehman Brothers Collapse",
+            "format": "pptx",
+            "content": "Lehman Brothers Collapse (2008) as a multi-risk case...",
+            "sources": ["g1"],
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s1_assess",
+            "type": "assessment",
+            "title": "Self-Assessment: Nature of Financial Risk",
+            "format": "docx",
+            "content": "Q1. Define financial risk and give two examples of how it arises in a bank.",
+            "solution": "Q1. Financial risk is the possibility of loss from market, credit, liquidity, or operational exposure. Examples: a trading loss from market moves; a borrower default (credit).",
+            "sources": [],
+            "file": null,
+            "status": "done"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "course_id": "frm",
+  "artifact_type": "blueprint",
+  "produced_by_step": "blueprint",
+  "schema_version": "0.1",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": ["toc", "domain_model"],
+  "updated_at": "2026-06-03T00:00:00+00:00",
+  "body": {
+    "allocations": [
+      {"node_id": "m1", "hours": 2.5, "slides": 49},
+      {"node_id": "m1_s1", "hours": 0.5, "slides": 9},
+      {"node_id": "m2", "hours": 3.0, "slides": 55}
+    ],
+    "dependencies": [
+      {"module_id": "m1", "prerequisites": []},
+      {"module_id": "m2", "prerequisites": ["m1"]}
+    ],
+    "speakers": [
+      {"id": "sp1", "placed_at": "m1", "topic": "Institutional Risk Governance", "suggested_expert": "<expert from Step 2 research>", "source": "research", "status": "proposed"}
+    ]
+  }
+}

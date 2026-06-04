@@ -1,0 +1,67 @@
+{
+  "course_id": "frm-demo",
+  "artifact_type": "toc",
+  "produced_by_step": "structure",
+  "schema_version": "0.1",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "brief"
+  ],
+  "updated_at": "2026-06-04T06:47:06+00:00",
+  "body": {
+    "subject": "Financial Risk Management",
+    "modules": [
+      {
+        "id": "m1",
+        "order": 1,
+        "title": "Foundations of Financial Risk",
+        "subtopics": [
+          {
+            "id": "m1_s1",
+            "order": 1,
+            "title": "Nature of Financial Risk"
+          },
+          {
+            "id": "m1_s2",
+            "order": 2,
+            "title": "Risk Classification Framework"
+          },
+          {
+            "id": "m1_s3",
+            "order": 3,
+            "title": "Risk Management Process"
+          },
+          {
+            "id": "m1_s4",
+            "order": 4,
+            "title": "Risk Appetite & Capacity"
+          },
+          {
+            "id": "m1_s5",
+            "order": 5,
+            "title": "Evolution of Modern Risk Management"
+          },
+          {
+            "id": "m1_s6",
+            "order": 6,
+            "title": "Institutional Risk Governance"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "order": 2,
+        "title": "Quantitative Foundations for Risk",
+        "subtopics": [
+          {
+            "id": "m2_s1",
+            "order": 1,
+            "title": "Probability Theory"
+          }
+        ]
+      }
+    ]
+  }
+}

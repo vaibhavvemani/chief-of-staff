@@ -1,0 +1,66 @@
+{
+  "course_id": "frm-demo",
+  "artifact_type": "domain_model",
+  "produced_by_step": "structure",
+  "schema_version": "0.1",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "brief"
+  ],
+  "updated_at": "2026-06-04T06:47:06+00:00",
+  "body": {
+    "subject": "Financial Risk Management",
+    "overview": "Financial Risk Management is the discipline of identifying, measuring, and controlling losses from market movements, counterparty default, funding shortfalls, and operational failure. It progresses from foundational definitions through quantitative measurement to regulatory frameworks and integrated, firm-wide practice.",
+    "concepts": [
+      {
+        "id": "c1",
+        "name": "Financial Risk",
+        "summary": "The possibility of loss from market, credit, liquidity, or operational exposure.",
+        "depends_on": []
+      },
+      {
+        "id": "c2",
+        "name": "Risk vs Uncertainty",
+        "summary": "Knight's distinction: risk is measurable probability; uncertainty is not.",
+        "depends_on": [
+          "c1"
+        ]
+      },
+      {
+        "id": "c3",
+        "name": "Value at Risk (VaR)",
+        "summary": "A quantile measure of maximum expected loss over a horizon at a confidence level.",
+        "depends_on": [
+          "c1"
+        ]
+      },
+      {
+        "id": "c4",
+        "name": "Regulatory Capital (Basel)",
+        "summary": "Minimum capital banks must hold against risk-weighted assets under the Basel Accords.",
+        "depends_on": [
+          "c3"
+        ]
+      }
+    ],
+    "grounding_sources": [
+      {
+        "category": "GLOBAL FRAMEWORKS",
+        "items": [
+          {
+            "id": "g1",
+            "name": "Basel III framework (BIS)",
+            "url": "https://www.bis.org/bcbs/basel3.htm"
+          },
+          {
+            "id": "g2",
+            "name": "Basel II framework (BIS)",
+            "url": "https://www.bis.org/publ/bcbs128.htm"
+          }
+        ]
+      }
+    ]
+  }
+}
