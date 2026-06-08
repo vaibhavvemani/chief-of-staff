@@ -6,7 +6,7 @@
   "status": "approved",
   "revision": 0,
   "revision_note": null,
-  "inputs": ["blueprint", "domain_model"],
+  "inputs": ["toc", "blueprint", "domain_model"],
   "updated_at": "2026-06-03T00:00:00+00:00",
   "body": {
     "asset_vocabulary": [

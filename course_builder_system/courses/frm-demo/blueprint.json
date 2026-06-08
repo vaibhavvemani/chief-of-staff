@@ -3,14 +3,14 @@
   "artifact_type": "blueprint",
   "produced_by_step": "blueprint",
   "schema_version": "0.1",
-  "status": "approved",
-  "revision": 0,
-  "revision_note": null,
+  "status": "draft",
+  "revision": 1,
+  "revision_note": "Change the speaker",
   "inputs": [
     "toc",
     "domain_model"
   ],
-  "updated_at": "2026-06-04T06:47:06+00:00",
+  "updated_at": "2026-06-05T09:38:23+00:00",
   "body": {
     "allocations": [
       {

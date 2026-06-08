@@ -33,7 +33,7 @@ def build_pipeline() -> list[Step]:
         ),
         Step(
             name="student_content",
-            consumes=["blueprint", "domain_model"],
+            consumes=["toc", "blueprint", "domain_model"],
             produces=["content_package"],
             run=steps.student_content_step,
         ),

@@ -151,13 +151,16 @@ def blueprint_step(inputs: dict, feedback: Optional[str]) -> dict:
 
 
 def student_content_step(inputs: dict, feedback: Optional[str]) -> dict:
-    """Blueprint + Domain Model -> Content Package (Handoff Section 4.6).
+    """TOC + Blueprint + Domain Model -> Content Package (Handoff Section 4.6).
 
-    Keyed by TOC subtopic id. `content` holds the generated material; `file`
-    stays null until packaging (Phase 5). `sources` reference Domain Model
-    grounding ids (e.g. g1). `solution` is the teacher-only key on assessments.
+    The TOC supplies the subtopic titles and module context the content is
+    written against; the Blueprint supplies per-subtopic volume (hours/slides);
+    the Domain Model supplies concepts and grounding sources. Output is keyed by
+    TOC subtopic id. `content` holds the generated material; `file` stays null
+    until packaging (Phase 5). `sources` reference Domain Model grounding ids
+    (e.g. g1). `solution` is the teacher-only key on assessments.
     """
-    course_id = inputs["blueprint"]["course_id"]
+    course_id = inputs["toc"]["course_id"]
 
     content = make_artifact(
         course_id, "content_package", "student_content",
@@ -197,7 +200,7 @@ def student_content_step(inputs: dict, feedback: Optional[str]) -> dict:
                 },
             ],
         },
-        inputs=["blueprint", "domain_model"],
+        inputs=["toc", "blueprint", "domain_model"],
     )
     return {"content_package": content}
 
