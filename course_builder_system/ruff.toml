@@ -1,0 +1,15 @@
+# Ruff — fast Python linter + formatter for this project.
+# Install:  pip install ruff
+# Lint:     ruff check .
+# Autofix:  ruff check --fix .
+# Format:   ruff format .
+
+target-version = "py312"
+line-length = 100
+
+[lint]
+# E/F  = pycodestyle errors + pyflakes (Ruff defaults)
+# I    = import sorting (isort)
+# UP   = pyupgrade (modernize syntax for the target version)
+# B    = flake8-bugbear (likely-bug patterns)
+select = ["E", "F", "I", "UP", "B"]
