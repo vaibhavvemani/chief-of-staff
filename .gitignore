@@ -4,3 +4,14 @@ venv/
 **/.venv/
 
 **/.env
+**/.env.*
+!**/.env.example
+
+.DS_Store
+**/.DS_Store
+
+**/.claude/
+**/.codex_work/
+**/__pycache__/
+**/*.py[cod]
+**/node_modules/
