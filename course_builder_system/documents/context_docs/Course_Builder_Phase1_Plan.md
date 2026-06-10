@@ -3,10 +3,9 @@
 > **Status:** Design locked, ready to implement. Created 2026-06-08.
 > **Phase 1 goal:** Replace the `student_content_step` stub with a *real* Student Content agent for one FRM subtopic, with grounding, separate verification, claim-level attribution, and a review rubric.
 > **Done when:** for **m1_s1 "Nature of Financial Risk"**, the agent's output scores ≥ the manual version on the rubric and a human review takes **minutes (light touch-ups), not a rewrite**.
-> **Timebox:** ~3 weeks target, 4 weeks ceiling (this is the make-or-break phase and the most justified place in the whole project to spend a buffer week). Part of a ~13.5-week whole-POC budget due ~2026-09-08.
-> **Team:** 2 peer interns (P1 = Vaibhav, P2 = peer), ~4–6 focused hrs/day × 5 days, worked fully paired/fluid with a primary lane each sprint.
+> **Timeline & ownership:** the sprint breakdown, schedule, and who-does-what live in the companion boss-facing **Sprint Sheet** → `Course_Builder_Phase1_Sprint_Sheet.md`. (Summary: ~3-week target, 4-week ceiling; 2 peer interns paired.)
 
-This doc is the single source of truth for Phase 1. Sections A–H are the **locked design decisions** (the "what + why"); Section J is the **sprint plan**; Sections K–N are **Done / risks / scope / lessons**.
+This doc is the single source of truth for **building** Phase 1. Sections A–H are the **locked design decisions** (the "what + why"); Sections K–N are **Done / risks / scope / lessons**.
 
 ---
 
@@ -118,56 +117,6 @@ evals/
   run_*.json                 # per-run scorecards
   compare.py                 # trend / two-tier comparison helper
 ```
-
----
-
-## J. Sprint plan
-
-3 one-week sprints + 1 buffer. Paired/fluid with a primary lane each sprint; pair on the make-or-break pieces. Each sprint ends with a checkpoint demo + decision (mirrors the product's checkpoint model).
-
-### Sprint 1 — Ruler, inputs, wrapper, spike
-*Lock what "good" means and assemble every agent input before generating for real; get one throwaway generation on screen.*
-
-| Owner | Tasks |
-|---|---|
-| **P1** | **Acquire + transcribe** m1_s1 manual assets → `benchmark/m1_s1.gold.content_package.json` (#1 risk — day 1). Write the **rubric** (`evals/rubric.md`, 7 dims, 1–5, 3=manual) + set the **review-time threshold**. |
-| **P2** | Hand-author the **DM** (`domain/m1_s1_domain_model.json`, deep m1_s1 + thin m1). Curate **3–6 sources** → `sources/*.md`. Build **`llm.py`** (call, retry, token log, prompt-hash cache). Run the **throwaway spike** (one `course_content` draft) to shake out SDK + grounding. |
-| **Pair** | Agree the rubric; confirm m1_s1's manual assets are complete (validates the subtopic choice). |
-
-**DoD:** gold reference package + rubric + review-time threshold + DM + sources in repo; `llm.py` callable with caching; spike output seen. **Checkpoint:** gold + rubric + spike side by side → agree the bar.
-
-### Sprint 2 — Generation pipeline, wired in
-*Real grounded + attributed generation for the core 5, running inside the orchestrator on the v0.2 contract.*
-
-| Owner | Tasks |
-|---|---|
-| **Shared, first** | **v0.2 schema bump:** Content Package schema + example sample + stub + `integrity.py` (claim `source_id`s resolve). |
-| **P1** | **Generation agent** — per-asset prompt templates (`prompts/`) for the core 5; Course-Content-first anchored generation; claim-level attribution; allow-but-flag ungrounded. |
-| **P2** | Wire **`student_content_step`** (thin adapter) → `run.py` produces a real v0.2 Content Package, integrity passes, checkpoint pauses; source-id plumbing. |
-| **Pair** | Meet at the contract; first live end-to-end run. |
-
-**DoD:** `python run.py` generates a real v0.2 Content Package for the core 5, passes integrity, pauses at the checkpoint (quality not yet judged). **Checkpoint:** live run, eyeball the content.
-
-### Sprint 3 — Verification + eval + iterate core-5 to the bar
-*The separate verifier, the scoring harness, and the tuning loop that gets the core 5 to ≥ manual.*
-
-| Owner | Tasks |
-|---|---|
-| **P2** | **Verification agent** (asset-by-asset, adversarial) → verdicts written back into `claims[]` + per-asset summary. |
-| **P1** | **Eval harness** — auto mechanical scores + LLM-judge proposes coverage/house-style; JSON scorecard in `evals/` + trend script; blind-gate setup. |
-| **Pair** | First scored run → **iterate** core 5 (generate→verify→score vs manual), split by gap type (P1 generation-quality, P2 verification/attribution), until each core asset hits ≥3. |
-
-**DoD:** core 5 hit ≥3 at a blind scoring; verification surfaced; scorecard trend shows the climb. **Checkpoint:** baseline → improved scorecard; top remaining gaps.
-
-### Sprint 4 — BUFFER / finish: light-4 sweep, revision loop, done-gate, handoff
-*May land inside 3 weeks if iteration is fast; otherwise this is the justified overrun week.*
-
-- Sweep the **light 4** assets (reuse the machinery; bar = present & decent).
-- Wire **feedback-driven per-asset revision** (the deferred 4g loop).
-- **Final blind human gate** on all done-conditions + timed review.
-- **Phase 1 handoff doc** (Section M lessons) + update the master context; mark Phase 1 done.
-
-**DoD:** see Section K. **Checkpoint:** final agent-vs-manual blind scoring → **Phase 1 done?**
 
 ---
 
