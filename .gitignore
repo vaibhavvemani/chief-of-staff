@@ -12,6 +12,7 @@ venv/
 
 **/.claude/
 **/.codex_work/
+**/CLAUDE.local.md
 **/__pycache__/
 **/*.py[cod]
 **/node_modules/
