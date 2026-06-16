@@ -85,7 +85,7 @@ This doc is the single source of truth for **building** Phase 1. Sections A–H 
 ## G. Eval & scoring (Cluster 7)
 
 - **Rubric = 7 dimensions** (master doc §11): factual accuracy, coverage, source attribution, pedagogical clarity, asset completeness, house style, review time.
-- **Scale: 1–5 per dimension, 3 anchored to "matches the manual version."** "≥ manual" = ≥3 on every comparative dimension; review-time has its own target.
+- **Scale: 1–10 per dimension, 6 anchored to "matches the manual version."** "≥ manual" = ≥6 on every comparative dimension; review-time has its own target. Scores 1–5 are below the manual bar, 6 means manual-equivalent, 7–8 means better than manual, and 9–10 means substantially better than manual.
 - **Scoring is hybrid, human is the final arbiter:** auto for mechanical (asset completeness; attribution + factual accuracy come from the verifier's verdicts); **LLM-as-judge proposes** coverage + house style; **human is final scorer** for pedagogical clarity + review time and **ratifies** everything. A model is never the *sole* arbiter of the bar.
 - **Two-tier comparison:** LLM-judge head-to-head (agent vs manual) each iteration for a fast directional signal; **blind side-by-side human scoring (A/B anonymized)** at the "done" gate for the real call.
 - **Scorecard:** one JSON per run in `evals/` (rubric scores + verifier stats + review-time + prompt git SHA) + a tiny trend script. File-based.
@@ -125,7 +125,7 @@ evals/
 For **m1_s1**:
 - [ ] All 9 assets generated, grounded, claim-level attributed, and verified.
 - [ ] Output is schema-valid **v0.2**, passes `integrity.py`, runs end-to-end via `run.py` with the checkpoint.
-- [ ] **Core 5 score ≥3** ("matches manual") on every comparative rubric dimension at the **blind human gate**; **light 4 present & decent**.
+- [ ] **Core 5 score ≥6** ("matches manual") on every comparative rubric dimension at the **blind human gate**; **light 4 present & decent**.
 - [ ] **Timed human review ≤ threshold**, edits are touch-ups not a rewrite.
 - [ ] Verification pass runs; its summary is surfaced at the checkpoint.
 - [ ] Gold reference package + rubric + sources + hand-authored DM all live in the repo.
