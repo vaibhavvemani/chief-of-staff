@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BeyondRisX SCORM Converter</title>
+  <style>
+    :root {
+      --ink: #162033;
+      --muted: #65758b;
+      --line: #d7dde8;
+      --surface: #ffffff;
+      --canvas: #f3f6fa;
+      --accent: #0f766e;
+      --accent-2: #b45309;
+      --danger: #b91c1c;
+      --ok: #15803d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--canvas);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 64px;
+      padding: 14px 28px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+    main {
+      width: min(980px, calc(100% - 32px));
+      margin: 28px auto 56px;
+    }
+    section {
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 0 12px 35px rgba(22, 32, 51, 0.07);
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: end;
+    }
+    label {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    input[type="file"] {
+      min-height: 46px;
+      padding: 10px;
+      border: 1px dashed var(--muted);
+      border-radius: 6px;
+      background: #f8fafc;
+      color: var(--ink);
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    button {
+      min-width: 150px;
+      min-height: 46px;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      padding: 0 18px;
+      color: #ffffff;
+      background: var(--accent);
+      font-weight: 750;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .progress-shell {
+      height: 12px;
+      margin-top: 10px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #edf2f7;
+    }
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 180ms ease;
+    }
+    .results {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .result {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fbfcfe;
+    }
+    .result strong {
+      display: block;
+      font-size: 15px;
+      word-break: break-word;
+    }
+    .result span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 13px;
+      word-break: break-word;
+    }
+    .result a {
+      color: var(--accent);
+      font-weight: 750;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .status-ok { color: var(--ok); }
+    .status-failed { color: var(--danger); }
+    .note {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    @media (max-width: 720px) {
+      header { padding: 14px 16px; }
+      main { width: min(100% - 20px, 980px); margin-top: 12px; }
+      section { padding: 18px; }
+      .toolbar { grid-template-columns: 1fr; }
+      button { width: 100%; }
+      .meta, .result { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BeyondRisX SCORM Converter</h1>
+  </header>
+  <main>
+    <section>
+      <p class="note">Select a folder containing static Word and PowerPoint files. The app creates one SCORM 1.2 ZIP package per supported file.</p>
+      <form id="convertForm">
+        <div class="toolbar">
+          <label>
+            Source folder
+            <input id="folderInput" name="files" type="file" webkitdirectory directory multiple accept=".docx,.pptx,.doc,.ppt">
+          </label>
+          <button id="convertBtn" type="submit" disabled>Convert</button>
+        </div>
+      </form>
+      <div class="meta">
+        <span id="fileCount">No folder selected</span>
+        <span id="statusText">Idle</span>
+      </div>
+      <div class="progress-shell" aria-label="Conversion progress">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+      <div id="results" class="results" aria-live="polite"></div>
+    </section>
+  </main>
+  <script>
+    const form = document.getElementById('convertForm');
+    const folderInput = document.getElementById('folderInput');
+    const convertBtn = document.getElementById('convertBtn');
+    const fileCount = document.getElementById('fileCount');
+    const statusText = document.getElementById('statusText');
+    const progressBar = document.getElementById('progressBar');
+    const results = document.getElementById('results');
+    const supported = new Set(['docx', 'pptx', 'doc', 'ppt']);
+
+    folderInput.addEventListener('change', () => {
+      const files = selectedOfficeFiles();
+      convertBtn.disabled = files.length === 0;
+      fileCount.textContent = files.length === 1 ? '1 Office file selected' : `${files.length} Office files selected`;
+      statusText.textContent = files.length ? 'Ready' : 'No supported files found';
+      progressBar.style.width = '0%';
+      results.innerHTML = '';
+    });
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const files = selectedOfficeFiles();
+      if (!files.length) return;
+
+      const data = new FormData();
+      files.forEach((file) => data.append('files', file, file.webkitRelativePath || file.name));
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/convert');
+      convertBtn.disabled = true;
+      results.innerHTML = '';
+      statusText.textContent = 'Uploading files';
+      progressBar.style.width = '5%';
+
+      xhr.upload.addEventListener('progress', (event) => {
+        if (!event.lengthComputable) return;
+        const uploadPercent = Math.round((event.loaded / event.total) * 55);
+        progressBar.style.width = `${Math.max(5, uploadPercent)}%`;
+      });
+
+      xhr.addEventListener('load', () => {
+        convertBtn.disabled = false;
+        try {
+          const payload = JSON.parse(xhr.responseText);
+          if (!payload.ok) throw new Error(payload.error || 'Conversion failed.');
+          progressBar.style.width = '100%';
+          const converted = payload.results.filter((item) => item.status === 'converted').length;
+          statusText.textContent = `${converted} of ${payload.results.length} converted`;
+          renderResults(payload.results);
+        } catch (error) {
+          progressBar.style.width = '0%';
+          statusText.textContent = error.message;
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        convertBtn.disabled = false;
+        progressBar.style.width = '0%';
+        statusText.textContent = 'Upload failed';
+      });
+
+      xhr.send(data);
+      let simulated = 58;
+      const timer = setInterval(() => {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          clearInterval(timer);
+          return;
+        }
+        simulated = Math.min(94, simulated + 4);
+        progressBar.style.width = `${simulated}%`;
+        statusText.textContent = 'Building SCORM packages';
+      }, 450);
+    });
+
+    function selectedOfficeFiles() {
+      return Array.from(folderInput.files || []).filter((file) => {
+        const extension = file.name.split('.').pop().toLowerCase();
+        return supported.has(extension);
+      });
+    }
+
+    function renderResults(items) {
+      results.innerHTML = '';
+      items.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'result';
+        const detail = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = item.source;
+        const status = document.createElement('span');
+        status.className = item.status === 'converted' ? 'status-ok' : 'status-failed';
+        status.textContent = item.status === 'converted' ? `Created ${item.package}` : item.error;
+        detail.append(title, status);
+        row.append(detail);
+        if (item.downloadUrl) {
+          const link = document.createElement('a');
+          link.href = item.downloadUrl;
+          link.textContent = 'Download ZIP';
+          row.append(link);
+        }
+        results.append(row);
+      });
+    }
+  </script>
+</body>
+</html>
