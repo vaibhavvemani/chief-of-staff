@@ -170,7 +170,7 @@ Today, courses are built through a largely manual **five-stage** process, with m
 
 **Strengths worth preserving:** genuinely comparative research (10+ real programs benchmarked); facts grounded with verified source links; explicit, consistent pedagogical structure with a deliberate 20–50% extra-material buffer; self-contained chapters.
 
-**Known gaps the POC closes:** heavy reliance on one person; slow, repetitive manual prompting; uneven/manual verification; **no LMS packaging**; underdeveloped trainer enablement; drift between the defined asset list and what's actually produced.
+**Known gaps the POC closes:** heavy reliance on one person; slow, repetitive manual prompting; uneven/manual verification; **LMS packaging (now built — SCORM 1.2 converter, see §16)**; underdeveloped trainer enablement; drift between the defined asset list and what's actually produced.
 
 ---
 
@@ -192,7 +192,7 @@ Today, courses are built through a largely manual **five-stage** process, with m
 
 ## 11. Open questions (to resolve during phasing)
 
-- **Target LMS and packaging format.** Must be known before Step 3 generation; does not affect Steps 1–2. Likely SCORM or xAPI.
+- **Target LMS and packaging format. RESOLVED — SCORM 1.2.** A standalone converter (`.docx`/`.pptx` → self-contained SCORM 1.2 `.zip`, via a LibreOffice→PDF→JPEG pipeline) is built and tested against an LMS; see `scorm_converter.md`. Does not affect Steps 1–2. The remaining Phase 5 work is wiring the builder's generated course folder into it (see §16).
 - **Phase 1 reference subtopic.** FRM is the most complete reference course and was used for the Phase 0 schemas. Before building the real Student Content agent, choose the exact FRM subtopic and manual assets that will serve as the Phase 1 quality benchmark.
 - **Phase 1 review rubric.** "At least as good as the manual version" must become a small rubric before implementation: factual accuracy, coverage, source attribution, pedagogical clarity, asset completeness, house style, and human review time.
 - **Citation granularity.** Phase 0 has source IDs at the Domain Model grounding-source level. Phase 1 must decide how precise attribution needs to be for verification — for example source URL, document section, excerpt, or claim-level support — without jumping to RAG prematurely.
@@ -264,7 +264,7 @@ Defaults chosen to minimise moving parts while learning. Change any of them late
 | **2** | Structure (Step 1) | Subject → Domain Model + TOC, reusing grounding |
 | **3** | Blueprint (Step 2) | A runnable plan: hours, slides, speakers, dependencies |
 | **4** | Integrate & scale content | A whole course's content generated from a subject |
-| **5** | Lesson plan + LMS packaging | Teacher materials and platform-ready output |
+| **5** | Lesson plan + LMS packaging *(packaging tool built early — see §11)* | Teacher materials and platform-ready output |
 | **6** | Hardening | Reliable, observable, pleasant to run |
 
 ### Phase details
@@ -279,7 +279,7 @@ Defaults chosen to minimise moving parts while learning. Change any of them late
 
 **Phase 4 — Integrate, then scale content.** Let Step 3 consume real Step 1 and 2 output, and generate content for ALL subtopics with tracking, retries, and partial-failure handling. Do not parallelize before this point. *Done when:* a whole course's student content generates from a subject, with approvals at the gates.
 
-**Phase 5 — Lesson Plan (Step 4) + LMS packaging.** A lesson-plan agent (per-class plans, live-vs-self-study, talking points) and packaging that exports the course folder into the target LMS format. Both depend on finished content, so both come last. *Done when:* the folder is complete and uploads cleanly into the target LMS.
+**Phase 5 — Lesson Plan (Step 4) + LMS packaging.** A lesson-plan agent (per-class plans, live-vs-self-study, talking points) and packaging that exports the course folder into the target LMS format. **The packaging format and tool are now decided and built ahead of schedule:** a standalone converter turns `.docx`/`.pptx` into self-contained SCORM 1.2 `.zip` packages (see `scorm_converter.md`), and already round-trips the hand-authored `m1_s1` assets end-to-end into an LMS. What remains for this phase is the lesson-plan agent and wiring the builder's *generated* course folder into the converter. The freed packaging effort is **banked as schedule buffer** against the tight overall timeline rather than used to pull the end date in. *Done when:* the folder is complete and uploads cleanly into the target LMS.
 
 **Phase 6 — Hardening.** A better approval interface, tracing/observability, retries, cost control, polished single-folder output. Polish after it works, never before. *Done when:* someone who didn't build it could run a course and trust the result.
 

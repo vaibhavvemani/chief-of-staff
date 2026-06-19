@@ -17,7 +17,7 @@ This is the **make-or-break** phase. The core question of the entire project is:
 |---|---|
 | **Duration** | ~3 weeks (target), 4 weeks (ceiling). One-week sprints. |
 | **Team** | 2 people — **P1 = Vaibhav**, **P2 = [teammate]** — ~4–6 focused hrs/day each, working closely paired. |
-| **Where it sits** | First of 6 remaining phases. ~3 of a ~13.5-week total to finish the whole proof-of-concept (target ~Sep 8, 2026). Achievable but tight. |
+| **Where it sits** | First of 6 remaining phases. ~3 of a ~13.5-week total to finish the whole proof-of-concept (target ~Sep 8, 2026). Achievable but tight — slightly de-risked now that Phase 5's LMS-packaging tool (a SCORM 1.2 converter) is already built; that freed effort is banked as buffer, not used to pull the date in. |
 | **The deliverable** | One FRM subtopic's full student content, AI-generated, fact-checked against sources, and judged at least as good as our manual version. |
 
 ## Timeline / order of implementation
@@ -46,7 +46,7 @@ For one subtopic, the AI's content is **at least as good as our manual version**
 
 1. **Access to the manual files** for the "Nature of Financial Risk" subtopic (slides, docs). This is the benchmark we measure against — and our single biggest dependency. *(They are not yet in the project; getting them on Day 1 is the top priority.)*
 2. **Agreement on the ~3-week target with a possible 4th-week cushion.** This is the highest-risk phase; the buffer protects quality rather than cutting it.
-3. *(For the wider conversation)* Our realistic read on the whole project: **~13.5 weeks for all 6 remaining phases** — achievable but tight against the 3-month target, with little slack.
+3. *(For the wider conversation)* Our realistic read on the whole project: **~13.5 weeks for all 6 remaining phases** — achievable but tight against the 3-month target, with little slack. *(Mild de-risk: the Phase 5 SCORM 1.2 packaging tool is already built ahead of schedule; that freed effort is held as buffer, not used to move the date in.)*
 
 ## Schedule risks (plain language)
 

@@ -153,7 +153,7 @@ For **m1_s1**:
 
 ## N. Out of scope for Phase 1 (YAGNI — deferred to their proper phases)
 
-No RAG / vector DB · no parallelization · no multi-subtopic scaling (Phase 4) · no LMS / file packaging — `file: null`, text only (Phase 5) · no agent framework (direct SDK) · Steps 1/2/4 stay stubs · console checkpoint only, no UI (Phase 6) · no model-mix cost optimization (Phase 4).
+No RAG / vector DB · no parallelization · no multi-subtopic scaling (Phase 4) · no LMS / file packaging *in the pipeline* — `file: null`, text only (Phase 5; the standalone SCORM 1.2 converter is already built but not yet wired into the pipeline — see `scorm_converter.md`) · no agent framework (direct SDK) · Steps 1/2/4 stay stubs · console checkpoint only, no UI (Phase 6) · no model-mix cost optimization (Phase 4).
 
 ---
 
