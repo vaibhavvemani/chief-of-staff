@@ -1,0 +1,183 @@
+{
+  "course_id": "frm",
+  "artifact_type": "domain_model",
+  "produced_by_step": "structure",
+  "schema_version": "0.1",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": ["brief"],
+  "updated_at": "2026-06-23T00:00:00+00:00",
+  "body": {
+    "subject": "Financial Risk Management",
+    "module": {"id": "m1", "title": "Foundations of Financial Risk"},
+    "focus_subtopic": "m1_s1",
+    "overview": "Module 1 'Foundations of Financial Risk' establishes the conceptual groundwork for the course. This hand-authored Domain Model develops subtopic m1_s1 'Nature of Financial Risk' in depth; the remaining module-1 subtopics are carried as thin stubs so the m1_s1 content stays self-contained and does not pre-empt them (no cross-linkage). Phase 2 replaces this file with an auto-built Domain Model in the same schema.",
+    "subtopics": [
+      {
+        "id": "m1_s1",
+        "order": 1,
+        "depth": "deep",
+        "title": "Nature of Financial Risk",
+        "overview": "Introduces financial risk as the possibility of loss from exposure to market movements, counterparty default, funding shortfalls, and operational failure. Grounds the distinction between measurable risk and Knightian uncertainty, defines the four core risk categories (credit, liquidity, market, operational), and shows—through the Lehman Brothers collapse—how those categories interact in a real crisis.",
+        "concepts": [
+          {
+            "id": "c1",
+            "name": "Financial Risk",
+            "summary": "The possibility of loss arising from exposure to market movements, counterparty default, funding shortfalls, or operational failure. The organizing concept under which the core risk categories sit.",
+            "depends_on": [],
+            "source_ids": []
+          },
+          {
+            "id": "c2",
+            "name": "Risk vs Uncertainty (Knightian)",
+            "summary": "Knight's distinction: 'risk' is uncertainty that can be measured or assigned probabilities, while 'uncertainty' cannot. Financial risk management operates mainly in the measurable-risk zone.",
+            "depends_on": ["c1"],
+            "source_ids": ["g1"]
+          },
+          {
+            "id": "c3",
+            "name": "Credit Risk",
+            "summary": "The potential that a borrower or counterparty fails to meet obligations under agreed terms. Extends well beyond ordinary loans to bonds, interbank transactions, FX, swaps, guarantees, and settlement.",
+            "depends_on": ["c1"],
+            "source_ids": ["g2"]
+          },
+          {
+            "id": "c4",
+            "name": "Liquidity Risk",
+            "summary": "The risk of being unable to fund asset growth and meet obligations as they come due without unacceptable losses. Distinct from insolvency—a solvent firm can still fail if funding disappears.",
+            "depends_on": ["c1"],
+            "source_ids": ["g3"]
+          },
+          {
+            "id": "c5",
+            "name": "Market Risk",
+            "summary": "The risk of loss from changes in market factors—interest rates, FX, credit spreads, equities, commodities. Continuous, because prices, rates, spreads, and volatilities move frequently.",
+            "depends_on": ["c1"],
+            "source_ids": ["g4"]
+          },
+          {
+            "id": "c6",
+            "name": "Operational Risk",
+            "summary": "The risk of loss from failed internal processes, people, systems, or external events; commonly includes legal risk. Distinct from market and credit risk because it stems from execution and control failures, not price movement or default.",
+            "depends_on": ["c1"],
+            "source_ids": ["g4"]
+          },
+          {
+            "id": "c7",
+            "name": "Risk Interaction (Layered Risk)",
+            "summary": "Risk categories are not isolated: credit, liquidity, market, and operational risk interact, and a shock in one can amplify the others—especially in a crisis, where liquidity stress can force asset sales that worsen solvency.",
+            "depends_on": ["c3", "c4", "c5", "c6"],
+            "source_ids": ["g2", "g3", "g5"]
+          },
+          {
+            "id": "c8",
+            "name": "Measurement Enables Management",
+            "summary": "Quantitative tools (VaR, stress testing, scenario analysis, credit models, hedging) need an estimate of probability, exposure, or impact and are useful only inside the measurable-risk zone; judgment remains essential where uncertainty cannot be reliably modeled.",
+            "depends_on": ["c2"],
+            "source_ids": ["g1"]
+          }
+        ],
+        "key_points": [
+          {
+            "id": "kp1",
+            "text": "Knight distinguishes measurable risk from unmeasurable uncertainty; financial risk management operates mainly in the measurable-risk zone.",
+            "source_ids": ["g1"]
+          },
+          {
+            "id": "kp2",
+            "text": "Quantitative tools such as VaR, stress testing, scenario analysis, credit models, and hedging require some estimate of probability, exposure, or impact and are useful only inside the measurable-risk zone.",
+            "source_ids": ["g1"]
+          },
+          {
+            "id": "kp3",
+            "text": "Credit risk is the potential that a borrower or counterparty fails to meet obligations under agreed terms, and it arises well beyond ordinary loans—in bonds, interbank transactions, FX, swaps, guarantees, and settlement activity.",
+            "source_ids": ["g2"]
+          },
+          {
+            "id": "kp4",
+            "text": "Liquidity is the ability to fund asset growth and meet obligations as they come due without unacceptable losses; a solvent-looking firm can still fail if funding disappears.",
+            "source_ids": ["g3"]
+          },
+          {
+            "id": "kp5",
+            "text": "Market risk arises from changes in market factors—interest rates, FX, credit spreads, equities, and commodities—and is continuous because those factors move frequently.",
+            "source_ids": ["g4"]
+          },
+          {
+            "id": "kp6",
+            "text": "Operational risk is loss from failed internal processes, people, systems, or external events, and commonly includes legal risk.",
+            "source_ids": ["g4"]
+          },
+          {
+            "id": "kp7",
+            "text": "The Lehman Brothers collapse of September 2008 is a layered-risk failure: heavy reliance on short-term repo funding (about $197 billion of repos and $7.8 billion of commercial paper at end-Q1 2008), illiquid mortgage-related collateral (62% of liquidity by mid-June 2008), and major risk-governance failings.",
+            "source_ids": ["g5"]
+          },
+          {
+            "id": "kp8",
+            "text": "Liquidity stress can force asset sales that worsen solvency concerns, illustrating how risk categories interact during a crisis.",
+            "source_ids": ["g3", "g5"]
+          }
+        ]
+      },
+      {
+        "id": "m1_s2",
+        "order": 2,
+        "depth": "thin",
+        "title": "Risk Classification Framework",
+        "scope": "Formal schemes for classifying and organizing risk types into a structured taxonomy. m1_s1 only introduces the core categories conceptually; the full classification framework belongs here."
+      },
+      {
+        "id": "m1_s3",
+        "order": 3,
+        "depth": "thin",
+        "title": "Risk Management Process",
+        "scope": "The identify -> measure -> monitor -> control lifecycle as an operational process. m1_s1 motivates why such a process is needed but does not teach its steps."
+      },
+      {
+        "id": "m1_s4",
+        "order": 4,
+        "depth": "thin",
+        "title": "Risk Appetite & Capacity",
+        "scope": "Setting risk tolerance, appetite statements, and risk capacity. Out of scope for m1_s1, which stays at the nature-and-categories level."
+      },
+      {
+        "id": "m1_s5",
+        "order": 5,
+        "depth": "thin",
+        "title": "Evolution of Modern Risk Management",
+        "scope": "Historical development of FRM practice and regulation over time. m1_s1 stays conceptual and definitional rather than historical."
+      },
+      {
+        "id": "m1_s6",
+        "order": 6,
+        "depth": "thin",
+        "title": "Institutional Risk Governance",
+        "scope": "Board and committee governance structures, roles, and accountability. m1_s1 only notes governance failure via the Lehman case; it does not cover governance design."
+      }
+    ],
+    "grounding_sources": [
+      {
+        "category": "FOUNDATIONAL CONCEPTS",
+        "items": [
+          {"id": "g1", "name": "Risk, Uncertainty, and Profit (Knight, 1921)", "file": "sources/g1.md", "url": "https://en.wikipedia.org/wiki/Knightian_uncertainty"}
+        ]
+      },
+      {
+        "category": "BANKING RISK TAXONOMY",
+        "items": [
+          {"id": "g2", "name": "Principles for the Management of Credit Risk (BCBS, 2000)", "file": "sources/g2.md", "url": "https://www.bis.org/publ/bcbs75.htm"},
+          {"id": "g3", "name": "Principles for Sound Liquidity Risk Management and Supervision (BCBS, 2008)", "file": "sources/g3.md", "url": "https://www.bis.org/publ/bcbs144.htm"},
+          {"id": "g4", "name": "Minimum Capital Requirements for Market Risk; Basel II/III Operational Risk Framework (BCBS)", "file": "sources/g4.md", "url": "https://www.bis.org/bcbs/publ/d457.htm"}
+        ]
+      },
+      {
+        "category": "CRISIS CASES",
+        "items": [
+          {"id": "g5", "name": "The Financial Crisis Inquiry Report (FCIC, 2011)", "file": "sources/g5.md", "url": "https://www.govinfo.gov/content/pkg/GPO-FCIC/pdf/GPO-FCIC.pdf"}
+        ]
+      }
+    ]
+  }
+}
