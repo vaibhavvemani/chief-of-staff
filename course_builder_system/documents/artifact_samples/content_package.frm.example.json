@@ -2,7 +2,7 @@
   "course_id": "frm",
   "artifact_type": "content_package",
   "produced_by_step": "student_content",
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "status": "approved",
   "revision": 0,
   "revision_note": null,
@@ -23,17 +23,44 @@
             "title": "Learning Objectives",
             "format": "docx",
             "content": "Understand the concept of financial risk and how it arises...",
+            "claims": [],
             "sources": [],
+            "verification": {
+              "supported": 0,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": null
+            },
             "file": null,
             "status": "done"
           },
           {
             "id": "m1_s1_case",
             "type": "case_study",
-            "title": "The Lehman Brothers Collapse",
+            "title": "Basel III Risk Framework Mini Case",
             "format": "pptx",
-            "content": "Lehman Brothers Collapse (2008) as a multi-risk case...",
+            "content": "Basel III is a global banking regulatory framework used as a grounding reference for this risk-management case.",
+            "claims": [
+              {
+                "id": "c1",
+                "text": "Basel III is a global banking regulatory framework.",
+                "source_id": "g1",
+                "support": null,
+                "supporting_excerpt": null,
+                "note": null
+              }
+            ],
             "sources": ["g1"],
+            "verification": {
+              "supported": 0,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": null
+            },
             "file": null,
             "status": "done"
           },
@@ -43,8 +70,17 @@
             "title": "Self-Assessment: Nature of Financial Risk",
             "format": "docx",
             "content": "Q1. Define financial risk and give two examples of how it arises in a bank.",
-            "solution": "Q1. Financial risk is the possibility of loss from market, credit, liquidity, or operational exposure. Examples: a trading loss from market moves; a borrower default (credit).",
+            "claims": [],
             "sources": [],
+            "verification": {
+              "supported": 0,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": null
+            },
+            "solution": "Q1. Financial risk is the possibility of loss from market, credit, liquidity, or operational exposure. Examples: a trading loss from market moves; a borrower default (credit).",
             "file": null,
             "status": "done"
           }

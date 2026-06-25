@@ -27,55 +27,68 @@ Content Package / Lesson Plan reference resolves to a TOC id (see integrity.py).
 
 from __future__ import annotations
 
-from typing import Optional
+import json
+from pathlib import Path
 
 from orchestrator import make_artifact
 
+CONTENT_PACKAGE_SCHEMA_VERSION = "0.2"
 
-def structure_step(inputs: dict, feedback: Optional[str]) -> dict:
-    """subject brief -> Domain Model + TOC (Handoff Section 4.3 / 4.4)."""
+REPO_ROOT = Path(__file__).resolve().parent
+# Phase 1: the Domain Model is no longer a Phase-0 toy stub. It is the
+# hand-authored deep DM (S1.7) at domain/m1_s1_domain_model.json - the SAME
+# file the generation agent's CLI reads. structure_step surfaces that file's
+# body as the pipeline's domain_model so the in-pipeline generator and
+# integrity.py see the real grounding registry (g1-g5), not two diverging
+# copies. Reading a hand-authored input is still a "dumb" stub: no LLM call.
+DEEP_DOMAIN_MODEL_PATH = REPO_ROOT / "domain" / "m1_s1_domain_model.json"
+
+
+def _deep_domain_model_body() -> dict:
+    """Load the hand-authored deep Domain Model body (single source of truth)."""
+    if not DEEP_DOMAIN_MODEL_PATH.exists():
+        raise FileNotFoundError(
+            f"hand-authored Domain Model not found: {DEEP_DOMAIN_MODEL_PATH}"
+        )
+    artifact = json.loads(DEEP_DOMAIN_MODEL_PATH.read_text(encoding="utf-8"))
+    return artifact["body"]
+
+
+def _unverified_claim(claim_id: str, text: str, source_id: str | None) -> dict:
+    return {
+        "id": claim_id,
+        "text": text,
+        "source_id": source_id,
+        "support": None,
+        "supporting_excerpt": None,
+        "note": None,
+    }
+
+
+def _empty_verification() -> dict:
+    return {
+        "supported": 0,
+        "partial": 0,
+        "unsupported": 0,
+        "ungrounded": 0,
+        "unattributed_found": [],
+        "checked_at": None,
+    }
+
+
+def structure_step(inputs: dict, feedback: str | None) -> dict:
+    """subject brief -> Domain Model + TOC (Handoff Section 4.3 / 4.4).
+
+    The Domain Model body is the hand-authored deep DM (S1.7), loaded from
+    `domain/m1_s1_domain_model.json` - deep on m1_s1, thin stubs for the other
+    m1 subtopics, registering grounding sources g1-g5. The TOC stays a locked
+    hardcoded stub; its m1 subtopics (m1_s1..m1_s6) line up with the DM.
+    """
     course_id = inputs["brief"]["course_id"]
 
     domain_model = make_artifact(
         course_id, "domain_model", "structure",
-        body={
-            "subject": "Financial Risk Management",
-            "overview": (
-                "Financial Risk Management is the discipline of identifying, "
-                "measuring, and controlling losses from market movements, "
-                "counterparty default, funding shortfalls, and operational "
-                "failure. It progresses from foundational definitions through "
-                "quantitative measurement to regulatory frameworks and "
-                "integrated, firm-wide practice."
-            ),
-            "concepts": [
-                {"id": "c1", "name": "Financial Risk",
-                 "summary": "The possibility of loss from market, credit, "
-                            "liquidity, or operational exposure.",
-                 "depends_on": []},
-                {"id": "c2", "name": "Risk vs Uncertainty",
-                 "summary": "Knight's distinction: risk is measurable "
-                            "probability; uncertainty is not.",
-                 "depends_on": ["c1"]},
-                {"id": "c3", "name": "Value at Risk (VaR)",
-                 "summary": "A quantile measure of maximum expected loss over "
-                            "a horizon at a confidence level.",
-                 "depends_on": ["c1"]},
-                {"id": "c4", "name": "Regulatory Capital (Basel)",
-                 "summary": "Minimum capital banks must hold against "
-                            "risk-weighted assets under the Basel Accords.",
-                 "depends_on": ["c3"]},
-            ],
-            "grounding_sources": [
-                {"category": "GLOBAL FRAMEWORKS",
-                 "items": [
-                     {"id": "g1", "name": "Basel III framework (BIS)",
-                      "url": "https://www.bis.org/bcbs/basel3.htm"},
-                     {"id": "g2", "name": "Basel II framework (BIS)",
-                      "url": "https://www.bis.org/publ/bcbs128.htm"},
-                 ]},
-            ],
-        },
+        body=_deep_domain_model_body(),
         inputs=["brief"],
     )
     toc = make_artifact(
@@ -118,7 +131,7 @@ def structure_step(inputs: dict, feedback: Optional[str]) -> dict:
     return {"domain_model": domain_model, "toc": toc}
 
 
-def blueprint_step(inputs: dict, feedback: Optional[str]) -> dict:
+def blueprint_step(inputs: dict, feedback: str | None) -> dict:
     """TOC + Domain Model -> Blueprint (Handoff Section 4.5).
 
     allocations[].node_id and dependencies[].module_id reference the TOC node
@@ -150,15 +163,16 @@ def blueprint_step(inputs: dict, feedback: Optional[str]) -> dict:
     return {"blueprint": blueprint}
 
 
-def student_content_step(inputs: dict, feedback: Optional[str]) -> dict:
+def student_content_step(inputs: dict, feedback: str | None) -> dict:
     """TOC + Blueprint + Domain Model -> Content Package (Handoff Section 4.6).
 
     The TOC supplies the subtopic titles and module context the content is
     written against; the Blueprint supplies per-subtopic volume (hours/slides);
     the Domain Model supplies concepts and grounding sources. Output is keyed by
     TOC subtopic id. `content` holds the generated material; `file` stays null
-    until packaging (Phase 5). `sources` reference Domain Model grounding ids
-    (e.g. g1). `solution` is the teacher-only key on assessments.
+    until packaging (Phase 5). v0.2 keeps clean prose in `content`, tracks
+    significant factual claims in `claims[]`, and derives `sources[]` from the
+    non-null claim source ids. `solution` is the teacher-only key on assessments.
     """
     course_id = inputs["toc"]["course_id"]
 
@@ -174,38 +188,69 @@ def student_content_step(inputs: dict, feedback: Optional[str]) -> dict:
                 {
                     "subtopic_id": "m1_s1",
                     "assets": [
-                        {"id": "m1_s1_lo", "type": "learning_objectives",
-                         "title": "Learning Objectives", "format": "docx",
-                         "content": "Understand the concept of financial risk "
-                                    "and how it arises...",
-                         "sources": [], "file": None, "status": "done"},
-                        {"id": "m1_s1_case", "type": "case_study",
-                         "title": "The Lehman Brothers Collapse",
-                         "format": "pptx",
-                         "content": "Lehman Brothers Collapse (2008) as a "
-                                    "multi-risk case...",
-                         "sources": ["g1"], "file": None, "status": "done"},
-                        {"id": "m1_s1_assess", "type": "assessment",
-                         "title": "Self-Assessment: Nature of Financial Risk",
-                         "format": "docx",
-                         "content": "Q1. Define financial risk and give two "
-                                    "examples of how it arises in a bank.",
-                         "solution": "Q1. Financial risk is the possibility of "
-                                     "loss from market, credit, liquidity, or "
-                                     "operational exposure. Examples: a trading "
-                                     "loss from market moves; a borrower "
-                                     "default (credit).",
-                         "sources": [], "file": None, "status": "done"},
+                        {
+                            "id": "m1_s1_lo",
+                            "type": "learning_objectives",
+                            "title": "Learning Objectives",
+                            "format": "docx",
+                            "content": "Understand the concept of financial risk "
+                                       "and how it arises...",
+                            "claims": [],
+                            "sources": [],
+                            "verification": _empty_verification(),
+                            "file": None,
+                            "status": "done",
+                        },
+                        {
+                            "id": "m1_s1_case",
+                            "type": "case_study",
+                            "title": "Basel III Risk Framework Mini Case",
+                            "format": "pptx",
+                            "content": "Basel III is a global banking "
+                                       "regulatory framework used as a grounding "
+                                       "reference for this risk-management case.",
+                            "claims": [
+                                _unverified_claim(
+                                    "c1",
+                                    "Basel III is a global banking regulatory "
+                                    "framework.",
+                                    "g1",
+                                ),
+                            ],
+                            "sources": ["g1"],
+                            "verification": _empty_verification(),
+                            "file": None,
+                            "status": "done",
+                        },
+                        {
+                            "id": "m1_s1_assess",
+                            "type": "assessment",
+                            "title": "Self-Assessment: Nature of Financial Risk",
+                            "format": "docx",
+                            "content": "Q1. Define financial risk and give two "
+                                       "examples of how it arises in a bank.",
+                            "claims": [],
+                            "sources": [],
+                            "verification": _empty_verification(),
+                            "solution": "Q1. Financial risk is the possibility of "
+                                        "loss from market, credit, liquidity, or "
+                                        "operational exposure. Examples: a trading "
+                                        "loss from market moves; a borrower "
+                                        "default (credit).",
+                            "file": None,
+                            "status": "done",
+                        },
                     ],
                 },
             ],
         },
         inputs=["toc", "blueprint", "domain_model"],
+        schema_version=CONTENT_PACKAGE_SCHEMA_VERSION,
     )
     return {"content_package": content}
 
 
-def lesson_plan_step(inputs: dict, feedback: Optional[str]) -> dict:
+def lesson_plan_step(inputs: dict, feedback: str | None) -> dict:
     """Content Package + Blueprint -> Lesson Plan (Handoff Section 4.7).
 
     Organized by session (a class). covers[].subtopic_id references TOC

@@ -11,17 +11,20 @@ a small, fixed metadata *envelope*. Its only jobs are:
   4. pause after each step for human approve / request-changes,
   5. on "request-changes", re-run ONLY that step with the feedback.
 
-Because it depends only on the envelope (never the body), the real schema work
-you do next will not require changing a single line of this file.
+Because it depends only on the envelope (never the body), schema/content work
+stays in steps.py. The envelope itself may still gain orchestrator-owned fields
+- e.g. the optional `schema_version` override on `make_artifact` that lets one
+artifact pin a newer schema version (Content Package v0.2) while the rest stay
+v0.1. That is an envelope contract change, not a body-shape change.
 """
 
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable, Optional
 
 SCHEMA_VERSION = "0.1"
 COURSES_DIR = Path("courses")
@@ -37,18 +40,24 @@ def make_artifact(
     produced_by_step: str,
     body: dict,
     inputs: list[str],
+    schema_version: str | None = None,
 ) -> dict:
     """Wrap a step's output body in the fixed metadata envelope.
 
     The lifecycle fields (status, revision, revision_note, updated_at) are
     owned by the orchestrator, not the step - they are set/overwritten when
     the artifact is saved. A step just declares identity + body + what it read.
+
+    `schema_version` defaults to the global SCHEMA_VERSION; a step may pass an
+    override so one artifact can pin a newer contract (e.g. Content Package
+    "0.2") while the rest stay on the default. This is an envelope field, not
+    body shape, so it lives here rather than in steps.py.
     """
     return {
         "course_id": course_id,
         "artifact_type": artifact_type,
         "produced_by_step": produced_by_step,
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": schema_version or SCHEMA_VERSION,
         "status": "draft",          # draft -> approved (set by orchestrator)
         "revision": 0,              # bumped by orchestrator on re-run
         "revision_note": None,      # the feedback that triggered the re-run
@@ -59,7 +68,7 @@ def make_artifact(
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 # --------------------------------------------------------------------------
@@ -72,7 +81,7 @@ class Step:
     name: str                                  # e.g. "structure"
     consumes: list[str]                         # artifact_types it reads
     produces: list[str]                         # artifact_types it writes
-    run: Callable[[dict, Optional[str]], dict]
+    run: Callable[[dict, str | None], dict]
     # run(inputs, feedback) -> {artifact_type: artifact_envelope}
     # inputs is {artifact_type: artifact_envelope}
 
@@ -80,7 +89,7 @@ class Step:
 @dataclass
 class Decision:
     approved: bool
-    feedback: Optional[str] = None
+    feedback: str | None = None
 
 
 # --------------------------------------------------------------------------
@@ -102,7 +111,7 @@ def save_artifact(artifact: dict) -> Path:
     return path
 
 
-def load_artifact(course_id: str, artifact_type: str) -> Optional[dict]:
+def load_artifact(course_id: str, artifact_type: str) -> dict | None:
     path = artifact_path(course_id, artifact_type)
     if not path.exists():
         return None
@@ -169,7 +178,7 @@ def run_pipeline(
             inputs[t] = art
 
         # --- run / approve loop: re-runs ONLY this step until approved
-        feedback: Optional[str] = None
+        feedback: str | None = None
         revision = 0
         while True:
             produced = step.run(inputs, feedback)

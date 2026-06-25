@@ -36,6 +36,13 @@ load_dotenv()  # reads ANTHROPIC_API_KEY (and anything else) from .env
 
 DEFAULT_MODEL = "claude-opus-4-8"
 
+# Above this max_tokens, route through the streaming API. The SDK refuses
+# non-streaming requests it estimates will exceed its ~10-minute socket timeout
+# (i.e. large max_tokens), raising ValueError; streaming sidesteps that. It is
+# transport only - `.get_final_message()` returns the same Message a create()
+# would - so the cached result and the cache key are identical either way.
+_STREAM_THRESHOLD = 8000
+
 # Module-level client — SDK reads ANTHROPIC_API_KEY from the environment.
 # max_retries=4 activates the SDK's built-in exponential backoff on 429/5xx.
 # We do NOT guard against a missing key here; we guard inside `call()` so that
@@ -45,6 +52,21 @@ _client = anthropic.Anthropic(max_retries=4)
 _CACHE_DIR = Path(".llm_cache")
 _LOG_DIR = Path("logs")
 _LOG_FILE = _LOG_DIR / "llm_calls.jsonl"
+
+# ---------------------------------------------------------------------------
+# Errors
+# ---------------------------------------------------------------------------
+
+
+class LLMError(RuntimeError):
+    """Raised when a live call returns output we cannot use.
+
+    Covers a non-clean stop (truncation at max_tokens, a safety refusal, or a
+    context-window overflow) and structured output that is not valid JSON. The
+    point is to fail loudly with a request id instead of letting a downstream
+    json.loads() blow up on truncated/empty text with an opaque error.
+    """
+
 
 # ---------------------------------------------------------------------------
 # Result dataclass
@@ -75,8 +97,15 @@ def _canonical_key(
     messages: list[dict[str, Any]],
     max_tokens: int,
     schema: dict[str, Any] | None,
+    thinking: dict[str, Any] | None = None,
 ) -> str:
-    """SHA-256 over a deterministic JSON serialisation of the full call spec."""
+    """SHA-256 over a deterministic JSON serialisation of the full call spec.
+
+    `thinking` is folded in ONLY when set, so cache entries written before
+    thinking was a parameter still resolve for the common thinking-off path.
+    `stream` is deliberately not part of the key: it is transport only and the
+    final message is identical whether streamed or not.
+    """
     payload = {
         "model": model,
         "system": system,
@@ -84,8 +113,38 @@ def _canonical_key(
         "max_tokens": max_tokens,
         "schema": schema,
     }
+    if thinking is not None:
+        payload["thinking"] = thinking
     canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+_USABLE_STOP_REASONS = {"end_turn", "stop_sequence"}
+
+
+def _raise_on_bad_stop(response: Any, max_tokens: int) -> None:
+    """Raise LLMError if the model did not finish cleanly.
+
+    A max_tokens / refusal / context-overflow stop means the text is truncated
+    or empty; treating it as a complete answer (or parsing it as JSON) fails
+    with an opaque error far from the cause. Fail here, with a request id.
+    """
+    stop = response.stop_reason
+    if stop in _USABLE_STOP_REASONS:
+        return
+    rid = getattr(response, "_request_id", None)
+    if stop == "max_tokens":
+        detail = (
+            f"output truncated at max_tokens={max_tokens} - raise max_tokens "
+            "(streaming auto-engages above the threshold)"
+        )
+    elif stop == "refusal":
+        detail = "model declined the request (stop_reason='refusal')"
+    elif stop == "model_context_window_exceeded":
+        detail = "input exceeded the model context window"
+    else:
+        detail = f"unexpected stop_reason={stop!r}"
+    raise LLMError(f"{detail}; model={response.model} request_id={rid}")
 
 
 def _cache_path(prompt_hash: str) -> Path:
@@ -172,6 +231,8 @@ def call(
     model: str = DEFAULT_MODEL,
     max_tokens: int = 4096,
     schema: dict[str, Any] | None = None,
+    thinking: dict[str, Any] | None = None,
+    stream: bool | None = None,
     use_cache: bool = True,
 ) -> LLMResult:
     """Call the Anthropic Messages API, with local disk caching and token logging.
@@ -185,6 +246,14 @@ def call(
         schema:     JSON Schema dict for structured output.  When provided, the API
                     is asked to return JSON that conforms to the schema, and
                     LLMResult.parsed is populated via json.loads().
+        thinking:   Optional thinking config, e.g. {"type": "adaptive"} on
+                    Opus 4.8 (budget_tokens is rejected on this tier). Off by
+                    default; folded into the cache key only when set. Thinking
+                    blocks are ignored when extracting text, so structured
+                    output is unaffected.
+        stream:     Tri-state. None (default) auto-streams when max_tokens
+                    exceeds the streaming threshold; True/False force it. The
+                    final message is identical either way.
         use_cache:  When False, always bypass the local cache and call the API.
 
     Returns:
@@ -193,11 +262,13 @@ def call(
 
     Raises:
         SystemExit: If ANTHROPIC_API_KEY is unset and an API call is required.
+        LLMError:   If the model stops uncleanly (truncation/refusal/context
+                    overflow) or structured output is not valid JSON.
     """
     t0 = time.monotonic()
     timestamp = datetime.now(tz=UTC).isoformat()
 
-    prompt_hash = _canonical_key(model, system, messages, max_tokens, schema)
+    prompt_hash = _canonical_key(model, system, messages, max_tokens, schema, thinking)
 
     # ------------------------------------------------------------------
     # Cache hit path
@@ -225,7 +296,7 @@ def call(
             "Add it to your .env file or export it in your shell before running."
         )
 
-    # Build keyword arguments for messages.create
+    # Build keyword arguments shared by the streaming and non-streaming paths.
     kwargs: dict[str, Any] = {
         "model": model,
         "max_tokens": max_tokens,
@@ -235,10 +306,23 @@ def call(
         kwargs["system"] = system
     if schema is not None:
         kwargs["output_config"] = {"format": {"type": "json_schema", "schema": schema}}
+    if thinking is not None:
+        kwargs["thinking"] = thinking
 
-    response = _client.messages.create(**kwargs)
+    # Stream large outputs so we never trip the SDK's non-streaming timeout
+    # guard; get_final_message() returns the same Message a create() would.
+    should_stream = stream if stream is not None else max_tokens > _STREAM_THRESHOLD
+    if should_stream:
+        with _client.messages.stream(**kwargs) as streamed:
+            response = streamed.get_final_message()
+    else:
+        response = _client.messages.create(**kwargs)
 
     latency_s = time.monotonic() - t0
+
+    # Fail loud on output we cannot use, rather than caching/parsing truncated
+    # or empty text and surfacing an opaque error far from the cause.
+    _raise_on_bad_stop(response, max_tokens)
 
     # Extract text from all text-type content blocks
     text = "".join(block.text for block in response.content if block.type == "text")
@@ -257,7 +341,14 @@ def call(
     # Structured output
     parsed: Any = None
     if schema is not None:
-        parsed = json.loads(text)
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError as exc:
+            rid = getattr(response, "_request_id", None)
+            raise LLMError(
+                f"structured-output response was not valid JSON ({exc}); "
+                f"model={response.model} request_id={rid}"
+            ) from exc
 
     result = LLMResult(
         text=text,

@@ -48,7 +48,7 @@ logs/                                 # token log + S1.9 smoke output (gitignore
 
 ## Notes & flags to carry into Sprint 2
 
-1. **Gold package is `schema_version: 0.1`.** Correct for Sprint 1, but **S2.1 bumps the content_package to v0.2** (`claims[]` + `verification`). When it lands, revisit `m1_s1.gold.content_package.json` so the eval stays apples-to-apples against agent output. *(Not a defect — a Sprint 2 to-do.)*
+1. **Gold package migration.** Sprint 1 produced `m1_s1.gold.content_package.json` as `schema_version: 0.1`; S2.1 structurally migrates it to content-package v0.2 (`claims[]` + `verification`) so the eval remains apples-to-apples against agent output. The manual prose remains untouched; manual claim attribution is not retroactively authored in this migration.
 
 2. **Domain Model is subtopic-structured (a superset of the flat sample).** The body uses `body.subtopics[]` with `depth: deep|thin`, nesting `concepts[]` + `key_points[]` under the deep `m1_s1` slice, plus body-level `grounding_sources[]`. Implications:
    - Sprint 2 prompts (S2.2) should inject the whole `m1_s1` slice (deep concepts + key_points) + the thin-neighbor stubs (stay-in-lane awareness) + the source registry.

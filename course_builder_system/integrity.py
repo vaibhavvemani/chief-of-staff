@@ -17,6 +17,8 @@ Checks performed:
   - Blueprint.speakers[].placed_at         -> a TOC module OR subtopic id
   - Content Package.subtopics[].subtopic_id-> a TOC subtopic id
   - Content Package asset.sources[]        -> a Domain Model grounding-source id
+  - Content Package v0.2 claims[].source_id-> a Domain Model grounding-source id
+  - Content Package v0.2 asset.sources[]   -> non-null claims[].source_id union
   - Lesson Plan.sessions[].covers[].subtopic_id -> a TOC subtopic id
   - Domain Model.concepts[].depends_on     -> a Domain Model concept id
 """
@@ -35,6 +37,10 @@ def _toc_ids(toc_body: dict) -> tuple[set[str], set[str]]:
         for s in m.get("subtopics", []):
             subtopics.add(s["id"])
     return modules, subtopics
+
+
+def _source_list_label(source_ids: set[str]) -> str:
+    return "[" + ", ".join(sorted(source_ids)) + "]"
 
 
 def check_referential_integrity(course_id: str) -> list[str]:
@@ -61,8 +67,14 @@ def check_referential_integrity(course_id: str) -> list[str]:
         for category in dm["body"].get("grounding_sources", []):
             for item in category.get("items", []):
                 grounding_ids.add(item["id"])
-        concept_ids = {c["id"] for c in dm["body"].get("concepts", [])}
-        for c in dm["body"].get("concepts", []):
+        # Concepts can live at the body top level (Phase-0 shape) OR nested
+        # under each subtopic (the hand-authored deep DM). Gather both so the
+        # depends_on graph is checked regardless of which shape is on disk.
+        all_concepts = list(dm["body"].get("concepts", []))
+        for st in dm["body"].get("subtopics", []):
+            all_concepts.extend(st.get("concepts", []))
+        concept_ids = {c["id"] for c in all_concepts}
+        for c in all_concepts:
             for dep in c.get("depends_on", []):
                 if dep not in concept_ids:
                     problems.append(
@@ -100,6 +112,7 @@ def check_referential_integrity(course_id: str) -> list[str]:
     # Content Package references.
     cp = load_artifact(course_id, "content_package")
     if cp is not None:
+        content_package_v02 = cp.get("schema_version") == "0.2"
         for st in cp["body"].get("subtopics", []):
             if st["subtopic_id"] not in subtopic_ids:
                 problems.append(
@@ -107,12 +120,42 @@ def check_referential_integrity(course_id: str) -> list[str]:
                     f"a TOC subtopic"
                 )
             for asset in st.get("assets", []):
+                asset_sources = set(asset.get("sources", []))
                 for src in asset.get("sources", []):
                     if src not in grounding_ids:
                         problems.append(
                             f"content_package: asset '{asset['id']}' source "
                             f"'{src}' is not a Domain Model grounding id"
                         )
+                if not content_package_v02:
+                    continue
+
+                if "claims" not in asset:
+                    problems.append(
+                        f"content_package: v0.2 asset '{asset['id']}' is missing "
+                        "claims[]"
+                    )
+                    continue
+
+                claim_sources: set[str] = set()
+                for claim in asset.get("claims", []):
+                    src = claim.get("source_id")
+                    if src is None:
+                        continue
+                    claim_sources.add(src)
+                    if src not in grounding_ids:
+                        problems.append(
+                            f"content_package: asset '{asset['id']}' claim "
+                            f"'{claim.get('id')}' source_id '{src}' is not a "
+                            "Domain Model grounding id"
+                        )
+
+                if asset_sources != claim_sources:
+                    problems.append(
+                        f"content_package: asset '{asset['id']}' sources "
+                        f"{_source_list_label(asset_sources)} do not match "
+                        f"claim source union {_source_list_label(claim_sources)}"
+                    )
 
     # Lesson Plan references.
     lp = load_artifact(course_id, "lesson_plan")

@@ -1,0 +1,282 @@
+{
+  "id": "m1_s1_cc",
+  "type": "course_content",
+  "title": "Nature of Financial Risk",
+  "format": "pptx",
+  "content": "# Nature of Financial Risk\n\n## Why Financial Risk Management Exists\n\nEvery financial institution operates in an environment where future outcomes are unknown. Financial Risk Management exists to give firms a disciplined way to identify, measure, monitor, and control the threats to their value, earnings, and survival. Its purpose is not to eliminate risk—taking risk is how financial institutions earn returns—but to ensure that the risks taken are understood, deliberate, priced appropriately, and kept within limits the firm can withstand.\n\nThis opening subtopic builds the conceptual foundation for everything that follows. It defines what financial risk is, distinguishes measurable risk from genuine uncertainty, introduces the four core risk categories, and shows—through the collapse of Lehman Brothers—how those categories interact in a real crisis.\n\n## What Financial Risk Means\n\nFinancial risk is the possibility of loss arising from exposure to market movements, counterparty default, funding shortfalls, or operational failure. It is the organizing concept under which the core risk categories sit. A useful way to think about it is exposure plus the chance of an adverse outcome: wherever a firm holds a position, lends money, depends on funding, or runs a process, it carries the possibility that things move against it.\n\nFinancial risk matters because the consequences of mismanaging it are severe and often sudden. For an individual firm, unmanaged risk can mean trading losses, defaults that erode capital, an inability to meet obligations, or reputational damage that destroys franchise value. For the wider system, a shortfall at one institution can cascade outward, because financial firms are densely interconnected through lending, trading, and funding relationships.\n\n## Risk Versus Uncertainty\n\nA central idea underpinning risk management comes from Frank Knight's 1921 work, *Risk, Uncertainty, and Profit*. Knight drew a sharp distinction between two kinds of unknown future. \"Risk\" is uncertainty that can be measured or assigned probabilities—a quantity susceptible of measurement. \"Uncertainty\" in the Knightian sense cannot be reduced to reliable probabilities in the same way.\n\nThis distinction explains where financial risk management is most powerful and where it reaches its limits. Financial risk management operates mainly in the measurable-risk zone, where exposures and likely outcomes can be estimated. When probabilities genuinely cannot be estimated, the problem shifts from ordinary quantifiable risk into judgment-heavy uncertainty.\n\n### Why Measurement Enables but Does Not Replace Judgment\n\nThe quantitative tools at the heart of the discipline—Value at Risk, stress testing, scenario analysis, credit models, and hedging—all require some estimate of probability, exposure, or impact, and are useful only inside the measurable-risk zone. Where outcomes cannot be reliably modeled, human judgment remains essential. Measurement enables management; it does not replace the experienced judgment needed when the world moves beyond what the models were built to capture. The most dangerous failures often occur precisely where firms treat a deeply uncertain situation as if it were a neatly measurable one.\n\n## The Four Core Risk Categories\n\nFinancial risk is conventionally decomposed into four core categories. Each has its own drivers, measurement tools, and control approaches.\n\n### Credit Risk\n\nCredit risk is the potential that a borrower or counterparty will fail to meet its obligations in accordance with agreed terms. It extends well beyond ordinary loans: credit risk arises in bonds, interbank transactions, trade finance, foreign exchange, futures, swaps, options, guarantees, commitments, and settlement activity. The goal of credit risk management is to keep exposure within acceptable parameters while pursuing risk-adjusted return, and it must be managed both at the individual-transaction level and across the portfolio. Importantly, credit risk does not stand alone—it interacts with liquidity, market, operational, and reputational risk.\n\n### Liquidity Risk\n\nLiquidity is the ability to fund increases in assets and to meet obligations as they come due without incurring unacceptable losses. Banks are naturally exposed to liquidity risk because they transform short-term funding into longer-term assets. Crucially, liquidity risk is not identical to insolvency: a firm that looks solvent on paper can still fail if its funding disappears.\n\nLiquidity risk can be institution-specific or market-wide, and a shortfall at one institution can create system-wide effects. The 2007–08 turmoil demonstrated that liquidity can vanish quickly and stay unavailable for a long period. Sound liquidity risk management therefore includes setting a liquidity risk tolerance, holding cushions of liquid assets, running stress tests, maintaining contingency funding plans, managing intraday liquidity and collateral, and disclosing liquidity positions.\n\n### Market Risk\n\nMarket risk is the risk of loss from changes in market risk factors. It is associated primarily with trading activity, and frameworks distinguish between trading book and banking book exposures. Market risk drivers include interest rate risk, foreign exchange risk, credit spread risk, equity risk, commodity risk, and market illiquidity effects. Market risk is continuous, because prices, rates, spreads, and volatilities move frequently. Modern regulatory frameworks measure it using tools such as expected shortfall for internal models, with explicit attention to non-modellable risk factors.\n\n### Operational Risk\n\nOperational risk is the risk of loss resulting from inadequate or failed internal processes, people, and systems, or from external events; it commonly includes legal risk. It is distinct from market and credit risk because it arises from execution, control, systems, people, or external-event failures rather than from ordinary price movement or borrower default. Because its sources are so different, operational risk requires its own measurement and control approaches.\n\n## How Risk Categories Interact in Layers\n\nThe four categories are analytically separate, but in practice they are deeply intertwined. A shock in one category can amplify the others. Credit deterioration can trigger market losses as spreads widen; market losses can erode confidence and choke off funding; a funding squeeze can force the sale of assets at depressed prices, which in turn worsens solvency. Liquidity stress, in particular, can force asset sales that deepen solvency concerns—a self-reinforcing spiral. Understanding risk as layered rather than isolated is essential, because crises rarely respect the neat boundaries of a risk taxonomy.\n\n## Applied Example: The Collapse of Lehman Brothers\n\nLehman Brothers was a central event in the financial crisis of September 2008, and it is the clearest illustration of layered-risk failure. Lehman's problems involved both solvency concerns and liquidity concerns; as the official inquiry put it, solvency and liquidity were essential and related. Investors and regulators focused on whether Lehman held enough real capital after possible asset write-downs, and enough cash to withstand a run.\n\nLehman relied heavily on short-term repo funding, including overnight funding secured by illiquid assets. At the end of the first quarter of 2008, the firm had about $197 billion of repos and $7.8 billion of commercial paper, alongside concerns about its real-estate-related investments. This heavy dependence on short-term funding made it acutely vulnerable to any loss of confidence.\n\nThe collateral behind that funding was a core weakness. As of mid-June 2008, 62% of Lehman's liquidity depended on borrowing against nontraditional securities such as illiquid mortgage-related securities. Shortly before failure, the firm had tri-party repo exposure of roughly $200 billion. The inquiry also examined \"Repo 105\" transactions, which appeared to reduce the firm's reported balance-sheet size around reporting dates.\n\nGovernance and risk management failed alongside the balance sheet. In July 2008, the Office of Thrift Supervision warned that Lehman was materially overexposed to commercial real estate and had major failings in its risk management process.\n\nRead through the lens of the four categories, Lehman is not a single-risk story. Market risk appeared as falling values on mortgage-related assets. Leverage and funding risk appeared in the enormous reliance on short-term repo. Liquidity risk appeared as confidence evaporated and funding became unavailable, forcing distressed sales that worsened solvency. And governance and risk-management failures meant the warning signs were not adequately controlled. The categories interacted and amplified one another until the firm collapsed—exactly the layered dynamic this subtopic teaches.\n\n## Summary\n\nFinancial risk is the possibility of loss from market movements, counterparty default, funding shortfalls, and operational failure. Knight's distinction between measurable risk and unmeasurable uncertainty defines the zone where quantitative tools work and where judgment must take over. The four core categories—credit, liquidity, market, and operational risk—each have distinct drivers and tools, but they interact in layers, and a shock in one can cascade into the others. Lehman Brothers shows what that interaction looks like in a real crisis, and why managing financial risk demands both rigorous measurement and seasoned judgment.",
+  "claims": [
+    {
+      "id": "cl1",
+      "text": "Financial risk is the possibility of loss arising from exposure to market movements, counterparty default, funding shortfalls, or operational failure.",
+      "source_id": null,
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl2",
+      "text": "Knight, in his 1921 work Risk, Uncertainty, and Profit, distinguished 'risk' as uncertainty that can be measured or assigned probabilities from 'uncertainty' that cannot be reduced to reliable probabilities in the same way.",
+      "source_id": "g1",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl3",
+      "text": "Knight described risk as a quantity susceptible of measurement.",
+      "source_id": "g1",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl4",
+      "text": "Financial risk management operates mainly in the measurable-risk zone, and when probabilities cannot be estimated the problem shifts into judgment-heavy uncertainty.",
+      "source_id": "g1",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl5",
+      "text": "Quantitative tools such as Value at Risk, stress testing, scenario analysis, credit models, and hedging require some estimate of probability, exposure, or impact and are useful only inside the measurable-risk zone.",
+      "source_id": "g1",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl6",
+      "text": "Human judgment remains important when uncertainty cannot be reliably modeled.",
+      "source_id": "g1",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl7",
+      "text": "Credit risk is the potential that a borrower or counterparty will fail to meet its obligations in accordance with agreed terms.",
+      "source_id": "g2",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl8",
+      "text": "Credit risk extends beyond ordinary loans, arising in bonds, interbank transactions, trade finance, foreign exchange, futures, swaps, options, guarantees, commitments, and settlement activity.",
+      "source_id": "g2",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl9",
+      "text": "Credit risk management aims to keep exposure within acceptable parameters while pursuing risk-adjusted return, and must be managed at both the individual-transaction and portfolio levels.",
+      "source_id": "g2",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl10",
+      "text": "Credit risk interacts with other risks, including liquidity, market, operational, and reputational risk.",
+      "source_id": "g2",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl11",
+      "text": "Liquidity is the ability to fund increases in assets and meet obligations as they come due without incurring unacceptable losses.",
+      "source_id": "g3",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl12",
+      "text": "Banks are naturally exposed to liquidity risk because they transform short-term funding into longer-term assets.",
+      "source_id": "g3",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl13",
+      "text": "Liquidity risk is not identical to insolvency; a solvent-looking firm can still fail if its funding disappears.",
+      "source_id": "g3",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl14",
+      "text": "Liquidity risk can be institution-specific or market-wide, and a shortfall at one institution can create system-wide effects.",
+      "source_id": "g3",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl15",
+      "text": "The 2007–08 turmoil showed that liquidity can disappear quickly and remain unavailable for a long period.",
+      "source_id": "g3",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl16",
+      "text": "Sound liquidity risk management includes liquidity risk tolerance, liquid asset cushions, stress testing, contingency funding plans, intraday liquidity management, collateral management, and public disclosure.",
+      "source_id": "g3",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl17",
+      "text": "Market risk is the risk of loss from changes in market risk factors and is associated primarily with trading activity, with frameworks distinguishing trading book and banking book exposures.",
+      "source_id": "g4",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl18",
+      "text": "Market risk drivers include interest rate risk, foreign exchange risk, credit spread risk, equity risk, commodity risk, and market illiquidity effects.",
+      "source_id": "g4",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl19",
+      "text": "Market risk is continuous because prices, rates, spreads, and volatilities move frequently.",
+      "source_id": "g4",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl20",
+      "text": "Basel's revised market risk framework uses expected shortfall for internal models and gives attention to non-modellable risk factors.",
+      "source_id": "g4",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl21",
+      "text": "Operational risk is the risk of loss resulting from inadequate or failed internal processes, people, and systems, or from external events, and commonly includes legal risk.",
+      "source_id": "g4",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl22",
+      "text": "Operational risk is distinct from market and credit risk because it arises from execution, control, systems, people, or external-event failures rather than from ordinary price movement or borrower default.",
+      "source_id": "g4",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl23",
+      "text": "Liquidity stress can force asset sales that worsen solvency concerns.",
+      "source_id": "g3",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl24",
+      "text": "Lehman Brothers was a central event in the financial crisis of September 2008, and its problems involved both solvency and liquidity concerns, which the inquiry described as essential and related.",
+      "source_id": "g5",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl25",
+      "text": "Investors and regulators focused on whether Lehman had enough real capital after possible asset write-downs and enough cash to withstand a run.",
+      "source_id": "g5",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl26",
+      "text": "Lehman relied heavily on short-term repo funding, including overnight funding secured by illiquid assets.",
+      "source_id": "g5",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl27",
+      "text": "At the end of the first quarter of 2008, Lehman had about $197 billion of repos and $7.8 billion of commercial paper, alongside concerns about its real-estate-related investments.",
+      "source_id": "g5",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl28",
+      "text": "As of mid-June 2008, 62% of Lehman's liquidity depended on borrowing against nontraditional securities such as illiquid mortgage-related securities.",
+      "source_id": "g5",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl29",
+      "text": "Shortly before failure, Lehman had tri-party repo exposure of roughly $200 billion.",
+      "source_id": "g5",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl30",
+      "text": "The inquiry examined 'Repo 105' transactions and concerns that they reduced Lehman's reported balance-sheet size around reporting dates.",
+      "source_id": "g5",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl31",
+      "text": "In July 2008, the Office of Thrift Supervision warned that Lehman was materially overexposed to commercial real estate and had major failings in its risk management process.",
+      "source_id": "g5",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    },
+    {
+      "id": "cl32",
+      "text": "Lehman illustrates the interaction between market risk, liquidity risk, leverage/funding dependence, and governance/risk-management failure.",
+      "source_id": "g5",
+      "support": null,
+      "supporting_excerpt": null,
+      "note": null
+    }
+  ],
+  "sources": [
+    "g1",
+    "g2",
+    "g3",
+    "g4",
+    "g5"
+  ],
+  "verification": {
+    "supported": 0,
+    "partial": 0,
+    "unsupported": 0,
+    "ungrounded": 0,
+    "unattributed_found": [],
+    "checked_at": null
+  },
+  "file": null,
+  "status": "done"
+}

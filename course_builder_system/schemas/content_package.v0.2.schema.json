@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://course-builder.local/schemas/content_package.v0.2.schema.json",
+  "title": "Course Builder Content Package v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "course_id",
+    "artifact_type",
+    "produced_by_step",
+    "schema_version",
+    "status",
+    "revision",
+    "revision_note",
+    "inputs",
+    "updated_at",
+    "body"
+  ],
+  "properties": {
+    "course_id": { "type": "string", "minLength": 1 },
+    "artifact_type": { "const": "content_package" },
+    "produced_by_step": { "const": "student_content" },
+    "schema_version": { "const": "0.2" },
+    "status": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "revision_note": { "type": ["string", "null"] },
+    "inputs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "contains": { "const": "toc" }
+    },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "body": { "$ref": "#/$defs/content_package_body" }
+  },
+  "$defs": {
+    "source_id": {
+      "type": "string",
+      "pattern": "^g[0-9]+$"
+    },
+    "asset_type": {
+      "enum": [
+        "learning_objectives",
+        "course_content",
+        "summary",
+        "case_study",
+        "important_person",
+        "did_you_know",
+        "assessment",
+        "activities",
+        "resources"
+      ]
+    },
+    "asset_format": {
+      "enum": ["docx", "pptx", "xlsx", "pdf", "html", "markdown", "text"]
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "text",
+        "source_id",
+        "support",
+        "supporting_excerpt",
+        "note"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 },
+        "source_id": {
+          "anyOf": [
+            { "$ref": "#/$defs/source_id" },
+            { "type": "null" }
+          ]
+        },
+        "support": {
+          "enum": ["supported", "partial", "unsupported", null]
+        },
+        "supporting_excerpt": {
+          "type": ["string", "null"]
+        },
+        "note": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supported",
+        "partial",
+        "unsupported",
+        "ungrounded",
+        "unattributed_found",
+        "checked_at"
+      ],
+      "properties": {
+        "supported": { "type": "integer", "minimum": 0 },
+        "partial": { "type": "integer", "minimum": 0 },
+        "unsupported": { "type": "integer", "minimum": 0 },
+        "ungrounded": { "type": "integer", "minimum": 0 },
+        "unattributed_found": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "checked_at": { "type": ["string", "null"] }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "title",
+        "format",
+        "content",
+        "claims",
+        "sources",
+        "verification",
+        "file",
+        "status"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "$ref": "#/$defs/asset_type" },
+        "title": { "type": "string", "minLength": 1 },
+        "format": { "$ref": "#/$defs/asset_format" },
+        "content": { "type": "string" },
+        "claims": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/claim" }
+        },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source_id" },
+          "uniqueItems": true
+        },
+        "verification": { "$ref": "#/$defs/verification" },
+        "solution": { "type": "string" },
+        "file": { "type": ["string", "null"] },
+        "status": { "type": "string", "minLength": 1 }
+      }
+    },
+    "subtopic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subtopic_id", "assets"],
+      "properties": {
+        "subtopic_id": { "type": "string", "minLength": 1 },
+        "assets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/asset" }
+        }
+      }
+    },
+    "content_package_body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asset_vocabulary", "subtopics"],
+      "properties": {
+        "asset_vocabulary": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/asset_type" },
+          "uniqueItems": true
+        },
+        "subtopics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/subtopic" }
+        }
+      }
+    }
+  }
+}

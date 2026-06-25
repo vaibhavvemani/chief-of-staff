@@ -102,6 +102,8 @@ This doc is the single source of truth for **building** Phase 1. Sections A–H 
 **Module layout:**
 ```
 llm.py                       # Anthropic wrapper: call, retry, token log, prompt-hash cache
+schemas/
+  content_package.v0.2.schema.json  # formal Content Package contract
 agents/
   student_content.py         # per-asset generation, anchored on Course Content
   verification.py            # separate asset-by-asset verifier
