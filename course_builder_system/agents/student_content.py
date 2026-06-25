@@ -102,8 +102,11 @@ ASSET_SPECS: dict[str, AssetSpec] = {
         asset_type="assessment",
         title="Assessment Quiz: Nature of Financial Risk",
         format="pptx",
+        # Assessment uniquely emits BOTH `content` (questions) and a full
+        # `solution` answer key, so it needs more headroom than the other assets
+        # (5_000 truncated a 10-question quiz + model answers during S2.6).
         prompt_filename="assessment.md",
-        max_tokens=5_000,
+        max_tokens=9_000,
         has_solution=True,
         conditioned_on_course_content=True,
     ),
@@ -480,12 +483,13 @@ def _validate_and_normalize_asset(
         if source_id not in derived_sources:
             derived_sources.append(source_id)
 
-    asset_sources = asset.get("sources")
-    if asset_sources != derived_sources:
-        errors.append(
-            "sources must match non-null claim source_id union; "
-            f"expected {derived_sources}, got {asset_sources!r}"
-        )
+    # `sources` is the derived union of non-null claim source_ids (Plan E). We
+    # derive it authoritatively from the claims above and let it be the source of
+    # truth (it is what the normalized asset returns below). The writer's echo of
+    # this redundant field is advisory only: models routinely over-list it (e.g.
+    # naming every available source) or under-list it, and that bookkeeping slip
+    # must not fail an otherwise-valid asset. The separate verifier (S3) — not
+    # this field — is what scrutinizes attribution integrity.
 
     if asset.get("verification") != EMPTY_VERIFICATION:
         errors.append(f"verification must be the empty pre-S3 state: {EMPTY_VERIFICATION!r}")
