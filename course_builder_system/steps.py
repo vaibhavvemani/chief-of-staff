@@ -30,6 +30,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from agents import student_content
 from orchestrator import make_artifact
 
 CONTENT_PACKAGE_SCHEMA_VERSION = "0.2"
@@ -52,28 +53,6 @@ def _deep_domain_model_body() -> dict:
         )
     artifact = json.loads(DEEP_DOMAIN_MODEL_PATH.read_text(encoding="utf-8"))
     return artifact["body"]
-
-
-def _unverified_claim(claim_id: str, text: str, source_id: str | None) -> dict:
-    return {
-        "id": claim_id,
-        "text": text,
-        "source_id": source_id,
-        "support": None,
-        "supporting_excerpt": None,
-        "note": None,
-    }
-
-
-def _empty_verification() -> dict:
-    return {
-        "supported": 0,
-        "partial": 0,
-        "unsupported": 0,
-        "ungrounded": 0,
-        "unattributed_found": [],
-        "checked_at": None,
-    }
 
 
 def structure_step(inputs: dict, feedback: str | None) -> dict:
@@ -164,85 +143,49 @@ def blueprint_step(inputs: dict, feedback: str | None) -> dict:
 
 
 def student_content_step(inputs: dict, feedback: str | None) -> dict:
-    """TOC + Blueprint + Domain Model -> Content Package (Handoff Section 4.6).
+    """TOC + Blueprint + Domain Model -> v0.2 Content Package (Handoff Section 4.6).
 
-    The TOC supplies the subtopic titles and module context the content is
-    written against; the Blueprint supplies per-subtopic volume (hours/slides);
-    the Domain Model supplies concepts and grounding sources. Output is keyed by
-    TOC subtopic id. `content` holds the generated material; `file` stays null
-    until packaging (Phase 5). v0.2 keeps clean prose in `content`, tracks
-    significant factual claims in `claims[]`, and derives `sources[]` from the
-    non-null claim source ids. `solution` is the teacher-only key on assessments.
+    Thin adapter (Plan H): call the generation agent for each of the five core
+    assets, then assemble them into one v0.2 Content Package. The Course Content
+    anchor is generated first; the other four (learning_objectives, summary,
+    case_study, assessment) are generated conditioned on it for cross-asset
+    coherence. `content` holds clean prose; significant factual claims live in
+    `claims[]`; `sources[]` is the derived non-null claim source-id union;
+    `solution` is the teacher-only key on the assessment. `file` stays null until
+    packaging (Phase 5).
+
+    `feedback` is accepted to satisfy the (inputs, feedback) contract but is NOT
+    used in the baseline: feedback-driven targeted per-asset regeneration is
+    wired later (S3.6), once the verifier flags exist (Plan D). use_cache stays
+    on (default) so repeated pipeline runs reuse cached LLM responses.
     """
     course_id = inputs["toc"]["course_id"]
+
+    gen_inputs = {
+        "toc": inputs["toc"],
+        "blueprint": inputs["blueprint"],
+        "domain_model": inputs["domain_model"],
+        "subtopic_id": "m1_s1",
+    }
+
+    # Course Content anchor first; the remaining four condition on it.
+    cc = student_content.generate_asset(student_content.COURSE_CONTENT_SPEC, gen_inputs)
+    assets = [cc]
+    for name in ("learning_objectives", "summary", "case_study", "assessment"):
+        spec = student_content.ASSET_SPECS[name]
+        assets.append(student_content.generate_asset(spec, gen_inputs, course_content=cc))
 
     content = make_artifact(
         course_id, "content_package", "student_content",
         body={
+            # Full 9-type vocabulary even though only the core 5 are generated
+            # this sprint; the light 4 land in S3.5.
             "asset_vocabulary": [
                 "learning_objectives", "course_content", "summary",
                 "case_study", "important_person", "did_you_know",
                 "assessment", "activities", "resources",
             ],
-            "subtopics": [
-                {
-                    "subtopic_id": "m1_s1",
-                    "assets": [
-                        {
-                            "id": "m1_s1_lo",
-                            "type": "learning_objectives",
-                            "title": "Learning Objectives",
-                            "format": "docx",
-                            "content": "Understand the concept of financial risk "
-                                       "and how it arises...",
-                            "claims": [],
-                            "sources": [],
-                            "verification": _empty_verification(),
-                            "file": None,
-                            "status": "done",
-                        },
-                        {
-                            "id": "m1_s1_case",
-                            "type": "case_study",
-                            "title": "Basel III Risk Framework Mini Case",
-                            "format": "pptx",
-                            "content": "Basel III is a global banking "
-                                       "regulatory framework used as a grounding "
-                                       "reference for this risk-management case.",
-                            "claims": [
-                                _unverified_claim(
-                                    "c1",
-                                    "Basel III is a global banking regulatory "
-                                    "framework.",
-                                    "g1",
-                                ),
-                            ],
-                            "sources": ["g1"],
-                            "verification": _empty_verification(),
-                            "file": None,
-                            "status": "done",
-                        },
-                        {
-                            "id": "m1_s1_assess",
-                            "type": "assessment",
-                            "title": "Self-Assessment: Nature of Financial Risk",
-                            "format": "docx",
-                            "content": "Q1. Define financial risk and give two "
-                                       "examples of how it arises in a bank.",
-                            "claims": [],
-                            "sources": [],
-                            "verification": _empty_verification(),
-                            "solution": "Q1. Financial risk is the possibility of "
-                                        "loss from market, credit, liquidity, or "
-                                        "operational exposure. Examples: a trading "
-                                        "loss from market moves; a borrower "
-                                        "default (credit).",
-                            "file": None,
-                            "status": "done",
-                        },
-                    ],
-                },
-            ],
+            "subtopics": [{"subtopic_id": "m1_s1", "assets": assets}],
         },
         inputs=["toc", "blueprint", "domain_model"],
         schema_version=CONTENT_PACKAGE_SCHEMA_VERSION,
