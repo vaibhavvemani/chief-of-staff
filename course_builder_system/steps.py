@@ -30,8 +30,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from agents import student_content
-from orchestrator import make_artifact
+from agents import revision, student_content, verification
+from orchestrator import load_artifact, make_artifact
 
 CONTENT_PACKAGE_SCHEMA_VERSION = "0.2"
 
@@ -40,7 +40,7 @@ REPO_ROOT = Path(__file__).resolve().parent
 # hand-authored deep DM (S1.7) at domain/m1_s1_domain_model.json - the SAME
 # file the generation agent's CLI reads. structure_step surfaces that file's
 # body as the pipeline's domain_model so the in-pipeline generator and
-# integrity.py see the real grounding registry (g1-g5), not two diverging
+# integrity.py see the real grounding registry (g1-g6), not two diverging
 # copies. Reading a hand-authored input is still a "dumb" stub: no LLM call.
 DEEP_DOMAIN_MODEL_PATH = REPO_ROOT / "domain" / "m1_s1_domain_model.json"
 
@@ -60,7 +60,7 @@ def structure_step(inputs: dict, feedback: str | None) -> dict:
 
     The Domain Model body is the hand-authored deep DM (S1.7), loaded from
     `domain/m1_s1_domain_model.json` - deep on m1_s1, thin stubs for the other
-    m1 subtopics, registering grounding sources g1-g5. The TOC stays a locked
+    m1 subtopics, registering grounding sources g1-g6. The TOC stays a locked
     hardcoded stub; its m1 subtopics (m1_s1..m1_s6) line up with the DM.
     """
     course_id = inputs["brief"]["course_id"]
@@ -145,19 +145,19 @@ def blueprint_step(inputs: dict, feedback: str | None) -> dict:
 def student_content_step(inputs: dict, feedback: str | None) -> dict:
     """TOC + Blueprint + Domain Model -> v0.2 Content Package (Handoff Section 4.6).
 
-    Thin adapter (Plan H): call the generation agent for each of the five core
-    assets, then assemble them into one v0.2 Content Package. The Course Content
-    anchor is generated first; the other four (learning_objectives, summary,
-    case_study, assessment) are generated conditioned on it for cross-asset
-    coherence. `content` holds clean prose; significant factual claims live in
-    `claims[]`; `sources[]` is the derived non-null claim source-id union;
-    `solution` is the teacher-only key on the assessment. `file` stays null until
-    packaging (Phase 5).
+    Thin adapter (Plan H): call the generation agent for all nine assets, then
+    assemble them into one v0.2 Content Package. The Course Content anchor is
+    generated first; the other eight assets are generated conditioned on it for
+    cross-asset coherence. `content` holds clean prose; significant factual
+    claims live in `claims[]`; `sources[]` is the derived non-null claim source-id
+    union; `solution` is the teacher-only key on the assessment. `file` stays
+    null until packaging (Phase 5).
 
-    `feedback` is accepted to satisfy the (inputs, feedback) contract but is NOT
-    used in the baseline: feedback-driven targeted per-asset regeneration is
-    wired later (S3.6), once the verifier flags exist (Plan D). use_cache stays
-    on (default) so repeated pipeline runs reuse cached LLM responses.
+    On a checkpoint rejection, feedback targets one or more assets (for example,
+    ``course_content: deepen the worked example``) or uses ``verifier`` to
+    regenerate only assets with verification flags. Unselected assets are
+    preserved, and every revised asset is reverified. ``use_cache`` stays on so
+    unchanged calls are reused while a changed feedback prompt gets a new key.
     """
     course_id = inputs["toc"]["course_id"]
 
@@ -168,29 +168,77 @@ def student_content_step(inputs: dict, feedback: str | None) -> dict:
         "subtopic_id": "m1_s1",
     }
 
-    # Course Content anchor first; the remaining four condition on it.
-    cc = student_content.generate_asset(student_content.COURSE_CONTENT_SPEC, gen_inputs)
-    assets = [cc]
-    for name in ("learning_objectives", "summary", "case_study", "assessment"):
-        spec = student_content.ASSET_SPECS[name]
-        assets.append(student_content.generate_asset(spec, gen_inputs, course_content=cc))
+    if feedback:
+        existing = load_artifact(course_id, "content_package")
+        if existing is None:
+            raise ValueError("cannot revise Student Content before a baseline package exists")
+        package_body = revision.revise_content_package(
+            existing["body"],
+            gen_inputs,
+            inputs["domain_model"],
+            feedback,
+        )
+    else:
+        # Course Content anchor first; all remaining registered assets follow in
+        # registry order. This stays dynamic as the registry evolves.
+        cc = student_content.generate_asset(student_content.COURSE_CONTENT_SPEC, gen_inputs)
+        assets = [cc]
+        for spec in student_content.ASSET_SPECS.values():
+            if spec is student_content.COURSE_CONTENT_SPEC:
+                continue
+            course_content = cc if spec.conditioned_on_course_content else None
+            assets.append(
+                student_content.generate_asset(
+                    spec,
+                    gen_inputs,
+                    course_content=course_content,
+                )
+            )
 
-    content = make_artifact(
-        course_id, "content_package", "student_content",
-        body={
-            # Full 9-type vocabulary even though only the core 5 are generated
-            # this sprint; the light 4 land in S3.5.
+        package_body = {
             "asset_vocabulary": [
                 "learning_objectives", "course_content", "summary",
                 "case_study", "important_person", "did_you_know",
                 "assessment", "activities", "resources",
             ],
             "subtopics": [{"subtopic_id": "m1_s1", "assets": assets}],
-        },
+        }
+
+        # Separate adversarial calls annotate every generated asset before the
+        # package is assembled. Learner content and source unions remain intact.
+        package_body = verification.verify_content_package(
+            package_body,
+            inputs["domain_model"],
+        )
+    _print_verification_summaries(package_body)
+
+    content = make_artifact(
+        course_id, "content_package", "student_content",
+        body=package_body,
         inputs=["toc", "blueprint", "domain_model"],
         schema_version=CONTENT_PACKAGE_SCHEMA_VERSION,
     )
     return {"content_package": content}
+
+
+def _print_verification_summaries(package_body: dict) -> None:
+    """Surface compact verifier results before the normal content checkpoint."""
+    print("\nVerification summary:")
+    print(
+        "  Revision syntax: '<asset id or type>: <feedback>' or 'verifier' "
+        "to target flagged assets."
+    )
+    for subtopic in package_body.get("subtopics", []):
+        for asset in subtopic.get("assets", []):
+            summary = asset.get("verification", {})
+            print(
+                f"  {asset.get('id', '<unknown>')}: "
+                f"supported={summary.get('supported', 0)}, "
+                f"partial={summary.get('partial', 0)}, "
+                f"unsupported={summary.get('unsupported', 0)}, "
+                f"ungrounded={summary.get('ungrounded', 0)}, "
+                f"unattributed={len(summary.get('unattributed_found', []))}"
+            )
 
 
 def lesson_plan_step(inputs: dict, feedback: str | None) -> dict:

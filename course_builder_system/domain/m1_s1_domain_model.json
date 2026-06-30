@@ -161,7 +161,7 @@
       {
         "category": "FOUNDATIONAL CONCEPTS",
         "items": [
-          {"id": "g1", "name": "Risk, Uncertainty, and Profit (Knight, 1921)", "file": "sources/g1.md", "url": "https://en.wikipedia.org/wiki/Knightian_uncertainty"}
+          {"id": "g1", "name": "Risk, Uncertainty, and Profit (Knight, 1921)", "file": "sources/g1.md", "url": "https://www.econlib.org/library/Knight/knRUP.html"}
         ]
       },
       {
@@ -176,6 +176,12 @@
         "category": "CRISIS CASES",
         "items": [
           {"id": "g5", "name": "The Financial Crisis Inquiry Report (FCIC, 2011)", "file": "sources/g5.md", "url": "https://www.govinfo.gov/content/pkg/GPO-FCIC/pdf/GPO-FCIC.pdf"}
+        ]
+      },
+      {
+        "category": "RISK GOVERNANCE HISTORY",
+        "items": [
+          {"id": "g6", "name": "Rise of the chief risk officer (The CFO, 2002)", "file": "sources/g6.md", "url": "https://the-cfo.io/2002/04/22/rise-of-the-chief-risk-officer/"}
         ]
       }
     ]

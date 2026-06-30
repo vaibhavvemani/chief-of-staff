@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import integrity
 import steps
-from orchestrator import Step, make_artifact, run_pipeline, console_approver
+from orchestrator import Step, console_approver, make_artifact, run_pipeline
 
 
 def build_pipeline() -> list[Step]:

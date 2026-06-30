@@ -5,7 +5,7 @@ Every Phase 1 pipeline step that needs a model call imports this module.
 Design goals:
   - Single, consistent call surface: `call(messages, ...)`.
   - Local prompt-hash disk cache to avoid redundant API calls during dev.
-  - Raw token-count logging (no dollar costing — deferred to S3.2).
+  - Token and estimated API-cost logging for each live call.
   - SDK-native retry (max_retries=4) so we never hand-roll backoff.
   - Forward-looking structured output via `schema` (JSON Schema dict).
 
@@ -52,6 +52,16 @@ _client = anthropic.Anthropic(max_retries=4)
 _CACHE_DIR = Path(".llm_cache")
 _LOG_DIR = Path("logs")
 _LOG_FILE = _LOG_DIR / "llm_calls.jsonl"
+
+# Standard Claude API prices in USD per million tokens, checked against the
+# Anthropic pricing table on 2026-06-30. Cache creation uses the five-minute
+# write rate because this wrapper does not opt into one-hour caching. Keeping
+# rates beside the log calculation makes historical estimates auditable.
+_MODEL_PRICING_PER_MTOK: dict[str, dict[str, float]] = {
+    "claude-opus-4-8": {"input": 5.0, "cache_write": 6.25, "cache_read": 0.5, "output": 25.0},
+    "claude-sonnet-4-6": {"input": 3.0, "cache_write": 3.75, "cache_read": 0.3, "output": 15.0},
+    "claude-haiku-4-5": {"input": 1.0, "cache_write": 1.25, "cache_read": 0.1, "output": 5.0},
+}
 
 # ---------------------------------------------------------------------------
 # Errors
@@ -190,7 +200,7 @@ def _append_log(
     usage: dict[str, Any],
     latency_s: float,
 ) -> None:
-    """Append one JSON line to logs/llm_calls.jsonl.  No dollar cost — S3.2."""
+    """Append one token-and-cost record to ``logs/llm_calls.jsonl``."""
     _LOG_DIR.mkdir(exist_ok=True)
     if cache_hit:
         # Cache hit: no new tokens were consumed from the API.
@@ -213,10 +223,30 @@ def _append_log(
         "prompt_hash": prompt_hash,
         "cache_hit": cache_hit,
         **log_usage,
+        "estimated_cost_usd": _estimate_cost_usd(model, log_usage),
+        "pricing_as_of": "2026-06-30",
         "latency_s": latency_s,
     }
     with _LOG_FILE.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(entry) + "\n")
+
+
+def _estimate_cost_usd(model: str, usage: dict[str, Any]) -> float | None:
+    """Estimate first-party Claude API cost from an SDK usage payload.
+
+    ``None`` is deliberate for an unknown model: silently applying the wrong
+    tier would make the Phase 4 depth-vs-cost evidence less trustworthy.
+    """
+    rates = _MODEL_PRICING_PER_MTOK.get(model)
+    if rates is None:
+        return None
+    cost = (
+        usage.get("input_tokens", 0) * rates["input"]
+        + usage.get("cache_creation_input_tokens", 0) * rates["cache_write"]
+        + usage.get("cache_read_input_tokens", 0) * rates["cache_read"]
+        + usage.get("output_tokens", 0) * rates["output"]
+    ) / 1_000_000
+    return round(cost, 8)
 
 
 # ---------------------------------------------------------------------------

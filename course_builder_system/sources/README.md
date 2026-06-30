@@ -11,6 +11,7 @@ hand-authored Domain Model for S1.7.
 | g3 | `g3.md` | Liquidity risk; funding stress; stress testing; contingency funding |
 | g4 | `g4.md` | Market risk; operational risk; major risk-category comparison |
 | g5 | `g5.md` | Lehman Brothers case facts; leverage; repo funding; liquidity stress |
+| g6 | `g6.md` | CRO role emergence; integrated institution-wide risk oversight |
 
 ## How To Use These In S1.7
 
@@ -23,4 +24,4 @@ Suggested Domain Model categories:
 - `FOUNDATIONAL CONCEPTS`: g1
 - `BANKING RISK TAXONOMY`: g2, g3, g4
 - `CRISIS CASES`: g5
-
+- `RISK GOVERNANCE HISTORY`: g6

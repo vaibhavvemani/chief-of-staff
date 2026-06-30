@@ -6,7 +6,7 @@ Tests
 1. test_schema_validator_positive_gold      - gold benchmark validates clean
 2. test_schema_validator_negatives         - validator catches 5 specific violations
 3. test_assembled_package_is_schema_valid_v02 - assembled artifact (mocked LLM) passes schema
-4. test_all_core5_assets_present           - correct asset ids/types/solution presence
+4. test_all_nine_assets_present            - correct asset ids/types/solution presence
 5. test_claims_resolve_and_integrity_passes - integrity.py returns [] for saved artifacts
 6. test_full_pipeline_plumbing_llm_mocked  - full pipeline dry-run, schema + integrity clean
 
@@ -52,8 +52,8 @@ GOLD_PATH = REPO_ROOT / "benchmark" / "m1_s1.gold.content_package.json"
 # is present; sources[] == the non-null claim source_id union so integrity
 # passes.  `solution` is ONLY present when spec.has_solution.
 
-# For the Course Content anchor and Case Study we include one claim each citing
-# g5 so that "claims resolve to grounding ids" is genuinely exercised by
+# Several core and light assets include one claim citing a registered source so
+# that "claims resolve to grounding ids" is genuinely exercised by
 # test_claims_resolve_and_integrity_passes and
 # test_full_pipeline_plumbing_llm_mocked.
 
@@ -70,24 +70,31 @@ _EMPTY_VERIFICATION = {
 def _make_fixture_asset(spec: student_content.AssetSpec) -> dict:
     """Build a minimal, schema-valid v0.2 asset dict for *spec*.
 
-    Assets whose type is course_content or case_study include one claim citing
-    g5 so the test suite genuinely exercises the grounding-id resolution path.
-    All other assets have empty claims/sources (also valid: empty union == empty
+    Representative factual assets include one claim citing a compatible source
+    so the test suite genuinely exercises the grounding-id resolution path.
+    Other assets have empty claims/sources (also valid: empty union == empty
     sources list, so integrity passes).
     """
-    grounded_types = {"course_content", "case_study"}
-    if spec.asset_type in grounded_types:
+    source_by_type = {
+        "course_content": "g5",
+        "case_study": "g5",
+        "important_person": "g1",
+        "did_you_know": "g5",
+        "resources": "g1",
+    }
+    source_id = source_by_type.get(spec.asset_type)
+    if source_id:
         claims = [
             {
                 "id": f"{spec.asset_id}_c1",
-                "text": "Financial risk arises from market exposure.",
-                "source_id": "g5",
+                "text": "Grounded fixture claim.",
+                "source_id": source_id,
                 "support": None,
                 "supporting_excerpt": None,
                 "note": None,
             }
         ]
-        sources = ["g5"]
+        sources = [source_id]
     else:
         claims = []
         sources = []
@@ -118,7 +125,99 @@ def _fixture_generate_asset(
     use_cache: bool = True,
 ) -> dict:
     """Drop-in replacement for student_content.generate_asset (no LLM call)."""
+    if spec.conditioned_on_course_content:
+        assert course_content is not None
+        assert course_content["id"] == "m1_s1_cc"
+    else:
+        assert course_content is None
     return _make_fixture_asset(spec)
+
+
+def _fixture_verify_content_package(
+    content_package: dict,
+    domain_model: dict,
+    **kwargs,
+) -> dict:
+    """Drop-in package verifier for plumbing tests (no LLM call)."""
+    verified = copy.deepcopy(content_package)
+    body = verified.get("body", verified)
+    for subtopic in body["subtopics"]:
+        for asset in subtopic["assets"]:
+            supported = 0
+            ungrounded = 0
+            for claim in asset["claims"]:
+                if claim["source_id"] is None:
+                    claim["support"] = None
+                    claim["supporting_excerpt"] = None
+                    claim["note"] = "Ungrounded fixture claim."
+                    ungrounded += 1
+                else:
+                    claim["support"] = "supported"
+                    claim["supporting_excerpt"] = "Fixture evidence."
+                    claim["note"] = "Supported fixture claim."
+                    supported += 1
+            asset["verification"] = {
+                "supported": supported,
+                "partial": 0,
+                "unsupported": 0,
+                "ungrounded": ungrounded,
+                "unattributed_found": [],
+                "checked_at": "2026-06-30T00:00:00+00:00",
+            }
+    return verified
+
+
+LIGHT_ASSET_EXPECTATIONS = {
+    "important_person": (
+        "m1_s1_person",
+        "Frank Knight — The Foundation of Risk Theory",
+        "pptx",
+        "s3_5_important_person_asset.json",
+    ),
+    "did_you_know": (
+        "m1_s1_dyk",
+        "The CRO Role Barely Existed Before the 1990s",
+        "pptx",
+        "s3_5_did_you_know_asset.json",
+    ),
+    "activities": ("m1_s1_activities", "Activities", "docx", "s3_5_activities_asset.json"),
+    "resources": (
+        "m1_s1_resources",
+        "Additional Resources",
+        "docx",
+        "s3_5_resources_asset.json",
+    ),
+}
+
+
+@pytest.mark.parametrize(("name", "expected"), LIGHT_ASSET_EXPECTATIONS.items())
+def test_light_asset_specs_and_prompt_contract(name, expected):
+    """The light-four registry and prompts preserve the v0.2 generation contract."""
+    expected_id, expected_title, expected_format, expected_filename = expected
+    spec = student_content.ASSET_SPECS[name]
+
+    assert spec.asset_id == expected_id
+    assert spec.asset_type == name
+    assert spec.title == expected_title
+    assert spec.format == expected_format
+    assert spec.conditioned_on_course_content is True
+    assert spec.has_solution is False
+    assert spec.max_tokens > 0
+    assert student_content._ASSET_OUTPUT_FILENAMES[name] == expected_filename
+
+    prompt = (REPO_ROOT / "prompts" / spec.prompt_filename).read_text(encoding="utf-8")
+    for placeholder in (
+        "{{COURSE_CONTENT}}",
+        "{{CONTEXT_JSON}}",
+        "{{SOURCE_TEXTS}}",
+        "{{FEEDBACK_SECTION}}",
+    ):
+        assert placeholder in prompt
+    assert f"- `id`: `{expected_id}`" in prompt
+    assert f"- `type`: `{name}`" in prompt
+    assert "Do not include a `solution` field." in prompt
+    assert "Every significant factual claim must appear in `claims[]`." in prompt
+    assert "solution" not in student_content._build_asset_schema(spec)["properties"]
 
 
 # ---------------------------------------------------------------------------
@@ -158,7 +257,13 @@ def _build_content_package_artifact() -> dict:
     blueprint = bp_out["blueprint"]
 
     # student_content_step with generate_asset mocked
-    with patch("steps.student_content.generate_asset", side_effect=_fixture_generate_asset):
+    with (
+        patch("steps.student_content.generate_asset", side_effect=_fixture_generate_asset),
+        patch(
+            "steps.verification.verify_content_package",
+            side_effect=_fixture_verify_content_package,
+        ),
+    ):
         sc_out = steps.student_content_step(
             {"toc": toc, "blueprint": blueprint, "domain_model": domain_model},
             None,
@@ -269,11 +374,11 @@ def test_assembled_package_is_schema_valid_v02():
 
 
 # ===========================================================================
-# Test 4: all core-5 assets present and correctly structured
+# Test 4: all nine assets present and correctly structured
 # ===========================================================================
 
 
-def test_all_core5_assets_present():
+def test_all_nine_assets_present():
     """Verify the assembled body has the right vocabulary, subtopic, and assets."""
     artifact = _build_content_package_artifact()
     body = artifact["body"]
@@ -300,14 +405,18 @@ def test_all_core5_assets_present():
     assert subtopics[0]["subtopic_id"] == "m1_s1"
 
     assets = subtopics[0]["assets"]
-    # The five core assets are generated in this order by student_content_step:
-    # cc, lo, summary, case, assessment
+    # The anchor is generated first, followed by the remaining core and light
+    # assets, all conditioned on that anchor.
     expected_ids_types = [
         ("m1_s1_cc", "course_content"),
         ("m1_s1_lo", "learning_objectives"),
         ("m1_s1_summary", "summary"),
         ("m1_s1_case", "case_study"),
         ("m1_s1_assess", "assessment"),
+        ("m1_s1_person", "important_person"),
+        ("m1_s1_dyk", "did_you_know"),
+        ("m1_s1_activities", "activities"),
+        ("m1_s1_resources", "resources"),
     ]
     assert len(assets) == len(expected_ids_types), (
         f"Expected {len(expected_ids_types)} assets, got {len(assets)}: {[a['id'] for a in assets]}"
@@ -360,7 +469,13 @@ def test_claims_resolve_and_integrity_passes(tmp_path):
     bp_out = steps.blueprint_step({"toc": toc, "domain_model": domain_model}, None)
     blueprint = bp_out["blueprint"]
 
-    with patch("steps.student_content.generate_asset", side_effect=_fixture_generate_asset):
+    with (
+        patch("steps.student_content.generate_asset", side_effect=_fixture_generate_asset),
+        patch(
+            "steps.verification.verify_content_package",
+            side_effect=_fixture_verify_content_package,
+        ),
+    ):
         sc_out = steps.student_content_step(
             {"toc": toc, "blueprint": blueprint, "domain_model": domain_model},
             None,
@@ -466,6 +581,10 @@ def test_full_pipeline_plumbing_llm_mocked(tmp_path):
         patch.object(orchestrator, "COURSES_DIR", courses_tmp),
         patch.object(llm, "call", side_effect=llm_must_not_be_called),
         patch("steps.student_content.generate_asset", side_effect=_fixture_generate_asset),
+        patch(
+            "steps.verification.verify_content_package",
+            side_effect=_fixture_verify_content_package,
+        ),
     ):
         run_pipeline(
             course_id=course_id,

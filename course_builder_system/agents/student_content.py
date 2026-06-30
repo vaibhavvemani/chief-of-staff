@@ -1,8 +1,7 @@
 """Student Content generation for Phase 1.
 
-S2.3 implements the Course Content asset; S2.4 adds Learning Objectives,
-Summary, Case Study, and Assessment — all conditioned on the Course Content
-anchor. S2.5 will decide how this plugs into `student_content_step`.
+Course Content is the anchor asset. The other eight student assets are generated
+independently from its finished content, the Domain Model, and curated sources.
 """
 
 from __future__ import annotations
@@ -55,7 +54,7 @@ class AssetSpec:
     conditioned_on_course_content: bool
 
 
-# Registry of the five core-5 specs, keyed by a short name used in the CLI.
+# Registry of all nine Phase 1 asset specs, keyed by a short name used in the CLI.
 ASSET_SPECS: dict[str, AssetSpec] = {
     "course_content": AssetSpec(
         asset_id="m1_s1_cc",
@@ -108,6 +107,46 @@ ASSET_SPECS: dict[str, AssetSpec] = {
         prompt_filename="assessment.md",
         max_tokens=9_000,
         has_solution=True,
+        conditioned_on_course_content=True,
+    ),
+    "important_person": AssetSpec(
+        asset_id="m1_s1_person",
+        asset_type="important_person",
+        title="Frank Knight — The Foundation of Risk Theory",
+        format="pptx",
+        prompt_filename="important_person.md",
+        max_tokens=4_500,
+        has_solution=False,
+        conditioned_on_course_content=True,
+    ),
+    "did_you_know": AssetSpec(
+        asset_id="m1_s1_dyk",
+        asset_type="did_you_know",
+        title="The CRO Role Barely Existed Before the 1990s",
+        format="pptx",
+        prompt_filename="did_you_know.md",
+        max_tokens=4_000,
+        has_solution=False,
+        conditioned_on_course_content=True,
+    ),
+    "activities": AssetSpec(
+        asset_id="m1_s1_activities",
+        asset_type="activities",
+        title="Activities",
+        format="docx",
+        prompt_filename="activities.md",
+        max_tokens=5_000,
+        has_solution=False,
+        conditioned_on_course_content=True,
+    ),
+    "resources": AssetSpec(
+        asset_id="m1_s1_resources",
+        asset_type="resources",
+        title="Additional Resources",
+        format="docx",
+        prompt_filename="resources.md",
+        max_tokens=5_000,
+        has_solution=False,
         conditioned_on_course_content=True,
     ),
 }
@@ -608,6 +647,10 @@ _ASSET_OUTPUT_FILENAMES: dict[str, str] = {
     "summary": "s2_4_summary_asset.json",
     "case_study": "s2_4_case_study_asset.json",
     "assessment": "s2_4_assessment_asset.json",
+    "important_person": "s3_5_important_person_asset.json",
+    "did_you_know": "s3_5_did_you_know_asset.json",
+    "activities": "s3_5_activities_asset.json",
+    "resources": "s3_5_resources_asset.json",
 }
 
 
@@ -644,7 +687,7 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_OUTPUT_PATH,
         help=(
             "Path to the already-generated Course Content asset JSON. "
-            "Required when generating a conditioned asset (lo/summary/case/assessment). "
+            "Required when generating any conditioned asset (all except course_content). "
             f"Defaults to {DEFAULT_OUTPUT_PATH}."
         ),
     )
