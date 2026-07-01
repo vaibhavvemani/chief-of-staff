@@ -4,59 +4,46 @@ You are writing the Additional Resources asset for the Course Builder pipeline.
 
 ## Objective
 
-Create a concise, curated reading-and-reference list that helps a learner deepen
-the target subtopic after completing the Course Content. Match the manual
-course's categorized resource-sheet style, but list only resources present in
-the supplied source registry. Accuracy and usefulness matter more than list
-length.
+Create a concise reading-and-reference list for the asset identified by
+`target_asset` and the `focus_subtopic` in `CONTEXT_JSON`. Help the learner
+deepen or extend what the Course Content teaches without expanding beyond the
+human-approved source set.
 
-Do not copy the manual benchmark and do not rely on model memory. Use the Domain
-Model, source metadata, curated source texts, and already-generated Course
-Content to explain why each resource is relevant.
+Use only sources approved for this asset or subtopic in `CONTEXT_JSON`. Follow
+the configured resource count, categories, study order, audience, format,
+`coverage_requirements`, `depth_budget`, and other asset-specific instructions.
+Accuracy and usefulness matter more than list length.
+
+For each listed resource, reproduce only supplied metadata and explain its
+specific relevance to the Course Content. Use clean, categorized Markdown when
+categories are useful. Include a suggested study order only when requested or
+when it materially helps the configured audience.
 
 ## Grounding Rules
 
-- Use only resources and URLs explicitly present in `CONTEXT_JSON` or the
-  curated source texts below.
+- Use only resources and URLs explicitly approved and present in `CONTEXT_JSON`
+  or the approved source texts below.
 - Reproduce URLs exactly as supplied. Do not invent, repair, expand, or guess a
-  URL, edition, publication date, author, institution, or access condition.
-- Every significant factual claim must appear in `claims[]`. Claims about a
-  resource must cite that resource's `source_id`.
-- Each listed resource must retain its registered source ID internally through
-  `claims[]`, but keep learner-facing `content` clean: no claim IDs or internal
-  source labels such as `g1`.
-- A short pedagogical recommendation such as “read this next” may be treated as
-  synthesis and need not be a factual claim.
-- Do not add popular books, news sites, videos, or courses that are absent from
-  the supplied registry, even if they appeared in a manual benchmark.
-
-## Required Structure
-
-Write clean Markdown with useful categories chosen from the available sources,
-such as:
-
-- **Foundational Concepts**
-- **Banking Risk Taxonomy and Supervisory Guidance**
-- **Crisis Case and Applied Analysis**
-
-For every resource include its supplied title/institution, exact supplied URL,
-and one sentence explaining which Course Content concept it deepens. Finish with
-a brief **Suggested Study Path** ordering the listed resources from foundation
-to application. Do not imply that an excerpt is a complete publication.
+  URL, title, edition, date, author, organization, or access condition.
+- Every significant factual claim must appear in `claims[]`. A claim about a
+  resource must cite that resource's valid approved `source_id`.
+- Each listed resource must remain traceable internally through `claims[]`, but
+  learner-facing `content` must not expose claim IDs or internal source labels.
+- Pedagogical recommendations may use `source_id: null` when they assert no
+  independently verifiable fact.
+- Do not add remembered books, sites, media, tools, or courses that are absent
+  from the approved source set.
+- Do not imply that an excerpt is a complete publication.
 
 ## Output Contract
 
-Return a single JSON object matching the provided schema. The object is only the
-Additional Resources asset, not the whole content package.
+Return one JSON object matching the provided schema. Return only the Additional
+Resources asset, not the whole content package.
 
-Fixed identity fields:
-
-- `id`: `m1_s1_resources`
-- `type`: `resources`
-- `title`: `Additional Resources`
-- `format`: `docx`
-- `file`: `null`
-- `status`: `done`
+Copy identity and delivery fields such as `id`, `type`, `title`, and `format`
+from `target_asset` exactly. Set `file` to `null` and `status` to `done` unless
+the target explicitly supplies another schema-valid value. Do not substitute
+hardcoded IDs, titles, formats, resource categories, or subject names.
 
 Do not include a `solution` field.
 
@@ -66,10 +53,11 @@ Set verification fields to the empty pre-verification state:
 - asset `verification` has all counts as `0`, `unattributed_found: []`, and
   `checked_at: null`
 
-## Already-Generated Course Content (condition on this — recommend resources for what it teaches)
+## Already-Generated Course Content
 
 Use this Course Content to determine relevance and study order. Do not recommend
-a resource for a topic that the Course Content does not introduce.
+a resource for a topic it does not introduce unless `target_asset` explicitly
+requests a clearly labelled extension.
 
 ```text
 {{COURSE_CONTENT}}
@@ -81,7 +69,7 @@ a resource for a topic that the Course Content does not introduce.
 {{CONTEXT_JSON}}
 ```
 
-## Curated Source Texts
+## Approved Source Texts
 
 {{SOURCE_TEXTS}}
 

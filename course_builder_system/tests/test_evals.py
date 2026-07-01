@@ -213,6 +213,84 @@ def test_optional_llm_judge_is_only_a_validated_proposal(tmp_path):
     assert scorecard["gate"]["status"] == "pending_human_review"
 
 
+def test_llm_judge_and_blind_packet_receive_approved_scope(tmp_path):
+    agent_path, gold_path = _write_packages(tmp_path)
+    course_model_path = tmp_path / "course_model.json"
+    course_model_path.write_text(
+        json.dumps(
+            {
+                "body": {
+                    "course_metadata": {
+                        "course_title": "Test Course",
+                        "subject": "Testing",
+                        "audience_summary": "Reviewers",
+                        "level": "intermediate",
+                    },
+                    "modules": [
+                        {
+                            "id": "m1",
+                            "title": "Module",
+                            "context": {"purpose": "Teach tests."},
+                            "subtopics": [
+                                {
+                                    "id": "m1_s1",
+                                    "title": "Scope",
+                                    "context": {
+                                        "purpose": "Approved scope.",
+                                        "in_scope": ["included"],
+                                        "out_of_scope": ["excluded"],
+                                    },
+                                    "concepts": [],
+                                    "coverage_requirements": [],
+                                }
+                            ],
+                        }
+                    ],
+                }
+            }
+        )
+    )
+    assessments = [
+        {
+            "asset_type": asset_type,
+            "coverage": {"score": 6, "comparison": "matches", "evidence": "In scope."},
+            "house_style": {"score": 6, "comparison": "matches", "evidence": "Matches."},
+        }
+        for asset_type in compare.CORE_ASSET_TYPES
+    ]
+    result = llm.LLMResult(
+        text="",
+        raw={},
+        usage={},
+        model="mock-judge",
+        prompt_hash="scope-hash",
+        cache_hit=False,
+        parsed={"assessments": assessments},
+    )
+
+    with patch("evals.compare.llm.call", return_value=result) as mocked:
+        scorecard = compare.build_scorecard(
+            agent_path,
+            gold_path,
+            use_llm_judge=True,
+            course_model_path=course_model_path,
+        )
+    prompt = mocked.call_args.args[0][0]["content"]
+    assert '"out_of_scope": [' in prompt
+    assert '"excluded"' in prompt
+    assert scorecard["inputs"]["course_model_sha256"]
+
+    packet, mapping = compare.build_blind_packet(
+        agent_path,
+        gold_path,
+        course_model_path=course_model_path,
+    )
+    assert packet["evaluation_context"]["subtopic"]["context"]["out_of_scope"] == [
+        "excluded"
+    ]
+    assert mapping["inputs"]["course_model_sha256"]
+
+
 def test_blind_packet_is_deterministic_and_keeps_mapping_separate(tmp_path):
     agent_path, gold_path = _write_packages(tmp_path)
     packet_one, mapping_one = compare.build_blind_packet(agent_path, gold_path)
@@ -274,7 +352,10 @@ def test_ratification_rejects_incomplete_or_tampered_review(tmp_path):
 
     completed = _complete_packet(packet)
     tampered = copy.deepcopy(mapping)
-    tampered["assignments"]["course_content"]["A"] = "gold"
+    prior = tampered["assignments"]["course_content"]["A"]
+    tampered["assignments"]["course_content"]["A"] = (
+        "agent" if prior == "gold" else "gold"
+    )
     with pytest.raises(ValueError, match="commitment"):
         compare.ratify_scorecard(scorecard, completed, tampered)
 

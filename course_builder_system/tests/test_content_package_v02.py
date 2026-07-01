@@ -10,7 +10,7 @@ Tests
 5. test_claims_resolve_and_integrity_passes - integrity.py returns [] for saved artifacts
 6. test_full_pipeline_plumbing_llm_mocked  - full pipeline dry-run, schema + integrity clean
 
-LLM is NEVER called: generate_asset is monkeypatched throughout.
+LLM is NEVER called: generate_asset_to_depth is monkeypatched throughout.
 No live ANTHROPIC_API_KEY is needed.  The real courses/frm-demo/ is never touched.
 """
 
@@ -79,7 +79,7 @@ def _make_fixture_asset(spec: student_content.AssetSpec) -> dict:
         "course_content": "g5",
         "case_study": "g5",
         "important_person": "g1",
-        "did_you_know": "g5",
+        "did_you_know": "g6",
         "resources": "g1",
     }
     source_id = source_by_type.get(spec.asset_type)
@@ -124,18 +124,19 @@ def _fixture_generate_asset(
     model: str = "mock",
     use_cache: bool = True,
 ) -> dict:
-    """Drop-in replacement for student_content.generate_asset (no LLM call)."""
-    if spec.conditioned_on_course_content:
+    """Drop-in replacement for generate_asset_to_depth (no LLM call)."""
+    resolved = student_content.resolve_asset_spec(spec, inputs)
+    if resolved.conditioned_on_course_content:
         assert course_content is not None
         assert course_content["id"] == "m1_s1_cc"
     else:
         assert course_content is None
-    return _make_fixture_asset(spec)
+    return _make_fixture_asset(resolved)
 
 
 def _fixture_verify_content_package(
     content_package: dict,
-    domain_model: dict,
+    course_model: dict,
     **kwargs,
 ) -> dict:
     """Drop-in package verifier for plumbing tests (no LLM call)."""
@@ -190,11 +191,28 @@ LIGHT_ASSET_EXPECTATIONS = {
 }
 
 
+def test_structured_assets_have_claim_ledger_output_headroom():
+    """Regression: live structured output must not truncate at legacy 4k limits."""
+    minimums = {
+        "summary": 6_000,
+        "case_study": 8_000,
+        "important_person": 6_000,
+        "did_you_know": 6_000,
+        "activities": 7_000,
+        "resources": 7_000,
+        "assessment": 9_000,
+    }
+    for asset_type, minimum in minimums.items():
+        assert student_content.ASSET_SPECS[asset_type].max_tokens >= minimum
+
+
 @pytest.mark.parametrize(("name", "expected"), LIGHT_ASSET_EXPECTATIONS.items())
 def test_light_asset_specs_and_prompt_contract(name, expected):
-    """The light-four registry and prompts preserve the v0.2 generation contract."""
+    """Blueprint resolution and generic prompts preserve the generation contract."""
     expected_id, expected_title, expected_format, expected_filename = expected
-    spec = student_content.ASSET_SPECS[name]
+    catalog_spec = student_content.ASSET_SPECS[name]
+    inputs = student_content.load_generation_inputs("frm-demo")
+    spec = student_content.resolve_asset_spec(catalog_spec, inputs)
 
     assert spec.asset_id == expected_id
     assert spec.asset_type == name
@@ -205,7 +223,7 @@ def test_light_asset_specs_and_prompt_contract(name, expected):
     assert spec.max_tokens > 0
     assert student_content._ASSET_OUTPUT_FILENAMES[name] == expected_filename
 
-    prompt = (REPO_ROOT / "prompts" / spec.prompt_filename).read_text(encoding="utf-8")
+    prompt = (REPO_ROOT / "prompts" / catalog_spec.prompt_filename).read_text(encoding="utf-8")
     for placeholder in (
         "{{COURSE_CONTENT}}",
         "{{CONTEXT_JSON}}",
@@ -213,8 +231,8 @@ def test_light_asset_specs_and_prompt_contract(name, expected):
         "{{FEEDBACK_SECTION}}",
     ):
         assert placeholder in prompt
-    assert f"- `id`: `{expected_id}`" in prompt
-    assert f"- `type`: `{name}`" in prompt
+    assert "Copy identity and delivery fields" in prompt
+    assert "hardcoded IDs" in prompt or "Do not hardcode" in prompt
     assert "Do not include a `solution` field." in prompt
     assert "Every significant factual claim must appear in `claims[]`." in prompt
     assert "solution" not in student_content._build_asset_schema(spec)["properties"]
@@ -226,9 +244,31 @@ def test_light_asset_specs_and_prompt_contract(name, expected):
 # ---------------------------------------------------------------------------
 
 
+def _planning_artifacts(brief: dict) -> dict[str, dict]:
+    """Build the approved fixture-backed planning chain for a brief."""
+    outcomes = steps.course_outcomes_step({"brief": brief}, None)["course_outcomes"]
+    research = steps.research_step(
+        {"brief": brief, "course_outcomes": outcomes}, None
+    )["research_dossier"]
+    course_model = steps.structure_step(
+        {
+            "brief": brief,
+            "course_outcomes": outcomes,
+            "research_dossier": research,
+        },
+        None,
+    )["course_model"]
+    blueprint = steps.blueprint_step({"course_model": course_model}, None)["blueprint"]
+    return {
+        "course_outcomes": outcomes,
+        "research_dossier": research,
+        "course_model": course_model,
+        "blueprint": blueprint,
+    }
+
+
 def _build_content_package_artifact() -> dict:
-    """Run structure_step + blueprint_step (pure stubs, no LLM) then call
-    student_content_step with generate_asset mocked.
+    """Build fixture-backed planning artifacts, then generate mocked content.
 
     Returns the content_package artifact dict.
     """
@@ -247,25 +287,25 @@ def _build_content_package_artifact() -> dict:
         inputs=[],
     )
 
-    # structure_step (no LLM, reads from domain/m1_s1_domain_model.json)
-    struct_out = steps.structure_step({"brief": brief}, None)
-    toc = struct_out["toc"]
-    domain_model = struct_out["domain_model"]
+    planning = _planning_artifacts(brief)
 
-    # blueprint_step (pure stub)
-    bp_out = steps.blueprint_step({"toc": toc, "domain_model": domain_model}, None)
-    blueprint = bp_out["blueprint"]
-
-    # student_content_step with generate_asset mocked
+    # student_content_step with bounded generation mocked
     with (
-        patch("steps.student_content.generate_asset", side_effect=_fixture_generate_asset),
+        patch(
+            "steps.student_content.generate_asset_to_depth",
+            side_effect=_fixture_generate_asset,
+        ),
         patch(
             "steps.verification.verify_content_package",
             side_effect=_fixture_verify_content_package,
         ),
     ):
         sc_out = steps.student_content_step(
-            {"toc": toc, "blueprint": blueprint, "domain_model": domain_model},
+            {
+                "course_model": planning["course_model"],
+                "blueprint": planning["blueprint"],
+                "course_outcomes": planning["course_outcomes"],
+            },
             None,
         )
     return sc_out["content_package"]
@@ -280,7 +320,7 @@ def test_schema_validator_positive_gold():
     """The gold benchmark must validate clean against the v0.2 schema.
 
     The gold envelope must have produced_by_step='student_content',
-    schema_version='0.2', and inputs containing 'toc'.  If any of these is
+    schema_version='0.2', and inputs containing 'course_model'. If any is
     wrong the test is xfail (it would indicate an S2.1 migration gap to fix).
     """
     gold = json.loads(GOLD_PATH.read_text(encoding="utf-8"))
@@ -290,7 +330,7 @@ def test_schema_validator_positive_gold():
         gold.get("produced_by_step") == "student_content"
         and gold.get("schema_version") == "0.2"
         and gold.get("artifact_type") == "content_package"
-        and "toc" in (gold.get("inputs") or [])
+        and "course_model" in (gold.get("inputs") or [])
     )
     if not envelope_ok:
         pytest.xfail(
@@ -409,12 +449,12 @@ def test_all_nine_assets_present():
     # assets, all conditioned on that anchor.
     expected_ids_types = [
         ("m1_s1_cc", "course_content"),
-        ("m1_s1_lo", "learning_objectives"),
-        ("m1_s1_summary", "summary"),
-        ("m1_s1_case", "case_study"),
-        ("m1_s1_assess", "assessment"),
-        ("m1_s1_person", "important_person"),
-        ("m1_s1_dyk", "did_you_know"),
+            ("m1_s1_lo", "learning_objectives"),
+            ("m1_s1_summary", "summary"),
+            ("m1_s1_case", "case_study"),
+            ("m1_s1_person", "important_person"),
+            ("m1_s1_dyk", "did_you_know"),
+            ("m1_s1_assess", "assessment"),
         ("m1_s1_activities", "activities"),
         ("m1_s1_resources", "resources"),
     ]
@@ -443,7 +483,7 @@ def test_all_nine_assets_present():
 
 
 def test_claims_resolve_and_integrity_passes(tmp_path):
-    """Save all artifacts (toc, domain_model, blueprint, content_package) to
+    """Save the Course Model planning chain and Content Package to
     a tmp directory and assert integrity.check_referential_integrity returns [].
 
     The fixtures include claims citing g5, exercising the grounding-id
@@ -463,21 +503,24 @@ def test_claims_resolve_and_integrity_passes(tmp_path):
         },
         inputs=[],
     )
-    struct_out = steps.structure_step({"brief": brief}, None)
-    toc = struct_out["toc"]
-    domain_model = struct_out["domain_model"]
-    bp_out = steps.blueprint_step({"toc": toc, "domain_model": domain_model}, None)
-    blueprint = bp_out["blueprint"]
+    planning = _planning_artifacts(brief)
 
     with (
-        patch("steps.student_content.generate_asset", side_effect=_fixture_generate_asset),
+        patch(
+            "steps.student_content.generate_asset_to_depth",
+            side_effect=_fixture_generate_asset,
+        ),
         patch(
             "steps.verification.verify_content_package",
             side_effect=_fixture_verify_content_package,
         ),
     ):
         sc_out = steps.student_content_step(
-            {"toc": toc, "blueprint": blueprint, "domain_model": domain_model},
+            {
+                "course_model": planning["course_model"],
+                "blueprint": planning["blueprint"],
+                "course_outcomes": planning["course_outcomes"],
+            },
             None,
         )
     content_package = sc_out["content_package"]
@@ -486,7 +529,8 @@ def test_claims_resolve_and_integrity_passes(tmp_path):
     courses_tmp = tmp_path / "courses"
 
     # Fix course_id on all artifacts to "test-integrity"
-    for art in (toc, domain_model, blueprint, content_package):
+    artifacts = [*planning.values(), content_package]
+    for art in artifacts:
         art["course_id"] = "test-integrity"
         art["status"] = "approved"
 
@@ -497,7 +541,7 @@ def test_claims_resolve_and_integrity_passes(tmp_path):
         _load = lambda cid, atype: _patched_load(courses_tmp, cid, atype)  # noqa: E731
         with patch.object(integrity, "load_artifact", wraps=_load):
             # Save via the real save_artifact (patched COURSES_DIR)
-            for art in (toc, domain_model, blueprint, content_package):
+            for art in artifacts:
                 save_artifact(art)
 
             problems = integrity.check_referential_integrity("test-integrity")
@@ -524,7 +568,7 @@ def test_full_pipeline_plumbing_llm_mocked(tmp_path):
     """Dry-run the full pipeline with:
       - orchestrator.COURSES_DIR -> tmp_path
       - llm.call -> raises (proves no live API call escapes)
-      - steps.student_content.generate_asset -> fixture assets
+      - steps.student_content.generate_asset_to_depth -> fixture assets
 
     After run_pipeline completes, load the on-disk content_package and assert:
       - schema-valid v0.2
@@ -551,20 +595,32 @@ def test_full_pipeline_plumbing_llm_mocked(tmp_path):
 
     pipeline = [
         Step(
-            name="structure",
+            name="course_outcomes",
             consumes=["brief"],
-            produces=["domain_model", "toc"],
+            produces=["course_outcomes"],
+            run=steps.course_outcomes_step,
+        ),
+        Step(
+            name="research",
+            consumes=["brief", "course_outcomes"],
+            produces=["research_dossier"],
+            run=steps.research_step,
+        ),
+        Step(
+            name="structure",
+            consumes=["brief", "course_outcomes", "research_dossier"],
+            produces=["course_model"],
             run=steps.structure_step,
         ),
         Step(
             name="blueprint",
-            consumes=["toc", "domain_model"],
+            consumes=["course_model"],
             produces=["blueprint"],
             run=steps.blueprint_step,
         ),
         Step(
             name="student_content",
-            consumes=["toc", "blueprint", "domain_model"],
+            consumes=["course_model", "blueprint", "course_outcomes"],
             produces=["content_package"],
             run=steps.student_content_step,
         ),
@@ -580,7 +636,10 @@ def test_full_pipeline_plumbing_llm_mocked(tmp_path):
     with (
         patch.object(orchestrator, "COURSES_DIR", courses_tmp),
         patch.object(llm, "call", side_effect=llm_must_not_be_called),
-        patch("steps.student_content.generate_asset", side_effect=_fixture_generate_asset),
+        patch(
+            "steps.student_content.generate_asset_to_depth",
+            side_effect=_fixture_generate_asset,
+        ),
         patch(
             "steps.verification.verify_content_package",
             side_effect=_fixture_verify_content_package,

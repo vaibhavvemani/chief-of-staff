@@ -1,28 +1,9 @@
-"""
-Course Builder - Phase 0 step STUBS. (Person B's territory.)
+"""Course Builder pipeline steps.
 
-Every step here returns a hardcoded artifact body. There are STILL NO LLM calls,
-no research, no content generation. That is deliberate: Phase 0 stays dumb so we
-can debug the plumbing separately from agent quality (Handoff Section 2).
-
-What changed in Section 7.1: the placeholder bodies (`<module 1>`, `C1`, ...)
-have been replaced with the REAL locked shapes from the FRM reference course -
-the `*.frm.example.json` worked examples - copied in verbatim and hardcoded.
-The shapes here are the v0.1 contracts (Handoff Section 4); the agents that will
-fill them for real are Phase 1+. The orchestrator never changes: it only ever
-sees the metadata envelope, never these body shapes.
-
-Note the step->artifact mapping is not 1:1. Step 1 (Structure) produces TWO
-artifacts (domain_model AND toc), so a step returns a {type: artifact} dict,
-not a single artifact.
-
-`feedback` is accepted to satisfy the (inputs, feedback) -> {type: artifact}
-contract, but a dumb stub ignores it - it always returns the same fixed shape.
-A real Phase 1+ agent would use it to revise. `course_id` is read from `inputs`
-(not hardcoded) so the envelope follows the actual run, not the FRM sample.
-
-The five bodies below are mutually referentially consistent: every Blueprint /
-Content Package / Lesson Plan reference resolves to a TOC id (see integrity.py).
+Phase 1 keeps upstream intelligence as fixture-backed stubs while exercising a
+real Student Content agent. The target artifact flow is Course Brief -> approved
+Course Outcomes -> Research Dossier/source decisions -> compact Course Model ->
+Blueprint -> verified Content Package -> Lesson Plan.
 """
 
 from __future__ import annotations
@@ -34,121 +15,90 @@ from agents import revision, student_content, verification
 from orchestrator import load_artifact, make_artifact
 
 CONTENT_PACKAGE_SCHEMA_VERSION = "0.2"
+DESIGN_SCHEMA_VERSION = "0.2"
 
 REPO_ROOT = Path(__file__).resolve().parent
-# Phase 1: the Domain Model is no longer a Phase-0 toy stub. It is the
-# hand-authored deep DM (S1.7) at domain/m1_s1_domain_model.json - the SAME
-# file the generation agent's CLI reads. structure_step surfaces that file's
-# body as the pipeline's domain_model so the in-pipeline generator and
-# integrity.py see the real grounding registry (g1-g6), not two diverging
-# copies. Reading a hand-authored input is still a "dumb" stub: no LLM call.
-DEEP_DOMAIN_MODEL_PATH = REPO_ROOT / "domain" / "m1_s1_domain_model.json"
+FIXTURE_DIR = REPO_ROOT / "course_models"
+COURSE_OUTCOMES_FIXTURE = FIXTURE_DIR / "frm_demo.course_outcomes.json"
+RESEARCH_DOSSIER_FIXTURE = FIXTURE_DIR / "frm_demo.research_dossier.json"
+COURSE_MODEL_FIXTURE = FIXTURE_DIR / "frm_demo.course_model.json"
+BLUEPRINT_FIXTURE = FIXTURE_DIR / "frm_demo.blueprint.json"
 
 
-def _deep_domain_model_body() -> dict:
-    """Load the hand-authored deep Domain Model body (single source of truth)."""
-    if not DEEP_DOMAIN_MODEL_PATH.exists():
-        raise FileNotFoundError(
-            f"hand-authored Domain Model not found: {DEEP_DOMAIN_MODEL_PATH}"
-        )
-    artifact = json.loads(DEEP_DOMAIN_MODEL_PATH.read_text(encoding="utf-8"))
+def _fixture_body(path: Path, artifact_type: str) -> dict:
+    if not path.exists():
+        raise FileNotFoundError(f"{artifact_type} fixture not found: {path}")
+    artifact = json.loads(path.read_text(encoding="utf-8"))
+    if artifact.get("artifact_type") != artifact_type or not isinstance(
+        artifact.get("body"), dict
+    ):
+        raise ValueError(f"invalid {artifact_type} fixture: {path}")
     return artifact["body"]
 
 
-def structure_step(inputs: dict, feedback: str | None) -> dict:
-    """subject brief -> Domain Model + TOC (Handoff Section 4.3 / 4.4).
-
-    The Domain Model body is the hand-authored deep DM (S1.7), loaded from
-    `domain/m1_s1_domain_model.json` - deep on m1_s1, thin stubs for the other
-    m1 subtopics, registering grounding sources g1-g6. The TOC stays a locked
-    hardcoded stub; its m1 subtopics (m1_s1..m1_s6) line up with the DM.
-    """
+def course_outcomes_step(inputs: dict, feedback: str | None) -> dict:
+    """Approved Course Brief -> course-level outcomes (fixture-backed in Phase 1)."""
     course_id = inputs["brief"]["course_id"]
+    artifact = make_artifact(
+        course_id,
+        "course_outcomes",
+        "outcomes",
+        body=_fixture_body(COURSE_OUTCOMES_FIXTURE, "course_outcomes"),
+        inputs=["brief"],
+        schema_version=DESIGN_SCHEMA_VERSION,
+    )
+    return {"course_outcomes": artifact}
 
-    domain_model = make_artifact(
-        course_id, "domain_model", "structure",
-        body=_deep_domain_model_body(),
-        inputs=["brief"],
+
+def research_step(inputs: dict, feedback: str | None) -> dict:
+    """Brief + approved outcomes -> competitor/source dossier (Phase 1 fixture)."""
+    course_id = inputs["brief"]["course_id"]
+    artifact = make_artifact(
+        course_id,
+        "research_dossier",
+        "research",
+        body=_fixture_body(RESEARCH_DOSSIER_FIXTURE, "research_dossier"),
+        inputs=["brief", "course_outcomes"],
+        schema_version=DESIGN_SCHEMA_VERSION,
     )
-    toc = make_artifact(
-        course_id, "toc", "structure",
-        body={
-            "subject": "Financial Risk Management",
-            "modules": [
-                {
-                    "id": "m1",
-                    "order": 1,
-                    "title": "Foundations of Financial Risk",
-                    "subtopics": [
-                        {"id": "m1_s1", "order": 1,
-                         "title": "Nature of Financial Risk"},
-                        {"id": "m1_s2", "order": 2,
-                         "title": "Risk Classification Framework"},
-                        {"id": "m1_s3", "order": 3,
-                         "title": "Risk Management Process"},
-                        {"id": "m1_s4", "order": 4,
-                         "title": "Risk Appetite & Capacity"},
-                        {"id": "m1_s5", "order": 5,
-                         "title": "Evolution of Modern Risk Management"},
-                        {"id": "m1_s6", "order": 6,
-                         "title": "Institutional Risk Governance"},
-                    ],
-                },
-                {
-                    "id": "m2",
-                    "order": 2,
-                    "title": "Quantitative Foundations for Risk",
-                    "subtopics": [
-                        {"id": "m2_s1", "order": 1,
-                         "title": "Probability Theory"},
-                    ],
-                },
-            ],
-        },
-        inputs=["brief"],
+    return {"research_dossier": artifact}
+
+
+def structure_step(inputs: dict, feedback: str | None) -> dict:
+    """Approved intent + research -> combined compact Course Model fixture."""
+    course_id = inputs["brief"]["course_id"]
+    course_model = make_artifact(
+        course_id,
+        "course_model",
+        "structure",
+        body=_fixture_body(COURSE_MODEL_FIXTURE, "course_model"),
+        inputs=["brief", "course_outcomes", "research_dossier"],
+        schema_version=DESIGN_SCHEMA_VERSION,
     )
-    return {"domain_model": domain_model, "toc": toc}
+    return {"course_model": course_model}
 
 
 def blueprint_step(inputs: dict, feedback: str | None) -> dict:
-    """TOC + Domain Model -> Blueprint (Handoff Section 4.5).
-
-    allocations[].node_id and dependencies[].module_id reference the TOC node
-    ids produced by structure_step; speakers come from (future) Step 2 research.
-    """
-    course_id = inputs["toc"]["course_id"]
-
+    """Approved Course Model -> per-subtopic delivery and asset plan fixture."""
+    course_id = inputs["course_model"]["course_id"]
     blueprint = make_artifact(
-        course_id, "blueprint", "blueprint",
-        body={
-            "allocations": [
-                {"node_id": "m1", "hours": 2.5, "slides": 49},
-                {"node_id": "m1_s1", "hours": 0.5, "slides": 9},
-                {"node_id": "m2", "hours": 3.0, "slides": 55},
-            ],
-            "dependencies": [
-                {"module_id": "m1", "prerequisites": []},
-                {"module_id": "m2", "prerequisites": ["m1"]},
-            ],
-            "speakers": [
-                {"id": "sp1", "placed_at": "m1",
-                 "topic": "Institutional Risk Governance",
-                 "suggested_expert": "<expert from Step 2 research>",
-                 "source": "research", "status": "proposed"},
-            ],
-        },
-        inputs=["toc", "domain_model"],
+        course_id,
+        "blueprint",
+        "blueprint",
+        body=_fixture_body(BLUEPRINT_FIXTURE, "blueprint"),
+        inputs=["course_model"],
+        schema_version=DESIGN_SCHEMA_VERSION,
     )
     return {"blueprint": blueprint}
 
 
 def student_content_step(inputs: dict, feedback: str | None) -> dict:
-    """TOC + Blueprint + Domain Model -> v0.2 Content Package (Handoff Section 4.6).
+    """Course Model + Blueprint -> verified v0.2 Content Package.
 
-    Thin adapter (Plan H): call the generation agent for all nine assets, then
-    assemble them into one v0.2 Content Package. The Course Content anchor is
-    generated first; the other eight assets are generated conditioned on it for
-    cross-asset coherence. `content` holds clean prose; significant factual
+    The Phase 1 Blueprint selects all nine assets, while arbitrary courses may
+    select a different set for each subtopic. Course Content is generated first;
+    conditioned assets follow it for cross-asset coherence. `content` holds
+    clean prose; significant factual
     claims live in `claims[]`; `sources[]` is the derived non-null claim source-id
     union; `solution` is the teacher-only key on the assessment. `file` stays
     null until packaging (Phase 5).
@@ -159,13 +109,14 @@ def student_content_step(inputs: dict, feedback: str | None) -> dict:
     preserved, and every revised asset is reverified. ``use_cache`` stays on so
     unchanged calls are reused while a changed feedback prompt gets a new key.
     """
-    course_id = inputs["toc"]["course_id"]
+    course_id = inputs["course_model"]["course_id"]
+    subtopic_id = inputs.get("subtopic_id", "m1_s1")
 
     gen_inputs = {
-        "toc": inputs["toc"],
+        "course_model": inputs["course_model"],
         "blueprint": inputs["blueprint"],
-        "domain_model": inputs["domain_model"],
-        "subtopic_id": "m1_s1",
+        "course_outcomes": inputs.get("course_outcomes"),
+        "subtopic_id": subtopic_id,
     }
 
     if feedback:
@@ -175,20 +126,20 @@ def student_content_step(inputs: dict, feedback: str | None) -> dict:
         package_body = revision.revise_content_package(
             existing["body"],
             gen_inputs,
-            inputs["domain_model"],
+            inputs["course_model"],
             feedback,
         )
     else:
-        # Course Content anchor first; all remaining registered assets follow in
-        # registry order. This stays dynamic as the registry evolves.
-        cc = student_content.generate_asset(student_content.COURSE_CONTENT_SPEC, gen_inputs)
+        selected_specs = student_content.selected_asset_specs(gen_inputs)
+        cc_spec = next(spec for spec in selected_specs if spec.asset_type == "course_content")
+        cc = student_content.generate_asset_to_depth(cc_spec, gen_inputs)
         assets = [cc]
-        for spec in student_content.ASSET_SPECS.values():
-            if spec is student_content.COURSE_CONTENT_SPEC:
+        for spec in selected_specs:
+            if spec.asset_type == "course_content":
                 continue
             course_content = cc if spec.conditioned_on_course_content else None
             assets.append(
-                student_content.generate_asset(
+                student_content.generate_asset_to_depth(
                     spec,
                     gen_inputs,
                     course_content=course_content,
@@ -201,21 +152,22 @@ def student_content_step(inputs: dict, feedback: str | None) -> dict:
                 "case_study", "important_person", "did_you_know",
                 "assessment", "activities", "resources",
             ],
-            "subtopics": [{"subtopic_id": "m1_s1", "assets": assets}],
+            "subtopics": [{"subtopic_id": subtopic_id, "assets": assets}],
         }
 
         # Separate adversarial calls annotate every generated asset before the
         # package is assembled. Learner content and source unions remain intact.
         package_body = verification.verify_content_package(
             package_body,
-            inputs["domain_model"],
+            inputs["course_model"],
+            blueprint=inputs["blueprint"],
         )
     _print_verification_summaries(package_body)
 
     content = make_artifact(
         course_id, "content_package", "student_content",
         body=package_body,
-        inputs=["toc", "blueprint", "domain_model"],
+        inputs=["course_model", "blueprint", "course_outcomes"],
         schema_version=CONTENT_PACKAGE_SCHEMA_VERSION,
     )
     return {"content_package": content}
@@ -244,7 +196,7 @@ def _print_verification_summaries(package_body: dict) -> None:
 def lesson_plan_step(inputs: dict, feedback: str | None) -> dict:
     """Content Package + Blueprint -> Lesson Plan (Handoff Section 4.7).
 
-    Organized by session (a class). covers[].subtopic_id references TOC
+    Organized by session (a class). covers[].subtopic_id references Course Model
     subtopics; mode is live | self_study; talking_points are teacher-facing.
     """
     course_id = inputs["content_package"]["course_id"]

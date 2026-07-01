@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://course-builder.local/schemas/research_dossier.v0.2.schema.json",
+  "title": "Course Builder Research Dossier v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "course_id",
+    "artifact_type",
+    "produced_by_step",
+    "schema_version",
+    "status",
+    "revision",
+    "revision_note",
+    "inputs",
+    "updated_at",
+    "body"
+  ],
+  "properties": {
+    "course_id": { "$ref": "#/$defs/id" },
+    "artifact_type": { "const": "research_dossier" },
+    "produced_by_step": { "enum": ["research", "human"] },
+    "schema_version": { "const": "0.2" },
+    "status": { "enum": ["draft", "in_review", "approved", "rejected"] },
+    "revision": { "type": "integer", "minimum": 0 },
+    "revision_note": { "type": ["string", "null"], "maxLength": 500 },
+    "inputs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "contains": { "const": "course_outcomes" },
+      "uniqueItems": true
+    },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "body": { "$ref": "#/$defs/body" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "locator": {
+      "anyOf": [
+        { "type": "string", "minLength": 1, "maxLength": 1000 },
+        { "type": "null" }
+      ]
+    },
+    "competitor_finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "provider",
+        "offering",
+        "locator",
+        "audience",
+        "structure_summary",
+        "notable_topics",
+        "differentiation_opportunity"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "provider": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "offering": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "locator": { "$ref": "#/$defs/locator" },
+        "audience": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "structure_summary": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "notable_topics": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 150 },
+          "uniqueItems": true
+        },
+        "differentiation_opportunity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    },
+    "source_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "publisher",
+        "source_type",
+        "locator",
+        "content_ref",
+        "status",
+        "trust_notes",
+        "relevance",
+        "assigned_node_ids"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "publisher": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "source_type": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "locator": { "$ref": "#/$defs/locator" },
+        "content_ref": { "$ref": "#/$defs/locator" },
+        "status": { "enum": ["proposed", "approved", "rejected"] },
+        "trust_notes": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "relevance": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "assigned_node_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["research_scope", "competitor_findings", "source_candidates"],
+      "properties": {
+        "research_scope": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "competitor_findings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/competitor_finding" }
+        },
+        "source_candidates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source_candidate" }
+        }
+      }
+    }
+  }
+}

@@ -7,12 +7,17 @@
   "revision": 0,
   "revision_note": null,
   "inputs": [],
-  "updated_at": "2026-06-05T09:36:49+00:00",
+  "updated_at": "2026-06-30T14:25:42+00:00",
   "body": {
     "subject": "Financial Risk Management",
-    "audience": "PG",
+    "audience": "Postgraduate learners with foundational finance knowledge",
+    "prior_knowledge": "Foundational finance and accounting",
     "level": "intermediate",
-    "goals": "<what the course should achieve>",
-    "scope": "<in / out of scope>"
+    "goals": "Understand, distinguish, and apply foundational financial-risk concepts",
+    "scope": "Foundations of financial risk; quantitative implementation is excluded",
+    "duration": "30 minutes for the Phase 1 benchmark subtopic",
+    "modality": "blended",
+    "language": "English",
+    "jurisdiction": null
   }
 }

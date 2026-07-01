@@ -5,11 +5,9 @@
   "schema_version": "0.2",
   "status": "approved",
   "revision": 0,
-  "revision_note": null,
-  "inputs": [
-    "course_model"
-  ],
-  "updated_at": "2026-06-30T10:01:59+00:00",
+  "revision_note": "Phase 1 selects all nine benchmark assets for m1_s1; later courses may select any subset.",
+  "inputs": ["course_model"],
+  "updated_at": "2026-06-30T00:00:00+00:00",
   "body": {
     "subtopic_plans": [
       {
@@ -22,16 +20,7 @@
             "target": 2200,
             "maximum": 2800
           },
-          "required_concept_ids": [
-            "c1",
-            "c2",
-            "c3",
-            "c4",
-            "c5",
-            "c6",
-            "c7",
-            "c8"
-          ],
+          "required_concept_ids": ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"],
           "required_example_count": 4,
           "case_depth": "detailed",
           "assessment_complexity": "analysis",
@@ -45,13 +34,7 @@
             "format": "docx",
             "selection_status": "selected",
             "purpose": "State measurable outcomes aligned to the generated lesson.",
-            "source_ids": [
-              "g1",
-              "g2",
-              "g3",
-              "g4",
-              "g5"
-            ]
+            "source_ids": ["g1", "g2", "g3", "g4", "g5"]
           },
           {
             "id": "m1_s1_cc",
@@ -60,13 +43,7 @@
             "format": "pptx",
             "selection_status": "selected",
             "purpose": "Teach the approved coverage requirements at the configured depth.",
-            "source_ids": [
-              "g1",
-              "g2",
-              "g3",
-              "g4",
-              "g5"
-            ]
+            "source_ids": ["g1", "g2", "g3", "g4", "g5"]
           },
           {
             "id": "m1_s1_summary",
@@ -75,13 +52,7 @@
             "format": "docx",
             "selection_status": "selected",
             "purpose": "Reinforce the lesson's core ideas without adding new claims.",
-            "source_ids": [
-              "g1",
-              "g2",
-              "g3",
-              "g4",
-              "g5"
-            ]
+            "source_ids": ["g1", "g2", "g3", "g4", "g5"]
           },
           {
             "id": "m1_s1_case",
@@ -90,20 +61,16 @@
             "format": "pptx",
             "selection_status": "selected",
             "purpose": "Apply layered-risk concepts to a grounded real-world case.",
-            "source_ids": [
-              "g5"
-            ]
+            "source_ids": ["g5"]
           },
           {
             "id": "m1_s1_person",
             "asset_type": "important_person",
-            "title": "Frank Knight \u2014 The Foundation of Risk Theory",
+            "title": "Frank Knight — The Foundation of Risk Theory",
             "format": "pptx",
             "selection_status": "selected",
             "purpose": "Connect the risk-versus-uncertainty distinction to its intellectual origin.",
-            "source_ids": [
-              "g1"
-            ]
+            "source_ids": ["g1"]
           },
           {
             "id": "m1_s1_dyk",
@@ -112,9 +79,7 @@
             "format": "pptx",
             "selection_status": "selected",
             "purpose": "Add a concise, grounded historical insight about integrated risk oversight.",
-            "source_ids": [
-              "g6"
-            ]
+            "source_ids": ["g6"]
           },
           {
             "id": "m1_s1_assess",
@@ -123,13 +88,7 @@
             "format": "pptx",
             "selection_status": "selected",
             "purpose": "Test understanding and analytical application with a teacher solution.",
-            "source_ids": [
-              "g1",
-              "g2",
-              "g3",
-              "g4",
-              "g5"
-            ]
+            "source_ids": ["g1", "g2", "g3", "g4", "g5"]
           },
           {
             "id": "m1_s1_activities",
@@ -138,13 +97,7 @@
             "format": "docx",
             "selection_status": "selected",
             "purpose": "Provide participatory practice aligned to the lesson.",
-            "source_ids": [
-              "g1",
-              "g2",
-              "g3",
-              "g4",
-              "g5"
-            ]
+            "source_ids": ["g1", "g2", "g3", "g4", "g5"]
           },
           {
             "id": "m1_s1_resources",
@@ -153,14 +106,7 @@
             "format": "docx",
             "selection_status": "selected",
             "purpose": "Offer vetted paths for further study.",
-            "source_ids": [
-              "g1",
-              "g2",
-              "g3",
-              "g4",
-              "g5",
-              "g6"
-            ]
+            "source_ids": ["g1", "g2", "g3", "g4", "g5", "g6"]
           }
         ]
       }

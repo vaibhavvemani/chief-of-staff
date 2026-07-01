@@ -27,7 +27,7 @@
     "inputs": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
-      "contains": { "const": "toc" }
+      "contains": { "const": "course_model" }
     },
     "updated_at": { "type": "string", "minLength": 1 },
     "body": { "$ref": "#/$defs/content_package_body" }

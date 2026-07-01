@@ -4,63 +4,57 @@ You are writing the Course Content asset for the Course Builder pipeline.
 
 ## Objective
 
-Create the full Course Content asset for the target subtopic. This is the
-anchor asset for the rest of the content package, so it must teach the complete
-body of knowledge clearly and deeply enough for a postgraduate/intermediate
-Financial Risk Management learner.
+Create the complete Course Content asset identified by `target_asset` for the
+`focus_subtopic` in `CONTEXT_JSON`. Teach the approved subtopic clearly at the
+audience, level, and depth specified in the context.
 
-Do not copy the manual benchmark text. Write original course prose based on the
-provided Domain Model and curated source texts.
+Treat the approved subtopic outline, `coverage_requirements`, and `depth_budget`
+as the content contract. Cover every required item, preserve the approved scope
+and sequence, and allocate detail according to the depth budget. Do not add a
+fixed subject-matter syllabus of your own. Use the asset-specific instructions
+in `target_asset` when supplied.
+
+Write original course prose based on the supplied context and approved source
+texts. Structure it with useful Markdown headings so it can later be converted
+to the format requested by `target_asset`.
+
+## Depth and Completeness
+
+- Satisfy every approved coverage requirement with explanation proportionate to
+  its configured depth, not merely a mention.
+- Follow any configured target learning time, section allocation, examples,
+  exercises, case depth, or word-range guidance in `depth_budget`.
+- Treat a word range as a guardrail, not permission to pad the asset. Prefer
+  substantive explanation, examples, connections, and application.
+- If a required concept cannot be supported by an approved source, do not invent
+  facts. Make the limitation visible in the asset's claims or revision response.
+- When revision feedback is supplied, make the requested targeted changes while
+  preserving approved material that the feedback does not challenge. Recheck
+  coverage and depth after revising.
 
 ## Grounding Rules
 
-- Use only the curated source texts below for factual claims.
+- Use only the approved source texts below for factual claims.
 - Every significant factual claim must appear in `claims[]`.
 - Significant factual claims include definitions, dates, figures, named events,
-  named institutions, regulatory facts, and concrete assertions about Lehman or
-  risk categories.
-- Each significant factual claim should cite one source with `source_id`.
-- Use `source_id: null` only for synthesis, framing, or pedagogical transitions
-  that do not need factual support.
-- Do not invent source IDs. Valid source IDs are provided in the context.
+  named people or organizations, quotations, research findings, and other
+  independently verifiable assertions.
+- Each significant factual claim should cite one valid approved `source_id`.
+- Use `source_id: null` only for synthesis, framing, pedagogical transitions, or
+  clearly hypothetical examples that do not need factual support.
+- Do not invent source IDs or use sources that are not approved for this asset.
 - Keep `content` clean. Do not put inline citations, claim IDs, footnotes, or
-  source labels inside the prose.
-
-## Required Teaching Coverage
-
-Cover, at minimum:
-
-- the purpose of Financial Risk Management,
-- what financial risk means,
-- why financial risk matters to firms and institutions,
-- the distinction between risk and Knightian uncertainty,
-- why Financial Risk Management works mainly in the measurable-risk zone,
-- why measurement enables but does not replace management judgment,
-- credit risk,
-- liquidity risk,
-- market risk,
-- operational risk,
-- how risk categories interact in layers,
-- the Lehman Brothers collapse as an applied example of interacting market,
-  liquidity, leverage/funding, and governance/risk-management failures.
-
-Use headings and Markdown structure suitable for later conversion to slides or
-trainer-facing content. The output should be comprehensive: comparable to or
-deeper than the manual Course Content benchmark.
+  internal source labels inside learner-facing prose.
 
 ## Output Contract
 
-Return a single JSON object matching the provided schema. The object is only the
-Course Content asset, not the whole content package.
+Return one JSON object matching the provided schema. Return only the Course
+Content asset, not the whole content package.
 
-Fixed identity fields:
-
-- `id`: `m1_s1_cc`
-- `type`: `course_content`
-- `title`: `Nature of Financial Risk`
-- `format`: `pptx`
-- `file`: `null`
-- `status`: `done`
+Copy identity and delivery fields such as `id`, `type`, `title`, and `format`
+from `target_asset` exactly. Set `file` to `null` and `status` to `done` unless
+the target explicitly supplies another schema-valid value. Do not substitute
+hardcoded IDs, titles, formats, or subject names.
 
 Set verification fields to the empty pre-verification state:
 
@@ -74,7 +68,7 @@ Set verification fields to the empty pre-verification state:
 {{CONTEXT_JSON}}
 ```
 
-## Curated Source Texts
+## Approved Source Texts
 
 {{SOURCE_TEXTS}}
 

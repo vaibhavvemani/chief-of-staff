@@ -1,14 +1,15 @@
 """Student Content generation for Phase 1.
 
-Course Content is the anchor asset. The other eight student assets are generated
-independently from its finished content, the Domain Model, and curated sources.
+Course Content is the anchor asset. Other selected assets are generated from its
+finished content, a compact Course Model slice, a Blueprint plan, and only the
+approved sources assigned to the target subtopic.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +17,8 @@ import llm
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 COURSES_DIR = REPO_ROOT / "courses"
-DEFAULT_DOMAIN_MODEL_PATH = REPO_ROOT / "domain" / "m1_s1_domain_model.json"
+DEFAULT_COURSE_MODEL_PATH = REPO_ROOT / "course_models" / "frm_demo.course_model.json"
+DEFAULT_BLUEPRINT_PATH = REPO_ROOT / "course_models" / "frm_demo.blueprint.json"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "outputs" / "phase1" / "m1_s1"
 DEFAULT_OUTPUT_PATH = DEFAULT_OUTPUT_DIR / "s2_3_course_content_asset.json"
 
@@ -44,7 +46,7 @@ EMPTY_VERIFICATION: dict[str, Any] = {
 class AssetSpec:
     """Per-asset identity and generation configuration."""
 
-    asset_id: str
+    asset_id: str  # ``{subtopic_id}`` template; resolved from the Course Model
     asset_type: str
     title: str
     format: str
@@ -54,12 +56,13 @@ class AssetSpec:
     conditioned_on_course_content: bool
 
 
-# Registry of all nine Phase 1 asset specs, keyed by a short name used in the CLI.
+# Domain-agnostic asset catalog. Identity/title/format/token overrides and the
+# selected subset come from Blueprint.subtopic_plans[].asset_plan.
 ASSET_SPECS: dict[str, AssetSpec] = {
     "course_content": AssetSpec(
-        asset_id="m1_s1_cc",
+        asset_id="{subtopic_id}_cc",
         asset_type="course_content",
-        title="Nature of Financial Risk",
+        title="Course Content",
         format="pptx",
         prompt_filename="course_content.md",
         max_tokens=12_000,
@@ -67,7 +70,7 @@ ASSET_SPECS: dict[str, AssetSpec] = {
         conditioned_on_course_content=False,
     ),
     "learning_objectives": AssetSpec(
-        asset_id="m1_s1_lo",
+        asset_id="{subtopic_id}_lo",
         asset_type="learning_objectives",
         title="Learning Objectives",
         format="docx",
@@ -77,29 +80,31 @@ ASSET_SPECS: dict[str, AssetSpec] = {
         conditioned_on_course_content=True,
     ),
     "summary": AssetSpec(
-        asset_id="m1_s1_summary",
+        asset_id="{subtopic_id}_summary",
         asset_type="summary",
         title="Summary",
         format="docx",
         prompt_filename="summary.md",
-        max_tokens=4_000,
+        # Structured output carries both learner prose and a claim ledger; the
+        # first live generic-path gate showed 4k can truncate valid summaries.
+        max_tokens=7_000,
         has_solution=False,
         conditioned_on_course_content=True,
     ),
     "case_study": AssetSpec(
-        asset_id="m1_s1_case",
+        asset_id="{subtopic_id}_case",
         asset_type="case_study",
-        title="The Lehman Brothers Collapse",
+        title="Case Study",
         format="pptx",
         prompt_filename="case_study.md",
-        max_tokens=6_000,
+        max_tokens=8_000,
         has_solution=False,
         conditioned_on_course_content=True,
     ),
     "assessment": AssetSpec(
-        asset_id="m1_s1_assess",
+        asset_id="{subtopic_id}_assess",
         asset_type="assessment",
-        title="Assessment Quiz: Nature of Financial Risk",
+        title="Assessment",
         format="pptx",
         # Assessment uniquely emits BOTH `content` (questions) and a full
         # `solution` answer key, so it needs more headroom than the other assets
@@ -110,42 +115,42 @@ ASSET_SPECS: dict[str, AssetSpec] = {
         conditioned_on_course_content=True,
     ),
     "important_person": AssetSpec(
-        asset_id="m1_s1_person",
+        asset_id="{subtopic_id}_person",
         asset_type="important_person",
-        title="Frank Knight — The Foundation of Risk Theory",
+        title="Important Person",
         format="pptx",
         prompt_filename="important_person.md",
-        max_tokens=4_500,
+        max_tokens=6_000,
         has_solution=False,
         conditioned_on_course_content=True,
     ),
     "did_you_know": AssetSpec(
-        asset_id="m1_s1_dyk",
+        asset_id="{subtopic_id}_dyk",
         asset_type="did_you_know",
-        title="The CRO Role Barely Existed Before the 1990s",
+        title="Did You Know?",
         format="pptx",
         prompt_filename="did_you_know.md",
-        max_tokens=4_000,
+        max_tokens=6_000,
         has_solution=False,
         conditioned_on_course_content=True,
     ),
     "activities": AssetSpec(
-        asset_id="m1_s1_activities",
+        asset_id="{subtopic_id}_activities",
         asset_type="activities",
         title="Activities",
         format="docx",
         prompt_filename="activities.md",
-        max_tokens=5_000,
+        max_tokens=7_000,
         has_solution=False,
         conditioned_on_course_content=True,
     ),
     "resources": AssetSpec(
-        asset_id="m1_s1_resources",
+        asset_id="{subtopic_id}_resources",
         asset_type="resources",
         title="Additional Resources",
         format="docx",
         prompt_filename="resources.md",
-        max_tokens=5_000,
+        max_tokens=7_000,
         has_solution=False,
         conditioned_on_course_content=True,
     ),
@@ -157,6 +162,117 @@ COURSE_CONTENT_SPEC = ASSET_SPECS["course_content"]
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
+
+def selected_asset_specs(inputs: dict[str, Any]) -> list[AssetSpec]:
+    """Return the human-selected asset catalog entries in Blueprint order.
+
+    A missing asset plan is accepted only for legacy Phase 1 fixtures and falls
+    back to the full catalog. New Course Models must make the choice explicit.
+    """
+    blueprint_body = _artifact_body(inputs["blueprint"], "blueprint")
+    subtopic_id = _subtopic_id(inputs)
+    plan = _find_blueprint_subtopic_plan(blueprint_body, subtopic_id)
+    raw_assets = _raw_asset_plan(plan)
+    if raw_assets is None:
+        return list(ASSET_SPECS.values())
+
+    selected: list[AssetSpec] = []
+    seen: set[str] = set()
+    for item in raw_assets:
+        if not isinstance(item, dict):
+            raise ValueError("Blueprint asset_plan entries must be objects")
+        asset_type = item.get("asset_type", item.get("type"))
+        if asset_type not in ASSET_SPECS:
+            raise ValueError(f"Blueprint selects unknown asset type {asset_type!r}")
+        selection_status = item.get("selection_status")
+        if selection_status is not None and selection_status not in {
+            "proposed",
+            "selected",
+            "rejected",
+        }:
+            raise ValueError(f"Blueprint asset {asset_type!r} has invalid selection_status")
+        enabled = (
+            selection_status == "selected"
+            if selection_status is not None
+            else item.get("selected", item.get("enabled", True))
+        )
+        if type(enabled) is not bool:
+            raise ValueError(f"Blueprint asset {asset_type!r} selected flag must be boolean")
+        if not enabled:
+            continue
+        if asset_type in seen:
+            raise ValueError(f"Blueprint selects duplicate asset type {asset_type!r}")
+        selected.append(ASSET_SPECS[asset_type])
+        seen.add(asset_type)
+
+    if "course_content" not in seen:
+        raise ValueError("Blueprint asset_plan must select course_content as the anchor")
+    return selected
+
+
+def resolve_asset_spec(spec: AssetSpec, inputs: dict[str, Any]) -> AssetSpec:
+    """Resolve generic catalog defaults with the target subtopic's Blueprint."""
+    subtopic_id = _subtopic_id(inputs)
+    blueprint_body = _artifact_body(inputs["blueprint"], "blueprint")
+    plan = _find_blueprint_subtopic_plan(blueprint_body, subtopic_id)
+    configured = None
+    for item in _raw_asset_plan(plan) or []:
+        if isinstance(item, dict) and item.get("asset_type", item.get("type")) == spec.asset_type:
+            configured = item
+            break
+    configured = configured or {}
+
+    asset_id = configured.get("id") or spec.asset_id.format(subtopic_id=subtopic_id)
+    title = configured.get("title") or spec.title
+    asset_format = configured.get("format") or spec.format
+    max_tokens = configured.get("max_tokens", spec.max_tokens)
+    if not isinstance(asset_id, str) or not asset_id.strip():
+        raise ValueError(f"Blueprint asset {spec.asset_type!r} must have a valid id")
+    if not isinstance(title, str) or not title.strip():
+        raise ValueError(f"Blueprint asset {spec.asset_type!r} must have a valid title")
+    if not isinstance(asset_format, str) or not asset_format.strip():
+        raise ValueError(f"Blueprint asset {spec.asset_type!r} must have a valid format")
+    if type(max_tokens) is not int or max_tokens <= 0:
+        raise ValueError(f"Blueprint asset {spec.asset_type!r} max_tokens must be positive")
+    return replace(
+        spec,
+        asset_id=asset_id,
+        title=title,
+        format=asset_format,
+        max_tokens=max_tokens,
+    )
+
+
+def routed_source_ids(spec: AssetSpec, inputs: dict[str, Any]) -> list[str]:
+    """Return the approved source subset assigned to one asset."""
+    course_body = _artifact_body(inputs["course_model"], "course_model")
+    blueprint_body = _artifact_body(inputs["blueprint"], "blueprint")
+    subtopic_id = _subtopic_id(inputs)
+    _, focus_subtopic = _find_course_subtopic(course_body, subtopic_id)
+    plan = _find_blueprint_subtopic_plan(blueprint_body, subtopic_id) or {}
+    asset_plan = next(
+        (
+            item
+            for item in _raw_asset_plan(plan) or []
+            if isinstance(item, dict)
+            and item.get("asset_type", item.get("type")) == spec.asset_type
+        ),
+        {},
+    )
+    approved = focus_subtopic.get("approved_source_ids")
+    routed = asset_plan.get("source_ids", approved)
+    if not isinstance(approved, list) or not all(isinstance(item, str) for item in approved):
+        raise ValueError(f"Course Model {subtopic_id} approved_source_ids must be a string list")
+    if not isinstance(routed, list) or not all(isinstance(item, str) for item in routed):
+        raise ValueError(f"Blueprint asset {spec.asset_type!r} source_ids must be a string list")
+    unapproved = sorted(set(routed) - set(approved))
+    if unapproved:
+        raise ValueError(
+            f"Blueprint asset {spec.asset_type!r} routes sources not approved for "
+            f"{subtopic_id}: {', '.join(unapproved)}"
+        )
+    return routed
 
 
 def generate_asset(
@@ -175,6 +291,7 @@ def generate_asset(
 
     Returns the validated, normalised asset dict.
     """
+    spec = resolve_asset_spec(spec, inputs)
     context = _build_prompt_context(spec, inputs)
     prompt = _render_prompt(spec, context, course_content, feedback)
     schema = _build_asset_schema(spec)
@@ -195,6 +312,61 @@ def generate_asset(
         raise ValueError(f"{spec.asset_type} generation returned a non-object JSON value")
 
     return _validate_and_normalize_asset(spec, asset, set(context["valid_source_ids"]))
+
+
+def generate_asset_to_depth(
+    spec: AssetSpec,
+    inputs: dict[str, Any],
+    course_content: dict[str, Any] | None = None,
+    feedback: str | None = None,
+    model: str = llm.DEFAULT_MODEL,
+    use_cache: bool = True,
+) -> dict[str, Any]:
+    """Generate with a bounded, Blueprint-driven mechanical depth check.
+
+    Word counts are guardrails, not the quality definition. Semantic coverage
+    remains the verifier/evaluator's job; this loop only catches clearly short
+    drafts or missing explicitly required sections.
+    """
+    requirements = _asset_depth_requirements(spec, inputs)
+    attempts = requirements.get("max_generation_attempts", 1)
+    if type(attempts) is not int or not 1 <= attempts <= 3:
+        raise ValueError("max_generation_attempts must be an integer from 1 to 3")
+
+    asset = generate_asset(
+        spec,
+        inputs,
+        course_content=course_content,
+        feedback=feedback,
+        model=model,
+        use_cache=use_cache,
+    )
+    for _ in range(1, attempts):
+        shortfalls = _depth_shortfalls(asset, requirements)
+        if not shortfalls:
+            break
+        revision_feedback = (
+            "The previous draft missed its approved depth budget:\n- "
+            + "\n- ".join(shortfalls)
+            + "\nRegenerate a focused, grounded draft that closes these gaps without padding."
+        )
+        if feedback:
+            revision_feedback = f"{feedback}\n\n{revision_feedback}"
+        asset = generate_asset(
+            spec,
+            inputs,
+            course_content=course_content,
+            feedback=revision_feedback,
+            model=model,
+            use_cache=use_cache,
+        )
+    final_shortfalls = _depth_shortfalls(asset, requirements)
+    if final_shortfalls:
+        raise ValueError(
+            f"{spec.asset_type} still misses its approved depth budget after "
+            f"{attempts} attempt(s):\n- " + "\n- ".join(final_shortfalls)
+        )
+    return asset
 
 
 def generate_course_content(
@@ -220,15 +392,26 @@ def generate_course_content(
 
 def load_generation_inputs(
     course_id: str,
-    domain_model_path: Path = DEFAULT_DOMAIN_MODEL_PATH,
+    course_model_path: Path = DEFAULT_COURSE_MODEL_PATH,
+    blueprint_path: Path | None = None,
     subtopic_id: str = "m1_s1",
 ) -> dict[str, Any]:
     """Load CLI inputs without mutating any course artifacts."""
     course_dir = COURSES_DIR / course_id
+    if blueprint_path is None:
+        candidate = course_dir / "blueprint.json"
+        if candidate.exists():
+            candidate_artifact = _load_json(candidate)
+            blueprint_path = (
+                candidate
+                if candidate_artifact.get("schema_version") == "0.2"
+                else DEFAULT_BLUEPRINT_PATH
+            )
+        else:
+            blueprint_path = DEFAULT_BLUEPRINT_PATH
     return {
-        "toc": _load_json(course_dir / "toc.json"),
-        "blueprint": _load_json(course_dir / "blueprint.json"),
-        "domain_model": _load_json(domain_model_path),
+        "course_model": _load_json(course_model_path),
+        "blueprint": _load_json(blueprint_path),
         "subtopic_id": subtopic_id,
     }
 
@@ -239,30 +422,53 @@ def load_generation_inputs(
 
 
 def _build_prompt_context(spec: AssetSpec, inputs: dict[str, Any]) -> dict[str, Any]:
-    domain_body = _artifact_body(inputs["domain_model"], "domain_model")
-    toc_body = _artifact_body(inputs["toc"], "toc")
+    course_model = inputs["course_model"]
+    course_body = _artifact_body(course_model, "course_model")
     blueprint_body = _artifact_body(inputs["blueprint"], "blueprint")
 
-    subtopic_id = inputs.get("subtopic_id") or domain_body.get("focus_subtopic") or "m1_s1"
-    focus_subtopic = _find_domain_subtopic(domain_body, subtopic_id)
-    toc_subtopic = _find_toc_subtopic(toc_body, subtopic_id)
-    source_registry = _load_registered_sources(domain_body)
+    subtopic_id = _subtopic_id(inputs)
+    module, focus_subtopic = _find_course_subtopic(course_body, subtopic_id)
     allocation = _find_blueprint_allocation(blueprint_body, subtopic_id)
+    subtopic_plan = _find_blueprint_subtopic_plan(blueprint_body, subtopic_id) or {}
+    asset_plan = next(
+        (
+            item
+            for item in _raw_asset_plan(subtopic_plan) or []
+            if isinstance(item, dict)
+            and item.get("asset_type", item.get("type")) == spec.asset_type
+        ),
+        {},
+    )
+    source_registry = _load_registered_sources(course_body, routed_source_ids(spec, inputs))
 
     sibling_subtopics = [
         {
             "id": item.get("id"),
             "title": item.get("title"),
+            "context": item.get("context"),
             "depth": item.get("depth"),
         }
-        for item in domain_body.get("subtopics", [])
+        for item in module.get("subtopics", [])
         if item.get("id") != subtopic_id
     ]
 
     return {
-        "course_id": inputs["toc"].get("course_id"),
-        "subject": domain_body.get("subject") or toc_body.get("subject"),
-        "module": domain_body.get("module"),
+        "course_id": course_model.get("course_id"),
+        "subject": course_body.get("course_metadata", {}).get(
+            "subject", course_body.get("subject")
+        ),
+        "course_title": course_body.get("course_metadata", {}).get(
+            "course_title", course_body.get("course_title", course_body.get("subject"))
+        ),
+        "course_outcomes": _course_outcomes(inputs, course_body),
+        "audience": course_body.get("course_metadata", {}).get(
+            "audience_summary", course_body.get("audience")
+        ),
+        "module": {
+            "id": module.get("id"),
+            "title": module.get("title"),
+            "context": module.get("context"),
+        },
         "target_asset": {
             "id": spec.asset_id,
             "type": spec.asset_type,
@@ -270,9 +476,13 @@ def _build_prompt_context(spec: AssetSpec, inputs: dict[str, Any]) -> dict[str, 
             "format": spec.format,
         },
         "focus_subtopic": focus_subtopic,
-        "toc_subtopic": toc_subtopic,
-        "thin_neighbor_subtopics": sibling_subtopics,
+        "coverage_requirements": focus_subtopic.get("coverage_requirements", []),
+        "neighbor_subtopics": sibling_subtopics,
         "blueprint_allocation": allocation,
+        "depth_budget": subtopic_plan.get("depth_budget", {}),
+        "asset_instructions": asset_plan.get(
+            "instructions", [asset_plan["purpose"]] if asset_plan.get("purpose") else []
+        ),
         "source_registry": [
             {
                 "id": source["id"],
@@ -571,23 +781,40 @@ def _artifact_body(artifact: dict[str, Any], name: str) -> dict[str, Any]:
     return body
 
 
-def _find_domain_subtopic(domain_body: dict[str, Any], subtopic_id: str) -> dict[str, Any]:
-    for subtopic in domain_body.get("subtopics", []):
-        if subtopic.get("id") == subtopic_id:
-            return subtopic
-    raise ValueError(f"Domain Model does not contain subtopic '{subtopic_id}'")
+def _subtopic_id(inputs: dict[str, Any]) -> str:
+    explicit = inputs.get("subtopic_id")
+    if isinstance(explicit, str) and explicit:
+        return explicit
+    course_body = _artifact_body(inputs["course_model"], "course_model")
+    focus = course_body.get("focus_subtopic")
+    if isinstance(focus, str) and focus:
+        return focus
+    raise ValueError("generation inputs must identify a subtopic_id")
 
 
-def _find_toc_subtopic(toc_body: dict[str, Any], subtopic_id: str) -> dict[str, Any]:
-    for module in toc_body.get("modules", []):
+def _course_outcomes(
+    inputs: dict[str, Any],
+    course_body: dict[str, Any],
+) -> list[Any]:
+    artifact = inputs.get("course_outcomes")
+    if isinstance(artifact, dict):
+        body = _artifact_body(artifact, "course_outcomes")
+        outcomes = body.get("outcomes", [])
+        if isinstance(outcomes, list):
+            return outcomes
+    outcomes = course_body.get("course_outcomes", [])
+    return outcomes if isinstance(outcomes, list) else []
+
+
+def _find_course_subtopic(
+    course_body: dict[str, Any],
+    subtopic_id: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    for module in course_body.get("modules", []):
         for subtopic in module.get("subtopics", []):
             if subtopic.get("id") == subtopic_id:
-                return {
-                    "module_id": module.get("id"),
-                    "module_title": module.get("title"),
-                    **subtopic,
-                }
-    raise ValueError(f"TOC does not contain subtopic '{subtopic_id}'")
+                return module, subtopic
+    raise ValueError(f"Course Model does not contain subtopic '{subtopic_id}'")
 
 
 def _find_blueprint_allocation(
@@ -600,9 +827,87 @@ def _find_blueprint_allocation(
     return None
 
 
-def _load_registered_sources(domain_body: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def _find_blueprint_subtopic_plan(
+    blueprint_body: dict[str, Any],
+    subtopic_id: str,
+) -> dict[str, Any] | None:
+    for plan in blueprint_body.get("subtopic_plans", []):
+        if plan.get("subtopic_id") == subtopic_id:
+            return plan
+    return None
+
+
+def _raw_asset_plan(plan: dict[str, Any] | None) -> list[Any] | None:
+    if plan is None:
+        return None
+    raw = plan.get("asset_plan", plan.get("assets"))
+    if raw is not None and not isinstance(raw, list):
+        raise ValueError("Blueprint subtopic asset_plan must be a list")
+    return raw
+
+
+def _asset_depth_requirements(spec: AssetSpec, inputs: dict[str, Any]) -> dict[str, Any]:
+    blueprint_body = _artifact_body(inputs["blueprint"], "blueprint")
+    plan = _find_blueprint_subtopic_plan(blueprint_body, _subtopic_id(inputs)) or {}
+    # The subtopic-level word/learning budget governs the anchor lesson. Other
+    # assets opt into their own mechanical limits through their asset-plan
+    # entry; a summary must not inherit a 1,600-word Course Content minimum.
+    requirements = (
+        dict(plan.get("depth_budget", {})) if spec.asset_type == "course_content" else {}
+    )
+    word_range = requirements.get("target_word_range")
+    if isinstance(word_range, dict):
+        requirements.setdefault("min_words", word_range.get("minimum"))
+        requirements.setdefault("max_words", word_range.get("maximum"))
+    if requirements.get("expansion_policy") == "targeted_by_coverage_gap":
+        requirements.setdefault(
+            "max_generation_attempts",
+            3 if spec.asset_type == "course_content" else 1,
+        )
+    for item in _raw_asset_plan(plan) or []:
+        if not isinstance(item, dict):
+            continue
+        if item.get("asset_type", item.get("type")) != spec.asset_type:
+            continue
+        requirements.update(item.get("depth_budget", {}))
+        for field in ("min_words", "max_words", "required_sections", "max_generation_attempts"):
+            if field in item:
+                requirements[field] = item[field]
+        break
+    return requirements
+
+
+def _depth_shortfalls(asset: dict[str, Any], requirements: dict[str, Any]) -> list[str]:
+    content = asset.get("content", "")
+    words = content.split()
+    shortfalls = []
+    min_words = requirements.get("min_words")
+    if min_words is not None:
+        if type(min_words) is not int or min_words < 0:
+            raise ValueError("depth_budget.min_words must be a non-negative integer")
+        if len(words) < min_words:
+            shortfalls.append(f"draft has {len(words)} words; approved minimum is {min_words}")
+    required_sections = requirements.get("required_sections", [])
+    if not isinstance(required_sections, list) or not all(
+        isinstance(section, str) and section.strip() for section in required_sections
+    ):
+        raise ValueError("depth_budget.required_sections must be a list of non-empty strings")
+    lowered = content.casefold()
+    missing = [section for section in required_sections if section.casefold() not in lowered]
+    if missing:
+        shortfalls.append("missing required sections: " + ", ".join(missing))
+    return shortfalls
+
+
+def _load_registered_sources(
+    course_body: dict[str, Any],
+    approved_source_ids: Any = None,
+) -> dict[str, dict[str, Any]]:
     sources: dict[str, dict[str, Any]] = {}
-    for category in domain_body.get("grounding_sources", []):
+    categories = course_body.get("grounding_sources", [])
+    if not categories and isinstance(course_body.get("source_registry"), list):
+        categories = [{"category": "APPROVED", "items": course_body["source_registry"]}]
+    for category in categories:
         category_name = category.get("category")
         for item in category.get("items", []):
             source_id = item.get("id")
@@ -611,7 +916,7 @@ def _load_registered_sources(domain_body: dict[str, Any]) -> dict[str, dict[str,
             if source_id in sources:
                 raise ValueError(f"Duplicate grounding source id '{source_id}'")
 
-            source_file = item.get("file")
+            source_file = item.get("file", item.get("content_ref"))
             if not source_file:
                 raise ValueError(f"Grounding source '{source_id}' is missing file")
             source_path = Path(source_file)
@@ -624,12 +929,25 @@ def _load_registered_sources(domain_body: dict[str, Any]) -> dict[str, dict[str,
 
             sources[source_id] = {
                 **item,
-                "category": category_name,
+                "name": item.get("name", item.get("title", source_id)),
+                "category": category_name or item.get("source_type"),
+                "url": item.get("url", item.get("locator")),
+                "file": source_file,
                 "text": source_path.read_text(encoding="utf-8"),
             }
     if not sources:
-        raise ValueError("Domain Model has no registered grounding sources")
-    return sources
+        raise ValueError("Course Model has no registered grounding sources")
+
+    if approved_source_ids is None:
+        return sources
+    if not isinstance(approved_source_ids, list) or not all(
+        isinstance(source_id, str) for source_id in approved_source_ids
+    ):
+        raise ValueError("approved_source_ids must be a list of source-id strings")
+    unknown = sorted(set(approved_source_ids) - set(sources))
+    if unknown:
+        raise ValueError("approved_source_ids are not registered: " + ", ".join(unknown))
+    return {source_id: sources[source_id] for source_id in approved_source_ids}
 
 
 def _write_asset(path: Path, asset: dict[str, Any]) -> None:
@@ -655,9 +973,7 @@ _ASSET_OUTPUT_FILENAMES: dict[str, str] = {
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Generate one or more m1_s1 student-content assets."
-    )
+    parser = argparse.ArgumentParser(description="Generate a selected student-content asset.")
     parser.add_argument("--course-id", default="frm-demo")
     parser.add_argument("--subtopic-id", default="m1_s1")
     parser.add_argument(
@@ -667,10 +983,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Which asset to generate (default: course_content).",
     )
     parser.add_argument(
-        "--domain-model",
+        "--course-model",
         type=Path,
-        default=DEFAULT_DOMAIN_MODEL_PATH,
-        help="Path to the Sprint 1 deep Domain Model artifact.",
+        default=DEFAULT_COURSE_MODEL_PATH,
+        help="Path to the approved compact Course Model artifact.",
+    )
+    parser.add_argument(
+        "--blueprint",
+        type=Path,
+        default=None,
+        help="Path to the approved Blueprint (defaults to the course folder).",
     )
     parser.add_argument(
         "--output",
@@ -702,7 +1024,8 @@ def main(argv: list[str] | None = None) -> int:
 
     inputs = load_generation_inputs(
         course_id=args.course_id,
-        domain_model_path=args.domain_model,
+        course_model_path=args.course_model,
+        blueprint_path=args.blueprint,
         subtopic_id=args.subtopic_id,
     )
 
@@ -717,7 +1040,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         course_content = _load_json(cc_path)
 
-    asset = generate_asset(
+    asset = generate_asset_to_depth(
         spec,
         inputs,
         course_content=course_content,

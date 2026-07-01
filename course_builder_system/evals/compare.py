@@ -119,6 +119,46 @@ def _subtopic_assets(package: dict[str, Any], subtopic_id: str) -> dict[str, dic
     raise ValueError(f"Subtopic {subtopic_id!r} not found in package")
 
 
+def _evaluation_context(
+    course_model_path: Path | None,
+    subtopic_id: str,
+) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    """Load the approved scope contract without exposing source bodies."""
+    if course_model_path is None:
+        return None, {"course_model_path": None, "course_model_sha256": None}
+    path = course_model_path.resolve()
+    artifact = _load_json(path)
+    body = artifact.get("body", artifact)
+    metadata = body.get("course_metadata", {})
+    for module in body.get("modules", []):
+        for subtopic in module.get("subtopics", []):
+            if subtopic.get("id") != subtopic_id:
+                continue
+            context = {
+                "course_title": metadata.get("course_title"),
+                "subject": metadata.get("subject"),
+                "audience_summary": metadata.get("audience_summary"),
+                "level": metadata.get("level"),
+                "module": {
+                    "id": module.get("id"),
+                    "title": module.get("title"),
+                    "context": module.get("context"),
+                },
+                "subtopic": {
+                    "id": subtopic.get("id"),
+                    "title": subtopic.get("title"),
+                    "context": subtopic.get("context"),
+                    "concepts": subtopic.get("concepts", []),
+                    "coverage_requirements": subtopic.get("coverage_requirements", []),
+                },
+            }
+            return context, {
+                "course_model_path": str(path),
+                "course_model_sha256": _sha256_bytes(path.read_bytes()),
+            }
+    raise ValueError(f"Subtopic {subtopic_id!r} not found in Course Model {path}")
+
+
 def _git_sha() -> str | None:
     try:
         completed = subprocess.run(
@@ -355,6 +395,7 @@ def _judge_prompt(
     agent_assets: dict[str, dict[str, Any]],
     gold_assets: dict[str, dict[str, Any]],
     asset_types: Iterable[str],
+    evaluation_context: dict[str, Any] | None = None,
 ) -> str:
     comparisons = []
     for asset_type in asset_types:
@@ -375,14 +416,21 @@ def _judge_prompt(
                 },
             }
         )
+    payload = {
+        "approved_scope_contract": evaluation_context,
+        "comparisons": comparisons,
+    }
     return (
         "You are proposing two rubric scores by comparing generated course assets "
         "head-to-head with their manual references. The manual reference anchors score 6. "
         "Use 1-5 when the agent is worse, 6 when it matches, and 7-10 when it is better. "
         "Coverage means essential scope and useful depth. House style means tone, headings, "
         "bullet density, seriousness, and structure. Return every supplied asset exactly once. "
-        "Your result is advisory and will be ratified by a human.\n\n"
-        + json.dumps(comparisons, ensure_ascii=False, indent=2)
+        "When an approved scope contract is supplied, score coverage against that contract: "
+        "do not penalize either candidate for omitting manual material explicitly out of scope. "
+        "The manual still anchors style and quality. Your result is advisory and will be "
+        "ratified by a human.\n\n"
+        + json.dumps(payload, ensure_ascii=False, indent=2)
     )
 
 
@@ -391,6 +439,7 @@ def _llm_judge(
     gold_assets: dict[str, dict[str, Any]],
     asset_types: Iterable[str],
     model: str,
+    evaluation_context: dict[str, Any] | None = None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     expected = [
         asset_type
@@ -398,7 +447,17 @@ def _llm_judge(
         if asset_type in agent_assets and asset_type in gold_assets
     ]
     result = llm.call(
-        [{"role": "user", "content": _judge_prompt(agent_assets, gold_assets, expected)}],
+        [
+            {
+                "role": "user",
+                "content": _judge_prompt(
+                    agent_assets,
+                    gold_assets,
+                    expected,
+                    evaluation_context,
+                ),
+            }
+        ],
         system=(
             "You are an independent course-quality evaluator. Compare the supplied pairs; "
             "do not infer human approval and do not score dimensions you were not asked to score."
@@ -470,6 +529,7 @@ def build_scorecard(
     subtopic_id: str = "m1_s1",
     use_llm_judge: bool = False,
     model: str = llm.DEFAULT_MODEL,
+    course_model_path: Path | None = None,
 ) -> dict[str, Any]:
     """Build a provisional scorecard. This function can never pass the human gate."""
     agent_path = agent_path.resolve()
@@ -478,6 +538,7 @@ def build_scorecard(
     gold_package = _load_package(gold_path)
     agent_assets = _subtopic_assets(agent_package, subtopic_id)
     gold_assets = _subtopic_assets(gold_package, subtopic_id)
+    evaluation_context, context_inputs = _evaluation_context(course_model_path, subtopic_id)
 
     present_types = [
         asset_type
@@ -496,7 +557,11 @@ def build_scorecard(
     }
     if use_llm_judge:
         proposals, judge_metadata = _llm_judge(
-            agent_assets, gold_assets, present_types, model=model
+            agent_assets,
+            gold_assets,
+            present_types,
+            model=model,
+            evaluation_context=evaluation_context,
         )
 
     rows = []
@@ -570,7 +635,9 @@ def build_scorecard(
             "agent_sha256": agent_hash,
             "gold_path": str(gold_path),
             "gold_sha256": gold_hash,
+            **context_inputs,
         },
+        "evaluation_context": evaluation_context,
         "prompt_git_sha": _git_sha(),
         "llm_judge": judge_metadata,
         "verifier_stats": _aggregate_verifier_stats(rows),
@@ -624,6 +691,7 @@ def build_blind_packet(
     gold_path: Path,
     *,
     subtopic_id: str = "m1_s1",
+    course_model_path: Path | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Return an anonymized packet and its separate, hidden deterministic mapping."""
     agent_path = agent_path.resolve()
@@ -632,6 +700,7 @@ def build_blind_packet(
     gold_package = _load_package(gold_path)
     agent_assets = _subtopic_assets(agent_package, subtopic_id)
     gold_assets = _subtopic_assets(gold_package, subtopic_id)
+    evaluation_context, context_inputs = _evaluation_context(course_model_path, subtopic_id)
     shared_types = [
         asset_type
         for asset_type in ASSET_ORDER
@@ -649,7 +718,12 @@ def build_blind_packet(
     agent_hash = _sha256_bytes(agent_path.read_bytes())
     gold_hash = _sha256_bytes(gold_path.read_bytes())
     basis = _sha256_json(
-        {"agent_sha256": agent_hash, "gold_sha256": gold_hash, "subtopic_id": subtopic_id}
+        {
+            "agent_sha256": agent_hash,
+            "gold_sha256": gold_hash,
+            "course_model_sha256": context_inputs["course_model_sha256"],
+            "subtopic_id": subtopic_id,
+        }
     )
     packet_id = basis[:16]
     assignments: dict[str, dict[str, str]] = {}
@@ -692,9 +766,11 @@ def build_blind_packet(
             "edit_extent_values": sorted(ALLOWED_EDIT_EXTENTS),
             "completion": (
                 "Score and ratify both candidates for every core asset. Record wall-clock "
-                "minutes and edit extent separately for each candidate, then ratify the review."
+                "minutes and edit extent separately for each candidate, then ratify the review. "
+                "Score coverage against evaluation_context; do not reward out-of-scope breadth."
             ),
         },
+        "evaluation_context": evaluation_context,
         "human_review": {
             "reviewer": None,
             "started_at": None,
@@ -714,6 +790,7 @@ def build_blind_packet(
             "agent_sha256": agent_hash,
             "gold_path": str(gold_path),
             "gold_sha256": gold_hash,
+            **context_inputs,
         },
         "assignments": assignments,
     }
@@ -765,7 +842,7 @@ def ratify_scorecard(
         raise ValueError("Blind mapping commitment does not match the packet")
     score_inputs = scorecard.get("inputs", {})
     map_inputs = mapping.get("inputs", {})
-    for field in ("agent_sha256", "gold_sha256"):
+    for field in ("agent_sha256", "gold_sha256", "course_model_sha256"):
         if score_inputs.get(field) != map_inputs.get(field):
             raise ValueError(f"Scorecard and blind mapping disagree on {field}")
 
@@ -927,6 +1004,7 @@ def _build_parser() -> argparse.ArgumentParser:
     score.add_argument("--subtopic-id", default="m1_s1")
     score.add_argument("--llm-judge", action="store_true")
     score.add_argument("--model", default=llm.DEFAULT_MODEL)
+    score.add_argument("--course-model", type=Path)
 
     blind = subparsers.add_parser("blind", help="Create blind packet + hidden mapping")
     blind.add_argument("--agent", type=Path, required=True)
@@ -934,6 +1012,7 @@ def _build_parser() -> argparse.ArgumentParser:
     blind.add_argument("--output", type=Path, required=True)
     blind.add_argument("--mapping-output", type=Path)
     blind.add_argument("--subtopic-id", default="m1_s1")
+    blind.add_argument("--course-model", type=Path)
 
     ratify = subparsers.add_parser("ratify", help="Ingest a completed blind human review")
     ratify.add_argument("--scorecard", type=Path, required=True)
@@ -956,12 +1035,18 @@ def main(argv: list[str] | None = None) -> int:
             subtopic_id=args.subtopic_id,
             use_llm_judge=args.llm_judge,
             model=args.model,
+            course_model_path=args.course_model,
         )
         _write_json(args.output, result)
         print(f"Wrote provisional scorecard: {args.output}")
         return 0
     if args.command == "blind":
-        packet, mapping = build_blind_packet(args.agent, args.gold, subtopic_id=args.subtopic_id)
+        packet, mapping = build_blind_packet(
+            args.agent,
+            args.gold,
+            subtopic_id=args.subtopic_id,
+            course_model_path=args.course_model,
+        )
         mapping_path = args.mapping_output or _default_mapping_path(args.output)
         _write_json(args.output, packet)
         _write_json(mapping_path, mapping)

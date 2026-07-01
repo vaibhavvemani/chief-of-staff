@@ -9,8 +9,14 @@ from agents import revision, student_content
 from steps import student_content_step
 
 
+def _generation_inputs() -> dict:
+    return student_content.load_generation_inputs("frm-demo")
+
+
 def _asset(key: str, *, flagged: bool = False) -> dict:
-    spec = student_content.ASSET_SPECS[key]
+    spec = student_content.resolve_asset_spec(
+        student_content.ASSET_SPECS[key], _generation_inputs()
+    )
     claim = {
         "id": "c1",
         "text": "A factual claim.",
@@ -81,15 +87,15 @@ def test_revise_content_package_preserves_unselected_assets() -> None:
 
     with (
         patch(
-            "agents.revision.student_content.generate_asset",
+            "agents.revision.student_content.generate_asset_to_depth",
             return_value=generated_summary,
         ) as generate,
         patch("agents.revision.verification.verify_asset", return_value=verified_summary) as verify,
     ):
         revised = revision.revise_content_package(
             package,
-            generation_inputs={},
-            domain_model={},
+            generation_inputs=_generation_inputs(),
+            course_model=_generation_inputs()["course_model"],
             raw_feedback="verifier",
         )
 
@@ -98,7 +104,8 @@ def test_revise_content_package_preserves_unselected_assets() -> None:
     assert revised_assets[1]["content"] == "Revised summary"
     assert package["subtopics"][0]["assets"][1]["content"] == "Original summary"
     assert generate.call_count == 1
-    assert generate.call_args.args[0] is student_content.ASSET_SPECS["summary"]
+    assert generate.call_args.args[0].asset_type == "summary"
+    assert generate.call_args.args[0].asset_id == "m1_s1_summary"
     assert generate.call_args.kwargs["course_content"] == cc
     assert "Verifier findings" in generate.call_args.kwargs["feedback"]
     verify.assert_called_once()
@@ -118,16 +125,15 @@ def test_student_content_step_routes_rejection_to_targeted_revision() -> None:
     body = _package(_asset("course_content"), _asset("summary", flagged=True))
     existing = {"body": body}
     inputs = {
-        "toc": {"course_id": "frm-demo", "body": {}},
-        "blueprint": {"body": {}},
-        "domain_model": {"body": {}},
+        **_generation_inputs(),
+        "course_outcomes": {"body": {"outcomes": []}},
     }
 
     with (
         patch("steps.load_artifact", return_value=existing),
         patch("steps.revision.revise_content_package", return_value=body) as revise,
         patch(
-            "steps.student_content.generate_asset",
+            "steps.student_content.generate_asset_to_depth",
             side_effect=AssertionError("full regeneration should not run"),
         ),
     ):

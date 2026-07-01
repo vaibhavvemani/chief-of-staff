@@ -1,0 +1,45 @@
+{
+  "course_id": "frm-demo",
+  "artifact_type": "course_outcomes",
+  "produced_by_step": "human",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": ["brief"],
+  "updated_at": "2026-06-30T00:00:00+00:00",
+  "body": {
+    "course_title": "Financial Risk Management",
+    "audience_summary": "Postgraduate learners with foundational finance knowledge who need an intermediate introduction to financial risk concepts and practice.",
+    "outcomes": [
+      {
+        "id": "co1",
+        "statement": "Explain the nature of financial risk and distinguish measurable risk from uncertainty.",
+        "cognitive_level": "understand",
+        "evidence": "Learner gives accurate definitions and classifies short scenarios.",
+        "priority": "core"
+      },
+      {
+        "id": "co2",
+        "statement": "Analyze how credit, liquidity, market, and operational risks interact in financial institutions.",
+        "cognitive_level": "analyze",
+        "evidence": "Learner maps interacting risk channels in a case analysis.",
+        "priority": "core"
+      },
+      {
+        "id": "co3",
+        "statement": "Apply a structured risk-management process to identify, assess, monitor, and respond to financial risks.",
+        "cognitive_level": "apply",
+        "evidence": "Learner produces and defends a risk response for a realistic scenario.",
+        "priority": "core"
+      },
+      {
+        "id": "co4",
+        "statement": "Evaluate the role of risk appetite, governance, and quantitative evidence in risk decisions.",
+        "cognitive_level": "evaluate",
+        "evidence": "Learner critiques a governance or risk-appetite decision using stated criteria.",
+        "priority": "supporting"
+      }
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 """Adversarial claim verification for Phase 1 student-content assets.
 
-The verifier is deliberately separate from the writer.  It checks each asset
-against the source text registered by the Domain Model, annotates the existing
+The verifier is deliberately separate from the writer. It checks each asset
+against the source text approved in the Course Model, annotates the existing
 claims, and surfaces significant factual statements that the writer did not
 put in ``claims[]``.  It never rewrites learner-facing content.
 """
@@ -32,18 +32,21 @@ UNGROUNDED_NOTE = "Ungrounded claim: no source_id was supplied; human review is 
 
 def verify_asset(
     asset: dict[str, Any],
-    domain_model: dict[str, Any],
+    course_model: dict[str, Any],
     *,
     model: str = llm.DEFAULT_MODEL,
     use_cache: bool = True,
     checked_at: str | datetime | None = None,
+    source_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """Verify one asset and return an annotated deep copy.
 
     One independent LLM call is made for the asset.  Learner-facing ``content``
     and the claim-derived ``sources`` union are preserved byte-for-byte.
     """
-    source_registry = _load_registered_sources(domain_model)
+    source_registry = _load_registered_sources(course_model)
+    if source_ids is not None:
+        source_registry = _filter_sources(source_registry, source_ids, "asset")
     timestamp = _normalise_checked_at(checked_at)
     return _verify_asset_with_sources(
         asset,
@@ -56,11 +59,12 @@ def verify_asset(
 
 def verify_content_package(
     content_package: dict[str, Any],
-    domain_model: dict[str, Any],
+    course_model: dict[str, Any],
     *,
     model: str = llm.DEFAULT_MODEL,
     use_cache: bool = True,
     checked_at: str | datetime | None = None,
+    blueprint: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Verify every asset in a Content Package envelope or body.
 
@@ -70,7 +74,7 @@ def verify_content_package(
     """
     verified_package = deepcopy(content_package)
     body = _content_package_body(verified_package)
-    source_registry = _load_registered_sources(domain_model)
+    source_registry = _load_registered_sources(course_model)
     timestamp = _normalise_checked_at(checked_at)
 
     subtopics = body.get("subtopics")
@@ -82,16 +86,29 @@ def verify_content_package(
             raise ValueError(
                 f"content package subtopics[{subtopic_index}] must contain an assets list"
             )
-        subtopic["assets"] = [
-            _verify_asset_with_sources(
+        subtopic_sources = _sources_for_subtopic(
+            course_model,
+            subtopic.get("subtopic_id"),
+            source_registry,
+        )
+        verified_assets = []
+        for asset in subtopic["assets"]:
+            asset_sources = _sources_for_asset(
+                blueprint,
+                subtopic.get("subtopic_id"),
                 asset,
-                source_registry,
-                model=model,
-                use_cache=use_cache,
-                checked_at=timestamp,
+                subtopic_sources,
             )
-            for asset in subtopic["assets"]
-        ]
+            verified_assets.append(
+                _verify_asset_with_sources(
+                    asset,
+                    asset_sources,
+                    model=model,
+                    use_cache=use_cache,
+                    checked_at=timestamp,
+                )
+            )
+        subtopic["assets"] = verified_assets
 
     return verified_package
 
@@ -106,30 +123,54 @@ def _verify_asset_with_sources(
 ) -> dict[str, Any]:
     claims, attributed_ids = _validate_asset_for_verification(asset, source_registry)
     prompt = _render_prompt(asset, source_registry)
-
-    result = llm.call(
-        [{"role": "user", "content": prompt}],
-        system=VERIFICATION_SYSTEM,
-        model=model,
-        max_tokens=8_000,
-        schema=_verification_response_schema(),
-        use_cache=use_cache,
-    )
-    response = result.parsed
-    if response is None:
+    validation_error: ValueError | None = None
+    for attempt in range(2):
+        correction = ""
+        if validation_error is not None:
+            correction = (
+                "\n\n## Required Correction\n\n"
+                "Your previous verifier response failed deterministic validation:\n"
+                f"{validation_error}\n\n"
+                "Re-check every verdict against its claim's cited source_id only. "
+                "Return a fresh complete response; do not copy evidence from another source."
+            )
+        result = llm.call(
+            [{"role": "user", "content": prompt + correction}],
+            system=VERIFICATION_SYSTEM,
+            model=model,
+            max_tokens=8_000,
+            schema=_verification_response_schema(),
+            use_cache=use_cache,
+        )
+        response: dict[str, Any] | None = None
         try:
-            response = json.loads(result.text)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"verifier returned invalid JSON: {exc}") from exc
-    if not isinstance(response, dict):
-        raise ValueError("verifier response must be a JSON object")
-
-    verdicts, unattributed = _validate_response(
-        response,
-        claims=claims,
-        attributed_ids=attributed_ids,
-        source_registry=source_registry,
-    )
+            response = _parse_verifier_response(result)
+            verdicts, unattributed = _validate_response(
+                response,
+                claims=claims,
+                attributed_ids=attributed_ids,
+                source_registry=source_registry,
+            )
+            break
+        except ValueError as exc:
+            validation_error = exc
+            if attempt == 1:
+                if response is None:
+                    raise
+                response = _conservative_verifier_fallback(
+                    response,
+                    claims=claims,
+                    source_registry=source_registry,
+                )
+                verdicts, unattributed = _validate_response(
+                    response,
+                    claims=claims,
+                    attributed_ids=attributed_ids,
+                    source_registry=source_registry,
+                )
+                break
+    else:  # pragma: no cover - loop either breaks or raises
+        raise AssertionError("verifier retry loop ended without a result")
 
     verified = deepcopy(asset)
     for claim in verified["claims"]:
@@ -159,6 +200,113 @@ def _verify_asset_with_sources(
     if verified.get("sources") != asset.get("sources"):
         raise AssertionError("verification must not modify the asset source union")
     return verified
+
+
+def _parse_verifier_response(result: llm.LLMResult) -> dict[str, Any]:
+    response = result.parsed
+    if response is None:
+        try:
+            response = json.loads(result.text)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"verifier returned invalid JSON: {exc}") from exc
+    if not isinstance(response, dict):
+        raise ValueError("verifier response must be a JSON object")
+    return response
+
+
+def _conservative_verifier_fallback(
+    response: dict[str, Any],
+    *,
+    claims: list[dict[str, Any]],
+    source_registry: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Conservatively repair verifier-only defects after retry exhaustion.
+
+    This never upgrades a verdict. Unknown/duplicate verdict ids are discarded;
+    attributed claims left without a verdict become unsupported. A
+    supported/partial claim whose evidence is absent from its cited source also
+    becomes unsupported. Unrelated response defects remain and still fail.
+    """
+    repaired = deepcopy(response)
+    claims_by_id = {claim.get("id"): claim for claim in claims}
+    verdicts = repaired.get("claim_verdicts")
+    if not isinstance(verdicts, list):
+        return repaired
+
+    canonical_verdicts: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    changed = False
+    for verdict in verdicts:
+        if not isinstance(verdict, dict):
+            continue
+        claim_id = verdict.get("claim_id")
+        claim = claims_by_id.get(claim_id)
+        if (
+            not isinstance(claim_id, str)
+            or not isinstance(claim, dict)
+            or claim.get("source_id") is None
+            or claim_id in seen
+        ):
+            changed = True
+            continue
+        canonical_verdicts.append(verdict)
+        seen.add(claim_id)
+
+    for claim in claims:
+        claim_id = claim.get("id")
+        if claim.get("source_id") is None or claim_id in seen:
+            continue
+        canonical_verdicts.append(
+            {
+                "claim_id": claim_id,
+                "support": "unsupported",
+                "supporting_excerpt": None,
+                "note": (
+                    "Deterministic fallback: the verifier returned no valid verdict for "
+                    "this attributed claim; treated as unsupported."
+                ),
+            }
+        )
+        seen.add(claim_id)
+        changed = True
+
+    repaired["claim_verdicts"] = canonical_verdicts
+    verdicts = canonical_verdicts
+    for verdict in verdicts:
+        claim = claims_by_id[verdict["claim_id"]]
+        source_id = claim.get("source_id")
+        source = source_registry.get(source_id)
+        if not isinstance(source, dict):
+            continue
+        excerpt = verdict.get("supporting_excerpt")
+        support = verdict.get("support")
+        if support in {"supported", "partial"} and (
+            not isinstance(excerpt, str) or not excerpt.strip() or excerpt not in source["text"]
+        ):
+            verdict["support"] = "unsupported"
+            verdict["supporting_excerpt"] = None
+            verdict["note"] = (
+                "Deterministic fallback: the verifier could not provide an exact excerpt "
+                f"from cited source {source_id}; treated as unsupported."
+            )
+            changed = True
+        elif support == "unsupported" and excerpt is not None:
+            verdict["supporting_excerpt"] = None
+            verdict["note"] = (
+                "Deterministic fallback: unsupported verdict retained and invalid evidence "
+                "was discarded."
+            )
+            changed = True
+
+    summary = repaired.get("verification")
+    if changed and isinstance(summary, dict):
+        for support in ("supported", "partial", "unsupported"):
+            summary[support] = sum(
+                isinstance(verdict, dict) and verdict.get("support") == support
+                for verdict in verdicts
+            )
+        summary["ungrounded"] = sum(claim.get("source_id") is None for claim in claims)
+    return repaired
 
 
 def _validate_asset_for_verification(
@@ -413,21 +561,24 @@ def _verification_response_schema() -> dict[str, Any]:
 
 
 def _load_registered_sources(
-    domain_model: dict[str, Any],
+    course_model: dict[str, Any],
 ) -> dict[str, dict[str, Any]]:
-    body = domain_model.get("body", domain_model)
+    body = course_model.get("body", course_model)
     if not isinstance(body, dict):
-        raise ValueError("domain_model must be an artifact envelope or object body")
+        raise ValueError("course_model must be an artifact envelope or object body")
 
     sources: dict[str, dict[str, Any]] = {}
-    for category in body.get("grounding_sources", []):
+    categories = body.get("grounding_sources", [])
+    if not categories and isinstance(body.get("source_registry"), list):
+        categories = [{"category": "APPROVED", "items": body["source_registry"]}]
+    for category in categories:
         for item in category.get("items", []):
             source_id = item.get("id")
             if not isinstance(source_id, str) or not source_id:
                 raise ValueError("encountered a grounding source without an id")
             if source_id in sources:
                 raise ValueError(f"duplicate grounding source id {source_id!r}")
-            source_file = item.get("file")
+            source_file = item.get("file", item.get("content_ref"))
             if not isinstance(source_file, str) or not source_file:
                 raise ValueError(f"grounding source {source_id!r} is missing file")
             source_path = Path(source_file)
@@ -439,12 +590,77 @@ def _load_registered_sources(
                 )
             sources[source_id] = {
                 **item,
-                "category": category.get("category"),
+                "name": item.get("name", item.get("title", source_id)),
+                "category": category.get("category") or item.get("source_type"),
+                "url": item.get("url", item.get("locator")),
+                "file": source_file,
                 "text": source_path.read_text(encoding="utf-8"),
             }
     if not sources:
-        raise ValueError("domain_model has no registered grounding sources")
+        raise ValueError("course_model has no registered grounding sources")
     return sources
+
+
+def _sources_for_subtopic(
+    course_model: dict[str, Any],
+    subtopic_id: Any,
+    source_registry: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Deterministically select the human-approved source pack for a node."""
+    body = course_model.get("body", course_model)
+    approved = None
+    for module in body.get("modules", []):
+        for subtopic in module.get("subtopics", []):
+            if subtopic.get("id") == subtopic_id:
+                approved = subtopic.get("approved_source_ids")
+                break
+    if approved is None:  # legacy fixture compatibility
+        return source_registry
+    if not isinstance(approved, list) or not all(isinstance(item, str) for item in approved):
+        raise ValueError("Course Model approved_source_ids must be a string list")
+    unknown = sorted(set(approved) - set(source_registry))
+    if unknown:
+        raise ValueError("Course Model approves unknown sources: " + ", ".join(unknown))
+    return {source_id: source_registry[source_id] for source_id in approved}
+
+
+def _filter_sources(
+    source_registry: dict[str, dict[str, Any]],
+    source_ids: list[str],
+    label: str,
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(source_ids, list) or not all(isinstance(item, str) for item in source_ids):
+        raise ValueError(f"{label} source_ids must be a string list")
+    unknown = sorted(set(source_ids) - set(source_registry))
+    if unknown:
+        raise ValueError(f"{label} routes unknown sources: " + ", ".join(unknown))
+    return {source_id: source_registry[source_id] for source_id in source_ids}
+
+
+def _sources_for_asset(
+    blueprint: dict[str, Any] | None,
+    subtopic_id: Any,
+    asset: dict[str, Any],
+    subtopic_sources: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Narrow an approved subtopic pack to the Blueprint's asset assignment."""
+    if blueprint is None:
+        return subtopic_sources
+    body = blueprint.get("body", blueprint)
+    for plan in body.get("subtopic_plans", []):
+        if plan.get("subtopic_id") != subtopic_id:
+            continue
+        for configured in plan.get("asset_plan", []):
+            if configured.get("id") == asset.get("id") or configured.get(
+                "asset_type"
+            ) == asset.get("type"):
+                return _filter_sources(
+                    subtopic_sources,
+                    configured.get("source_ids", list(subtopic_sources)),
+                    f"Blueprint asset {asset.get('id')}",
+                )
+        raise ValueError(f"Blueprint has no asset plan for {asset.get('id')!r}")
+    raise ValueError(f"Blueprint has no subtopic plan for {subtopic_id!r}")
 
 
 def _content_package_body(content_package: dict[str, Any]) -> dict[str, Any]:
@@ -476,17 +692,24 @@ def main(argv: list[str] | None = None) -> int:
     """Verify a saved v0.2 package and write a separate annotated artifact."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--package", type=Path, required=True)
-    parser.add_argument("--domain-model", type=Path, required=True)
+    parser.add_argument(
+        "--course-model",
+        "--domain-model",
+        dest="course_model",
+        type=Path,
+        required=True,
+        help="Approved combined Course Model (legacy --domain-model alias supported).",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--model", default=llm.DEFAULT_MODEL)
     parser.add_argument("--no-cache", action="store_true")
     args = parser.parse_args(argv)
 
     package = json.loads(args.package.read_text(encoding="utf-8"))
-    domain_model = json.loads(args.domain_model.read_text(encoding="utf-8"))
+    course_model = json.loads(args.course_model.read_text(encoding="utf-8"))
     verified = verify_content_package(
         package,
-        domain_model,
+        course_model,
         model=args.model,
         use_cache=not args.no_cache,
     )

@@ -1,8 +1,8 @@
 """
 Course Builder - Phase 0 orchestrator (the walking skeleton).
 
-This is the ENGINE. It knows nothing about what a Domain Model or a TOC
-actually contains. It treats every artifact as an opaque JSON *body* wrapped in
+This is the ENGINE. It knows nothing about what a Course Model, Blueprint, or
+Content Package actually contains. It treats every artifact as an opaque JSON *body* wrapped in
 a small, fixed metadata *envelope*. Its only jobs are:
 
   1. run the steps in order,
@@ -163,7 +163,12 @@ def run_pipeline(
         # (Saves re-approving Steps 1-2 every time you tweak Step 3. To force a
         # redo of an approved step, delete its .json files and re-run.)
         existing = [load_artifact(course_id, t) for t in step.produces]
-        if existing and all(a and a["status"] == "approved" for a in existing):
+        if existing and all(
+            a
+            and a["status"] == "approved"
+            and set(a.get("inputs", [])) == set(step.consumes)
+            for a in existing
+        ):
             print(f"[skip]  '{step.name}' already approved - resuming past it")
             continue
 

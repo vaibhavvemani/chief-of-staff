@@ -1,0 +1,1184 @@
+{
+  "scorecard_version": "1.0",
+  "run_id": "2cf7a4a6ff7cfd84",
+  "timestamp": "2026-06-30T14:50:41+00:00",
+  "subtopic_id": "m1_s1",
+  "inputs": {
+    "agent_path": "/Users/vaibhavvemani/Developer/chief_of_staff/course_builder_system/courses/frm-demo/content_package.json",
+    "agent_sha256": "72274853f604d0281693bead2caffa7c95fa6d87f6a8037cfdc388ff565b0649",
+    "gold_path": "/Users/vaibhavvemani/Developer/chief_of_staff/course_builder_system/benchmark/m1_s1.gold.content_package.json",
+    "gold_sha256": "f6fe4ddefb95b9569a26c86ac581558bd47f497f85b3f8b5892862438597aa8f",
+    "course_model_path": "/Users/vaibhavvemani/Developer/chief_of_staff/course_builder_system/courses/frm-demo/course_model.json",
+    "course_model_sha256": "5ac918a3811044162a1ec9f783aeaebac5e42cfacb0c42bf945d76d01548ffa8"
+  },
+  "evaluation_context": {
+    "course_title": "Financial Risk Management",
+    "subject": "Financial Risk Management",
+    "audience_summary": "Postgraduate learners with foundational finance knowledge.",
+    "level": "intermediate",
+    "module": {
+      "id": "m1",
+      "title": "Foundations of Financial Risk",
+      "context": {
+        "purpose": "Establish the concepts, classifications, process, appetite, history, and governance foundations needed for later risk analysis.",
+        "in_scope": [
+          "financial-risk foundations",
+          "institutional risk context"
+        ],
+        "out_of_scope": [
+          "detailed quantitative model implementation"
+        ]
+      }
+    },
+    "subtopic": {
+      "id": "m1_s1",
+      "title": "Nature of Financial Risk",
+      "context": {
+        "purpose": "Introduce financial risk, distinguish measurable risk from uncertainty, explain four core risk categories, and show how they interact in a crisis.",
+        "in_scope": [
+          "risk versus uncertainty",
+          "credit risk",
+          "liquidity risk",
+          "market risk",
+          "operational risk",
+          "layered risk",
+          "Lehman Brothers illustration"
+        ],
+        "out_of_scope": [
+          "formal risk taxonomy",
+          "risk-management lifecycle",
+          "risk-appetite design",
+          "governance-structure design"
+        ]
+      },
+      "concepts": [
+        {
+          "id": "c1",
+          "name": "Financial Risk",
+          "summary": "The possibility of loss arising from exposure to market movements, counterparty default, funding shortfalls, or operational failure.",
+          "depends_on": [],
+          "source_ids": []
+        },
+        {
+          "id": "c2",
+          "name": "Risk vs Uncertainty",
+          "summary": "Knight distinguishes measurable risk from uncertainty that cannot be assigned reliable probabilities; quantitative risk management mainly operates in the measurable zone.",
+          "depends_on": [
+            "c1"
+          ],
+          "source_ids": [
+            "g1"
+          ]
+        },
+        {
+          "id": "c3",
+          "name": "Credit Risk",
+          "summary": "The potential that a borrower or counterparty fails to meet agreed obligations across loans, securities, derivatives, guarantees, or settlement activity.",
+          "depends_on": [
+            "c1"
+          ],
+          "source_ids": [
+            "g2"
+          ]
+        },
+        {
+          "id": "c4",
+          "name": "Liquidity Risk",
+          "summary": "The risk that an institution cannot fund assets or meet obligations when due without unacceptable losses, even when it appears solvent.",
+          "depends_on": [
+            "c1"
+          ],
+          "source_ids": [
+            "g3"
+          ]
+        },
+        {
+          "id": "c5",
+          "name": "Market Risk",
+          "summary": "The risk of loss from movements in factors such as interest rates, foreign exchange, credit spreads, equities, commodities, and volatility.",
+          "depends_on": [
+            "c1"
+          ],
+          "source_ids": [
+            "g4"
+          ]
+        },
+        {
+          "id": "c6",
+          "name": "Operational Risk",
+          "summary": "The risk of loss from failed processes, people, systems, or external events, commonly including legal risk.",
+          "depends_on": [
+            "c1"
+          ],
+          "source_ids": [
+            "g4"
+          ]
+        },
+        {
+          "id": "c7",
+          "name": "Layered Risk",
+          "summary": "Risk categories interact: a shock in one category can amplify others, especially when liquidity stress forces asset sales and worsens solvency concerns.",
+          "depends_on": [
+            "c3",
+            "c4",
+            "c5",
+            "c6"
+          ],
+          "source_ids": [
+            "g2",
+            "g3",
+            "g5"
+          ]
+        },
+        {
+          "id": "c8",
+          "name": "Measurement Enables Management",
+          "summary": "Models and controls require estimates of probability, exposure, or impact; judgment remains essential where uncertainty cannot be modeled reliably.",
+          "depends_on": [
+            "c2"
+          ],
+          "source_ids": [
+            "g1"
+          ]
+        }
+      ],
+      "coverage_requirements": [
+        {
+          "id": "cr1",
+          "statement": "Define financial risk and distinguish measurable risk from Knightian uncertainty, including why the distinction matters for management tools.",
+          "concept_ids": [
+            "c1",
+            "c2",
+            "c8"
+          ],
+          "source_ids": [
+            "g1"
+          ]
+        },
+        {
+          "id": "cr2",
+          "statement": "Explain credit risk and show that counterparty exposure extends beyond ordinary loans.",
+          "concept_ids": [
+            "c3"
+          ],
+          "source_ids": [
+            "g2"
+          ]
+        },
+        {
+          "id": "cr3",
+          "statement": "Explain liquidity risk and why a solvent-looking institution can fail when funding disappears.",
+          "concept_ids": [
+            "c4"
+          ],
+          "source_ids": [
+            "g3"
+          ]
+        },
+        {
+          "id": "cr4",
+          "statement": "Define and contrast market risk and operational risk using representative exposure and failure examples.",
+          "concept_ids": [
+            "c5",
+            "c6"
+          ],
+          "source_ids": [
+            "g4"
+          ]
+        },
+        {
+          "id": "cr5",
+          "statement": "Explain how credit, liquidity, market, and operational risks can interact and amplify one another.",
+          "concept_ids": [
+            "c3",
+            "c4",
+            "c5",
+            "c6",
+            "c7"
+          ],
+          "source_ids": [
+            "g2",
+            "g3",
+            "g5"
+          ]
+        },
+        {
+          "id": "cr6",
+          "statement": "Use the Lehman Brothers collapse as a grounded illustration of layered market, funding, solvency, and governance pressures.",
+          "concept_ids": [
+            "c7"
+          ],
+          "source_ids": [
+            "g5"
+          ]
+        }
+      ]
+    }
+  },
+  "prompt_git_sha": "060508c4749739deba5eec59df248cf231d03415",
+  "llm_judge": {
+    "enabled": true,
+    "model": "claude-opus-4-8",
+    "prompt_hash": "01a07cb3a7ac8496c9c0bf0177ac1f5a0e9ea722ddfe5f99301223401d8a776b",
+    "cache_hit": false
+  },
+  "verifier_stats": {
+    "claim_count": 104,
+    "supported": 96,
+    "partial": 2,
+    "unsupported": 3,
+    "ungrounded": 3,
+    "unattributed_found": 0,
+    "assets_checked": 9,
+    "assets_consistent": 9
+  },
+  "assets": [
+    {
+      "asset_id": "m1_s1_cc",
+      "asset_type": "course_content",
+      "required_for_gate": true,
+      "manual_asset_present": true,
+      "dimensions": {
+        "factual_accuracy": {
+          "score": 8,
+          "status": "mechanical_provisional",
+          "method": "supported=1, partial=0.5, all other significant claims=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:47:45+00:00",
+            "claim_count": 31,
+            "supported": 30,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 1,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "weighted_support_ratio": 0.967741935483871,
+            "note": "Unsupported, ungrounded, pending, and unattributed claims receive no credit."
+          }
+        },
+        "coverage": {
+          "score": 7,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "exceeds",
+            "rationale": "The agent covers every in-scope coverage requirement (cr1-cr6) with worked examples, the four core categories, the risk-vs-uncertainty distinction, the layered-risk feedback loop, and a detailed Lehman illustration with specific figures. The manual covers broader material (FRM process, governance, objectives, PD/LGD/EAD) much of which is explicitly out of scope for this subtopic, while spending less depth on the layered-risk interaction and Lehman illustration that are central to the contract. Against the approved scope, the agent is tighter and deeper on exactly the required scope."
+          }
+        },
+        "source_attribution": {
+          "score": 8,
+          "status": "mechanical_provisional",
+          "method": "supported citation=1, partial citation=0.5, unsupported/ungrounded/unattributed=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:47:45+00:00",
+            "claim_count": 31,
+            "supported": 30,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 1,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "traceable_support_ratio": 0.967741935483871,
+            "note": "A citation receives credit only when the verifier confirms its support."
+          }
+        },
+        "pedagogical_clarity": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "Human judgment is required; this dimension is never auto-scored."
+          }
+        },
+        "asset_completeness": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "required asset/field checks; content depth is scored under coverage",
+          "evidence": {
+            "checks": {
+              "asset_present": true,
+              "type_matches": true,
+              "id_present": true,
+              "title_present": true,
+              "format_present": true,
+              "content_nonempty": true,
+              "claims_array": true,
+              "sources_array": true,
+              "verification_object": true,
+              "status_present": true
+            },
+            "passed": 10,
+            "total": 10,
+            "completion_ratio": 1.0,
+            "failed_checks": []
+          }
+        },
+        "house_style": {
+          "score": 6,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "matches",
+            "rationale": "Both use markdown headings, bold key terms, and bullet/table structures. The agent adds worked examples, practice checks, and tables; the manual uses consistent section headers with intro paragraphs and bulleted characteristic lists. Tone and seriousness are comparable and appropriate for postgraduate learners. Structure differs but quality is equivalent."
+          }
+        },
+        "review_time": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "A human must record wall-clock minutes and edit extent."
+          }
+        }
+      }
+    },
+    {
+      "asset_id": "m1_s1_lo",
+      "asset_type": "learning_objectives",
+      "required_for_gate": true,
+      "manual_asset_present": true,
+      "dimensions": {
+        "factual_accuracy": {
+          "score": 6,
+          "status": "mechanical_provisional",
+          "method": "supported=1, partial=0.5, all other significant claims=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:34:53+00:00",
+            "claim_count": 6,
+            "supported": 5,
+            "partial": 0,
+            "unsupported": 1,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "weighted_support_ratio": 0.8333333333333334,
+            "note": "Unsupported, ungrounded, pending, and unattributed claims receive no credit."
+          }
+        },
+        "coverage": {
+          "score": 7,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "exceeds",
+            "rationale": "The agent's objectives map directly onto the subtopic scope contract (cr1-cr6): financial risk definition, risk vs uncertainty, four categories, layered risk, and Lehman. It also adds a structured study aid with key ideas and terms. The manual's objectives target module-level material (FRM process, strategic importance, governance) much of which is out of scope for this subtopic. For the approved scope the agent is more precisely aligned and deeper."
+          }
+        },
+        "source_attribution": {
+          "score": 6,
+          "status": "mechanical_provisional",
+          "method": "supported citation=1, partial citation=0.5, unsupported/ungrounded/unattributed=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:34:53+00:00",
+            "claim_count": 6,
+            "supported": 5,
+            "partial": 0,
+            "unsupported": 1,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "traceable_support_ratio": 0.8333333333333334,
+            "note": "A citation receives credit only when the verifier confirms its support."
+          }
+        },
+        "pedagogical_clarity": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "Human judgment is required; this dimension is never auto-scored."
+          }
+        },
+        "asset_completeness": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "required asset/field checks; content depth is scored under coverage",
+          "evidence": {
+            "checks": {
+              "asset_present": true,
+              "type_matches": true,
+              "id_present": true,
+              "title_present": true,
+              "format_present": true,
+              "content_nonempty": true,
+              "claims_array": true,
+              "sources_array": true,
+              "verification_object": true,
+              "status_present": true
+            },
+            "passed": 10,
+            "total": 10,
+            "completion_ratio": 1.0,
+            "failed_checks": []
+          }
+        },
+        "house_style": {
+          "score": 7,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "exceeds",
+            "rationale": "The manual uses a clean numbered-list plus topic-by-topic outcomes format. The agent matches this with numbered objectives and section groupings, then exceeds with an integrated study-aid summary, key ideas, and a key-terms glossary that fit the serious instructional tone while adding useful structure consistent with the course's house style."
+          }
+        },
+        "review_time": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "A human must record wall-clock minutes and edit extent."
+          }
+        }
+      }
+    },
+    {
+      "asset_id": "m1_s1_summary",
+      "asset_type": "summary",
+      "required_for_gate": true,
+      "manual_asset_present": true,
+      "dimensions": {
+        "factual_accuracy": {
+          "score": 6,
+          "status": "mechanical_provisional",
+          "method": "supported=1, partial=0.5, all other significant claims=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:35:37+00:00",
+            "claim_count": 10,
+            "supported": 8,
+            "partial": 1,
+            "unsupported": 1,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "weighted_support_ratio": 0.85,
+            "note": "Unsupported, ungrounded, pending, and unattributed claims receive no credit."
+          }
+        },
+        "coverage": {
+          "score": 7,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "exceeds",
+            "rationale": "The agent summary captures all in-scope requirements: financial risk, Knightian distinction, the four categories with distinguishing detail, the layered-risk transmission mechanism, and a Lehman mapping across market/funding/solvency/governance. The manual summary is brief and mixes in out-of-scope items (FRM process, strategic function) while its key-terms list includes out-of-scope concepts (PD/LGD/EAD, CRO, lifecycle). For the approved scope the agent is more complete and better targeted."
+          }
+        },
+        "source_attribution": {
+          "score": 6,
+          "status": "mechanical_provisional",
+          "method": "supported citation=1, partial citation=0.5, unsupported/ungrounded/unattributed=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:35:37+00:00",
+            "claim_count": 10,
+            "supported": 8,
+            "partial": 1,
+            "unsupported": 1,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "traceable_support_ratio": 0.85,
+            "note": "A citation receives credit only when the verifier confirms its support."
+          }
+        },
+        "pedagogical_clarity": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "Human judgment is required; this dimension is never auto-scored."
+          }
+        },
+        "asset_completeness": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "required asset/field checks; content depth is scored under coverage",
+          "evidence": {
+            "checks": {
+              "asset_present": true,
+              "type_matches": true,
+              "id_present": true,
+              "title_present": true,
+              "format_present": true,
+              "content_nonempty": true,
+              "claims_array": true,
+              "sources_array": true,
+              "verification_object": true,
+              "status_present": true
+            },
+            "passed": 10,
+            "total": 10,
+            "completion_ratio": 1.0,
+            "failed_checks": []
+          }
+        },
+        "house_style": {
+          "score": 6,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "matches",
+            "rationale": "Both use headed sections, bulleted key ideas, and a key-terms section. The agent is longer with an added objectives recap and takeaway; the manual is more concise. Tone and bullet density are consistent with the house style in both; quality is comparable."
+          }
+        },
+        "review_time": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "A human must record wall-clock minutes and edit extent."
+          }
+        }
+      }
+    },
+    {
+      "asset_id": "m1_s1_case",
+      "asset_type": "case_study",
+      "required_for_gate": true,
+      "manual_asset_present": true,
+      "dimensions": {
+        "factual_accuracy": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "supported=1, partial=0.5, all other significant claims=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:25:42+00:00",
+            "claim_count": 12,
+            "supported": 12,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "weighted_support_ratio": 1.0,
+            "note": "Unsupported, ungrounded, pending, and unattributed claims receive no credit."
+          }
+        },
+        "coverage": {
+          "score": 7,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "exceeds",
+            "rationale": "The agent case study directly fulfills cr5 and cr6 with a slide-based layered-risk walkthrough, specific report figures ($7.8bn CP, $197bn repos, 62% nontraditional collateral, ~$200bn tri-party, Repo 105, OTS warning), explicit category mapping, a feedback-loop section, and analysis questions. The manual covers the same narrative (maturity mismatch, 30:1 leverage, liquidity, governance) well but with less specific sourcing and fewer explicit ties to the four-category framework. The agent provides greater grounded depth on the required scope."
+          }
+        },
+        "source_attribution": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "supported citation=1, partial citation=0.5, unsupported/ungrounded/unattributed=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:25:42+00:00",
+            "claim_count": 12,
+            "supported": 12,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "traceable_support_ratio": 1.0,
+            "note": "A citation receives credit only when the verifier confirms its support."
+          }
+        },
+        "pedagogical_clarity": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "Human judgment is required; this dimension is never auto-scored."
+          }
+        },
+        "asset_completeness": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "required asset/field checks; content depth is scored under coverage",
+          "evidence": {
+            "checks": {
+              "asset_present": true,
+              "type_matches": true,
+              "id_present": true,
+              "title_present": true,
+              "format_present": true,
+              "content_nonempty": true,
+              "claims_array": true,
+              "sources_array": true,
+              "verification_object": true,
+              "status_present": true
+            },
+            "passed": 10,
+            "total": 10,
+            "completion_ratio": 1.0,
+            "failed_checks": []
+          }
+        },
+        "house_style": {
+          "score": 6,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "matches",
+            "rationale": "The manual uses concise headed sections with bold call-outs and numbered sequences. The agent uses a slide format with 'Connect to course concept' call-outs, a mapping table, and questions. Both maintain a serious instructional tone and clear structure; the agent is longer but the styling quality is equivalent to the manual anchor."
+          }
+        },
+        "review_time": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "A human must record wall-clock minutes and edit extent."
+          }
+        }
+      }
+    },
+    {
+      "asset_id": "m1_s1_assess",
+      "asset_type": "assessment",
+      "required_for_gate": true,
+      "manual_asset_present": true,
+      "dimensions": {
+        "factual_accuracy": {
+          "score": 7,
+          "status": "mechanical_provisional",
+          "method": "supported=1, partial=0.5, all other significant claims=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:48:58+00:00",
+            "claim_count": 10,
+            "supported": 9,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 1,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "weighted_support_ratio": 0.9,
+            "note": "Unsupported, ungrounded, pending, and unattributed claims receive no credit."
+          }
+        },
+        "coverage": {
+          "score": 7,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "exceeds",
+            "rationale": "The agent assessment covers all in-scope requirements with 7 MCQs spanning risk-vs-uncertainty, credit beyond loans, liquidity-vs-solvency, market vs operational, and a correct-pairing item, plus two short-application prompts on the layered loop and Lehman, with a detailed answer key and scoring guidance. The manual's seven MCQs cover the same conceptual ground but with brief solutions and less depth, and lean on the Lehman case framing. The agent provides broader item coverage and richer model answers within scope."
+          }
+        },
+        "source_attribution": {
+          "score": 7,
+          "status": "mechanical_provisional",
+          "method": "supported citation=1, partial citation=0.5, unsupported/ungrounded/unattributed=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:48:58+00:00",
+            "claim_count": 10,
+            "supported": 9,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 1,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "traceable_support_ratio": 0.9,
+            "note": "A citation receives credit only when the verifier confirms its support."
+          }
+        },
+        "pedagogical_clarity": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "Human judgment is required; this dimension is never auto-scored."
+          }
+        },
+        "asset_completeness": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "required asset/field checks; content depth is scored under coverage",
+          "evidence": {
+            "checks": {
+              "asset_present": true,
+              "type_matches": true,
+              "id_present": true,
+              "title_present": true,
+              "format_present": true,
+              "content_nonempty": true,
+              "claims_array": true,
+              "sources_array": true,
+              "verification_object": true,
+              "status_present": true,
+              "solution_nonempty": true
+            },
+            "passed": 11,
+            "total": 11,
+            "completion_ratio": 1.0,
+            "failed_checks": []
+          }
+        },
+        "house_style": {
+          "score": 7,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "exceeds",
+            "rationale": "The manual is a clean three-section quiz with concise solutions. The agent matches the format (sectioned MCQ plus application) and exceeds with point allocations, word targets, and detailed scoring rubrics in the answer key, while maintaining the same serious assessment tone and clear structure."
+          }
+        },
+        "review_time": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "A human must record wall-clock minutes and edit extent."
+          }
+        }
+      }
+    },
+    {
+      "asset_id": "m1_s1_person",
+      "asset_type": "important_person",
+      "required_for_gate": false,
+      "manual_asset_present": true,
+      "dimensions": {
+        "factual_accuracy": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "supported=1, partial=0.5, all other significant claims=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:25:42+00:00",
+            "claim_count": 7,
+            "supported": 7,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "weighted_support_ratio": 1.0,
+            "note": "Unsupported, ungrounded, pending, and unattributed claims receive no credit."
+          }
+        },
+        "coverage": {
+          "score": 7,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "exceeds",
+            "rationale": "Both profiles cover Knight's 1921 risk-vs-uncertainty distinction and its relevance to model boundaries. The agent adds the explicit measurable-risk-zone framing, the list of dependent tools (VaR, stress testing, credit models, hedging), the judgment-vs-measurement lesson, and a forward connection to the four categories and Lehman, giving fuller coverage of the in-scope concepts (c2, c8). The manual additionally mentions why profit exists, but the agent is more thorough on the subtopic's required content."
+          }
+        },
+        "source_attribution": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "supported citation=1, partial citation=0.5, unsupported/ungrounded/unattributed=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:25:42+00:00",
+            "claim_count": 7,
+            "supported": 7,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "traceable_support_ratio": 1.0,
+            "note": "A citation receives credit only when the verifier confirms its support."
+          }
+        },
+        "pedagogical_clarity": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "Human judgment is required; this dimension is never auto-scored."
+          }
+        },
+        "asset_completeness": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "required asset/field checks; content depth is scored under coverage",
+          "evidence": {
+            "checks": {
+              "asset_present": true,
+              "type_matches": true,
+              "id_present": true,
+              "title_present": true,
+              "format_present": true,
+              "content_nonempty": true,
+              "claims_array": true,
+              "sources_array": true,
+              "verification_object": true,
+              "status_present": true
+            },
+            "passed": 10,
+            "total": 10,
+            "completion_ratio": 1.0,
+            "failed_checks": []
+          }
+        },
+        "house_style": {
+          "score": 6,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "matches",
+            "rationale": "The manual uses a short headed profile with bold term definitions and a 'why it matters' section. The agent uses a slide format with similar bold definitions and connective framing. Both are serious and well-structured; quality and tone are comparable to the anchor."
+          }
+        },
+        "review_time": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "A human must record wall-clock minutes and edit extent."
+          }
+        }
+      }
+    },
+    {
+      "asset_id": "m1_s1_dyk",
+      "asset_type": "did_you_know",
+      "required_for_gate": false,
+      "manual_asset_present": true,
+      "dimensions": {
+        "factual_accuracy": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "supported=1, partial=0.5, all other significant claims=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:25:42+00:00",
+            "claim_count": 8,
+            "supported": 8,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "weighted_support_ratio": 1.0,
+            "note": "Unsupported, ungrounded, pending, and unattributed claims receive no credit."
+          }
+        },
+        "coverage": {
+          "score": 6,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "matches",
+            "rationale": "Both pieces cover the emergence of the CRO role and tie it to managing interacting risk categories. The agent adds the James Lam/GE Capital 1993 origin detail and a quote linking to layered risk, while the manual lists driving events (derivatives boom, LTCM 1998, 2008 crisis). This CRO/governance topic is largely outside the strict subtopic scope; both provide comparable enrichment connecting back to the layered-risk theme."
+          }
+        },
+        "source_attribution": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "supported citation=1, partial citation=0.5, unsupported/ungrounded/unattributed=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:25:42+00:00",
+            "claim_count": 8,
+            "supported": 8,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "traceable_support_ratio": 1.0,
+            "note": "A citation receives credit only when the verifier confirms its support."
+          }
+        },
+        "pedagogical_clarity": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "Human judgment is required; this dimension is never auto-scored."
+          }
+        },
+        "asset_completeness": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "required asset/field checks; content depth is scored under coverage",
+          "evidence": {
+            "checks": {
+              "asset_present": true,
+              "type_matches": true,
+              "id_present": true,
+              "title_present": true,
+              "format_present": true,
+              "content_nonempty": true,
+              "claims_array": true,
+              "sources_array": true,
+              "verification_object": true,
+              "status_present": true
+            },
+            "passed": 10,
+            "total": 10,
+            "completion_ratio": 1.0,
+            "failed_checks": []
+          }
+        },
+        "house_style": {
+          "score": 6,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "matches",
+            "rationale": "Both use an engaging 'Did You Know?' tone with headed sections and bullets. The agent is longer with a blockquote and more sub-sections; the manual is more compact. Both fit the house style and seriousness level appropriately."
+          }
+        },
+        "review_time": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "A human must record wall-clock minutes and edit extent."
+          }
+        }
+      }
+    },
+    {
+      "asset_id": "m1_s1_activities",
+      "asset_type": "activities",
+      "required_for_gate": false,
+      "manual_asset_present": true,
+      "dimensions": {
+        "factual_accuracy": {
+          "score": 6,
+          "status": "mechanical_provisional",
+          "method": "supported=1, partial=0.5, all other significant claims=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:25:42+00:00",
+            "claim_count": 12,
+            "supported": 10,
+            "partial": 1,
+            "unsupported": 1,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "weighted_support_ratio": 0.875,
+            "note": "Unsupported, ungrounded, pending, and unattributed claims receive no credit."
+          }
+        },
+        "coverage": {
+          "score": 7,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "exceeds",
+            "rationale": "The agent activities map tightly to the in-scope requirements: risk-vs-uncertainty sorting, four-category classification, market-vs-operational contrast, layered-loop mapping, and Lehman application, plus a bring-your-own transfer task. The manual activities cover similar ground but include governance/CRO evaluation (out of scope) and are briefer with less scaffolding. For the approved scope the agent is more comprehensive and better aligned."
+          }
+        },
+        "source_attribution": {
+          "score": 6,
+          "status": "mechanical_provisional",
+          "method": "supported citation=1, partial citation=0.5, unsupported/ungrounded/unattributed=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:25:42+00:00",
+            "claim_count": 12,
+            "supported": 10,
+            "partial": 1,
+            "unsupported": 1,
+            "ungrounded": 0,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "traceable_support_ratio": 0.875,
+            "note": "A citation receives credit only when the verifier confirms its support."
+          }
+        },
+        "pedagogical_clarity": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "Human judgment is required; this dimension is never auto-scored."
+          }
+        },
+        "asset_completeness": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "required asset/field checks; content depth is scored under coverage",
+          "evidence": {
+            "checks": {
+              "asset_present": true,
+              "type_matches": true,
+              "id_present": true,
+              "title_present": true,
+              "format_present": true,
+              "content_nonempty": true,
+              "claims_array": true,
+              "sources_array": true,
+              "verification_object": true,
+              "status_present": true
+            },
+            "passed": 10,
+            "total": 10,
+            "completion_ratio": 1.0,
+            "failed_checks": []
+          }
+        },
+        "house_style": {
+          "score": 7,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "exceeds",
+            "rationale": "The manual lists activities concisely with bullet prompts. The agent matches and exceeds with explicit purpose, time, grouping, stepwise instructions, and deliverables per activity, maintaining the serious instructional tone while adding consistent, useful structure beyond the anchor."
+          }
+        },
+        "review_time": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "A human must record wall-clock minutes and edit extent."
+          }
+        }
+      }
+    },
+    {
+      "asset_id": "m1_s1_resources",
+      "asset_type": "resources",
+      "required_for_gate": false,
+      "manual_asset_present": true,
+      "dimensions": {
+        "factual_accuracy": {
+          "score": 6,
+          "status": "mechanical_provisional",
+          "method": "supported=1, partial=0.5, all other significant claims=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:25:42+00:00",
+            "claim_count": 8,
+            "supported": 7,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 1,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "weighted_support_ratio": 0.875,
+            "note": "Unsupported, ungrounded, pending, and unattributed claims receive no credit."
+          }
+        },
+        "coverage": {
+          "score": 6,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "matches",
+            "rationale": "The agent resources are tightly curated to the subtopic's sources (Knight, Basel credit/liquidity/market-operational, FCIC Lehman report, optional CRO article) with a suggested study order, directly supporting the in-scope concepts. The manual offers a broader resource set (Jorion, Hull, Basel III, IMF/ECB/Fed reports, news, video lectures) that extends beyond strict scope. Both adequately resource the topic; the agent is more targeted while the manual is broader, netting a match."
+          }
+        },
+        "source_attribution": {
+          "score": 6,
+          "status": "mechanical_provisional",
+          "method": "supported citation=1, partial citation=0.5, unsupported/ungrounded/unattributed=0",
+          "evidence": {
+            "checked_at": "2026-06-30T14:25:42+00:00",
+            "claim_count": 8,
+            "supported": 7,
+            "partial": 0,
+            "unsupported": 0,
+            "ungrounded": 1,
+            "unattributed_found": [],
+            "pending_verdicts": 0,
+            "summary_consistent": true,
+            "summary_mismatches": [],
+            "traceable_support_ratio": 0.875,
+            "note": "A citation receives credit only when the verifier confirms its support."
+          }
+        },
+        "pedagogical_clarity": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "Human judgment is required; this dimension is never auto-scored."
+          }
+        },
+        "asset_completeness": {
+          "score": 10,
+          "status": "mechanical_provisional",
+          "method": "required asset/field checks; content depth is scored under coverage",
+          "evidence": {
+            "checks": {
+              "asset_present": true,
+              "type_matches": true,
+              "id_present": true,
+              "title_present": true,
+              "format_present": true,
+              "content_nonempty": true,
+              "claims_array": true,
+              "sources_array": true,
+              "verification_object": true,
+              "status_present": true
+            },
+            "passed": 10,
+            "total": 10,
+            "completion_ratio": 1.0,
+            "failed_checks": []
+          }
+        },
+        "house_style": {
+          "score": 6,
+          "status": "llm_proposal_pending_human_ratification",
+          "method": "LLM head-to-head proposal; manual asset anchors score 6",
+          "evidence": {
+            "comparison": "matches",
+            "rationale": "Both use categorized headings with annotated or listed links. The agent adds descriptive annotations and a study-order section; the manual uses numbered categorized lists. Tone, structure, and seriousness are comparable to the anchor."
+          }
+        },
+        "review_time": {
+          "score": null,
+          "status": "pending_human",
+          "method": null,
+          "evidence": {
+            "reason": "A human must record wall-clock minutes and edit extent."
+          }
+        }
+      }
+    }
+  ],
+  "pending_human_dimensions": [
+    "pedagogical_clarity",
+    "review_time"
+  ],
+  "human_ratification": {
+    "status": "pending",
+    "note": "Automated scores and LLM judgments are proposals until blind human review."
+  },
+  "human_review": null,
+  "gate": {
+    "status": "pending_human_review",
+    "passed": false,
+    "core_minimum_score": 6,
+    "core_review_minutes_limit": 60,
+    "provisional_mechanical_blockers": [],
+    "reasons": [
+      "Blind human A/B scores, timed review, edit extent, and ratification are pending."
+    ]
+  }
+}

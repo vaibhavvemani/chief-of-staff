@@ -4,72 +4,53 @@ You are writing the Assessment asset for the Course Builder pipeline.
 
 ## Objective
 
-Create a self-assessment that tests learner understanding of the Course Content
-for the target subtopic. The assessment should contain a mix of conceptual and
-applied questions — both testing recall of definitions/distinctions and requiring
-application (e.g. diagnosing risk categories in the Lehman Brothers case).
+Create a self-assessment for the asset identified by `target_asset` and the
+`focus_subtopic` in `CONTEXT_JSON`. Test learner understanding of the
+already-generated Course Content at the configured level of difficulty.
 
-You must produce **two things** in one JSON object:
+Follow the configured question count, question types, scoring or weighting,
+audience, format, `coverage_requirements`, `depth_budget`, and other
+asset-specific assessment instructions. Balance recall, explanation, and
+application only as the configured depth requires. Every question must assess
+material actually taught in the Course Content.
 
-1. `content` — the learner-facing assessment (questions only, no answers).
-2. `solution` — a teacher-only answer key (string, Markdown formatted) that
-   provides full model answers with grounding for every question. This field is
-   teacher-only and must NOT appear in the learner-facing `content`.
+Produce two things in one JSON object:
 
-Do not copy the manual benchmark text. Write original questions and solutions
-based on the provided Domain Model, curated source texts, and the
-already-generated Course Content.
+1. `content` — the learner-facing assessment with questions only.
+2. `solution` — a teacher-only, Markdown-formatted answer key containing a
+   complete model answer for every question.
+
+Use matching question labels in `content` and `solution`. Keep answers out of
+learner-facing content.
 
 ## Grounding Rules
 
-- Use only the curated source texts below for factual claims.
+- Use only the approved source texts below for factual claims.
 - Every significant factual claim must appear in `claims[]`.
 - Significant factual claims include definitions, dates, figures, named events,
-  named institutions, regulatory facts, and concrete assertions.
-- Each significant factual claim should cite one source with `source_id`.
-- Use `source_id: null` for question framing, pedagogical scaffolding, or
-  transitions that assert no verifiable fact.
-- Do not invent source IDs. Valid source IDs are provided in the context.
+  named people or organizations, quotations, research findings, and other
+  independently verifiable assertions.
+- Each significant factual claim should cite one valid approved `source_id`.
+- Use `source_id: null` for question framing, pedagogical scaffolding, clearly
+  hypothetical scenarios, or transitions that assert no verifiable fact.
+- Do not invent source IDs or use sources that are not approved for this asset.
 - Keep `content` clean. Do not put inline citations, claim IDs, footnotes, or
-  source labels inside the question prose.
-- The `solution` field may reference claim IDs or source IDs for internal
-  clarity, but should also be readable prose.
-
-## Required Coverage
-
-The assessment must include questions that cover, at minimum:
-
-- defining financial risk (conceptual),
-- distinguishing the four core risk categories (credit, liquidity, market,
-  operational),
-- the distinction between risk and Knightian uncertainty,
-- the Lehman Brothers collapse as an applied case: identifying which risk
-  categories were at play and how they interacted,
-- the role of measurement and management judgment.
-
-Include at least 5 and at most 10 questions. Mix question types (short answer,
-multiple choice, scenario-based). Format `content` as Markdown.
-
-The `solution` must provide a complete model answer for every question in
-`content`. Format it as Markdown with question labels matching those in
-`content`.
+  internal source labels inside learner-facing questions.
+- The teacher-only `solution` may mention claim or source IDs when useful, but it
+  must remain readable prose.
 
 ## Output Contract
 
-Return a single JSON object matching the provided schema. The object is only the
-Assessment asset, not the whole content package.
+Return one JSON object matching the provided schema. Return only the Assessment
+asset, not the whole content package.
 
-Fixed identity fields:
+Copy identity and delivery fields such as `id`, `type`, `title`, and `format`
+from `target_asset` exactly. Set `file` to `null` and `status` to `done` unless
+the target explicitly supplies another schema-valid value. Do not substitute
+hardcoded IDs, titles, formats, question counts, or subject names.
 
-- `id`: `m1_s1_assess`
-- `type`: `assessment`
-- `title`: `Assessment Quiz: Nature of Financial Risk`
-- `format`: `pptx`
-- `file`: `null`
-- `status`: `done`
-
-The `solution` field is **required** and must be a non-empty string containing
-the teacher-facing answer key.
+The `solution` field is required and must be a non-empty string containing the
+teacher-facing answer key.
 
 Set verification fields to the empty pre-verification state:
 
@@ -77,13 +58,11 @@ Set verification fields to the empty pre-verification state:
 - asset `verification` has all counts as `0`, `unattributed_found: []`, and
   `checked_at: null`
 
-## Already-Generated Course Content (condition on this — do not contradict or merely repeat it)
+## Already-Generated Course Content
 
-The following is the Course Content asset that was already generated for this
-subtopic. Your Assessment must test **exactly** what this content taught. Do not
-ask about topics absent from the Course Content, and do not contradict any
-factual assertions it makes. The `solution` must be consistent with the Course
-Content's explanations.
+Assess exactly what this Course Content teaches, at the depth it teaches it.
+Do not ask about absent topics or contradict its factual assertions. Ensure each
+model answer is consistent with it.
 
 ```text
 {{COURSE_CONTENT}}
@@ -95,7 +74,7 @@ Content's explanations.
 {{CONTEXT_JSON}}
 ```
 
-## Curated Source Texts
+## Approved Source Texts
 
 {{SOURCE_TEXTS}}
 

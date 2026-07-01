@@ -1,0 +1,444 @@
+{
+  "course_id": "frm-demo",
+  "artifact_type": "course_model",
+  "produced_by_step": "structure",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "brief",
+    "course_outcomes",
+    "research_dossier"
+  ],
+  "updated_at": "2026-06-30T10:01:54+00:00",
+  "body": {
+    "course_metadata": {
+      "course_title": "Financial Risk Management",
+      "subject": "Financial Risk Management",
+      "audience_summary": "Postgraduate learners with foundational finance knowledge.",
+      "level": "intermediate",
+      "language": "English",
+      "jurisdiction": null,
+      "course_outcome_ids": [
+        "co1",
+        "co2",
+        "co3",
+        "co4"
+      ]
+    },
+    "modules": [
+      {
+        "id": "m1",
+        "order": 1,
+        "title": "Foundations of Financial Risk",
+        "context": {
+          "purpose": "Establish the concepts, classifications, process, appetite, history, and governance foundations needed for later risk analysis.",
+          "in_scope": [
+            "financial-risk foundations",
+            "institutional risk context"
+          ],
+          "out_of_scope": [
+            "detailed quantitative model implementation"
+          ]
+        },
+        "prerequisite_module_ids": [],
+        "subtopics": [
+          {
+            "id": "m1_s1",
+            "order": 1,
+            "title": "Nature of Financial Risk",
+            "context": {
+              "purpose": "Introduce financial risk, distinguish measurable risk from uncertainty, explain four core risk categories, and show how they interact in a crisis.",
+              "in_scope": [
+                "risk versus uncertainty",
+                "credit risk",
+                "liquidity risk",
+                "market risk",
+                "operational risk",
+                "layered risk",
+                "Lehman Brothers illustration"
+              ],
+              "out_of_scope": [
+                "formal risk taxonomy",
+                "risk-management lifecycle",
+                "risk-appetite design",
+                "governance-structure design"
+              ]
+            },
+            "prerequisite_subtopic_ids": [],
+            "concepts": [
+              {
+                "id": "c1",
+                "name": "Financial Risk",
+                "summary": "The possibility of loss arising from exposure to market movements, counterparty default, funding shortfalls, or operational failure.",
+                "depends_on": [],
+                "source_ids": []
+              },
+              {
+                "id": "c2",
+                "name": "Risk vs Uncertainty",
+                "summary": "Knight distinguishes measurable risk from uncertainty that cannot be assigned reliable probabilities; quantitative risk management mainly operates in the measurable zone.",
+                "depends_on": [
+                  "c1"
+                ],
+                "source_ids": [
+                  "g1"
+                ]
+              },
+              {
+                "id": "c3",
+                "name": "Credit Risk",
+                "summary": "The potential that a borrower or counterparty fails to meet agreed obligations across loans, securities, derivatives, guarantees, or settlement activity.",
+                "depends_on": [
+                  "c1"
+                ],
+                "source_ids": [
+                  "g2"
+                ]
+              },
+              {
+                "id": "c4",
+                "name": "Liquidity Risk",
+                "summary": "The risk that an institution cannot fund assets or meet obligations when due without unacceptable losses, even when it appears solvent.",
+                "depends_on": [
+                  "c1"
+                ],
+                "source_ids": [
+                  "g3"
+                ]
+              },
+              {
+                "id": "c5",
+                "name": "Market Risk",
+                "summary": "The risk of loss from movements in factors such as interest rates, foreign exchange, credit spreads, equities, commodities, and volatility.",
+                "depends_on": [
+                  "c1"
+                ],
+                "source_ids": [
+                  "g4"
+                ]
+              },
+              {
+                "id": "c6",
+                "name": "Operational Risk",
+                "summary": "The risk of loss from failed processes, people, systems, or external events, commonly including legal risk.",
+                "depends_on": [
+                  "c1"
+                ],
+                "source_ids": [
+                  "g4"
+                ]
+              },
+              {
+                "id": "c7",
+                "name": "Layered Risk",
+                "summary": "Risk categories interact: a shock in one category can amplify others, especially when liquidity stress forces asset sales and worsens solvency concerns.",
+                "depends_on": [
+                  "c3",
+                  "c4",
+                  "c5",
+                  "c6"
+                ],
+                "source_ids": [
+                  "g2",
+                  "g3",
+                  "g5"
+                ]
+              },
+              {
+                "id": "c8",
+                "name": "Measurement Enables Management",
+                "summary": "Models and controls require estimates of probability, exposure, or impact; judgment remains essential where uncertainty cannot be modeled reliably.",
+                "depends_on": [
+                  "c2"
+                ],
+                "source_ids": [
+                  "g1"
+                ]
+              }
+            ],
+            "coverage_requirements": [
+              {
+                "id": "cr1",
+                "statement": "Define financial risk and distinguish measurable risk from Knightian uncertainty, including why the distinction matters for management tools.",
+                "concept_ids": [
+                  "c1",
+                  "c2",
+                  "c8"
+                ],
+                "source_ids": [
+                  "g1"
+                ]
+              },
+              {
+                "id": "cr2",
+                "statement": "Explain credit risk and show that counterparty exposure extends beyond ordinary loans.",
+                "concept_ids": [
+                  "c3"
+                ],
+                "source_ids": [
+                  "g2"
+                ]
+              },
+              {
+                "id": "cr3",
+                "statement": "Explain liquidity risk and why a solvent-looking institution can fail when funding disappears.",
+                "concept_ids": [
+                  "c4"
+                ],
+                "source_ids": [
+                  "g3"
+                ]
+              },
+              {
+                "id": "cr4",
+                "statement": "Define and contrast market risk and operational risk using representative exposure and failure examples.",
+                "concept_ids": [
+                  "c5",
+                  "c6"
+                ],
+                "source_ids": [
+                  "g4"
+                ]
+              },
+              {
+                "id": "cr5",
+                "statement": "Explain how credit, liquidity, market, and operational risks can interact and amplify one another.",
+                "concept_ids": [
+                  "c3",
+                  "c4",
+                  "c5",
+                  "c6",
+                  "c7"
+                ],
+                "source_ids": [
+                  "g2",
+                  "g3",
+                  "g5"
+                ]
+              },
+              {
+                "id": "cr6",
+                "statement": "Use the Lehman Brothers collapse as a grounded illustration of layered market, funding, solvency, and governance pressures.",
+                "concept_ids": [
+                  "c7"
+                ],
+                "source_ids": [
+                  "g5"
+                ]
+              }
+            ],
+            "approved_source_ids": [
+              "g1",
+              "g2",
+              "g3",
+              "g4",
+              "g5",
+              "g6"
+            ]
+          },
+          {
+            "id": "m1_s2",
+            "order": 2,
+            "title": "Risk Classification Framework",
+            "context": {
+              "purpose": "Organize risk types into a formal taxonomy after the core categories have been introduced.",
+              "in_scope": [
+                "classification criteria",
+                "risk taxonomy"
+              ],
+              "out_of_scope": [
+                "introductory definitions already taught in m1_s1"
+              ]
+            },
+            "prerequisite_subtopic_ids": [
+              "m1_s1"
+            ],
+            "concepts": [],
+            "coverage_requirements": [],
+            "approved_source_ids": []
+          },
+          {
+            "id": "m1_s3",
+            "order": 3,
+            "title": "Risk Management Process",
+            "context": {
+              "purpose": "Teach the identify, measure, monitor, and control lifecycle as an operational process.",
+              "in_scope": [
+                "risk-management lifecycle"
+              ],
+              "out_of_scope": [
+                "detailed quantitative techniques"
+              ]
+            },
+            "prerequisite_subtopic_ids": [
+              "m1_s1",
+              "m1_s2"
+            ],
+            "concepts": [],
+            "coverage_requirements": [],
+            "approved_source_ids": []
+          },
+          {
+            "id": "m1_s4",
+            "order": 4,
+            "title": "Risk Appetite & Capacity",
+            "context": {
+              "purpose": "Distinguish risk tolerance, appetite, and capacity and connect them to decisions.",
+              "in_scope": [
+                "risk appetite",
+                "risk tolerance",
+                "risk capacity"
+              ],
+              "out_of_scope": [
+                "board and committee design"
+              ]
+            },
+            "prerequisite_subtopic_ids": [
+              "m1_s3"
+            ],
+            "concepts": [],
+            "coverage_requirements": [],
+            "approved_source_ids": []
+          },
+          {
+            "id": "m1_s5",
+            "order": 5,
+            "title": "Evolution of Modern Risk Management",
+            "context": {
+              "purpose": "Trace the historical development of financial risk practice and regulation.",
+              "in_scope": [
+                "historical development",
+                "regulatory milestones"
+              ],
+              "out_of_scope": [
+                "complete regulatory compliance training"
+              ]
+            },
+            "prerequisite_subtopic_ids": [
+              "m1_s1"
+            ],
+            "concepts": [],
+            "coverage_requirements": [],
+            "approved_source_ids": []
+          },
+          {
+            "id": "m1_s6",
+            "order": 6,
+            "title": "Institutional Risk Governance",
+            "context": {
+              "purpose": "Explain board, committee, executive, and chief-risk-officer responsibilities and accountability.",
+              "in_scope": [
+                "governance roles",
+                "accountability",
+                "integrated risk oversight"
+              ],
+              "out_of_scope": [
+                "jurisdiction-specific legal advice"
+              ]
+            },
+            "prerequisite_subtopic_ids": [
+              "m1_s3",
+              "m1_s4"
+            ],
+            "concepts": [],
+            "coverage_requirements": [],
+            "approved_source_ids": [
+              "g6"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "order": 2,
+        "title": "Quantitative Foundations for Risk",
+        "context": {
+          "purpose": "Build the quantitative foundations needed to measure and model financial risk.",
+          "in_scope": [
+            "probability and statistical foundations"
+          ],
+          "out_of_scope": [
+            "advanced model implementation not approved in the brief"
+          ]
+        },
+        "prerequisite_module_ids": [
+          "m1"
+        ],
+        "subtopics": [
+          {
+            "id": "m2_s1",
+            "order": 1,
+            "title": "Probability Theory",
+            "context": {
+              "purpose": "Introduce probability concepts used to quantify uncertain financial outcomes.",
+              "in_scope": [
+                "probability concepts for risk"
+              ],
+              "out_of_scope": [
+                "measure-theoretic probability"
+              ]
+            },
+            "prerequisite_subtopic_ids": [
+              "m1_s1"
+            ],
+            "concepts": [],
+            "coverage_requirements": [],
+            "approved_source_ids": []
+          }
+        ]
+      }
+    ],
+    "source_registry": [
+      {
+        "id": "g1",
+        "title": "Risk, Uncertainty, and Profit",
+        "publisher": "Frank H. Knight / Econlib",
+        "source_type": "public-domain economics text",
+        "locator": "https://www.econlib.org/library/Knight/knRUP.html",
+        "content_ref": "sources/g1.md"
+      },
+      {
+        "id": "g2",
+        "title": "Principles for the Management of Credit Risk",
+        "publisher": "Basel Committee on Banking Supervision",
+        "source_type": "supervisory guidance",
+        "locator": "https://www.bis.org/publ/bcbs75.htm",
+        "content_ref": "sources/g2.md"
+      },
+      {
+        "id": "g3",
+        "title": "Principles for Sound Liquidity Risk Management and Supervision",
+        "publisher": "Basel Committee on Banking Supervision",
+        "source_type": "supervisory guidance",
+        "locator": "https://www.bis.org/publ/bcbs144.htm",
+        "content_ref": "sources/g3.md"
+      },
+      {
+        "id": "g4",
+        "title": "Basel market-risk and operational-risk frameworks",
+        "publisher": "Basel Committee on Banking Supervision",
+        "source_type": "regulatory standards",
+        "locator": "https://www.bis.org/bcbs/publ/d457.htm",
+        "content_ref": "sources/g4.md"
+      },
+      {
+        "id": "g5",
+        "title": "The Financial Crisis Inquiry Report",
+        "publisher": "Financial Crisis Inquiry Commission",
+        "source_type": "official government report",
+        "locator": "https://www.govinfo.gov/content/pkg/GPO-FCIC/pdf/GPO-FCIC.pdf",
+        "content_ref": "sources/g5.md"
+      },
+      {
+        "id": "g6",
+        "title": "Rise of the chief risk officer",
+        "publisher": "The CFO",
+        "source_type": "trade-press interview and industry report",
+        "locator": "https://the-cfo.io/2002/04/22/rise-of-the-chief-risk-officer/",
+        "content_ref": "sources/g6.md"
+      }
+    ]
+  }
+}

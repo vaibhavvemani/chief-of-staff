@@ -142,7 +142,7 @@ Score guidance:
 Evidence to use:
 
 - manual benchmark content,
-- Domain Model concepts,
+- Course Model concepts and coverage requirements,
 - expected subtopic scope,
 - missing concepts, examples, cases, definitions, and transitions.
 
@@ -293,4 +293,3 @@ The output passes Phase 1 only if:
 2. The full core 5 package is reviewed in 60 minutes or less.
 3. Edits are touch-ups, not rewrites.
 4. The human reviewer ratifies the final scores.
-

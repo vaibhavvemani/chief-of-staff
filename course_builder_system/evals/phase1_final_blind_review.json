@@ -1,35 +1,280 @@
 {
-  "course_id": "frm-demo",
-  "artifact_type": "content_package",
-  "produced_by_step": "student_content",
-  "schema_version": "0.2",
-  "status": "approved",
-  "revision": 3,
-  "revision_note": "{\"assets\": [\"course_content\", \"assessment\"], \"feedback\": \"Course Content: produce 1900-2200 learner-facing words and never fewer than 1600. Preserve every approved coverage requirement and factual grounding. Keep the scannable house style with short paragraphs, bold labels, bullets, and a comparison table. Add substantive depth rather than padding: worked examples for each core risk category, a risk-versus-uncertainty comparison, common misconceptions, a step-by-step layered-risk feedback loop, a detailed Lehman application, and short learner practice checks. Assessment: preserve postgraduate analytical rigor and complete teacher solutions, but use a compact sectioned quiz with approximately seven multiple-choice items plus two short application prompts, concise answer rationales, and point guidance, strictly within scope.\", \"verifier\": false}",
-  "inputs": [
-    "course_model",
-    "blueprint",
-    "course_outcomes"
-  ],
-  "updated_at": "2026-06-30T14:49:25+00:00",
-  "body": {
-    "asset_vocabulary": [
-      "learning_objectives",
-      "course_content",
-      "summary",
-      "case_study",
-      "important_person",
-      "did_you_know",
-      "assessment",
-      "activities",
-      "resources"
+  "blind_packet_version": "1.0",
+  "packet_id": "9056deafa6806b5c",
+  "created_at": "2026-06-30T14:51:03+00:00",
+  "subtopic_id": "m1_s1",
+  "mapping_commitment": "39c80233d5febc5d5ccb41746dc84e41e6eb184c1d4e3ad7b9a4487776923439",
+  "instructions": {
+    "score_scale": "1-10; 6 means manual-equivalent",
+    "dimensions": [
+      "factual_accuracy",
+      "coverage",
+      "source_attribution",
+      "pedagogical_clarity",
+      "asset_completeness",
+      "house_style",
+      "review_time"
     ],
-    "subtopics": [
-      {
-        "subtopic_id": "m1_s1",
-        "assets": [
-          {
-            "id": "m1_s1_cc",
+    "edit_extent_values": [
+      "heavy",
+      "light",
+      "moderate",
+      "none",
+      "rewrite"
+    ],
+    "completion": "Score and ratify both candidates for every core asset. Record wall-clock minutes and edit extent separately for each candidate, then ratify the review. Score coverage against evaluation_context; do not reward out-of-scope breadth."
+  },
+  "evaluation_context": {
+    "course_title": "Financial Risk Management",
+    "subject": "Financial Risk Management",
+    "audience_summary": "Postgraduate learners with foundational finance knowledge.",
+    "level": "intermediate",
+    "module": {
+      "id": "m1",
+      "title": "Foundations of Financial Risk",
+      "context": {
+        "purpose": "Establish the concepts, classifications, process, appetite, history, and governance foundations needed for later risk analysis.",
+        "in_scope": [
+          "financial-risk foundations",
+          "institutional risk context"
+        ],
+        "out_of_scope": [
+          "detailed quantitative model implementation"
+        ]
+      }
+    },
+    "subtopic": {
+      "id": "m1_s1",
+      "title": "Nature of Financial Risk",
+      "context": {
+        "purpose": "Introduce financial risk, distinguish measurable risk from uncertainty, explain four core risk categories, and show how they interact in a crisis.",
+        "in_scope": [
+          "risk versus uncertainty",
+          "credit risk",
+          "liquidity risk",
+          "market risk",
+          "operational risk",
+          "layered risk",
+          "Lehman Brothers illustration"
+        ],
+        "out_of_scope": [
+          "formal risk taxonomy",
+          "risk-management lifecycle",
+          "risk-appetite design",
+          "governance-structure design"
+        ]
+      },
+      "concepts": [
+        {
+          "id": "c1",
+          "name": "Financial Risk",
+          "summary": "The possibility of loss arising from exposure to market movements, counterparty default, funding shortfalls, or operational failure.",
+          "depends_on": [],
+          "source_ids": []
+        },
+        {
+          "id": "c2",
+          "name": "Risk vs Uncertainty",
+          "summary": "Knight distinguishes measurable risk from uncertainty that cannot be assigned reliable probabilities; quantitative risk management mainly operates in the measurable zone.",
+          "depends_on": [
+            "c1"
+          ],
+          "source_ids": [
+            "g1"
+          ]
+        },
+        {
+          "id": "c3",
+          "name": "Credit Risk",
+          "summary": "The potential that a borrower or counterparty fails to meet agreed obligations across loans, securities, derivatives, guarantees, or settlement activity.",
+          "depends_on": [
+            "c1"
+          ],
+          "source_ids": [
+            "g2"
+          ]
+        },
+        {
+          "id": "c4",
+          "name": "Liquidity Risk",
+          "summary": "The risk that an institution cannot fund assets or meet obligations when due without unacceptable losses, even when it appears solvent.",
+          "depends_on": [
+            "c1"
+          ],
+          "source_ids": [
+            "g3"
+          ]
+        },
+        {
+          "id": "c5",
+          "name": "Market Risk",
+          "summary": "The risk of loss from movements in factors such as interest rates, foreign exchange, credit spreads, equities, commodities, and volatility.",
+          "depends_on": [
+            "c1"
+          ],
+          "source_ids": [
+            "g4"
+          ]
+        },
+        {
+          "id": "c6",
+          "name": "Operational Risk",
+          "summary": "The risk of loss from failed processes, people, systems, or external events, commonly including legal risk.",
+          "depends_on": [
+            "c1"
+          ],
+          "source_ids": [
+            "g4"
+          ]
+        },
+        {
+          "id": "c7",
+          "name": "Layered Risk",
+          "summary": "Risk categories interact: a shock in one category can amplify others, especially when liquidity stress forces asset sales and worsens solvency concerns.",
+          "depends_on": [
+            "c3",
+            "c4",
+            "c5",
+            "c6"
+          ],
+          "source_ids": [
+            "g2",
+            "g3",
+            "g5"
+          ]
+        },
+        {
+          "id": "c8",
+          "name": "Measurement Enables Management",
+          "summary": "Models and controls require estimates of probability, exposure, or impact; judgment remains essential where uncertainty cannot be modeled reliably.",
+          "depends_on": [
+            "c2"
+          ],
+          "source_ids": [
+            "g1"
+          ]
+        }
+      ],
+      "coverage_requirements": [
+        {
+          "id": "cr1",
+          "statement": "Define financial risk and distinguish measurable risk from Knightian uncertainty, including why the distinction matters for management tools.",
+          "concept_ids": [
+            "c1",
+            "c2",
+            "c8"
+          ],
+          "source_ids": [
+            "g1"
+          ]
+        },
+        {
+          "id": "cr2",
+          "statement": "Explain credit risk and show that counterparty exposure extends beyond ordinary loans.",
+          "concept_ids": [
+            "c3"
+          ],
+          "source_ids": [
+            "g2"
+          ]
+        },
+        {
+          "id": "cr3",
+          "statement": "Explain liquidity risk and why a solvent-looking institution can fail when funding disappears.",
+          "concept_ids": [
+            "c4"
+          ],
+          "source_ids": [
+            "g3"
+          ]
+        },
+        {
+          "id": "cr4",
+          "statement": "Define and contrast market risk and operational risk using representative exposure and failure examples.",
+          "concept_ids": [
+            "c5",
+            "c6"
+          ],
+          "source_ids": [
+            "g4"
+          ]
+        },
+        {
+          "id": "cr5",
+          "statement": "Explain how credit, liquidity, market, and operational risks can interact and amplify one another.",
+          "concept_ids": [
+            "c3",
+            "c4",
+            "c5",
+            "c6",
+            "c7"
+          ],
+          "source_ids": [
+            "g2",
+            "g3",
+            "g5"
+          ]
+        },
+        {
+          "id": "cr6",
+          "statement": "Use the Lehman Brothers collapse as a grounded illustration of layered market, funding, solvency, and governance pressures.",
+          "concept_ids": [
+            "c7"
+          ],
+          "source_ids": [
+            "g5"
+          ]
+        }
+      ]
+    }
+  },
+  "human_review": {
+    "reviewer": null,
+    "started_at": null,
+    "completed_at": null,
+    "ratified": false,
+    "notes": ""
+  },
+  "assets": [
+    {
+      "asset_type": "course_content",
+      "required_for_gate": true,
+      "candidates": {
+        "A": {
+          "asset": {
+            "type": "course_content",
+            "title": "Nature of Financial Risk",
+            "format": "pptx",
+            "content": "## Financial Risk Management\n\nFinancial Risk Management (FRM) is a critical discipline that delves into how firms systematically identify, measure, and manage uncertainty in their financial outcomes. This involves understanding potential adverse events that could impact a firm's financial health, quantifying their likelihood and potential severity, and implementing strategies to mitigate or capitalize on them. It's not just about avoiding losses, but also about protecting and enhancing organizational value in a dynamic and often unpredictable economic landscape.\n\nIn modern finance, FRM has evolved beyond mere loss prevention to become a core value-preserving and decision-enabling function. It safeguards a firm's assets and reputation by anticipating threats, while providing insights that enable calculated risk-taking, efficient capital allocation, and the confident pursuit of strategic opportunities for sustainable growth.\n\n## Why Financial Risk Management Matters\n\nFinancial risks are not abstract concepts; they are tangible threats that can directly impact a firm's very survival, hinder its growth trajectory, and erode the value it seeks to create for stakeholders. In today's interconnected and rapidly changing global economy, understanding and managing these risks is more critical than ever.\n\n**Consequences of poorly managed financial risk** (neglecting financial risk can have devastating consequences, turning potential opportunities into significant setbacks):\n- Volatile earnings and cash flows: Unpredictable revenues and expenditures make budgeting, forecasting, and strategic planning nearly impossible.\n- Liquidity stress during adverse market conditions: Firms can find themselves unable to meet short-term obligations, potentially leading to insolvency.\n- Capital erosion and loss of investor confidence: Persistent losses due to unmanaged risks directly deplete a firm's capital base and shatter investor trust.\n\n**Benefits of effective financial risk management** (a robust framework acts as a strategic enabler, fostering stability and unlocking opportunities):\n- Improves predictability of financial performance: Firms can achieve more stable and predictable earnings by identifying and mitigating potential financial shocks.\n- Protects downside outcomes: Proactive risk management minimizes the impact of adverse events, safeguarding assets and enabling firms to weather economic downturns.\n- Enables firms to take calculated risks aligned with their capacity: Effective management allows firms to strategically embrace risks that offer significant rewards.\n\n## What Is Financial Risk?\n\nFinancial risk refers to uncertainty in outcomes that have direct financial consequences. It encompasses a broad range of potential events that could negatively impact a company's financial health, from minor fluctuations to severe crises.\n\n**Impact areas:**\n- Revenues and costs: Fluctuations in market rates directly affect sales, cost of goods sold, and operating expenses.\n- Asset and liability values: Market volatility can significantly change the valuation of a company's investments or debt.\n- Cash flows and capital adequacy: Unforeseen events can disrupt cash flow, leading to liquidity shortfalls and eroding capital.\n\n**Risk characteristics:**\n- Multiple future outcomes are possible: Financial risk implies a range of potential results, not a single guaranteed outcome.\n- Each outcome has a different financial impact: Outcomes can range from minor financial deviations to substantial losses or gains.\n- The likelihood of outcomes can be estimated: Probabilities for different scenarios can be assigned using data and models.\n\n## Risk vs Uncertainty\n\nWhile often used interchangeably, there is a fundamental distinction between risk and uncertainty in financial contexts. Understanding this difference is crucial, as it dictates how potential future outcomes can be analyzed, quantified, and ultimately managed. Not all future outcomes are equally predictable; therefore, not all uncertainty qualifies as a measurable risk that can be addressed with standard financial tools.\n\n**Risk:**\n- Probabilities can be estimated: For events categorized as risks, we have sufficient historical data or theoretical frameworks to assign a probability distribution to various outcomes.\n- Outcomes can be quantified: The potential financial impact of risky events can be expressed in concrete, measurable terms, such as potential monetary losses, gains, or deviations from expected returns.\n- Exposure can be measured and managed: The overall exposure to a specific risk can be calculated, enabling the design and implementation of various risk management strategies.\n\n**Uncertainty:**\n- Probabilities cannot be reliably assigned: Pure uncertainty involves situations where there is insufficient data, experience, or theoretical understanding to assign meaningful probabilities to future events.\n- Outcomes cannot be modeled ex-ante: The potential impacts of truly uncertain events are highly unpredictable and difficult, if not impossible, to model before they occur.\n- Traditional financial risk tools do not apply: Conventional financial risk management instruments are generally ineffective or inapplicable for truly uncertain events.\n\n## The Risk-Uncertainty Spectrum\n\nUncertainty exists on a continuum, ranging from entirely unpredictable events to those that can be statistically modeled and managed. Understanding this spectrum is fundamental to effective financial risk management.\n\n- **Pure Uncertainty (Knightian Uncertainty):** This end of the spectrum represents situations where the future outcome is completely unknown, and there is no reliable basis for estimating probabilities. These are often \"unknown unknowns.\"\n- **FRM Operating Zone (Statistically Measurable Uncertainty):** This is the domain where financial risk management tools become applicable. While outcomes are not guaranteed, there's enough information to apply statistical and probabilistic methods.\n- **Measurable Risk (Objective Probability):** At this end, risks are well-defined, and probabilities can be determined with a high degree of confidence, often through objective statistical analysis or explicit contractual terms.\n\nA novel pandemic begins as pure uncertainty. Daily market fluctuations are measurable risks.\n\n## Simple Example of Financial Risk: Foreign Exchange Risk\n\nA firm expects to receive foreign currency cash flows in the future, often from international sales, investments, or debt obligations. This exposes the company to the inherent volatility of exchange rates, where the value of these future cash flows in the firm's domestic currency is not fixed but rather depends on currency movements.\n\n**Key characteristics, and as a result:**\n- Exchange rates fluctuate continuously: Global economic shifts, geopolitical events, and central bank policies constantly influence currency values, causing them to change moment by moment.\n- Historical data is available: Unlike pure uncertainty where outcomes are novel and unquantifiable, currency movements offer a rich history of data.\n- The range of outcomes is uncertain, yet definable: While the exact future exchange rate is unknown, the availability of historical data and market indicators allows for the estimation of a probable range of outcomes.\n- Probabilities can be estimated: Leveraging historical data and market pricing, financial analysts can apply statistical methods to assign probabilities to different exchange rate outcomes.\n\n## Objectives of Financial Risk Management\n\nEffective Financial Risk Management (FRM) is crucial for an organization's stability and sustained growth. It involves identifying, assessing, and mitigating financial risks to achieve strategic business objectives. The primary objectives are to:\n\n- **Reduce excessive volatility in earnings and cash flows:** Financial markets are inherently dynamic, and fluctuations in interest rates, exchange rates, commodity prices, and equity values can lead to significant and unpredictable swings in a firm's profitability and available cash. FRM seeks to smooth out these variations, making earnings and cash flows more predictable.\n- **Protect firm capital and liquidity:** Capital represents the financial bedrock of a company, absorbing losses and supporting future investments, while liquidity ensures the firm can meet its short-term obligations and operational needs. FRM aims to safeguard this capital base from erosion due to adverse financial events and to maintain adequate liquidity levels.\n- **Prevent large, irreversible downside losses:** Certain financial events, if unmanaged, can lead to catastrophic and often irreversible losses for a firm. These could range from significant losses in derivatives portfolios, major defaults on loans, or severe reputational damage due to compliance failures.\n- **Align risk-taking with the firm's financial capacity and strategic goals:** Every business inherently takes risks, but these risks must be proportionate to the firm's ability to bear them and aligned with its strategic objectives. FRM helps define the firm's risk appetite and ensures that all risk-taking activities fall within established boundaries.\n- **Support long-term value creation:** Ultimately, FRM is not just about loss prevention; it's about enabling sustainable business growth and enhancing shareholder value. By mitigating financial uncertainties and protecting assets, FRM creates a stable environment for strategic investments and consistent profitability.\n\n**Important note:** FRM does not aim to eliminate all risk. Complete risk elimination would often mean foregoing opportunities for growth and profit. Instead, FRM is about understanding, measuring, and managing financial exposures to an optimal level that supports the firm's strategic objectives.\n\n## Core Categories of Financial Risk\n\nFinancial risks are systematically classified based on their inherent source, behavior, and potential impact on an organization's financial health. Understanding these categories is fundamental for effective risk management.\n\n- **Market Risk:** the potential for losses in financial positions arising from adverse movements in market prices or rates.\n- **Credit Risk:** the possibility of a loss resulting from a borrower's failure to repay a loan or meet contractual obligations.\n- **Liquidity Risk:** the potential inability of an organization to meet its short-term financial obligations when they fall due, without incurring unacceptable losses.\n- **Operational Risk:** the risk of loss resulting from inadequate or failed internal processes, people, and systems, or from external events.\n\nEach distinct category of financial risk arises from different drivers, requires different measurement tools, and demands different management responses.\n\n## Market Risk\n\nMarket risk is the risk of loss due to adverse movements in market prices. This type of risk stems from fluctuations in macroeconomic factors, geopolitical events, and shifts in market sentiment that can impact the value of investments, financial instruments, and overall asset portfolios. It's a fundamental consideration for investors, corporations, and financial institutions as it can significantly affect profitability, capital adequacy, and strategic planning.\n\nIt typically arises from changes in:\n- Interest rates: When interest rates change, the value of fixed-income securities can fluctuate.\n- Equity prices: Variations in stock market indices and individual stock prices can lead to substantial portfolio depreciation.\n- Foreign exchange rates: Unexpected shifts in exchange rates can be detrimental for businesses involved in international trade.\n- Commodity prices: Volatile swings in commodity prices can impact production costs, revenue, and overall profitability for companies relying on raw materials.\n\n**Market risk: key characteristics:**\n- Continuous Nature: Market prices are constantly moving and reacting to new information, meaning market risk is an ever-present factor that requires continuous monitoring and management.\n- Observable: The price movements in financial markets are publicly available and can be tracked in real-time, allowing for transparent assessment of potential risks.\n- Quantifiable: Advanced financial models and statistical methods allow institutions to measure and estimate the potential losses due to market risk with a reasonable degree of precision (e.g., Value at Risk - VaR).\n- Often Hedgeable: Due to its quantifiable nature, market risk can frequently be mitigated or offset through the use of various financial instruments such as derivatives (futures, options, swaps), which are designed to protect against adverse price movements.\n\nEffective management of market risk is crucial for maintaining financial stability and achieving investment objectives.\n\n## Credit Risk\n\nCredit risk is the risk of financial loss resulting from a counterparty's failure to meet contractual obligations. This means that a borrower or trading partner may not honor their commitments, such as making scheduled payments or delivering on agreed-upon terms, leading to direct monetary losses and potential disruption to cash flow for the lender or creditor. It is a fundamental concern in financial transactions across all sectors.\n\nIt exists in:\n- Loans and bonds: Borrowers fail to repay principal or interest on their debt obligations.\n- Trade credit: Customers fail to pay invoices for goods or services sold on credit.\n- Counterparty exposures in derivatives: One party to a derivative contract defaults before its expiration.\n- Guarantees and Letters of Credit: The obligor fails to perform, forcing the guarantor to pay.\n\n**Credit risk: analysis framework.** Credit risk analysis relies on a comprehensive framework to assess and quantify potential losses:\n- Probability of Default (PD): Quantifies the likelihood that a borrower or counterparty will default on its financial obligations within a specified time horizon. It's estimated using factors like financial health, credit scores, and historical default rates.\n- Loss Given Default (LGD): Should a default occur, LGD represents the percentage of the exposure amount likely to be lost by the lender after recovery efforts. It is expressed as a percentage of the total exposure at the time of default.\n- Exposure at Default (EAD): Measures the total outstanding amount a lender is exposed to when a borrower defaults. This can be the remaining principal for a loan, or more complex for revolving credits or derivatives.\n- Credit Rating: An independent assessment of a borrower's creditworthiness, often provided by rating agencies. It helps in quickly evaluating the risk.\n\n## Liquidity Risk\n\nLiquidity risk is the potential for an entity to be unable to meet its short-term financial obligations when they become due, without having to raise funds at unfavorable terms or selling assets at significant discounts, thereby incurring substantial losses. This risk is not about whether an entity is ultimately solvent, but rather its ability to convert assets into cash quickly and cost-effectively when needed.\n\n**Two primary forms:**\n- Funding Liquidity Risk: The risk that a firm cannot meet payment obligations when due, due to unexpected cash outflows or inability to obtain funding.\n- Market Liquidity Risk: The risk that an entity cannot sell an asset at the prevailing market price due to insufficient market depth, or only by offering a significant discount.\n\n**Liquidity risk: management strategies.**\n\nCommon causes of liquidity risk:\n- Unexpected Cash Outflows: Large, unanticipated withdrawals can quickly deplete available cash.\n- Inability to Roll Over Debt: Difficulty refinancing maturing debt creates immediate funding gaps.\n- Concentration in Illiquid Assets: Holding assets that cannot be quickly sold without significant loss poses a risk.\n\nMitigation strategies:\n- Maintain a buffer of high-quality liquid assets (HQLA): Keep easily convertible assets to meet short-term needs.\n- Diversify funding sources and maturities: Spread funding across different sources to avoid single points of failure.\n- Contingency funding plans: Establish pre-arranged credit lines and backup funding.\n\n## Operational Risk\n\nOperational risk arises from failures of internal systems, people, or processes, or from adverse external events. Unlike market or credit risk, operational risk is often pervasive and encompasses a wide range of potential disruptions that can significantly impact an organization's financial stability and reputation. It's about the day-to-day execution and resilience of a business.\n\n- Process failures: Risks stemming from inadequate or failed internal processes, including flawed transaction processing, incorrect data handling, or inefficient operational procedures. These failures can lead to significant oversights and defects.\n- System breakdowns: Risks from malfunctions, failures, or vulnerabilities in technology infrastructure and systems. This covers hardware failures, software bugs, network outages, and cybersecurity breaches, leading to downtime and financial losses.\n- Human errors: Risks introduced by individuals through negligence, inadequate training, malicious intent, or simple mistakes. This includes data input errors, unauthorized actions, or internal fraud, causing significant operational issues.\n- Legal and compliance issues: Risks from failing to adhere to laws, regulations, internal policies, or ethical standards, as well as from contractual disputes. Consequences can include regulatory fines, litigation costs, and reputational damage.\n\nOperational risk is distinct from strategic and business risk. Its financial impact can be substantial, manifesting as direct losses, reputational damage, or regulatory penalties, making effective management crucial for organizational health.\n\n## Measuring Risk vs Managing Risk\n\n**Risk Measurement:**\n- Quantifies exposure: This involves systematically identifying and assessing potential threats and their financial or operational impact.\n- Uses models, metrics, and scenarios: Advanced analytical tools like Value-at-Risk (VaR), stress testing, and Monte Carlo simulations are employed to forecast potential losses under various conditions.\n- Answers: How much risk exists? The primary objective is to provide a clear, data-driven understanding of the risk landscape.\n\n**Risk Management:**\n- Uses measurement outputs: The quantitative data and insights generated from risk measurement are directly applied here.\n- Involves decisions and actions: This phase translates insights into tangible strategies.\n- Answers: What should be done about the risk? This is the strategic and operational response.\n\nMeasurement informs management — but does not replace judgment. While quantitative models provide invaluable data, human experience, ethical considerations, and strategic foresight remain indispensable in interpreting complex results and making nuanced, real-world decisions.\n\n## The Financial Risk Management Process\n\nFinancial Risk Management is not a one-off task, but a dynamic and structured lifecycle designed to systematically address uncertainties that could impact an organization's financial health. It's a continuous journey, ensuring resilience and adaptability in volatile markets.\n\n1. **Identification of Financial Risks:** This foundational step involves systematically discovering and defining potential financial risks. It's about looking forward to anticipate what could go wrong and understanding the nature of these threats.\n2. **Measurement of Exposure:** Once identified, risks need to be quantified. This step involves assessing the potential impact and likelihood of each risk event, providing a numerical basis for decision-making.\n3. **Ongoing Monitoring:** Risk is not static; it constantly evolves with market conditions, strategic shifts, and operational changes. Continuous monitoring ensures that the risk profile remains aligned with the organization's risk appetite.\n4. **Control and Mitigation:** The final stage focuses on actively managing and reducing the identified and measured risks. This involves implementing strategies and establishing controls to either prevent adverse events or lessen their impact.\n\nThis process is not linear but continuous, forward-looking, and deeply integrated with strategic decision-making. It forms a cyclical framework where insights from control and mitigation feed back into risk identification, fostering a culture of perpetual risk awareness and proactive management.\n\n## Role of FRM in Organisations\n\nFinancial Risk Management (FRM) plays a central and indispensable role in modern firms, moving beyond a mere compliance function to become a strategic imperative. It systematically identifies, assesses, monitors, and controls financial risks to safeguard an organization's assets and ensure its long-term viability.\n\n- **Preserving shareholder value:** FRM protects the firm's assets and ensures stable earnings by identifying and mitigating potential financial losses, directly contributing to the preservation and growth of shareholder equity.\n- **Supporting strategic planning:** FRM offers crucial insights into risk-adjusted returns, facilitating informed decision-making on investment strategies, market expansion, and product development, aligning with long-term strategic objectives.\n- **Enhancing financial resilience:** Robust FRM practices enable an organization to withstand financial shocks by maintaining adequate capital reserves, managing liquidity, and establishing contingency plans for economic downturns or crises.\n- **Meeting regulatory expectations:** FRM ensures continuous compliance with complex regulatory landscapes, helping firms avoid significant fines, legal penalties, and reputational damage, while fostering accountability.\n- **Improving stakeholder confidence:** An effective FRM framework demonstrates responsible governance to stakeholders, fostering trust, attracting capital, stabilizing business relationships, and enhancing the organization's reputation in the marketplace.\n\nRisk management is a core managerial responsibility, not a support function.",
+            "claims": [],
+            "sources": [],
+            "verification": {
+              "supported": 0,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": null
+            }
+          },
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        },
+        "B": {
+          "asset": {
             "type": "course_content",
             "title": "Nature of Financial Risk",
             "format": "pptx",
@@ -298,12 +543,32 @@
               "ungrounded": 1,
               "unattributed_found": [],
               "checked_at": "2026-06-30T14:47:45+00:00"
-            },
-            "file": null,
-            "status": "done"
+            }
           },
-          {
-            "id": "m1_s1_lo",
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        }
+      }
+    },
+    {
+      "asset_type": "learning_objectives",
+      "required_for_gate": true,
+      "candidates": {
+        "A": {
+          "asset": {
             "type": "learning_objectives",
             "title": "Learning Objectives",
             "format": "docx",
@@ -372,16 +637,69 @@
               "ungrounded": 0,
               "unattributed_found": [],
               "checked_at": "2026-06-30T14:34:53+00:00"
-            },
-            "file": null,
-            "status": "done"
+            }
           },
-          {
-            "id": "m1_s1_summary",
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        },
+        "B": {
+          "asset": {
+            "type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "content": "## Learning Objectives\n\nBy the end of this module, students should be able to:\n\n1. Define Financial Risk Management and explain its scope.\n2. Distinguish clearly between risk and uncertainty.\n3. Identify and classify major categories of financial risk.\n4. Explain the difference between risk measurement and risk management.\n5. Describe the structured risk management process.\n6. Articulate the strategic importance of FRM in modern institutions.\n7. Interpret real-world failures (e.g., Lehman) through a risk lens.\n\n## Learning Outcomes by Topic\n\nBelow are measurable outcomes per section.\n\n**Topic 1 — What Is Financial Risk?**\nStudents should be able to:\n- Explain how financial risk differs from general business risk.\n- Identify financial impact areas (cash flow, capital, valuation).\n- Recognize characteristics of measurable risk.\n- Provide real-world examples of financial risk exposure.\n\n**Topic 2 — Risk vs Uncertainty**\nStudents should be able to:\n- Clearly differentiate between risk and uncertainty.\n- Apply Frank Knight's distinction to modern financial markets.\n- Identify events that fall under measurable risk vs pure uncertainty.\n- Explain why financial models cannot handle true uncertainty.\n\n**Topic 3 — Core Categories of Financial Risk**\nStudents should be able to:\n- Classify risks into market, credit, liquidity, and operational categories.\n- Identify examples of each risk type in different industries.\n- Explain why each category requires distinct measurement tools.\n- Recognize how risks may interact during stress periods.\n\n**Topic 4 — Measuring vs Managing Risk**\nStudents should be able to:\n- Distinguish between quantifying exposure and making decisions.\n- Explain the limitations of risk models.\n- Describe why managerial judgment remains essential.\n\n**Topic 5 — Risk Management Process**\nStudents should be able to:\n- Describe the four-stage risk lifecycle.\n- Explain why risk management is continuous.\n- Understand the feedback loop nature of exposure and mitigation.\n- Link risk management to governance and oversight.\n\n**Topic 6 — Strategic Importance of FRM**\nStudents should be able to:\n- Explain how FRM preserves shareholder value.\n- Describe its role in regulatory compliance.\n- Connect FRM with strategic planning and resilience.\n- Articulate why risk management is a core managerial responsibility.",
+            "claims": [],
+            "sources": [],
+            "verification": {
+              "supported": 0,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": null
+            }
+          },
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        }
+      }
+    },
+    {
+      "asset_type": "summary",
+      "required_for_gate": true,
+      "candidates": {
+        "A": {
+          "asset": {
             "type": "summary",
             "title": "Summary",
             "format": "docx",
-            "content": "# Nature of Financial Risk \u2014 Study Summary\n\n## Learning Objectives\n\nBy the end of this subtopic you should be able to:\n\n1. Define financial risk and separate measurable risk from uncertainty.\n2. Name and define the four core risk categories.\n3. Explain how those categories interact and amplify one another.\n4. Use the Lehman Brothers collapse to illustrate layered risk.\n\n**Foundations**\n- State what financial risk is and why exposure, not just realized loss, is the focus.\n- Distinguish Knightian measurable risk from deeper uncertainty.\n- Explain why measurement enables but never fully replaces management judgment.\n\n**Core Risk Categories**\n- Define credit, liquidity, market, and operational risk.\n- Show that credit exposure extends well beyond ordinary loans.\n- Explain why a solvent-looking institution can still fail on liquidity.\n- Contrast market risk and operational risk by their sources.\n\n**Layered Risk**\n- Describe how a shock in one category can amplify the others.\n- Explain liquidity stress as a common transmission mechanism.\n\n**Lehman Application**\n- Map Lehman's failure across market, funding, solvency, and governance pressures.\n\n## Key Ideas\n\n- Financial risk is the possibility of loss from exposure to market movements, counterparty default, funding shortfalls, or operational failure; the goal is to keep exposure within deliberate limits, not to eliminate it.\n- Frank Knight separated risk, which can be measured or assigned probabilities, from uncertainty, which cannot be reduced to reliable probabilities. Quantitative tools work inside the measurable zone; beyond it, judgment must take over.\n- Credit risk is the potential that a borrower or counterparty fails to meet agreed obligations, and it arises far beyond loans \u2014 in derivatives, settlement, guarantees, and more.\n- Liquidity risk is the danger that an institution cannot fund assets or meet obligations on time without unacceptable losses; it is not the same as insolvency.\n- Market risk is loss from moves in market factors (rates, FX, spreads, equities, commodities, volatility) and is essentially continuous.\n- Operational risk is loss from failed processes, people, systems, or external events, commonly including legal risk; its source differs from price moves or default, so it needs different controls.\n- The categories interact. Liquidity stress often transmits shocks: forced asset sales push prices down, deepen solvency concerns, and frighten lenders, tightening funding further.\n- Lehman Brothers shows the layered pattern: doubtful real-estate and mortgage exposures (market and credit), heavy short-term repo reliance on illiquid collateral (liquidity and leverage), and disclosure and risk-management weaknesses (operational and reputational), each feeding the next.\n\n## Key Terms\n\n- **Financial risk** \u2014 the possibility of loss from exposure to market movements, counterparty default, funding shortfalls, or operational failure.\n- **Risk vs uncertainty** \u2014 risk is measurable or probabilistic; uncertainty cannot be assigned reliable probabilities.\n- **Credit risk** \u2014 the potential that a borrower or counterparty fails to meet obligations in accordance with agreed terms.\n- **Liquidity risk** \u2014 the risk that a bank cannot fund assets or meet obligations as they come due without unacceptable losses.\n- **Market risk** \u2014 the risk of loss from changes in market risk factors affecting positions.\n- **Operational risk** \u2014 the risk of loss from inadequate or failed internal processes, people, and systems, or from external events.\n- **Layered risk** \u2014 the way risk categories interact so that a shock in one amplifies the others.\n\n## Takeaway\n\nThe four categories give you a shared language, but their real significance lies in how they reinforce one another. In a crisis the decisive question is rarely \"which single risk?\" but \"how are the risks reinforcing one another, and where does the chain break?\"",
+            "content": "# Nature of Financial Risk — Study Summary\n\n## Learning Objectives\n\nBy the end of this subtopic you should be able to:\n\n1. Define financial risk and separate measurable risk from uncertainty.\n2. Name and define the four core risk categories.\n3. Explain how those categories interact and amplify one another.\n4. Use the Lehman Brothers collapse to illustrate layered risk.\n\n**Foundations**\n- State what financial risk is and why exposure, not just realized loss, is the focus.\n- Distinguish Knightian measurable risk from deeper uncertainty.\n- Explain why measurement enables but never fully replaces management judgment.\n\n**Core Risk Categories**\n- Define credit, liquidity, market, and operational risk.\n- Show that credit exposure extends well beyond ordinary loans.\n- Explain why a solvent-looking institution can still fail on liquidity.\n- Contrast market risk and operational risk by their sources.\n\n**Layered Risk**\n- Describe how a shock in one category can amplify the others.\n- Explain liquidity stress as a common transmission mechanism.\n\n**Lehman Application**\n- Map Lehman's failure across market, funding, solvency, and governance pressures.\n\n## Key Ideas\n\n- Financial risk is the possibility of loss from exposure to market movements, counterparty default, funding shortfalls, or operational failure; the goal is to keep exposure within deliberate limits, not to eliminate it.\n- Frank Knight separated risk, which can be measured or assigned probabilities, from uncertainty, which cannot be reduced to reliable probabilities. Quantitative tools work inside the measurable zone; beyond it, judgment must take over.\n- Credit risk is the potential that a borrower or counterparty fails to meet agreed obligations, and it arises far beyond loans — in derivatives, settlement, guarantees, and more.\n- Liquidity risk is the danger that an institution cannot fund assets or meet obligations on time without unacceptable losses; it is not the same as insolvency.\n- Market risk is loss from moves in market factors (rates, FX, spreads, equities, commodities, volatility) and is essentially continuous.\n- Operational risk is loss from failed processes, people, systems, or external events, commonly including legal risk; its source differs from price moves or default, so it needs different controls.\n- The categories interact. Liquidity stress often transmits shocks: forced asset sales push prices down, deepen solvency concerns, and frighten lenders, tightening funding further.\n- Lehman Brothers shows the layered pattern: doubtful real-estate and mortgage exposures (market and credit), heavy short-term repo reliance on illiquid collateral (liquidity and leverage), and disclosure and risk-management weaknesses (operational and reputational), each feeding the next.\n\n## Key Terms\n\n- **Financial risk** — the possibility of loss from exposure to market movements, counterparty default, funding shortfalls, or operational failure.\n- **Risk vs uncertainty** — risk is measurable or probabilistic; uncertainty cannot be assigned reliable probabilities.\n- **Credit risk** — the potential that a borrower or counterparty fails to meet obligations in accordance with agreed terms.\n- **Liquidity risk** — the risk that a bank cannot fund assets or meet obligations as they come due without unacceptable losses.\n- **Market risk** — the risk of loss from changes in market risk factors affecting positions.\n- **Operational risk** — the risk of loss from inadequate or failed internal processes, people, and systems, or from external events.\n- **Layered risk** — the way risk categories interact so that a shock in one amplifies the others.\n\n## Takeaway\n\nThe four categories give you a shared language, but their real significance lies in how they reinforce one another. In a crisis the decisive question is rarely \"which single risk?\" but \"how are the risks reinforcing one another, and where does the chain break?\"",
             "claims": [
               {
                 "id": "cl1",
@@ -478,12 +796,65 @@
               "ungrounded": 0,
               "unattributed_found": [],
               "checked_at": "2026-06-30T14:35:37+00:00"
-            },
-            "file": null,
-            "status": "done"
+            }
           },
-          {
-            "id": "m1_s1_case",
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        },
+        "B": {
+          "asset": {
+            "type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "content": "## End-of-Chapter Summary\n\nThis module established the foundation of Financial Risk Management.\n\nKey ideas include:\n- Financial risk refers to measurable uncertainty with financial consequences.\n- Risk differs fundamentally from uncertainty.\n- Financial risks are categorized into market, credit, liquidity, and operational risk.\n- Risk measurement quantifies exposure; risk management determines action.\n- The risk management process is structured, continuous, and forward-looking.\n- Modern institutions rely on FRM as a strategic function, not merely a compliance requirement.\n\nThis chapter provides the conceptual lens through which all subsequent quantitative and applied modules will be understood.\n\n## Key Terms & Concepts Introduced\n\n- Financial Risk\n- Risk vs Uncertainty\n- Knightian Uncertainty\n- Risk-Uncertainty Spectrum\n- Market Risk\n- Credit Risk\n- Liquidity Risk\n- Operational Risk\n- Probability of Default (PD)\n- Loss Given Default (LGD)\n- Exposure at Default (EAD)\n- Risk Measurement\n- Risk Management\n- Risk Appetite\n- Risk Capacity\n- Risk Governance\n- Chief Risk Officer (CRO)\n- Risk Management Lifecycle",
+            "claims": [],
+            "sources": [],
+            "verification": {
+              "supported": 0,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": null
+            }
+          },
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        }
+      }
+    },
+    {
+      "asset_type": "case_study",
+      "required_for_gate": true,
+      "candidates": {
+        "A": {
+          "asset": {
             "type": "case_study",
             "title": "The Lehman Brothers Collapse",
             "format": "pptx",
@@ -596,180 +967,69 @@
               "ungrounded": 0,
               "unattributed_found": [],
               "checked_at": "2026-06-30T14:25:42+00:00"
-            },
-            "file": null,
-            "status": "done"
+            }
           },
-          {
-            "id": "m1_s1_person",
-            "type": "important_person",
-            "title": "Frank Knight \u2014 The Foundation of Risk Theory",
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        },
+        "B": {
+          "asset": {
+            "type": "case_study",
+            "title": "The Lehman Brothers Collapse",
             "format": "pptx",
-            "content": "# Frank Knight \u2014 The Foundation of Risk Theory\n\n## Slide 1 \u2014 Why This Person Matters\n\nWhen this course draws a line between *measurable risk* and deeper *uncertainty*, it is using a distinction that traces back to one economist: Frank H. Knight. Almost everything you will learn about when quantitative risk tools work \u2014 and when they quietly stop working \u2014 rests on the boundary he named.\n\nThis profile gives you the human entry point to that idea so the rest of the subtopic clicks into place.\n\n## Slide 2 \u2014 The Big Idea in One Line\n\nKnight separated two things that everyday language blurs together:\n\n- **Risk** \u2014 uncertainty that *can* be measured or assigned probabilities.\n- **Uncertainty** \u2014 the deeper kind that *cannot* be reduced to reliable probabilities.\n\nIn his own framing, risk means a quantity susceptible of measurement. That single sentence is the seed of the modern measurable-risk zone.\n\n## Slide 3 \u2014 The Work Behind the Idea\n\nThe distinction comes from Knight's book *Risk, Uncertainty, and Profit*, published in 1921. It is the authoritative source for the risk-versus-uncertainty divide that opens this subtopic. The book reserves the word \"uncertainty\" specifically for events that cannot be assigned dependable probabilities.\n\n## Slide 4 \u2014 Why It Anchors Financial Risk Management\n\nKnight's boundary explains the reach *and* the limits of the tools in this course:\n\n- Model-based tools \u2014 value-at-risk, stress testing, scenario analysis, credit models, and hedging \u2014 all need some estimate of probability, exposure, or impact.\n- Where those estimates are available and reasonable, quantitative methods are powerful and operate inside the measurable-risk zone.\n- Where probabilities genuinely cannot be estimated, the problem shifts to judgment-heavy uncertainty.\n\n## Slide 5 \u2014 The Lesson for a Risk Manager\n\nBecause some future events simply cannot be reduced to reliable probabilities, human judgment never fully disappears. Measurement *enables* management; it does not replace it. The risk manager who forgets where the measurable zone ends is the one most likely to trust numbers that no longer apply.\n\n## Slide 6 \u2014 Connecting Forward\n\nKeep Knight's line in mind as you meet credit, liquidity, market, and operational risk. Each is manageable to the degree it can be measured \u2014 and the Lehman story later in this subtopic shows what happens when confidence outruns what the numbers could actually support.",
-            "claims": [
-              {
-                "id": "c_1",
-                "text": "Frank H. Knight distinguished risk, which is uncertainty that can be measured or assigned probabilities, from uncertainty that cannot be reduced to reliable probabilities.",
-                "source_id": "g1",
-                "support": "supported",
-                "supporting_excerpt": "\"Risk\" is uncertainty that can be measured or assigned probabilities.",
-                "note": "Source defines risk as measurable uncertainty and distinguishes Knightian uncertainty as not measurable."
-              },
-              {
-                "id": "c_2",
-                "text": "In Knight's framing, risk means a quantity susceptible of measurement.",
-                "source_id": "g1",
-                "support": "supported",
-                "supporting_excerpt": "\"risk means ... a quantity susceptible of measurement\"",
-                "note": "Direct quoted anchor matches the claim."
-              },
-              {
-                "id": "c_3",
-                "text": "Knight's distinction comes from his work Risk, Uncertainty, and Profit, originally published in 1921.",
-                "source_id": "g1",
-                "support": "supported",
-                "supporting_excerpt": "Frank H. Knight, Risk, Uncertainty, and Profit, 1921",
-                "note": "Source confirms title and 1921 publication."
-              },
-              {
-                "id": "c_4",
-                "text": "Knight reserved the term 'uncertainty' for events that cannot be assigned dependable probabilities, distinct from measurable risk.",
-                "source_id": "g1",
-                "support": "supported",
-                "supporting_excerpt": "reserves \"uncertainty\" for the latter",
-                "note": "Source states Knight reserves 'uncertainty' for non-quantitative events, distinct from measurable risk."
-              },
-              {
-                "id": "c_5",
-                "text": "Model-based tools such as value-at-risk, stress testing, scenario analysis, credit models, and hedging require some estimate of probability, exposure, or impact.",
-                "source_id": "g1",
-                "support": "supported",
-                "supporting_excerpt": "Model-based tools such as VaR, stress testing, scenario analysis, credit\n  models, and hedging need some estimate of probability, exposure, or impact.",
-                "note": "Direct match to the listed tools and their requirements."
-              },
-              {
-                "id": "c_6",
-                "text": "Financial risk management mainly operates in the measurable-risk zone, and when probabilities cannot be estimated the issue becomes judgment-heavy uncertainty.",
-                "source_id": "g1",
-                "support": "supported",
-                "supporting_excerpt": "Financial risk management mainly operates in the measurable-risk zone.",
-                "note": "Both parts supported: measurable-risk zone and judgment-heavy uncertainty when probabilities cannot be estimated."
-              },
-              {
-                "id": "c_7",
-                "text": "Some future events cannot be reduced to reliable probabilities, so human judgment remains important where uncertainty cannot be reliably modeled.",
-                "source_id": "g1",
-                "support": "supported",
-                "supporting_excerpt": "Some future events cannot be reduced to reliable probabilities.",
-                "note": "Source supports both the unmeasurable events and ongoing importance of human judgment."
-              }
-            ],
-            "sources": [
-              "g1"
-            ],
+            "content": "## The Lehman Brothers Collapse\n\nA case study in Financial Risk Management — exploring how leverage, liquidity, and governance failures brought down a 158-year-old institution.\n\n## Case Introduction\n\nIn September 2008, Lehman Brothers — a 158-year-old investment bank — filed for bankruptcy. At the time, it was the fourth-largest investment bank in the United States.\n\nThe question is not whether markets were volatile. Markets are always volatile. The central question: Why did Lehman fail?\n\n## Business Model\n\nLehman operated heavily in mortgage-backed securities. It borrowed short-term funds from the repo market and invested in long-term, illiquid mortgage assets.\n\n**The Maturity Mismatch:** short-term liabilities, long-term assets. This created a critical structural vulnerability at the heart of its balance sheet — funding that could vanish overnight, tied to assets that could not be sold quickly. On one side: concentrated MBS holdings and illiquid mortgage assets (high long-term assets). On the other: overnight repo borrowing and short-term funding reliance (high short-term liabilities).\n\n## Leverage\n\nLehman's leverage ratio was roughly 30:1 — for every $1 of equity, Lehman held over $30 of assets. As the 4th-largest US bank, Lehman's scale made its leverage systemically dangerous.\n- Good times: High leverage magnifies returns — a small gain on assets produces outsized equity returns.\n- Bad times: High leverage equally magnifies losses — a small decline in asset value can wipe out equity entirely.\n\n## Market Risk\n\nWhen housing prices began declining, the value of mortgage-backed securities fell. That directly exposed Lehman to market risk — the risk that asset values move against a firm's positions. Losses mounted on the balance sheet as the housing market deteriorated through 2007 and into 2008.\n\n**Key insight:** Market risk alone does not cause collapse. It was the combination of risks that proved fatal.\n\n## Liquidity Risk\n\nLehman did not suddenly become insolvent overnight. It became illiquid. And illiquidity kills faster than insolvency.\n1. Confidence erodes: Counterparties began to lose confidence in Lehman's balance sheet as losses mounted.\n2. Funding withdrawn: Short-term lenders refused to roll over funding — the repo market dried up almost overnight.\n3. Collapse: Without short-term funding, Lehman could not operate — despite holding long-term assets.\n\n## Risk Management Failure\n\nThe firm had models. It had VaR calculations. It had internal controls. Yet three critical failures occurred:\n1. Excessive Leverage: Leverage exceeded the firm's capacity to absorb losses under stress scenarios.\n2. Tail Risk Underestimated: Models failed to account for extreme, low-probability but high-impact events.\n3. Liquidity Dependency: Over-reliance on short-term funding with no adequate contingency plan.\n\nThis was not a failure of mathematics. It was a failure of risk alignment.\n\n## Teaching Transition\n\nLehman demonstrates that risk exists in layers — and that each layer interacts with the others:\n- Market Risk: Triggered losses as housing prices declined and MBS values fell.\n- Liquidity Risk: Accelerated collapse as short-term funding was withdrawn by counterparties.\n- Governance Failure: Amplified exposure by allowing excessive leverage and poor risk alignment.\n\nThis is why Financial Risk Management is not optional — it is structural.",
+            "claims": [],
+            "sources": [],
             "verification": {
-              "supported": 7,
+              "supported": 0,
               "partial": 0,
               "unsupported": 0,
               "ungrounded": 0,
               "unattributed_found": [],
-              "checked_at": "2026-06-30T14:25:42+00:00"
-            },
-            "file": null,
-            "status": "done"
+              "checked_at": null
+            }
           },
-          {
-            "id": "m1_s1_dyk",
-            "type": "did_you_know",
-            "title": "The CRO Role Barely Existed Before the 1990s",
-            "format": "pptx",
-            "content": "# Did You Know? The CRO Role Barely Existed Before the 1990s\n\n## A Job Title Younger Than Most of Your Professors\n\nThe four risk categories you just met\u2014credit, liquidity, market, and operational\u2014feel timeless. But the executive whose entire job is to see them *together* is surprisingly new. The role of Chief Risk Officer scarcely existed before the early 1990s and was not established in most institutions before then.\n\n## The Origin Story\n\n- The CRO role is widely credited to James Lam, who was hired by GE Capital in 1993 to help establish a new capital-markets business and went on to define and develop the position.\n- U.S. financial-services institutions led the broader adoption of the role through the mid-1990s.\n- In other words, for most of modern finance, no single executive owned the institution-wide view of risk.\n\n## Why This Connects to the Lesson\n\nThe whole point of this subtopic is that risk categories do not live in separate boxes\u2014a shock in one amplifies the others. The CRO role exists for exactly that reason. It emerged from the need to manage interacting risk categories at the institution level rather than as disconnected silos. As one contemporaneous account put it bluntly:\n\n> \"Credit risk, market risk, operational risk, are highly related.\"\n\nThat single sentence is the layered-risk idea, stated as a hiring mandate.\n\n## From Back Office to the Boardroom\n\n- A CRO integrates credit, market, and operational risk instead of treating each as a stand-alone silo.\n- Raising risk leadership to a C-level position makes it part of executive decision-making rather than only a back- or middle-office function.\n- Adoption was driven by demand from shareholders, regulators, and senior managers for risk information aggregated across the business.\n\n## The Takeaway\n\nWhen you study Lehman and watch market losses bleed into a funding crisis bleed into a confidence collapse, remember: the institutional response to that very feedback loop was to invent a job. The CRO is organizational proof that the decisive question is rarely \"which single risk?\" but \"how are the risks reinforcing one another?\"",
-            "claims": [
-              {
-                "id": "cl1",
-                "text": "The formal Chief Risk Officer role scarcely existed before the early 1990s and was not established in most institutions before then.",
-                "source_id": "g6",
-                "support": "supported",
-                "supporting_excerpt": "The formal CRO role emerged in the early 1990s and was not established in\n  most institutions before then.",
-                "note": "Source directly supports that the role scarcely existed before the early 1990s."
-              },
-              {
-                "id": "cl2",
-                "text": "James Lam is credited with defining and developing the CRO role when GE Capital hired him in 1993 to establish a new capital-markets business.",
-                "source_id": "g6",
-                "support": "supported",
-                "supporting_excerpt": "James Lam is credited with defining and developing the CRO role when GE\n  Capital hired him in 1993 to establish a new capital-markets business.",
-                "note": "Exact match to source grounding point."
-              },
-              {
-                "id": "cl3",
-                "text": "U.S. financial-services institutions led broader adoption of the CRO role during the mid-1990s.",
-                "source_id": "g6",
-                "support": "supported",
-                "supporting_excerpt": "U.S. financial-services institutions led adoption in the mid-1990s.",
-                "note": "Source confirms US financial-services led mid-1990s adoption."
-              },
-              {
-                "id": "cl4",
-                "text": "The CRO role responds to the need to manage interacting risk categories at the institution level rather than as disconnected silos.",
-                "source_id": "g6",
-                "support": "supported",
-                "supporting_excerpt": "The CRO role responds to the need to manage interacting risk categories at\n  institution level.",
-                "note": "Source supports the institution-level interacting-risk rationale."
-              },
-              {
-                "id": "cl5",
-                "text": "A contemporaneous account stated that credit risk, market risk, and operational risk are highly related.",
-                "source_id": "g6",
-                "support": "supported",
-                "supporting_excerpt": "\"Credit risk, market risk, operational risk, are highly related\"",
-                "note": "Direct quoted anchor in source."
-              },
-              {
-                "id": "cl6",
-                "text": "A CRO integrates credit, market, and operational risk instead of managing them as disconnected silos.",
-                "source_id": "g6",
-                "support": "supported",
-                "supporting_excerpt": "The role integrates credit, market, and operational risk instead of managing\n  them as disconnected silos.",
-                "note": "Exact match to source grounding point."
-              },
-              {
-                "id": "cl7",
-                "text": "Raising risk management to a C-level position makes it part of executive decision-making rather than only a back- or middle-office function.",
-                "source_id": "g6",
-                "support": "supported",
-                "supporting_excerpt": "Raising risk management to a C-level position makes it part of executive\n  decision-making rather than only a back- or middle-office function.",
-                "note": "Exact match to source grounding point."
-              },
-              {
-                "id": "cl8",
-                "text": "Adoption of the CRO role was linked to demand from shareholders, regulators, and senior managers for risk information aggregated across the business.",
-                "source_id": "g6",
-                "support": "supported",
-                "supporting_excerpt": "The article links adoption to demand from shareholders, regulators, and\n  senior managers for risk information aggregated across the business.",
-                "note": "Exact match to source grounding point."
-              }
-            ],
-            "sources": [
-              "g6"
-            ],
-            "verification": {
-              "supported": 8,
-              "partial": 0,
-              "unsupported": 0,
-              "ungrounded": 0,
-              "unattributed_found": [],
-              "checked_at": "2026-06-30T14:25:42+00:00"
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
             },
-            "file": null,
-            "status": "done"
-          },
-          {
-            "id": "m1_s1_assess",
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        }
+      }
+    },
+    {
+      "asset_type": "assessment",
+      "required_for_gate": true,
+      "candidates": {
+        "A": {
+          "asset": {
             "type": "assessment",
             "title": "Assessment",
             "format": "pptx",
-            "content": "# Assessment: Nature of Financial Risk\n\n*Postgraduate self-assessment. Approximately 30 minutes. Total: 100 points.*\n\n---\n\n## Section A \u2014 Multiple Choice (7 items, 10 points each, 70 points)\n\nSelect the single best answer.\n\n**Q1.** Which statement best captures what \"financial risk\" means as introduced in this subtopic?\n\n- A. A guaranteed bad outcome that the institution must absorb.\n- B. The possibility of loss arising from exposure to a range of outcomes, some adverse, from market movements, counterparty default, funding shortfalls, or operational failure.\n- C. Any event that a quantitative model cannot price.\n- D. The certainty that prices will fall over a defined horizon.\n\n**Q2.** According to Frank Knight's distinction used in the content, \"risk\" differs from \"uncertainty\" because:\n\n- A. Risk applies only to credit exposures while uncertainty applies to markets.\n- B. Risk can be measured or assigned probabilities, whereas uncertainty cannot be reduced to reliable probabilities in the same way.\n- C. Uncertainty is always larger in magnitude than risk.\n- D. Risk is irrational and uncertainty is rational.\n\n**Q3.** A desk claims its model shows a \"zero probability\" of a 40% one-day move. The most defensible interpretation is:\n\n- A. The move is impossible and can be ignored.\n- B. The model has fully eliminated uncertainty for that book.\n- C. The extreme, poorly-estimable tail should be treated as uncertainty requiring judgment, not as precisely measured risk.\n- D. The desk has measured the tail risk accurately.\n\n**Q4.** Which of the following is the clearest example of credit (counterparty) risk arising without any loan on the books?\n\n- A. Equity prices fall 5% overnight on a trading book.\n- B. A settlement system outage causes a missed payment and penalties.\n- C. A swap counterparty defaults when the swap has positive value to the bank, causing loss of replacement cost.\n- D. Overnight lenders refuse to roll a firm's funding.\n\n**Q5.** Why can an institution that appears solvent still fail within a week?\n\n- A. Because its assets have permanently lost all value.\n- B. Because obligations come due before illiquid assets can be sold at acceptable prices.\n- C. Because operational risk always converts directly into insolvency.\n- D. Because market risk is the only category that causes failure.\n\n**Q6.** A trading desk holds foreign-currency bonds. An overnight move in exchange rates and credit spreads reduces the portfolio's value before any borrower defaults. This loss is best classified as:\n\n- A. Operational risk.\n- B. Credit risk.\n- C. Liquidity risk.\n- D. Market risk.\n\n**Q7.** Which pairing of risk category and primary source of loss is correct?\n\n- A. Operational risk \u2014 movement in prices, rates, and volatility.\n- B. Liquidity risk \u2014 failed internal processes, people, and systems.\n- C. Operational risk \u2014 failed processes, people, systems, or external events, commonly including legal risk.\n- D. Market risk \u2014 counterparty failure to perform.\n\n---\n\n## Section B \u2014 Short Application (2 prompts, 15 points each, 30 points)\n\n**Q8.** *(Layered-risk analysis.)* Describe the step-by-step feedback loop through which a market shock can escalate into a solvency and confidence crisis. Identify at least four risk categories and explain how each links to the next. (Aim for 120\u2013180 words.)\n\n**Q9.** *(Lehman application.)* Using the Lehman Brothers collapse, explain why the failure is described as \"layered\" rather than belonging to a single risk category. Reference at least two specific structural weaknesses and map them to risk categories, then identify which single structural fix would most reduce the feedback loop and justify your choice. (Aim for 120\u2013180 words.)",
+            "content": "# Assessment: Nature of Financial Risk\n\n*Postgraduate self-assessment. Approximately 30 minutes. Total: 100 points.*\n\n---\n\n## Section A — Multiple Choice (7 items, 10 points each, 70 points)\n\nSelect the single best answer.\n\n**Q1.** Which statement best captures what \"financial risk\" means as introduced in this subtopic?\n\n- A. A guaranteed bad outcome that the institution must absorb.\n- B. The possibility of loss arising from exposure to a range of outcomes, some adverse, from market movements, counterparty default, funding shortfalls, or operational failure.\n- C. Any event that a quantitative model cannot price.\n- D. The certainty that prices will fall over a defined horizon.\n\n**Q2.** According to Frank Knight's distinction used in the content, \"risk\" differs from \"uncertainty\" because:\n\n- A. Risk applies only to credit exposures while uncertainty applies to markets.\n- B. Risk can be measured or assigned probabilities, whereas uncertainty cannot be reduced to reliable probabilities in the same way.\n- C. Uncertainty is always larger in magnitude than risk.\n- D. Risk is irrational and uncertainty is rational.\n\n**Q3.** A desk claims its model shows a \"zero probability\" of a 40% one-day move. The most defensible interpretation is:\n\n- A. The move is impossible and can be ignored.\n- B. The model has fully eliminated uncertainty for that book.\n- C. The extreme, poorly-estimable tail should be treated as uncertainty requiring judgment, not as precisely measured risk.\n- D. The desk has measured the tail risk accurately.\n\n**Q4.** Which of the following is the clearest example of credit (counterparty) risk arising without any loan on the books?\n\n- A. Equity prices fall 5% overnight on a trading book.\n- B. A settlement system outage causes a missed payment and penalties.\n- C. A swap counterparty defaults when the swap has positive value to the bank, causing loss of replacement cost.\n- D. Overnight lenders refuse to roll a firm's funding.\n\n**Q5.** Why can an institution that appears solvent still fail within a week?\n\n- A. Because its assets have permanently lost all value.\n- B. Because obligations come due before illiquid assets can be sold at acceptable prices.\n- C. Because operational risk always converts directly into insolvency.\n- D. Because market risk is the only category that causes failure.\n\n**Q6.** A trading desk holds foreign-currency bonds. An overnight move in exchange rates and credit spreads reduces the portfolio's value before any borrower defaults. This loss is best classified as:\n\n- A. Operational risk.\n- B. Credit risk.\n- C. Liquidity risk.\n- D. Market risk.\n\n**Q7.** Which pairing of risk category and primary source of loss is correct?\n\n- A. Operational risk — movement in prices, rates, and volatility.\n- B. Liquidity risk — failed internal processes, people, and systems.\n- C. Operational risk — failed processes, people, systems, or external events, commonly including legal risk.\n- D. Market risk — counterparty failure to perform.\n\n---\n\n## Section B — Short Application (2 prompts, 15 points each, 30 points)\n\n**Q8.** *(Layered-risk analysis.)* Describe the step-by-step feedback loop through which a market shock can escalate into a solvency and confidence crisis. Identify at least four risk categories and explain how each links to the next. (Aim for 120–180 words.)\n\n**Q9.** *(Lehman application.)* Using the Lehman Brothers collapse, explain why the failure is described as \"layered\" rather than belonging to a single risk category. Reference at least two specific structural weaknesses and map them to risk categories, then identify which single structural fix would most reduce the feedback loop and justify your choice. (Aim for 120–180 words.)",
             "claims": [
               {
                 "id": "c-q1",
@@ -867,12 +1127,336 @@
               "unattributed_found": [],
               "checked_at": "2026-06-30T14:48:58+00:00"
             },
-            "file": null,
-            "status": "done",
-            "solution": "# Teacher Answer Key: Nature of Financial Risk\n\n*Total 100 points. Section A: 7 \u00d7 10 = 70 points. Section B: 2 \u00d7 15 = 30 points.*\n\n---\n\n## Section A \u2014 Multiple Choice (10 points each)\n\n**Q1 \u2014 Correct: B.** Financial risk is exposure to a *range* of outcomes, some adverse, arising from market movements, counterparty default, funding shortfalls, or operational failure. It is not a guaranteed bad outcome (A, D), and it is broader than \"anything a model cannot price\" (C). Grounded in claim c-q1.\n\n**Q2 \u2014 Correct: B.** Knight defined risk as measurable/probabilistic uncertainty and reserved \"uncertainty\" for what cannot be reduced to reliable probabilities (claim c-q2, source g1). Distractors A, C, and D misstate the distinction.\n\n**Q3 \u2014 Correct: C.** A claimed \"zero probability\" of an extreme move signals a poorly-estimable tail that belongs in the uncertainty zone requiring judgment, not precise measurement. Models quantify only the estimable part of the future (claim c-q3, g1). A treats the tail as impossible; B and D overclaim model power.\n\n**Q4 \u2014 Correct: C.** A defaulting swap counterparty with the swap in-the-money to the bank produces loss of replacement cost \u2014 credit (counterparty) risk from a derivative, not a loan (claim c-q4, g2). A and D are market and liquidity examples; B is operational.\n\n**Q5 \u2014 Correct: B.** Liquidity risk is distinct from insolvency: obligations fall due before illiquid assets can be sold at acceptable prices, so a positive-net-worth firm can fail this week (claim c-q5, g3). A, C, and D misattribute the cause.\n\n**Q6 \u2014 Correct: D.** Loss from FX and credit-spread movement before any default is market risk (claim c-q6, g4). No process failure (A), no counterparty default (B), and no funding failure (C) occurred.\n\n**Q7 \u2014 Correct: C.** Operational risk = failed processes, people, systems, or external events, commonly including legal risk (claim c-q7, g4). A swaps operational with market sources; B swaps liquidity with operational; D misattributes counterparty failure to market risk.\n\n---\n\n## Section B \u2014 Short Application (15 points each)\n\n**Q8 \u2014 Model answer (layered-risk loop).** A strong response traces the self-reinforcing sequence: (1) **Market shock** \u2014 asset prices fall, reducing the value of collateral and holdings (market risk). (2) **Funding stress** \u2014 lenders demand more collateral or refuse to roll short-term funding (liquidity risk). (3) **Forced sales** \u2014 the firm sells assets quickly to raise cash, realizing losses at depressed prices (market risk feeding liquidity-driven sales). (4) **Solvency concern** \u2014 realized losses erode capital and counterparties question solvency (credit/counterparty risk rises). (5) **Confidence collapse** \u2014 more funders withdraw, and control/governance weaknesses (operational/governance risk) slow the firm's response, accelerating the loop. Grounded in claim c-q8 (g5). \n\n*Scoring guidance (15 pts):* up to 8 pts for a correct ordered loop; up to 4 pts for naming at least four categories (market, liquidity, credit, operational); up to 3 pts for explaining how each link triggers the next (especially the liquidity-to-forced-sale and forced-sale-to-solvency transitions). Deduct for treating any single category as the sole cause.\n\n**Q9 \u2014 Model answer (Lehman).** Lehman is \"layered\" because no single category explains the failure. Falling mortgage-related valuations (market risk) undermined collateral; heavy reliance on short-term, overnight repo secured by illiquid assets (liquidity risk) \u2014 including $7.8 billion commercial paper and $197 billion of repos at end-Q1 2008, with 62% of liquidity by mid-June 2008 depending on borrowing against nontraditional securities \u2014 converted the valuation problem into a funding crisis; realized losses and counterparty fears amplified solvency concerns (credit risk); and the OTS July 2008 warning of material commercial-real-estate overexposure and major risk-management failings reflects governance/operational weakness. The single most effective structural fix is reducing reliance on overnight, illiquid-collateral repo funding, because it breaks the liquidity-to-forced-sale link that drives the loop. Grounded in claims c-q8, c-q9a, c-q9b (g5).\n\n*Scoring guidance (15 pts):* up to 6 pts for explaining the layered/multi-category framing; up to 5 pts for at least two specific structural weaknesses mapped to categories (use of figures such as the repo reliance, 62% nontraditional-collateral figure, or OTS findings strengthens the answer); up to 4 pts for a justified single fix targeting overnight illiquid-collateral funding. Award partial credit for other defensible fixes only if the justification correctly ties to breaking the feedback loop."
+            "solution": "# Teacher Answer Key: Nature of Financial Risk\n\n*Total 100 points. Section A: 7 × 10 = 70 points. Section B: 2 × 15 = 30 points.*\n\n---\n\n## Section A — Multiple Choice (10 points each)\n\n**Q1 — Correct: B.** Financial risk is exposure to a *range* of outcomes, some adverse, arising from market movements, counterparty default, funding shortfalls, or operational failure. It is not a guaranteed bad outcome (A, D), and it is broader than \"anything a model cannot price\" (C). Grounded in claim c-q1.\n\n**Q2 — Correct: B.** Knight defined risk as measurable/probabilistic uncertainty and reserved \"uncertainty\" for what cannot be reduced to reliable probabilities (claim c-q2, source g1). Distractors A, C, and D misstate the distinction.\n\n**Q3 — Correct: C.** A claimed \"zero probability\" of an extreme move signals a poorly-estimable tail that belongs in the uncertainty zone requiring judgment, not precise measurement. Models quantify only the estimable part of the future (claim c-q3, g1). A treats the tail as impossible; B and D overclaim model power.\n\n**Q4 — Correct: C.** A defaulting swap counterparty with the swap in-the-money to the bank produces loss of replacement cost — credit (counterparty) risk from a derivative, not a loan (claim c-q4, g2). A and D are market and liquidity examples; B is operational.\n\n**Q5 — Correct: B.** Liquidity risk is distinct from insolvency: obligations fall due before illiquid assets can be sold at acceptable prices, so a positive-net-worth firm can fail this week (claim c-q5, g3). A, C, and D misattribute the cause.\n\n**Q6 — Correct: D.** Loss from FX and credit-spread movement before any default is market risk (claim c-q6, g4). No process failure (A), no counterparty default (B), and no funding failure (C) occurred.\n\n**Q7 — Correct: C.** Operational risk = failed processes, people, systems, or external events, commonly including legal risk (claim c-q7, g4). A swaps operational with market sources; B swaps liquidity with operational; D misattributes counterparty failure to market risk.\n\n---\n\n## Section B — Short Application (15 points each)\n\n**Q8 — Model answer (layered-risk loop).** A strong response traces the self-reinforcing sequence: (1) **Market shock** — asset prices fall, reducing the value of collateral and holdings (market risk). (2) **Funding stress** — lenders demand more collateral or refuse to roll short-term funding (liquidity risk). (3) **Forced sales** — the firm sells assets quickly to raise cash, realizing losses at depressed prices (market risk feeding liquidity-driven sales). (4) **Solvency concern** — realized losses erode capital and counterparties question solvency (credit/counterparty risk rises). (5) **Confidence collapse** — more funders withdraw, and control/governance weaknesses (operational/governance risk) slow the firm's response, accelerating the loop. Grounded in claim c-q8 (g5). \n\n*Scoring guidance (15 pts):* up to 8 pts for a correct ordered loop; up to 4 pts for naming at least four categories (market, liquidity, credit, operational); up to 3 pts for explaining how each link triggers the next (especially the liquidity-to-forced-sale and forced-sale-to-solvency transitions). Deduct for treating any single category as the sole cause.\n\n**Q9 — Model answer (Lehman).** Lehman is \"layered\" because no single category explains the failure. Falling mortgage-related valuations (market risk) undermined collateral; heavy reliance on short-term, overnight repo secured by illiquid assets (liquidity risk) — including $7.8 billion commercial paper and $197 billion of repos at end-Q1 2008, with 62% of liquidity by mid-June 2008 depending on borrowing against nontraditional securities — converted the valuation problem into a funding crisis; realized losses and counterparty fears amplified solvency concerns (credit risk); and the OTS July 2008 warning of material commercial-real-estate overexposure and major risk-management failings reflects governance/operational weakness. The single most effective structural fix is reducing reliance on overnight, illiquid-collateral repo funding, because it breaks the liquidity-to-forced-sale link that drives the loop. Grounded in claims c-q8, c-q9a, c-q9b (g5).\n\n*Scoring guidance (15 pts):* up to 6 pts for explaining the layered/multi-category framing; up to 5 pts for at least two specific structural weaknesses mapped to categories (use of figures such as the repo reliance, 62% nontraditional-collateral figure, or OTS findings strengthens the answer); up to 4 pts for a justified single fix targeting overnight illiquid-collateral funding. Award partial credit for other defensible fixes only if the justification correctly ties to breaking the feedback loop."
           },
-          {
-            "id": "m1_s1_activities",
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        },
+        "B": {
+          "asset": {
+            "type": "assessment",
+            "title": "Assessment Quiz: Nature of Financial Risk",
+            "format": "pptx",
+            "content": "Test your understanding of Financial Risk Management concepts covered in the Lehman Brothers case study. The quiz is divided into three sections: Conceptual (Q1–Q3), Analytical (Q4–Q5), and Application (Q6–Q7).\n\n## Section A — Conceptual\n\n**Q1. Risk vs. Uncertainty.** Which statement best distinguishes risk from uncertainty?\nA. Risk involves losses; uncertainty involves gains.\nB. Risk can be measured probabilistically; uncertainty cannot.\nC. Risk is short-term; uncertainty is long-term.\nD. Risk applies only to financial markets.\n\n**Q2. Liquidity Risk.** Liquidity risk primarily concerns:\nA. Asset value decline.\nB. Counterparty default.\nC. Inability to meet obligations when due.\nD. Regulatory penalties.\n\n**Q3. Market Risk vs. Credit Risk.** Market risk differs from credit risk because:\nA. Market risk is continuous; credit risk is event-driven.\nB. Credit risk cannot be measured.\nC. Market risk does not affect portfolios.\nD. Credit risk only affects banks.\n\n## Section B — Analytical\n\n**Q4. Identifying the Dominant Risk.** A firm has strong capital but relies heavily on short-term funding. Which risk is most significant?\nA. Operational risk.\nB. Liquidity risk.\nC. Market risk.\nD. Legal risk.\n\n**Q5. Lehman's Primary Failure.** Which failure contributed most directly to Lehman's collapse?\nA. Absence of profit.\nB. Regulatory fines.\nC. Technology breakdown.\nD. Excessive leverage combined with liquidity stress.\n\n## Section C — Application\n\n**Q6. Classifying Cyber Risk.** A cyber attack that disrupts transaction systems is classified as:\nA. Market risk.\nB. Credit risk.\nC. Liquidity risk.\nD. Operational risk.\n\n**Q7. Risk or Uncertainty?** If a firm cannot assign probabilities to a new geopolitical event, this represents:\nA. Measurable risk.\nB. Diversifiable risk.\nC. Uncertainty.\nD. Hedged exposure.",
+            "claims": [],
+            "sources": [],
+            "verification": {
+              "supported": 0,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": null
+            },
+            "solution": "Q1 — B: Risk can be measured probabilistically; uncertainty cannot. This distinction is foundational to Financial Risk Management.\nQ2 — C: Liquidity risk is the inability to meet financial obligations when due, as demonstrated by Lehman's repo market collapse.\nQ3 — A: Market risk fluctuates continuously with prices and rates, whereas credit risk is triggered by discrete events such as default or downgrade.\nQ4 — B: Even with strong capital, heavy reliance on short-term funding creates acute liquidity risk. This mirrors Lehman's own structural vulnerability.\nQ5 — D: Excessive leverage (30:1) combined with acute liquidity stress when short-term funding was withdrawn was the direct cause of Lehman's bankruptcy.\nQ6 — D: Cyber attacks fall under operational risk, which covers losses from failed internal processes, systems, or external events.\nQ7 — C: When probabilities cannot be assigned, the situation represents uncertainty rather than measurable risk — a key distinction in Financial Risk Management.\n\n## Key Takeaways\n- Risk Exists in Layers: Market, liquidity, and governance risks interact — no single risk type operates in isolation.\n- Leverage Is a Double-Edged Sword: At 30:1, Lehman had no buffer to absorb losses when asset values declined.\n- Illiquidity Kills Faster Than Insolvency: Models and controls are only as effective as the risk culture and alignment behind them.\n- FRM Is Structural, Not Optional: Financial Risk Management must be embedded into every strategic and operational decision."
+          },
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        }
+      }
+    },
+    {
+      "asset_type": "important_person",
+      "required_for_gate": false,
+      "candidates": {
+        "A": {
+          "asset": {
+            "type": "important_person",
+            "title": "Frank Knight — The Foundation of Risk Theory",
+            "format": "pptx",
+            "content": "# Frank Knight — The Foundation of Risk Theory\n\n## Slide 1 — Why This Person Matters\n\nWhen this course draws a line between *measurable risk* and deeper *uncertainty*, it is using a distinction that traces back to one economist: Frank H. Knight. Almost everything you will learn about when quantitative risk tools work — and when they quietly stop working — rests on the boundary he named.\n\nThis profile gives you the human entry point to that idea so the rest of the subtopic clicks into place.\n\n## Slide 2 — The Big Idea in One Line\n\nKnight separated two things that everyday language blurs together:\n\n- **Risk** — uncertainty that *can* be measured or assigned probabilities.\n- **Uncertainty** — the deeper kind that *cannot* be reduced to reliable probabilities.\n\nIn his own framing, risk means a quantity susceptible of measurement. That single sentence is the seed of the modern measurable-risk zone.\n\n## Slide 3 — The Work Behind the Idea\n\nThe distinction comes from Knight's book *Risk, Uncertainty, and Profit*, published in 1921. It is the authoritative source for the risk-versus-uncertainty divide that opens this subtopic. The book reserves the word \"uncertainty\" specifically for events that cannot be assigned dependable probabilities.\n\n## Slide 4 — Why It Anchors Financial Risk Management\n\nKnight's boundary explains the reach *and* the limits of the tools in this course:\n\n- Model-based tools — value-at-risk, stress testing, scenario analysis, credit models, and hedging — all need some estimate of probability, exposure, or impact.\n- Where those estimates are available and reasonable, quantitative methods are powerful and operate inside the measurable-risk zone.\n- Where probabilities genuinely cannot be estimated, the problem shifts to judgment-heavy uncertainty.\n\n## Slide 5 — The Lesson for a Risk Manager\n\nBecause some future events simply cannot be reduced to reliable probabilities, human judgment never fully disappears. Measurement *enables* management; it does not replace it. The risk manager who forgets where the measurable zone ends is the one most likely to trust numbers that no longer apply.\n\n## Slide 6 — Connecting Forward\n\nKeep Knight's line in mind as you meet credit, liquidity, market, and operational risk. Each is manageable to the degree it can be measured — and the Lehman story later in this subtopic shows what happens when confidence outruns what the numbers could actually support.",
+            "claims": [
+              {
+                "id": "c_1",
+                "text": "Frank H. Knight distinguished risk, which is uncertainty that can be measured or assigned probabilities, from uncertainty that cannot be reduced to reliable probabilities.",
+                "source_id": "g1",
+                "support": "supported",
+                "supporting_excerpt": "\"Risk\" is uncertainty that can be measured or assigned probabilities.",
+                "note": "Source defines risk as measurable uncertainty and distinguishes Knightian uncertainty as not measurable."
+              },
+              {
+                "id": "c_2",
+                "text": "In Knight's framing, risk means a quantity susceptible of measurement.",
+                "source_id": "g1",
+                "support": "supported",
+                "supporting_excerpt": "\"risk means ... a quantity susceptible of measurement\"",
+                "note": "Direct quoted anchor matches the claim."
+              },
+              {
+                "id": "c_3",
+                "text": "Knight's distinction comes from his work Risk, Uncertainty, and Profit, originally published in 1921.",
+                "source_id": "g1",
+                "support": "supported",
+                "supporting_excerpt": "Frank H. Knight, Risk, Uncertainty, and Profit, 1921",
+                "note": "Source confirms title and 1921 publication."
+              },
+              {
+                "id": "c_4",
+                "text": "Knight reserved the term 'uncertainty' for events that cannot be assigned dependable probabilities, distinct from measurable risk.",
+                "source_id": "g1",
+                "support": "supported",
+                "supporting_excerpt": "reserves \"uncertainty\" for the latter",
+                "note": "Source states Knight reserves 'uncertainty' for non-quantitative events, distinct from measurable risk."
+              },
+              {
+                "id": "c_5",
+                "text": "Model-based tools such as value-at-risk, stress testing, scenario analysis, credit models, and hedging require some estimate of probability, exposure, or impact.",
+                "source_id": "g1",
+                "support": "supported",
+                "supporting_excerpt": "Model-based tools such as VaR, stress testing, scenario analysis, credit\n  models, and hedging need some estimate of probability, exposure, or impact.",
+                "note": "Direct match to the listed tools and their requirements."
+              },
+              {
+                "id": "c_6",
+                "text": "Financial risk management mainly operates in the measurable-risk zone, and when probabilities cannot be estimated the issue becomes judgment-heavy uncertainty.",
+                "source_id": "g1",
+                "support": "supported",
+                "supporting_excerpt": "Financial risk management mainly operates in the measurable-risk zone.",
+                "note": "Both parts supported: measurable-risk zone and judgment-heavy uncertainty when probabilities cannot be estimated."
+              },
+              {
+                "id": "c_7",
+                "text": "Some future events cannot be reduced to reliable probabilities, so human judgment remains important where uncertainty cannot be reliably modeled.",
+                "source_id": "g1",
+                "support": "supported",
+                "supporting_excerpt": "Some future events cannot be reduced to reliable probabilities.",
+                "note": "Source supports both the unmeasurable events and ongoing importance of human judgment."
+              }
+            ],
+            "sources": [
+              "g1"
+            ],
+            "verification": {
+              "supported": 7,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-06-30T14:25:42+00:00"
+            }
+          },
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        },
+        "B": {
+          "asset": {
+            "type": "important_person",
+            "title": "Frank Knight — The Foundation of Risk Theory",
+            "format": "pptx",
+            "content": "## Frank Knight — The Foundation of Risk Theory\n\nIn 1921, economist Frank Knight introduced a distinction that still underpins modern Financial Risk Management. Knight argued that risk and uncertainty are not the same.\n\n**Risk:** Situations where probabilities can be assigned. For example, we can estimate the volatility of exchange rates or default probabilities using historical data.\n\n**Uncertainty:** Situations where no reliable probability distribution exists. These are the \"unknown unknowns\" — beyond the reach of quantitative modelling.\n\n## Why Does This Matter?\n\nFinancial Risk Management operates only in the domain of measurable risk. Our models — VaR, stress testing, credit models — all assume probability estimation is possible.\n- Model Boundaries: Knight's distinction clarifies what our quantitative tools can and cannot capture.\n- Why Profit Exists: If everything were measurable and perfectly predictable, there would be no excess return. Profit compensates for uncertainty.\n- Philosophical Foundation: This conceptual distinction forms the philosophical bedrock of the entire discipline.",
+            "claims": [],
+            "sources": [],
+            "verification": {
+              "supported": 0,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": null
+            }
+          },
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        }
+      }
+    },
+    {
+      "asset_type": "did_you_know",
+      "required_for_gate": false,
+      "candidates": {
+        "A": {
+          "asset": {
+            "type": "did_you_know",
+            "title": "The CRO Role Barely Existed Before the 1990s",
+            "format": "pptx",
+            "content": "# Did You Know? The CRO Role Barely Existed Before the 1990s\n\n## A Job Title Younger Than Most of Your Professors\n\nThe four risk categories you just met—credit, liquidity, market, and operational—feel timeless. But the executive whose entire job is to see them *together* is surprisingly new. The role of Chief Risk Officer scarcely existed before the early 1990s and was not established in most institutions before then.\n\n## The Origin Story\n\n- The CRO role is widely credited to James Lam, who was hired by GE Capital in 1993 to help establish a new capital-markets business and went on to define and develop the position.\n- U.S. financial-services institutions led the broader adoption of the role through the mid-1990s.\n- In other words, for most of modern finance, no single executive owned the institution-wide view of risk.\n\n## Why This Connects to the Lesson\n\nThe whole point of this subtopic is that risk categories do not live in separate boxes—a shock in one amplifies the others. The CRO role exists for exactly that reason. It emerged from the need to manage interacting risk categories at the institution level rather than as disconnected silos. As one contemporaneous account put it bluntly:\n\n> \"Credit risk, market risk, operational risk, are highly related.\"\n\nThat single sentence is the layered-risk idea, stated as a hiring mandate.\n\n## From Back Office to the Boardroom\n\n- A CRO integrates credit, market, and operational risk instead of treating each as a stand-alone silo.\n- Raising risk leadership to a C-level position makes it part of executive decision-making rather than only a back- or middle-office function.\n- Adoption was driven by demand from shareholders, regulators, and senior managers for risk information aggregated across the business.\n\n## The Takeaway\n\nWhen you study Lehman and watch market losses bleed into a funding crisis bleed into a confidence collapse, remember: the institutional response to that very feedback loop was to invent a job. The CRO is organizational proof that the decisive question is rarely \"which single risk?\" but \"how are the risks reinforcing one another?\"",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "The formal Chief Risk Officer role scarcely existed before the early 1990s and was not established in most institutions before then.",
+                "source_id": "g6",
+                "support": "supported",
+                "supporting_excerpt": "The formal CRO role emerged in the early 1990s and was not established in\n  most institutions before then.",
+                "note": "Source directly supports that the role scarcely existed before the early 1990s."
+              },
+              {
+                "id": "cl2",
+                "text": "James Lam is credited with defining and developing the CRO role when GE Capital hired him in 1993 to establish a new capital-markets business.",
+                "source_id": "g6",
+                "support": "supported",
+                "supporting_excerpt": "James Lam is credited with defining and developing the CRO role when GE\n  Capital hired him in 1993 to establish a new capital-markets business.",
+                "note": "Exact match to source grounding point."
+              },
+              {
+                "id": "cl3",
+                "text": "U.S. financial-services institutions led broader adoption of the CRO role during the mid-1990s.",
+                "source_id": "g6",
+                "support": "supported",
+                "supporting_excerpt": "U.S. financial-services institutions led adoption in the mid-1990s.",
+                "note": "Source confirms US financial-services led mid-1990s adoption."
+              },
+              {
+                "id": "cl4",
+                "text": "The CRO role responds to the need to manage interacting risk categories at the institution level rather than as disconnected silos.",
+                "source_id": "g6",
+                "support": "supported",
+                "supporting_excerpt": "The CRO role responds to the need to manage interacting risk categories at\n  institution level.",
+                "note": "Source supports the institution-level interacting-risk rationale."
+              },
+              {
+                "id": "cl5",
+                "text": "A contemporaneous account stated that credit risk, market risk, and operational risk are highly related.",
+                "source_id": "g6",
+                "support": "supported",
+                "supporting_excerpt": "\"Credit risk, market risk, operational risk, are highly related\"",
+                "note": "Direct quoted anchor in source."
+              },
+              {
+                "id": "cl6",
+                "text": "A CRO integrates credit, market, and operational risk instead of managing them as disconnected silos.",
+                "source_id": "g6",
+                "support": "supported",
+                "supporting_excerpt": "The role integrates credit, market, and operational risk instead of managing\n  them as disconnected silos.",
+                "note": "Exact match to source grounding point."
+              },
+              {
+                "id": "cl7",
+                "text": "Raising risk management to a C-level position makes it part of executive decision-making rather than only a back- or middle-office function.",
+                "source_id": "g6",
+                "support": "supported",
+                "supporting_excerpt": "Raising risk management to a C-level position makes it part of executive\n  decision-making rather than only a back- or middle-office function.",
+                "note": "Exact match to source grounding point."
+              },
+              {
+                "id": "cl8",
+                "text": "Adoption of the CRO role was linked to demand from shareholders, regulators, and senior managers for risk information aggregated across the business.",
+                "source_id": "g6",
+                "support": "supported",
+                "supporting_excerpt": "The article links adoption to demand from shareholders, regulators, and\n  senior managers for risk information aggregated across the business.",
+                "note": "Exact match to source grounding point."
+              }
+            ],
+            "sources": [
+              "g6"
+            ],
+            "verification": {
+              "supported": 8,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-06-30T14:25:42+00:00"
+            }
+          },
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        },
+        "B": {
+          "asset": {
+            "type": "did_you_know",
+            "title": "The CRO Role Barely Existed Before the 1990s",
+            "format": "pptx",
+            "content": "## Did You Know? The CRO Role Barely Existed Before the 1990s\n\nIt may surprise you that the formal Chief Risk Officer role did not exist in most banks before the 1990s. Risk management was often decentralised, handled within business units rather than at an institutional level.\n- 1990s Derivatives Boom: Increased complexity demanded more structured oversight.\n- LTCM Collapse — 1998: Demonstrated dangerous systemic interconnections across institutions.\n- 2008 Financial Crisis: Fundamentally reshaped governance expectations across the industry.\n\n## The CRO Today\n\n- A Seat at the Top Table: Today, the CRO sits alongside the CEO and CFO, reflecting how central risk governance has become to institutional leadership.\n- An Evolving Discipline: This evolution shows that Financial Risk Management is not static — it evolves in direct response to crises and growing complexity. Each major shock has reshaped the profession, raising standards and expanding its scope.",
+            "claims": [],
+            "sources": [],
+            "verification": {
+              "supported": 0,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": null
+            }
+          },
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        }
+      }
+    },
+    {
+      "asset_type": "activities",
+      "required_for_gate": false,
+      "candidates": {
+        "A": {
+          "asset": {
             "type": "activities",
             "title": "Activities",
             "format": "docx",
@@ -989,12 +1573,65 @@
               "ungrounded": 0,
               "unattributed_found": [],
               "checked_at": "2026-06-30T14:25:42+00:00"
-            },
-            "file": null,
-            "status": "done"
+            }
           },
-          {
-            "id": "m1_s1_resources",
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        },
+        "B": {
+          "asset": {
+            "type": "activities",
+            "title": "Activities",
+            "format": "docx",
+            "content": "## Activity 1 — Personal Risk Mapping\n\nReflect on a real company (e.g., airline, tech company, bank). Identify:\n- 2 market risks\n- 2 credit risks\n- 1 liquidity risk\n- 1 operational risk\n\nWrite a 1-page analysis explaining why each qualifies.\n\n## Activity 2 — News-Based Risk Analysis\n\nChoose a recent financial news article.\n- Identify the type of risk involved.\n- Was it measurable risk or uncertainty?\n- Could better risk management have reduced the impact?\n\n## Activity 3 — Risk vs Uncertainty Reflection\n\nThink of a recent global event (e.g., geopolitical conflict, pandemic). Classify:\n- What aspects were measurable risk?\n- What aspects were pure uncertainty?\n\n## Activity 4 — Governance Evaluation\n\nResearch a company's annual report.\n- Does it have a CRO?\n- How is risk governance structured?\n- What risks does it emphasize most?\n\n## Activity 5 — Case Reflection (Lehman)\n\nAnswer in 300 words:\n- Which risk category was most critical in Lehman's collapse?\n- Was the failure quantitative or managerial?",
+            "claims": [],
+            "sources": [],
+            "verification": {
+              "supported": 0,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": null
+            }
+          },
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        }
+      }
+    },
+    {
+      "asset_type": "resources",
+      "required_for_gate": false,
+      "candidates": {
+        "A": {
+          "asset": {
             "type": "resources",
             "title": "Additional Resources",
             "format": "docx",
@@ -1080,12 +1717,58 @@
               "ungrounded": 1,
               "unattributed_found": [],
               "checked_at": "2026-06-30T14:25:42+00:00"
+            }
+          },
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
             },
-            "file": null,
-            "status": "done"
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
           }
-        ]
+        },
+        "B": {
+          "asset": {
+            "type": "resources",
+            "title": "Additional Resources",
+            "format": "docx",
+            "content": "## Foundational Texts\n\n1. Frank Knight — *Risk, Uncertainty, and Profit* (1921). Full text (public domain PDF): https://oll.libertyfund.org/title/knight-risk-uncertainty-and-profit\n2. Philippe Jorion — *Value at Risk* (Book Overview). Publisher page: https://www.mheducation.com/highered/product/value-risk-jorion/M9780071464956.html\n3. John Hull — *Risk Management and Financial Institutions*. Publisher page: https://www.wiley.com/en-us/Risk+Management+and+Financial+Institutions%2C+5th+Edition-p-9781119448112\n4. Basel Committee Publications (Official Source). Bank for International Settlements (BIS): https://www.bis.org/bcbs/index.htm\n\n## Regulatory & Institutional Reports\n\n5. Basel III Framework (Consolidated Text): https://www.bis.org/basel_framework/\n6. IMF — Global Financial Stability Report: https://www.imf.org/en/Publications/GFSR\n7. U.S. Federal Reserve — Financial Stability Report: https://www.federalreserve.gov/publications/financial-stability-report.htm\n8. European Central Bank — Financial Stability Review: https://www.ecb.europa.eu/pub/financial-stability/fsr/html/index.en.html\n\n## News & Industry Analysis\n\n9. Financial Times (Risk & Regulation): https://www.ft.com/markets\n10. The Economist — Finance & Economics: https://www.economist.com/finance-and-economics\n11. Bloomberg Markets: https://www.bloomberg.com/markets\n\n## Video & Lecture Resources\n\n12. Federal Reserve YouTube Channel: https://www.youtube.com/user/FedReserveBoard\n13. BIS YouTube Channel: https://www.youtube.com/@bankforinternationalsettlement\n14. Yale Open Course — Financial Crisis (Robert Shiller): https://oyc.yale.edu/economics/econ-252-11\n15. Khan Academy — Probability & Statistics: https://www.khanacademy.org/math/statistics-probability",
+            "claims": [],
+            "sources": [],
+            "verification": {
+              "supported": 0,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": null
+            }
+          },
+          "rating": {
+            "scores": {
+              "factual_accuracy": null,
+              "coverage": null,
+              "source_attribution": null,
+              "pedagogical_clarity": null,
+              "asset_completeness": null,
+              "house_style": null,
+              "review_time": null
+            },
+            "review_minutes": null,
+            "edit_extent": null,
+            "notes": "",
+            "ratified": false
+          }
+        }
       }
-    ]
-  }
+    }
+  ]
 }

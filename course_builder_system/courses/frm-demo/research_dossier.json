@@ -1,0 +1,162 @@
+{
+  "course_id": "frm-demo",
+  "artifact_type": "research_dossier",
+  "produced_by_step": "research",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "brief",
+    "course_outcomes"
+  ],
+  "updated_at": "2026-06-30T10:01:49+00:00",
+  "body": {
+    "research_scope": "Compare introductory financial-risk curricula and identify trustworthy sources for the approved outcomes, with deep grounding for Nature of Financial Risk.",
+    "competitor_findings": [
+      {
+        "id": "rf1",
+        "provider": "GARP",
+        "offering": "Financial Risk Manager curriculum",
+        "locator": "https://www.garp.org/frm",
+        "audience": "Finance professionals preparing for professional risk-management practice.",
+        "structure_summary": "Progresses from foundations and quantitative analysis into market, credit, operational, liquidity, and investment risk.",
+        "notable_topics": [
+          "risk foundations",
+          "quantitative analysis",
+          "market risk",
+          "credit risk",
+          "operational risk"
+        ],
+        "differentiation_opportunity": "Use shorter concept-to-case loops and explicit human selection of source and asset plans."
+      },
+      {
+        "id": "rf2",
+        "provider": "Phase 1 benchmark",
+        "offering": "Nature of Financial Risk reference materials",
+        "locator": null,
+        "audience": "Postgraduate learners encountering financial risk categories for the first time.",
+        "structure_summary": "Combines concept exposition, objectives, summary, case, personality, fact, assessment, activities, and resources.",
+        "notable_topics": [
+          "risk versus uncertainty",
+          "four risk categories",
+          "Lehman Brothers case"
+        ],
+        "differentiation_opportunity": "Generate only the assets selected for each subtopic and tune depth independently."
+      }
+    ],
+    "source_candidates": [
+      {
+        "id": "g1",
+        "title": "Risk, Uncertainty, and Profit",
+        "publisher": "Frank H. Knight / Econlib",
+        "source_type": "public-domain economics text",
+        "locator": "https://www.econlib.org/library/Knight/knRUP.html",
+        "content_ref": "sources/g1.md",
+        "status": "approved",
+        "trust_notes": "Foundational primary text for the risk-versus-uncertainty distinction.",
+        "relevance": "Supports measurable risk, uncertainty, and the limits of quantitative management.",
+        "assigned_node_ids": [
+          "m1_s1"
+        ]
+      },
+      {
+        "id": "g2",
+        "title": "Principles for the Management of Credit Risk",
+        "publisher": "Basel Committee on Banking Supervision",
+        "source_type": "supervisory guidance",
+        "locator": "https://www.bis.org/publ/bcbs75.htm",
+        "content_ref": "sources/g2.md",
+        "status": "approved",
+        "trust_notes": "Authoritative banking-supervision source.",
+        "relevance": "Supports credit-risk definitions, exposure examples, and interaction with other risks.",
+        "assigned_node_ids": [
+          "m1_s1"
+        ]
+      },
+      {
+        "id": "g3",
+        "title": "Principles for Sound Liquidity Risk Management and Supervision",
+        "publisher": "Basel Committee on Banking Supervision",
+        "source_type": "supervisory guidance",
+        "locator": "https://www.bis.org/publ/bcbs144.htm",
+        "content_ref": "sources/g3.md",
+        "status": "approved",
+        "trust_notes": "Authoritative banking-supervision source.",
+        "relevance": "Supports liquidity-risk definitions, funding stress, and risk interaction.",
+        "assigned_node_ids": [
+          "m1_s1"
+        ]
+      },
+      {
+        "id": "g4",
+        "title": "Basel market-risk and operational-risk frameworks",
+        "publisher": "Basel Committee on Banking Supervision",
+        "source_type": "regulatory standards",
+        "locator": "https://www.bis.org/bcbs/publ/d457.htm",
+        "content_ref": "sources/g4.md",
+        "status": "approved",
+        "trust_notes": "Authoritative regulatory source.",
+        "relevance": "Supports market-risk and operational-risk definitions and examples.",
+        "assigned_node_ids": [
+          "m1_s1"
+        ]
+      },
+      {
+        "id": "g5",
+        "title": "The Financial Crisis Inquiry Report",
+        "publisher": "Financial Crisis Inquiry Commission",
+        "source_type": "official government report",
+        "locator": "https://www.govinfo.gov/content/pkg/GPO-FCIC/pdf/GPO-FCIC.pdf",
+        "content_ref": "sources/g5.md",
+        "status": "approved",
+        "trust_notes": "Official investigation with detailed case evidence.",
+        "relevance": "Supports the Lehman Brothers layered-risk case.",
+        "assigned_node_ids": [
+          "m1_s1"
+        ]
+      },
+      {
+        "id": "g6",
+        "title": "Rise of the chief risk officer",
+        "publisher": "The CFO",
+        "source_type": "trade-press interview and industry report",
+        "locator": "https://the-cfo.io/2002/04/22/rise-of-the-chief-risk-officer/",
+        "content_ref": "sources/g6.md",
+        "status": "approved",
+        "trust_notes": "Useful contemporaneous industry source; use only for the narrow history claim.",
+        "relevance": "Supports the emergence of the CRO role and integrated risk oversight.",
+        "assigned_node_ids": [
+          "m1_s1",
+          "m1_s6"
+        ]
+      },
+      {
+        "id": "cand1",
+        "title": "Risk-management practitioner interview",
+        "publisher": "To be identified",
+        "source_type": "expert interview",
+        "locator": null,
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Requires expert identification, consent, and transcript review.",
+        "relevance": "Could add current practitioner judgment to the governance module.",
+        "assigned_node_ids": [
+          "m1_s6"
+        ]
+      },
+      {
+        "id": "cand2",
+        "title": "Anonymous risk explainer",
+        "publisher": "Unknown",
+        "source_type": "unattributed web article",
+        "locator": null,
+        "content_ref": null,
+        "status": "rejected",
+        "trust_notes": "Rejected by the human reviewer because authorship and evidence are unclear.",
+        "relevance": "Overlaps with approved definitions but adds no trustworthy evidence.",
+        "assigned_node_ids": []
+      }
+    ]
+  }
+}

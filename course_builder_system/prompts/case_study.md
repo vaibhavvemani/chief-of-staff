@@ -4,69 +4,44 @@ You are writing the Case Study asset for the Course Builder pipeline.
 
 ## Objective
 
-Develop the **Lehman Brothers collapse** as an applied case study for the target
-subtopic. The case must show how multiple financial risk categories (credit,
-liquidity, market, and operational/governance) interacted and cascaded to produce
-the September 2008 failure of Lehman Brothers Holdings Inc.
+Develop the case specified by the asset's configured `case` or equivalent
+instruction for the `focus_subtopic` in `CONTEXT_JSON`. Do not choose or
+substitute a different case.
 
-The case study is primarily grounded in **g5** (the FCIC report) and uses
-**g2** and **g3** (the credit-risk and liquidity-risk references) for the
-risk-category interactions. It must be consistent with how the Course Content
-already references Lehman — do not introduce facts that contradict the Course
-Content.
+Use the configured case subject, learning purpose, scope, questions, emphasis,
+audience, format, `coverage_requirements`, and `depth_budget`. Show how the case
+applies the concepts actually taught in the Course Content. Include context,
+events or evidence, analysis, and takeaways only to the extent requested and
+supported by approved sources.
 
-Do not copy the manual benchmark text. Write original case-study prose based on
-the provided curated source texts and the already-generated Course Content.
+Write original case-study prose with clear Markdown structure appropriate to
+the requested output format. Do not copy source prose or benchmark wording.
 
 ## Grounding Rules
 
-- Use only the curated source texts below for factual claims.
+- Use only the approved source texts below for factual claims.
 - Every significant factual claim must appear in `claims[]`.
 - Significant factual claims include definitions, dates, figures, named events,
-  named institutions, regulatory facts, and concrete assertions — this asset is
-  claim-heavy and should attribute rigorously.
-- Named events, specific dates (e.g. filing date), dollar figures (e.g. asset
-  values, leverage ratios), and named institutions must each be captured as a
-  claim.
-- Each significant factual claim should cite one source with `source_id`.
-  Prefer g5 for FCIC-sourced facts; use g2/g3 for credit/liquidity concepts.
-- Use `source_id: null` only for narrative framing or pedagogical transitions
-  that assert no verifiable fact.
-- Do not invent source IDs. Valid source IDs are provided in the context.
+  named people or organizations, quotations, research findings, and concrete
+  assertions. Capture claim-heavy case details rigorously.
+- Each significant factual claim should cite one valid approved `source_id`.
+- Use `source_id: null` only for narrative framing, analysis explicitly presented
+  as synthesis, pedagogical transitions, or clearly hypothetical case elements.
+- Do not turn a configured real case into a fictional one or present an invented
+  case as real. Label hypothetical elements unambiguously when they are allowed.
+- Do not invent source IDs or use sources that are not approved for this asset.
 - Keep `content` clean. Do not put inline citations, claim IDs, footnotes, or
-  source labels inside the prose.
-
-## Required Coverage
-
-The case study must cover, at minimum:
-
-- Lehman's business model and key exposures (mortgage-backed securities,
-  commercial real estate, high leverage),
-- the market risk dimension: falling asset values and mark-to-market losses,
-- the credit risk dimension: counterparty doubts and interbank credit withdrawal,
-- the liquidity risk dimension: repo-market funding collapse and inability to
-  roll short-term debt,
-- the operational/governance dimension: risk management and oversight failures,
-- how these risk categories amplified each other (the cascade logic),
-- the date and scale of the bankruptcy filing,
-- the systemic contagion effects,
-- lessons for financial risk management practice.
-
-Use Markdown with clear section headings suitable for later conversion to slides.
+  internal source labels inside learner-facing prose.
 
 ## Output Contract
 
-Return a single JSON object matching the provided schema. The object is only the
-Case Study asset, not the whole content package.
+Return one JSON object matching the provided schema. Return only the Case Study
+asset, not the whole content package.
 
-Fixed identity fields:
-
-- `id`: `m1_s1_case`
-- `type`: `case_study`
-- `title`: `The Lehman Brothers Collapse`
-- `format`: `pptx`
-- `file`: `null`
-- `status`: `done`
+Copy identity and delivery fields such as `id`, `type`, `title`, and `format`
+from `target_asset` exactly. Set `file` to `null` and `status` to `done` unless
+the target explicitly supplies another schema-valid value. Do not substitute
+hardcoded IDs, titles, formats, cases, or subject names.
 
 Set verification fields to the empty pre-verification state:
 
@@ -74,12 +49,10 @@ Set verification fields to the empty pre-verification state:
 - asset `verification` has all counts as `0`, `unattributed_found: []`, and
   `checked_at: null`
 
-## Already-Generated Course Content (condition on this — do not contradict or merely repeat it)
+## Already-Generated Course Content
 
-The following is the Course Content asset that was already generated for this
-subtopic. Your Case Study must be consistent with how it describes Lehman and
-risk categories. Do not contradict any factual assertions made in the Course
-Content, and do not introduce Lehman-specific facts that conflict with it.
+Apply and extend only what this Course Content teaches. The case and its analysis
+must not contradict the Course Content's factual assertions or explanations.
 
 ```text
 {{COURSE_CONTENT}}
@@ -91,7 +64,7 @@ Content, and do not introduce Lehman-specific facts that conflict with it.
 {{CONTEXT_JSON}}
 ```
 
-## Curated Source Texts
+## Approved Source Texts
 
 {{SOURCE_TEXTS}}
 

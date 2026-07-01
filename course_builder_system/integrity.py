@@ -1,10 +1,10 @@
-"""
-Course Builder - referential-integrity check (Handoff Section 7.1 / 4.8).
+"""Course Builder cross-artifact referential-integrity checks.
 
-The TOC is the single source of truth for structure (Section 4.2): every other
-artifact REFERENCES TOC ids and never re-encodes the module/subtopic tree. This
-module is a cheap guard that the reference graph (Section 4.8) actually holds on
-disk - that no Blueprint / Content Package / Lesson Plan reference dangles.
+The compact Course Model is the source of truth for hierarchy, compact concept
+context, and the human-approved source registry. Blueprint, Content Package,
+and Lesson Plan artifacts reference its ids instead of repeating that data.
+Legacy TOC/Domain Model artifacts remain readable so historical runs can still
+be inspected during the Phase 1 migration.
 
 It reads only what is on disk via the orchestrator's loader, so it needs no
 changes to orchestrator.py. The engine stays oblivious to body shapes; this
@@ -25,7 +25,137 @@ Checks performed:
 
 from __future__ import annotations
 
+from course_model_integrity import validate_course_model_semantics
 from orchestrator import load_artifact
+
+
+def _course_model_ids(
+    course_model_body: dict,
+) -> tuple[set[str], set[str], set[str], dict[str, set[str]]]:
+    """Return module, subtopic, source, and per-subtopic approved source ids."""
+    modules: set[str] = set()
+    subtopics: set[str] = set()
+    approvals: dict[str, set[str]] = {}
+    for module in course_model_body.get("modules", []):
+        module_id = module.get("id")
+        if isinstance(module_id, str):
+            modules.add(module_id)
+        for subtopic in module.get("subtopics", []):
+            subtopic_id = subtopic.get("id")
+            if isinstance(subtopic_id, str):
+                subtopics.add(subtopic_id)
+                approvals[subtopic_id] = set(subtopic.get("approved_source_ids", []))
+    sources = {
+        source["id"]
+        for source in course_model_body.get("source_registry", [])
+        if isinstance(source, dict) and isinstance(source.get("id"), str)
+    }
+    return modules, subtopics, sources, approvals
+
+
+def _check_course_model_integrity(course_id: str, course_model: dict) -> list[str]:
+    """Validate the v0.2 Course Model graph and all downstream references."""
+    outcomes = load_artifact(course_id, "course_outcomes")
+    research = load_artifact(course_id, "research_dossier")
+    blueprint = load_artifact(course_id, "blueprint")
+    problems = validate_course_model_semantics(
+        course_model,
+        course_outcomes=outcomes,
+        research_dossier=research,
+        blueprint=blueprint,
+    )
+
+    _, subtopic_ids, source_ids, approvals = _course_model_ids(course_model["body"])
+    asset_routes: dict[tuple[str, str], set[str]] = {}
+    if blueprint is not None:
+        for plan in blueprint.get("body", {}).get("subtopic_plans", []):
+            subtopic_id = plan.get("subtopic_id")
+            for configured in plan.get("asset_plan", []):
+                routed = set(configured.get("source_ids", []))
+                for identity in (configured.get("id"), configured.get("asset_type")):
+                    if isinstance(subtopic_id, str) and isinstance(identity, str):
+                        asset_routes[(subtopic_id, identity)] = routed
+
+    content_package = load_artifact(course_id, "content_package")
+    if content_package is not None:
+        is_v02 = content_package.get("schema_version") == "0.2"
+        for subtopic in content_package["body"].get("subtopics", []):
+            subtopic_id = subtopic.get("subtopic_id")
+            if subtopic_id not in subtopic_ids:
+                problems.append(
+                    f"content_package: subtopic_id '{subtopic_id}' is not a Course Model subtopic"
+                )
+            approved_sources = approvals.get(subtopic_id, set())
+            for asset in subtopic.get("assets", []):
+                asset_sources = set(asset.get("sources", []))
+                routed_sources = asset_routes.get(
+                    (subtopic_id, asset.get("id")),
+                    asset_routes.get((subtopic_id, asset.get("type")), approved_sources),
+                )
+                for source_id in sorted(asset_sources):
+                    if source_id not in source_ids:
+                        problems.append(
+                            f"content_package: asset '{asset.get('id')}' source "
+                            f"'{source_id}' is not registered in the Course Model"
+                        )
+                    elif source_id not in approved_sources:
+                        problems.append(
+                            f"content_package: asset '{asset.get('id')}' source "
+                            f"'{source_id}' is not approved for '{subtopic_id}'"
+                        )
+                    elif source_id not in routed_sources:
+                        problems.append(
+                            f"content_package: asset '{asset.get('id')}' source "
+                            f"'{source_id}' is not routed to that asset by the Blueprint"
+                        )
+                if not is_v02:
+                    continue
+                if "claims" not in asset:
+                    problems.append(
+                        f"content_package: v0.2 asset '{asset.get('id')}' is missing claims[]"
+                    )
+                    continue
+                claim_sources: set[str] = set()
+                for claim in asset.get("claims", []):
+                    source_id = claim.get("source_id")
+                    if source_id is None:
+                        continue
+                    claim_sources.add(source_id)
+                    if source_id not in source_ids:
+                        problems.append(
+                            f"content_package: asset '{asset.get('id')}' claim "
+                            f"'{claim.get('id')}' source_id '{source_id}' is not registered"
+                        )
+                    elif source_id not in approved_sources:
+                        problems.append(
+                            f"content_package: asset '{asset.get('id')}' claim "
+                            f"'{claim.get('id')}' source_id '{source_id}' is not approved "
+                            f"for '{subtopic_id}'"
+                        )
+                    elif source_id not in routed_sources:
+                        problems.append(
+                            f"content_package: asset '{asset.get('id')}' claim "
+                            f"'{claim.get('id')}' source_id '{source_id}' is not routed "
+                            "to that asset by the Blueprint"
+                        )
+                if asset_sources != claim_sources:
+                    problems.append(
+                        f"content_package: asset '{asset.get('id')}' sources "
+                        f"{_source_list_label(asset_sources)} do not match claim source union "
+                        f"{_source_list_label(claim_sources)}"
+                    )
+
+    lesson_plan = load_artifact(course_id, "lesson_plan")
+    if lesson_plan is not None:
+        for session in lesson_plan["body"].get("sessions", []):
+            for coverage in session.get("covers", []):
+                subtopic_id = coverage.get("subtopic_id")
+                if subtopic_id not in subtopic_ids:
+                    problems.append(
+                        f"lesson_plan: session '{session.get('id')}' covers "
+                        f"'{subtopic_id}' which is not a Course Model subtopic"
+                    )
+    return problems
 
 
 def _toc_ids(toc_body: dict) -> tuple[set[str], set[str]]:
@@ -50,6 +180,10 @@ def check_referential_integrity(course_id: str) -> list[str]:
     reference resolves. Artifacts not yet on disk are simply skipped, so this
     is safe to run mid-pipeline (after the TOC exists) or at the end.
     """
+    course_model = load_artifact(course_id, "course_model")
+    if course_model is not None:
+        return _check_course_model_integrity(course_id, course_model)
+
     problems: list[str] = []
 
     toc = load_artifact(course_id, "toc")

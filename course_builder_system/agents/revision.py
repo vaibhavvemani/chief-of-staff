@@ -33,7 +33,7 @@ def parse_revision_request(
     if not isinstance(raw_feedback, str) or not raw_feedback.strip():
         raise ValueError("revision feedback must be a non-empty string")
     raw_feedback = raw_feedback.strip()
-    aliases = _asset_aliases()
+    aliases = _asset_aliases(assets)
 
     if raw_feedback.startswith("{"):
         try:
@@ -92,7 +92,7 @@ def parse_revision_request(
 def revise_content_package(
     content_package: dict[str, Any],
     generation_inputs: dict[str, Any],
-    domain_model: dict[str, Any],
+    course_model: dict[str, Any],
     raw_feedback: str,
     *,
     subtopic_id: str = "m1_s1",
@@ -128,18 +128,22 @@ def revise_content_package(
         request.asset_keys,
         key=lambda key: key != "course_content",
     )
-    cc_id = student_content.COURSE_CONTENT_SPEC.asset_id
+    resolved_specs = {
+        key: student_content.resolve_asset_spec(spec, generation_inputs)
+        for key, spec in student_content.ASSET_SPECS.items()
+    }
+    cc_id = resolved_specs["course_content"].asset_id
     course_content = by_id.get(cc_id)
     if course_content is None:
         raise ValueError("content package is missing the Course Content anchor")
 
     for key in ordered_keys:
-        spec = student_content.ASSET_SPECS[key]
+        spec = resolved_specs[key]
         current = by_id.get(spec.asset_id)
         if current is None:
             raise ValueError(f"content package is missing selected asset {spec.asset_id!r}")
         feedback = _build_asset_feedback(current, request.feedback, request.include_verifier_flags)
-        generated = student_content.generate_asset(
+        generated = student_content.generate_asset_to_depth(
             spec,
             generation_inputs,
             course_content=course_content if spec.conditioned_on_course_content else None,
@@ -149,9 +153,10 @@ def revise_content_package(
         )
         verified = verification.verify_asset(
             generated,
-            domain_model,
+            course_model,
             model=model,
             use_cache=use_cache,
+            source_ids=student_content.routed_source_ids(spec, generation_inputs),
         )
         by_id[spec.asset_id] = verified
         if key == "course_content":
@@ -161,11 +166,16 @@ def revise_content_package(
     return revised_package
 
 
-def _asset_aliases() -> dict[str, str]:
+def _asset_aliases(assets: list[dict[str, Any]] | None = None) -> dict[str, str]:
     aliases: dict[str, str] = {}
     for key, spec in student_content.ASSET_SPECS.items():
-        for alias in (key, spec.asset_type, spec.asset_id):
+        for alias in (key, spec.asset_type):
             aliases[alias.lower()] = key
+    for asset in assets or []:
+        asset_type = asset.get("type")
+        asset_id = asset.get("id")
+        if asset_type in ASSET_KEYS_BY_TYPE and isinstance(asset_id, str):
+            aliases[asset_id.lower()] = ASSET_KEYS_BY_TYPE[asset_type]
     return aliases
 
 
@@ -187,8 +197,11 @@ def _ordered_union(left: tuple[str, ...], right: tuple[str, ...]) -> tuple[str, 
     return tuple(dict.fromkeys((*left, *right)))
 
 
+ASSET_KEYS_BY_TYPE = {spec.asset_type: key for key, spec in student_content.ASSET_SPECS.items()}
+
+
 def _flagged_asset_keys(assets: list[dict[str, Any]]) -> tuple[str, ...]:
-    aliases = _asset_aliases()
+    aliases = _asset_aliases(assets)
     flagged = []
     for asset in assets:
         claims = asset.get("claims", [])

@@ -173,7 +173,7 @@ def test_verify_asset_annotates_all_verdicts_and_ungrounded(source_setup):
 
 
 @pytest.mark.parametrize(
-    ("verdicts", "match"),
+    ("verdicts", "defect"),
     [
         ([], "cover every attributed claim exactly once"),
         (
@@ -206,27 +206,28 @@ def test_verify_asset_annotates_all_verdicts_and_ungrounded(source_setup):
         ),
     ],
 )
-def test_verifier_requires_exact_known_unique_claim_coverage(
+def test_verifier_conservatively_repairs_claim_id_coverage_after_retry(
     source_setup,
     verdicts,
-    match,
+    defect,
 ):
     domain_model, _ = source_setup
     response = _response(verdicts)
     # Keep the model-provided summary consistent so coverage is the failure.
-    with (
-        patch.object(
-            verification.llm,
-            "call",
-            return_value=_llm_result(response),
-        ),
-        pytest.raises(ValueError, match=match),
-    ):
-        verification.verify_asset(
+    with patch.object(
+        verification.llm,
+        "call",
+        return_value=_llm_result(response),
+    ) as call:
+        verified = verification.verify_asset(
             _asset(_claim("c1")),
             domain_model,
             checked_at=CHECKED_AT,
         )
+    assert defect
+    assert call.call_count == 2
+    assert verified["claims"][0]["support"] == "unsupported"
+    assert verified["claims"][0]["note"]
 
 
 def test_verifier_rejects_inconsistent_summary_counts(source_setup):
@@ -259,18 +260,17 @@ def test_verifier_rejects_inconsistent_summary_counts(source_setup):
 
 
 @pytest.mark.parametrize(
-    ("support", "excerpt", "match"),
+    ("support", "excerpt"),
     [
-        ("supported", "A paraphrase not present in the source.", "exact substring"),
-        ("partial", None, "must include an evidence excerpt"),
-        ("unsupported", "Should be null.", "must use a null excerpt"),
+        ("supported", "A paraphrase not present in the source."),
+        ("partial", None),
+        ("unsupported", "Should be null."),
     ],
 )
-def test_verifier_enforces_excerpt_evidence_rules(
+def test_verifier_conservatively_downgrades_invalid_evidence_after_retry(
     source_setup,
     support,
     excerpt,
-    match,
 ):
     domain_model, _ = source_setup
     response = _response(
@@ -283,19 +283,60 @@ def test_verifier_enforces_excerpt_evidence_rules(
             }
         ]
     )
-    with (
-        patch.object(
-            verification.llm,
-            "call",
-            return_value=_llm_result(response),
-        ),
-        pytest.raises(ValueError, match=match),
-    ):
-        verification.verify_asset(
+    with patch.object(
+        verification.llm,
+        "call",
+        return_value=_llm_result(response),
+    ) as call:
+        verified = verification.verify_asset(
             _asset(_claim("c1")),
             domain_model,
             checked_at=CHECKED_AT,
         )
+
+    assert call.call_count == 2
+    assert verified["claims"][0]["support"] == "unsupported"
+    assert verified["claims"][0]["supporting_excerpt"] is None
+    assert "Deterministic fallback" in verified["claims"][0]["note"]
+
+
+def test_verifier_retries_once_after_wrong_source_excerpt(source_setup):
+    domain_model, excerpts = source_setup
+    invalid = _response(
+        [
+            {
+                "claim_id": "c1",
+                "support": "supported",
+                "supporting_excerpt": "Evidence copied from a different source.",
+                "note": "Wrong source on first attempt.",
+            }
+        ]
+    )
+    corrected = _response(
+        [
+            {
+                "claim_id": "c1",
+                "support": "supported",
+                "supporting_excerpt": excerpts["supported"],
+                "note": "Exact evidence from the cited source.",
+            }
+        ]
+    )
+
+    with patch.object(
+        verification.llm,
+        "call",
+        side_effect=[_llm_result(invalid), _llm_result(corrected)],
+    ) as call:
+        verified = verification.verify_asset(
+            _asset(_claim("c1")),
+            domain_model,
+            checked_at=CHECKED_AT,
+        )
+
+    assert call.call_count == 2
+    assert "failed deterministic validation" in call.call_args.args[0][0]["content"]
+    assert verified["claims"][0]["support"] == "supported"
 
 
 def test_verifier_rejects_unknown_input_source_before_calling_llm(source_setup):
@@ -344,7 +385,7 @@ def test_verify_content_package_calls_per_asset_and_remains_schema_valid(source_
                 }
             ],
         },
-        inputs=["toc", "blueprint", "domain_model"],
+        inputs=["course_model", "blueprint", "course_outcomes"],
         schema_version="0.2",
     )
     empty_response = _response([])

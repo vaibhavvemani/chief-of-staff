@@ -1,11 +1,4 @@
-"""
-Course Builder - Phase 0 entry point.
-
-Run with:   python run.py
-
-Produces a complete placeholder course folder under courses/<course_id>/,
-pausing for your approval after each step.
-"""
+"""Course Builder entry point for the Phase 1 domain-agnostic walking path."""
 
 from __future__ import annotations
 
@@ -20,20 +13,32 @@ def build_pipeline() -> list[Step]:
     `run=` stubs for real agents."""
     return [
         Step(
-            name="structure",
+            name="course_outcomes",
             consumes=["brief"],
-            produces=["domain_model", "toc"],
+            produces=["course_outcomes"],
+            run=steps.course_outcomes_step,
+        ),
+        Step(
+            name="research",
+            consumes=["brief", "course_outcomes"],
+            produces=["research_dossier"],
+            run=steps.research_step,
+        ),
+        Step(
+            name="structure",
+            consumes=["brief", "course_outcomes", "research_dossier"],
+            produces=["course_model"],
             run=steps.structure_step,
         ),
         Step(
             name="blueprint",
-            consumes=["toc", "domain_model"],
+            consumes=["course_model"],
             produces=["blueprint"],
             run=steps.blueprint_step,
         ),
         Step(
             name="student_content",
-            consumes=["toc", "blueprint", "domain_model"],
+            consumes=["course_model", "blueprint", "course_outcomes"],
             produces=["content_package"],
             run=steps.student_content_step,
         ),
@@ -49,17 +54,23 @@ def build_pipeline() -> list[Step]:
 def main() -> None:
     course_id = "frm-demo"
 
-    # The human's intent is itself an artifact: the seed input to Step 1.
+    # This approved seed stands in for the conversational intake agent that will
+    # ask only unresolved, high-impact clarifying questions in the full product.
     brief = make_artifact(
         course_id,
         artifact_type="brief",
         produced_by_step="human",
         body={
             "subject": "Financial Risk Management",
-            "audience": "PG",
+            "audience": "Postgraduate learners with foundational finance knowledge",
+            "prior_knowledge": "Foundational finance and accounting",
             "level": "intermediate",
-            "goals": "<what the course should achieve>",
-            "scope": "<in / out of scope>",
+            "goals": "Understand, distinguish, and apply foundational financial-risk concepts",
+            "scope": "Foundations of financial risk; quantitative implementation is excluded",
+            "duration": "30 minutes for the Phase 1 benchmark subtopic",
+            "modality": "blended",
+            "language": "English",
+            "jurisdiction": None,
         },
         inputs=[],
     )
@@ -71,8 +82,7 @@ def main() -> None:
         approver=console_approver,
     )
 
-    # Cheap guard that the data contracts held: every Blueprint / Content
-    # Package / Lesson Plan reference must resolve to a TOC id (Handoff 7.1).
+    # Cheap guard that Course Model hierarchy/source references remain sound.
     integrity.report(course_id)
 
 

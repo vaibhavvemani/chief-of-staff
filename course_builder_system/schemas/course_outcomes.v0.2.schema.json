@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://course-builder.local/schemas/course_outcomes.v0.2.schema.json",
+  "title": "Course Builder Course Outcomes v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "course_id",
+    "artifact_type",
+    "produced_by_step",
+    "schema_version",
+    "status",
+    "revision",
+    "revision_note",
+    "inputs",
+    "updated_at",
+    "body"
+  ],
+  "properties": {
+    "course_id": { "$ref": "#/$defs/id" },
+    "artifact_type": { "const": "course_outcomes" },
+    "produced_by_step": { "enum": ["outcomes", "human"] },
+    "schema_version": { "const": "0.2" },
+    "status": { "enum": ["draft", "in_review", "approved", "rejected"] },
+    "revision": { "type": "integer", "minimum": 0 },
+    "revision_note": { "type": ["string", "null"], "maxLength": 500 },
+    "inputs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "contains": { "const": "brief" },
+      "uniqueItems": true
+    },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "body": { "$ref": "#/$defs/body" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "cognitive_level", "evidence", "priority"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "statement": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "cognitive_level": {
+          "enum": ["remember", "understand", "apply", "analyze", "evaluate", "create"]
+        },
+        "evidence": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "priority": { "enum": ["core", "supporting", "optional"] }
+      }
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["course_title", "audience_summary", "outcomes"],
+      "properties": {
+        "course_title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "audience_summary": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "outcomes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/outcome" }
+        }
+      }
+    }
+  }
+}

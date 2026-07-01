@@ -1,8 +1,9 @@
 # Grounding Sources for Phase 1
 
 These files are the curated grounding sources for `m1_s1` ("Nature of Financial Risk").
-Each `g*.md` file is intended to become a registered grounding source in the
-hand-authored Domain Model for S1.7.
+Each `g*.md` file is a compact curated evidence excerpt/notes capsule registered
+by `content_ref` in the approved Course Model. It is intentionally smaller than
+the original publication; the primary locator remains in the source metadata.
 
 | ID | File | Coverage |
 |---|---|---|
@@ -13,13 +14,14 @@ hand-authored Domain Model for S1.7.
 | g5 | `g5.md` | Lehman Brothers case facts; leverage; repo funding; liquidity stress |
 | g6 | `g6.md` | CRO role emergence; integrated institution-wide risk oversight |
 
-## How To Use These In S1.7
+## How To Use These
 
-When authoring the Domain Model, register these source IDs under
-`grounding_sources`. The `id` values should remain stable because generated
-content and verifier claims will later cite them.
+Register these source IDs under `Course Model.body.source_registry`. The `id`
+values remain stable because generated content and verifier claims cite them.
+The Course Model approves sources per subtopic; the Blueprint routes a smaller
+`source_ids` subset to each selected asset.
 
-Suggested Domain Model categories:
+Coverage groupings:
 
 - `FOUNDATIONAL CONCEPTS`: g1
 - `BANKING RISK TAXONOMY`: g2, g3, g4

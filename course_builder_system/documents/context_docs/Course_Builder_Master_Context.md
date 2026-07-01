@@ -48,7 +48,7 @@ If we only get a course builder and learn nothing reusable, the POC underdeliver
 
 ## 3. What the Course Builder is
 
-**In one line:** An agent that builds a complete course largely on its own — researching the subject, structuring it, generating the learner and teacher material, and packaging it for an LMS — while a single person directs it and approves its work at the decision points that matter.
+**In one line:** A domain-agnostic agent that can build a complete course on any subject — researching it, structuring it, generating learner and teacher material, and packaging it for an LMS — while a single person directs it and approves its work at the decision points that matter.
 
 The goal is **not** to remove the human. It is to make course-building **roughly 10× faster** by shifting the person from producing everything by hand to **directing and approving**. The agent does the heavy lifting; the human steers.
 
@@ -62,66 +62,58 @@ When a course is complete, the human receives **a single organized folder** cont
 |---|---|
 | **Student Content** | Learner-facing deliverables — learning objectives, reading material, slides, workbooks, case studies, quizzes/assessments — organized by module and subtopic, packaged in an LMS-ready format. |
 | **Teacher Content** | What the teacher delivers live — per-class lesson plan, the live-vs-self-study split, talking points, and solution guides. A layer distinct from the student reading material. |
-| **Metadata Documents** | The operational reference — the Table of Contents and the Blueprint (hours, slide counts, speaker placement, dependency map). |
-| **Domain Model** | The structured knowledge document about the subject that the agent built and used throughout. Ships as a deliverable in its own right — a reusable asset, not just a working file. |
+| **Course Design Documents** | The approved Course Brief and course-level outcomes, Research Dossier and source decisions, compact Course Model, and Blueprint. |
+| **Reference Sources** | The approved source corpus and source metadata used to ground the course. Full source text stays here rather than inside the Course Model. |
 
 The folder is the deliverable.
 
 ---
 
-## 5. The four-step flow
+## 5. The course-building workflow
 
-A course is built end to end through **four sequential steps**. Each step's output becomes the next step's input. The Domain Model (Section 6) sits beneath all four and is drawn on throughout. Each step ends at a **human checkpoint** before the next begins.
+A course is built through **eight approval-oriented stages**. The stages are sequential at the contract level, but a stage may contain an agent loop with the human until its artifact is approved.
 
 ```
-1. STRUCTURE  →  2. BLUEPRINT  →  3. STUDENT CONTENT  →  4. LESSON PLAN
+1. BRIEF → 2. OUTCOMES → 3. RESEARCH & SOURCES → 4. COURSE MODEL
+         → 5. BLUEPRINT → 6. STUDENT CONTENT → 7. LESSON PLAN → 8. PACKAGE
 ```
 
-### Step 1 — Structure
-*Understand the subject and produce the finalized Table of Contents.*
-- Takes in the person's intent: subject, target audience, level, goals, scope.
-- Builds the **Domain Model** — a structured understanding of the subject's concepts, how they relate, and what depends on what.
-- Researches the field, including the **real, current problems** practitioners face — not just textbook theory.
-- Analyzes the competitive landscape (what existing courses cover and where they fall short).
-- Runs a gap analysis to surface what should be in the course that nobody has flagged.
-- Drafts the **Table of Contents** — modules and subtopics in a defensible teaching order.
-- **Outputs:** Domain Model (persists onward) + finalized TOC (module list with subtopics and ordering).
+### Stage 1 — Conversational Course Brief
+The user may begin with only a subject. The agent asks the smallest useful set of clarifying questions about audience, prior knowledge, desired depth, duration, scope, modality, jurisdiction, goals, constraints, and must-have or excluded material. The user approves the resulting Course Brief.
 
-### Step 2 — Blueprint
-*Turn the structure into a runnable operational plan. Metadata only — a learner never sees this.*
-- Allocates time (hours per module and subtopic).
-- Plans delivery volume (slides and material per topic).
-- Places speakers (where a guest expert fits and on what topic; can use the Domain Model to suggest candidates).
-- Makes the **prerequisite/dependency structure explicit** (which modules depend on which).
-- **Outputs:** The Course Blueprint — per-module/subtopic hours and slide counts, speaker placement plan, explicit dependency map.
+### Stage 2 — Course-level Outcomes
+The agent proposes measurable course-level learning outcomes from the approved brief. The human revises and approves these **before research** so the competitor scan and structure are aimed at the intended learning result. These are design outcomes for the whole course; learner-facing objectives for individual subtopics are separate content assets.
 
-### Step 3 — Student Content
-*Generate the learner-facing material, ready for the LMS. The heaviest step, and where trustworthiness matters most.*
-- Generates learner deliverables — objectives, reading material, slides, workbooks, case studies, quizzes/assessments.
-- **Grounds** content in researched sources and runs a **separate verification pass** over factual claims.
-- Ensures reading material is genuinely comprehensive — the full body of knowledge, not a thin summary.
-- Packages output in an **LMS-compatible format** so progress tracking works once uploaded.
-- **Outputs:** All learner-facing documents + LMS-packaged output.
+### Stage 3 — Research Dossier and Source Approval
+The agent researches competing courses, current practice, real-world problems, and candidate authoritative sources. It produces a separate **Research Dossier** with competitor findings, gaps, candidate sources, and source-to-topic relevance. The human explicitly approves or rejects sources. Full source texts are stored separately and are never embedded in the Course Model.
 
-### Step 4 — Lesson Plan
-*Turn the full material into what the teacher delivers live.*
-- Maps the full module material against the available live teaching time.
-- Decides what is taught live vs left to self-study.
-- Produces a **per-class lesson plan** for each session.
-- Provides teacher-facing **talking points** (distinct from the learner's reading material, so the teacher isn't reading the textbook aloud).
-- **Outputs:** Per-class lesson plan, live-vs-self-study split, teacher talking points per session.
+### Stage 4 — Course Model
+The agent turns the approved brief, outcomes, research, and source decisions into one compact **Course Model**. It combines the former Table of Contents and Domain Model use cases: modules, subtopics, order, scope, concepts, dependencies, coverage requirements, and approved source IDs. The human revises and approves it as a single artifact.
+
+### Stage 5 — Blueprint
+The Blueprint turns the Course Model into a runnable operational plan. Per subtopic it records delivery time, depth, target learning minutes, a target word **range**, required concepts/examples/case depth, assessment complexity, and the exact learner and teacher assets to generate. It may also plan slide volume and speaker placement. Asset selection is not globally fixed: the human can choose what a particular subtopic needs.
+
+### Stage 6 — Student Content
+For each selected asset, a deterministic context builder supplies the current subtopic slice, course/audience context, relevant neighbouring titles/scopes, and only the approved source material routed to that asset. Long-form content follows `approved coverage plan → draft → coverage/depth check → bounded targeted regeneration`. Length is a guardrail, not a universal pass/fail threshold. A separate verification pass checks factual claims and attribution. Section-by-section drafting can be added during whole-course scaling if measured quality or context size warrants the extra calls.
+
+### Stage 7 — Lesson Plan
+The agent maps approved course content against live teaching time, decides live versus self-study delivery, and produces per-class plans and teacher talking points.
+
+### Stage 8 — Package
+The approved learner and teacher assets are assembled into the organized course folder and packaged for the target LMS.
 
 ---
 
-## 6. The Domain Model
+## 6. The compact Course Model
 
-The Domain Model is the **conceptual heart** of the system.
+The Course Model is the **single approved contract for course structure and scoped subject understanding**.
 
-- **What it is:** a knowledge *document* about the subject — a structured, written understanding of the field. It captures the concepts, how they relate, the order they should be learned in, and the grounding material (regulations, cases, real-world problems). It is **comprehension, not a pile of links**.
-- **How it's used:** built primarily in Step 1, but it persists and is reused by every later step (Step 2 uses it to suggest speakers; Step 3 uses it to ground content; Step 4 uses it to judge what matters most for live teaching). It ships in the final folder as a deliverable.
-- **Why a document:** a person can read, check, and correct it; it's portable and needs no special infrastructure; it can be handed to any step as context.
-- **POC simplification:** for the POC, a step is handed the **whole** Domain Model as context, not a retrieved slice. This avoids building retrieval machinery early. The trade-off is the document must stay within a sane size. Slicing it into retrievable pieces (RAG) is a **later optimization, not a Day-1 requirement**.
-- **Generalization to remember (but not over-build):** a structured knowledge document about a domain is useful far beyond course-building — any process the Chief of Staff later automates likely benefits from one. Note it; do not let it bloat the POC.
+- **One artifact, two logical views:** its hierarchy provides the TOC view; its concepts, scope, dependencies, coverage requirements, and source mappings provide the former Domain Model view. Separate TOC and Domain Model documents are retired for new work.
+- **Compact by design:** it contains only information needed to design and generate the approved course. It does not contain competitor-course narratives, full source text, generated teaching prose, or encyclopedic background.
+- **Stable identifiers:** modules, subtopics, concepts, outcomes, and sources use IDs so later artifacts reference rather than duplicate them.
+- **Sources remain separate:** the Research Dossier records why sources were considered and the source store holds their text. The Course Model stores only approved source IDs and topic relevance.
+- **Context is sliced deterministically:** later calls do not receive the whole Course Model and source corpus. Code selects the current subtopic, its parent and small neighbour summary, relevant course/audience constraints, Blueprint requirements, and assigned approved source excerpts by ID.
+- **No RAG yet:** this is explicit artifact selection, not semantic retrieval. Add embeddings/vector search only when deterministic source-to-subtopic mappings demonstrably stop scaling.
 
 ---
 
@@ -131,12 +123,15 @@ The agent does the heavy lifting and works through a step on its own. At a **che
 
 **Motto:** the agent proposes, the human disposes, and nothing significant moves forward without a yes.
 
-| Step | What the human provides | What they approve at the checkpoint |
+| Stage | What the human provides | What they approve at the checkpoint |
 |---|---|---|
-| 1 Structure | Subject, audience, level, goals, scope; any must-have topics/constraints | The TOC and module/subtopic division |
-| 2 Blueprint | Delivery constraints: total hours, format, fixed speaker/scheduling needs | Time allocation, slide volume, speaker placement, dependency map |
-| 3 Student Content | Target LMS format; any house style or depth preferences | The generated material (light, fast review because it's grounded + verified) before packaging |
-| 4 Lesson Plan | Live teaching time available per module/class | The live-vs-self-study split and per-class lesson plan |
+| Brief | Initial subject and answers to the agent's clarifying questions | Audience, depth, scope, duration, modality, constraints, inclusions and exclusions |
+| Outcomes | Corrections and priorities | Course-level learning outcomes |
+| Research & Sources | Trust preferences and known sources | Research findings and the exact candidate sources allowed for use |
+| Course Model | Structural and subject-matter corrections | Modules, subtopics, order, scope, concepts, dependencies, coverage and source mappings |
+| Blueprint | Delivery constraints and content preferences | Per-subtopic depth budget, timing, examples/cases, assessment complexity and selected assets |
+| Student Content | Feedback on individual assets | Grounded, verified learner material before packaging |
+| Lesson Plan | Live teaching time available per module/class | Live-vs-self-study split and per-class plan |
 
 **One director per course.** A single person owns and steers one course end to end. The team is larger, but we design for the single-director reality — **not** multi-user collaboration in the POC.
 
@@ -176,14 +171,21 @@ Today, courses are built through a largely manual **five-stage** process, with m
 
 ## 10. Decisions already locked (do not re-litigate)
 
+The 2026-06-30 migration rules are recorded in `Course_Builder_Architecture_Decision_2026-06-30.md`.
+
 | Decision | What was settled |
 |---|---|
-| **It is a Chief of Staff with a pipeline inside it** | The end product automates a company process by process. The course-builder four-step flow is the first process it learns to run — not the whole product. |
+| **It is a Chief of Staff with a pipeline inside it** | The end product automates a company process by process. The course-building workflow is the first process it learns to run — not the whole product. |
 | **Course-building is the first POC** | Chosen because it is real, self-contained, understood, and exercises the right general patterns. |
+| **Domain-agnostic course creation** | The product must be capable of building a course on any subject. FRM is a Phase 1 benchmark fixture, not product logic or the permanent domain. |
 | **Checkpoint model for human control** | Agent runs a step, stops, shows its work, asks for approval. Not continuous-supervision, not fully autonomous. |
-| **Domain model is a document, handed whole** | Readable, correctable, portable; given whole to each step for the POC. Retrieval/slicing deferred. Ships in the final folder. |
+| **Brief and course outcomes are approved first** | The agent clarifies intent conversationally; the human approves the Course Brief and course-level outcomes before research begins. |
+| **The Course Model combines TOC + Domain Model** | One compact, human-correctable artifact preserves both logical views. Full research and source text remain separate. |
+| **Human approves sources and per-subtopic assets** | Candidate sources and each subtopic's document/asset plan are explicit user decisions, not hidden or globally fixed choices. |
+| **Deterministic context slicing before RAG** | Generation receives a small subtopic-specific Course Model slice and assigned approved source excerpts. No vector database until this simpler mapping fails at real scale. |
+| **Depth is planned, not padded** | Blueprint depth budgets and coverage checks govern expansion. There is no universal word minimum across all subtopics. |
 | **One director per course** | Single-owner-per-project. Not designing for multi-user collaboration in the POC. |
-| **The deliverable is an organized folder** | Student content, teacher content, metadata, and the Domain Model — sorted, LMS-ready where applicable. |
+| **The deliverable is an organized folder** | Student content, teacher content, approved design/research artifacts, and reference sources — sorted and LMS-ready where applicable. |
 | **General lessons live in phase docs** | High-level docs stay course-focused; Chief-of-Staff generalization happens in per-phase design work. |
 | **Build order ≠ course order** | We build by contracts and risk, not in the sequence a course is made (see Section 12). |
 | **No agent framework at the start** | Direct model SDK calls first. Add a framework later only if a concrete need appears. |
@@ -192,24 +194,23 @@ Today, courses are built through a largely manual **five-stage** process, with m
 
 ## 11. Open questions (to resolve during phasing)
 
-- **Target LMS and packaging format. RESOLVED — SCORM 1.2.** A standalone converter (`.docx`/`.pptx` → self-contained SCORM 1.2 `.zip`, via a LibreOffice→PDF→JPEG pipeline) is built and tested against an LMS; see `scorm_converter.md`. Does not affect Steps 1–2. The remaining Phase 5 work is wiring the builder's generated course folder into it (see §16).
-- **Phase 1 reference subtopic.** FRM is the most complete reference course and was used for the Phase 0 schemas. Before building the real Student Content agent, choose the exact FRM subtopic and manual assets that will serve as the Phase 1 quality benchmark.
-- **Phase 1 review rubric.** "At least as good as the manual version" must become a small rubric before implementation: factual accuracy, coverage, source attribution, pedagogical clarity, asset completeness, house style, and human review time.
-- **Citation granularity.** Phase 0 has source IDs at the Domain Model grounding-source level. Phase 1 must decide how precise attribution needs to be for verification — for example source URL, document section, excerpt, or claim-level support — without jumping to RAG prematurely.
-- **Cost-vs-depth trade-off.** How thorough — and therefore how slow/expensive — each generation and verification run should be.
+- **Target LMS and packaging format. RESOLVED — SCORM 1.2.** A standalone converter (`.docx`/`.pptx` → self-contained SCORM 1.2 `.zip`, via a LibreOffice→PDF→JPEG pipeline) is built and tested against an LMS; see `scorm_converter.md`. It does not affect the brief, research, Course Model, or Blueprint contracts. The remaining Phase 5 work is wiring the builder's generated course folder into it (see §16).
+- **Phase 1 benchmark gate.** The FRM reference subtopic and review rubric are selected. The remaining decision is whether live generated output clears the blind human quality and review-time gate.
+- **Source context scale threshold.** Measure prompt size and source coverage as courses grow; define the evidence that would justify moving beyond deterministic source-to-subtopic mapping to retrieval.
+- **Cost-vs-depth policy.** Use the Blueprint's dynamic depth budget and logged runs to decide how thorough — and therefore how slow/expensive — generation and verification should be.
 - **How each agent is actually built.** All technical implementation is decided per-phase with the Chief-of-Staff vision in view.
 
 ---
 
 ## 12. Implementation philosophy: build order is not course order
 
-The natural instinct is to build Step 1 first because it's first, then 2, 3, 4. **That is the wrong sequence, and following it is the most common way projects like this stall.** Two ideas replace it:
+The natural instinct is to build the workflow from Brief through Package in order. **That is the wrong implementation sequence, and following it is a common way projects like this stall.** Two ideas replace it:
 
-**Each step is a function.** It takes an input artifact and produces an output artifact:
-`subject → Domain Model + TOC → Blueprint → Student Content → Lesson Plan`.
-So the **contracts between steps matter more than any single step's cleverness**. If each artifact's shape is well-defined and stable, you can build, test, and swap each step on its own — and hand-author an artifact to test a later step before the earlier one exists. **The real foundation is the data model, not Step 1.**
+**Each stage is a function.** It takes input artifacts and produces an output artifact:
+`subject → approved brief → approved course outcomes → research dossier + approved sources → Course Model → Blueprint → Student Content → Lesson Plan + package`.
+So the **contracts between stages matter more than any single stage's cleverness**. If each artifact's shape is well-defined and stable, you can build, test, and swap each stage on its own — and hand-author an artifact to test a later stage before the earlier one exists. **The real foundation is the data model, not the first stage.**
 
-**Deepen steps in risk order.** Step 3 (Student Content) is the long pole: heaviest, highest-value, and home to the one genuinely uncertain question — *can an agent produce content trustworthy enough that review is light?* Answer that early. The lucky break: finished manual courses let you test Step 3 on real input and measure it against a known-good result, **without having built Steps 1 or 2 first**.
+**Deepen stages in risk order.** Student Content is the long pole: heaviest, highest-value, and home to the one genuinely uncertain question — *can an agent produce content trustworthy enough that review is light?* Answer that early. Finished manual courses let us test it on hand-authored input and measure it against a known-good result before building conversational intake and live research.
 
 ---
 
@@ -218,9 +219,9 @@ So the **contracts between steps matter more than any single step's cleverness**
 - **Smallest thing that works, first.** Reach for the simplest version that proves the point, then grow it.
 - **No agent frameworks at the start.** Call the model SDK directly. Frameworks (LangChain, CrewAI, etc.) hide the mechanics you most need to learn and make debugging painful. Add one later only if a concrete need appears.
 - **Contracts before cleverness.** Lock the artifact shapes before building the agents that fill them.
-- **Composition over monolith.** Keep each step a small, bounded agent with a clear contract — not one giant do-everything prompt.
+- **Composition over monolith.** Keep each stage a small, bounded agent with a clear contract — not one giant do-everything prompt.
 - **Verification is the product, not a feature.** It is the entire reason review can be light.
-- **Hand-author inputs to test later steps.** You don't need Step 1 finished to test Step 3 — just a valid input artifact.
+- **Hand-author inputs to test later stages.** You do not need intake and research agents finished to test content generation—only valid approved fixtures.
 
 ---
 
@@ -230,9 +231,12 @@ So the **contracts between steps matter more than any single step's cleverness**
 |---|---|
 | **Agent** | An LLM given a goal, some tools, and a loop — so it takes steps toward the goal instead of answering once. |
 | **Tool / tool use** | A function you expose to the model (search, read a file, run code) that it can choose to call. How an agent acts, not just talks. |
-| **Artifact / contract** | The defined data shape each step outputs and the next consumes (e.g. the TOC as JSON). Stable contracts let you build and test each step on its own. |
+| **Artifact / contract** | The defined data shape each stage outputs and the next consumes (for example the Course Model as JSON). Stable contracts let you build and test each stage on its own. |
+| **Course Model** | The compact combined artifact for course hierarchy and scoped subject understanding; it replaces separate TOC and Domain Model artifacts for new work. |
+| **Research Dossier** | Competitor findings, gaps, candidate sources, relevance notes, and human source decisions. It is deliberately separate from the compact Course Model. |
+| **Context slice** | A deterministic, ID-based subset of the approved artifacts and sources assembled for one subtopic or asset generation call. |
 | **Grounding** | Generating from supplied, verified sources rather than the model's memory — so facts are real and traceable. |
-| **RAG** | Retrieval-augmented generation: grounding at scale — store sources, fetch the relevant ones at generation time. Don't reach for it until pasting sources into the prompt stops scaling. |
+| **RAG** | Retrieval-augmented generation: semantic retrieval for grounding at scale. Do not reach for it until deterministic source-to-subtopic mappings stop scaling. |
 | **Orchestration** | The code that runs the steps in order, passes artifacts between them, saves state, and pauses for approval. |
 | **Human-in-the-loop / checkpoint** | A deliberate stop where the person approves or redirects before the agent continues. |
 | **Eval** | A repeatable way to measure output quality — here, comparing against the manual courses — so "better" is a fact, not a feeling. |
@@ -249,7 +253,7 @@ Defaults chosen to minimise moving parts while learning. Change any of them late
 | **Model access** | Call the model SDK directly. No agent framework yet. |
 | **State & storage** | Plain files on disk: one folder per course, artifacts as JSON. No database until you feel real pain. |
 | **Approval** | A console prompt at first — print the artifact, wait for approve / request-changes. A nicer interface is Phase 6. |
-| **Grounding** | Start by pasting sources into the prompt. Move to retrieval / RAG only when source volume forces it. |
+| **Grounding** | Store approved source texts separately; map them to subtopics and inject only relevant excerpts. Move to retrieval / RAG only when this deterministic mapping demonstrably stops scaling. |
 
 ---
 
@@ -261,8 +265,8 @@ Defaults chosen to minimise moving parts while learning. Change any of them late
 |---|---|---|
 | **0** | Foundations & walking skeleton | **Complete:** pipeline runs end to end with real-shaped stubs, approvals, resumability, and contract checks |
 | **1** | Student content (one subtopic) | The core risk is retired: trustworthy content with light review |
-| **2** | Structure (Step 1) | Subject → Domain Model + TOC, reusing grounding |
-| **3** | Blueprint (Step 2) | A runnable plan: hours, slides, speakers, dependencies |
+| **2** | Intent, research & Course Model | Clarified brief → approved outcomes → research/source approval → compact Course Model |
+| **3** | Blueprint | A runnable per-subtopic plan: depth, time, assets, examples/cases, assessments, slides and speakers where relevant |
 | **4** | Integrate & scale content | A whole course's content generated from a subject |
 | **5** | Lesson plan + LMS packaging *(packaging tool built early — see §11)* | Teacher materials and platform-ready output |
 | **6** | Hardening | Reliable, observable, pleasant to run |
@@ -271,15 +275,15 @@ Defaults chosen to minimise moving parts while learning. Change any of them late
 
 **Phase 0 — Foundations & Walking Skeleton. COMPLETE.** The artifact schemas, orchestrator, approval loop, resumability, hardcoded real-shaped stubs, and referential-integrity check are in place. The archived Phase 0 handoff remains as historical implementation context only.
 
-**Phase 1 — Make Student Content real, on ONE subtopic. CURRENT FOCUS.** Retire the biggest risk. Feed the real structure and manual reference assets for one FRM subtopic into a Student Content agent. Build the trust machinery: grounding, separate verification, attribution, and a small human review rubric. Iterate against the human-made version of that same subtopic until quality is acceptable. *Done when:* for one subtopic, the agent's output is at least as good as the manual version and review takes minutes, not a rewrite.
+**Phase 1 — Make Student Content real, on ONE subtopic. CURRENT FOCUS.** Retire the biggest risk. Use one FRM subtopic as benchmark data for the domain-agnostic generation path. Build the trust machinery: scoped grounding, separate verification, attribution, coverage/depth checks, targeted revision, and a human review rubric. Iterate against the human-made version until quality is acceptable. *Done when:* the generic path produces this benchmark at least as well as the manual version and review takes minutes, not a rewrite.
 
-**Phase 2 — Make Structure real (Step 1).** Turn a subject into a competitor scan, a Domain Model, and a TOC — reusing the grounding infrastructure from Phase 1. Feed the new Domain Model back into Step 3 as a grounding upgrade. *Done when:* from a subject line you get a Domain Model and TOC comparable to a human researcher's, with human checks at quality-sensitive points (especially the competitor scan).
+**Phase 2 — Make intent, research, and structure real.** Starting from a subject as broad as “coffee making,” run a conversational clarification loop, obtain approval of the Course Brief and course-level outcomes, research competitors and candidate sources, let the human approve sources, and produce one compact Course Model. Reuse Phase 1 grounding and attribution machinery, but keep research evidence and full sources outside the Course Model. *Done when:* a sparse initial request becomes approved intent, outcomes, research/source decisions, and a human-approved Course Model without domain-specific prompt logic.
 
-**Phase 3 — Make Blueprint real (Step 2).** Turn the TOC + Domain Model into a runnable plan: hours, slide counts, speaker placement, dependencies. More rules and structured generation than open-ended writing. A simple dependency model. *Done when:* the Blueprint produces a plan a human signs off on with only minor tweaks.
+**Phase 3 — Make Blueprint real.** Turn the Course Model into a runnable, human-editable plan: timing, target depth/learning minutes/word ranges, required concepts and examples, case and assessment complexity, slide/speaker planning where relevant, and selected assets per subtopic. *Done when:* the Blueprint expresses intentional differences between subtopics and a human signs off with only minor tweaks.
 
-**Phase 4 — Integrate, then scale content.** Let Step 3 consume real Step 1 and 2 output, and generate content for ALL subtopics with tracking, retries, and partial-failure handling. Do not parallelize before this point. *Done when:* a whole course's student content generates from a subject, with approvals at the gates.
+**Phase 4 — Integrate, then scale content.** Let content generation consume deterministic per-subtopic slices from the Course Model, Blueprint, and approved source store. Generate only selected assets, using the outline/draft/coverage/depth/targeted-expansion loop for long-form content, with tracking, retries, and partial-failure handling. Do not parallelize before this point. *Done when:* a whole, non-FRM course can generate from a subject with approvals at every material gate.
 
-**Phase 5 — Lesson Plan (Step 4) + LMS packaging.** A lesson-plan agent (per-class plans, live-vs-self-study, talking points) and packaging that exports the course folder into the target LMS format. **The packaging format and tool are now decided and built ahead of schedule:** a standalone converter turns `.docx`/`.pptx` into self-contained SCORM 1.2 `.zip` packages (see `scorm_converter.md`), and already round-trips the hand-authored `m1_s1` assets end-to-end into an LMS. What remains for this phase is the lesson-plan agent and wiring the builder's *generated* course folder into the converter. The freed packaging effort is **banked as schedule buffer** against the tight overall timeline rather than used to pull the end date in. *Done when:* the folder is complete and uploads cleanly into the target LMS.
+**Phase 5 — Lesson Plan + LMS packaging.** A lesson-plan agent (per-class plans, live-vs-self-study, talking points) and packaging that exports the course folder into the target LMS format. **The packaging format and tool are now decided and built ahead of schedule:** a standalone converter turns `.docx`/`.pptx` into self-contained SCORM 1.2 `.zip` packages (see `scorm_converter.md`), and already round-trips the hand-authored `m1_s1` assets end-to-end into an LMS. What remains for this phase is the lesson-plan agent and wiring the builder's *generated* course folder into the converter. The freed packaging effort is **banked as schedule buffer** against the tight overall timeline rather than used to pull the end date in. *Done when:* the folder is complete and uploads cleanly into the target LMS.
 
 **Phase 6 — Hardening.** A better approval interface, tracing/observability, retries, cost control, polished single-folder output. Polish after it works, never before. *Done when:* someone who didn't build it could run a course and trust the result.
 
@@ -292,7 +296,7 @@ A clean split is **bones versus intelligence**. It keeps the two builders out of
 | Role | Owns |
 |---|---|
 | **Person A — Platform** | The bones: orchestrator, artifact schemas & storage, the approval loop, packaging, tracing. |
-| **Person B — Agents** | The intelligence: the step agents — prompts, grounding, verification, attribution, and the evals. |
+| **Person B — Agents** | The intelligence: the stage agents — prompts, grounding, verification, attribution, and the evals. |
 | **Where to pair** | Tightly in Phase 0 (the shared contracts) and Phase 1 (the make-or-break step). Diverge after that. |
 
 ---
@@ -305,21 +309,24 @@ A clean split is **bones versus intelligence**. It keeps the two builders out of
 - **Building in course order** — it feels natural and it stalls projects. Build by contracts and risk.
 - **Optimising too early** — don't parallelise or add a vector database before one subtopic works end to end.
 - **No eval** — without comparing against the manual courses you can't tell whether a change helped. Build the comparison early.
+- **Domain facts in reusable prompts** — prompts express the task; approved artifacts provide the subject-specific coverage requirements.
+- **Context dumping** — do not inject the full Course Model and every source into every call. Build the deterministic context slice first.
+- **Word-count inflation** — a universal minimum rewards padding. Use subtopic-specific depth, coverage, examples, and word-range checks.
 
 ---
 
 ## 19. Phase 0 completion snapshot
 
-**Status:** Phase 0 is complete. The active build focus is now Phase 1.
+**Status:** Phase 0 is complete. Phase 1 uses the existing FRM artifacts as a narrow quality benchmark while reusable contracts migrate to the domain-agnostic architecture above.
 
 What Phase 0 left behind as durable project context:
 
-- **Artifact schemas v0.1 are locked for the POC.** The five artifact bodies are Domain Model, TOC, Blueprint, Content Package, and Lesson Plan. Worked FRM examples live in `documents/artifact_samples/`.
+- **Artifact schemas v0.1 are historical walking-skeleton contracts.** They originally separated Domain Model and TOC. New work migrates them to the combined Course Model and adds Course Brief, course outcomes, Research Dossier/source decisions, and per-subtopic Blueprint depth/asset fields.
 - **Every artifact is wrapped in the same metadata envelope.** The orchestrator owns lifecycle fields such as `status`, `revision`, `revision_note`, and `updated_at`; artifact-specific content lives under `body`.
-- **The TOC is the single source of truth for structure.** Later artifacts reference stable TOC IDs instead of re-encoding the module/subtopic tree. Human-facing numbering is derived from `order`.
+- **Stable hierarchy IDs remain the single source of truth for structure.** In the target contract these live in the Course Model; later artifacts reference them instead of re-encoding the module/subtopic tree. Human-facing numbering is derived from `order`.
 - **The walking skeleton works.** `orchestrator.py`, `steps.py`, and `run.py` run the four-step pipeline end to end with hardcoded real-shaped stubs, save artifacts under `courses/<course_id>/`, pause for approval, and skip already-approved steps on resume.
 - **Step functions are isolated contracts.** Each step follows `(inputs, feedback) -> {artifact_type: artifact}`. Rejection at a checkpoint re-runs only that step, preserving earlier approved artifacts.
-- **A cheap contract guard exists.** `integrity.py` checks that Blueprint, Content Package, Lesson Plan, Domain Model, and TOC references resolve.
+- **A cheap contract guard exists.** `integrity.py` checks cross-artifact references in the current contracts; migration must preserve equivalent checks for Course Model, approved sources, Blueprint, Content Package, and Lesson Plan IDs.
 - **The learning scripts exist only as a throwaway sandbox.** `learning_scripts/` demonstrates a plain model call, grounded answer, and simple tool-use loop. They are not part of the skeleton and should not shape production architecture unless a Phase 1 decision explicitly promotes an idea from them.
 
 The Phase 0 handoff has been archived at `documents/context_docs/archive/Course_Builder_Phase0_Handoff.md`. Treat it as historical rationale, not the current source of active instructions.
@@ -329,10 +336,10 @@ The Phase 0 handoff has been archived at `documents/context_docs/archive/Course_
 ## 20. Team & current state
 
 - **Team:** two engineers, both new to agentic AI.
-- **Current state:** Phase 0 is complete. The project has a working file-based skeleton with approved demo artifacts in `courses/frm-demo/`, real-shaped hardcoded stubs, and referential-integrity validation. No real content-generation agent has been built yet.
+- **Current state:** Phase 0 is complete. Phase 1 engineering has migrated the reusable contracts, prompts, context builder, verification, and integrity path to the compact Course Model architecture. The FRM one-subtopic live quality gate remains; FRM-specific fixtures are benchmark data, not reusable prompt or contract assumptions.
 - **Building method:** the project is being built largely with AI assistance — this document exists to give any AI collaborator full context.
 - **Key asset:** existing, manually-built courses (risk & governance subjects). These are the reference for designing the artifacts AND the quality bar the agent's output is measured against.
-- **Immediate next action:** create a Phase 1 implementation handoff/design doc, then build Student Content for one chosen FRM subtopic with grounding, separate verification, source attribution, and a review rubric.
+- **Immediate next action:** with explicit approval for external API use, run the FRM live quality gate through the migrated generic path, ratify the scorecard/review-time gate, and write the Phase 1 handoff.
 
 ---
 
