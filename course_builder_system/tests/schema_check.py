@@ -3,8 +3,8 @@ Dependency-free JSON Schema subset validator for v0.2 Content Package contracts.
 
 Supports ONLY the keyword subset that content_package.v0.2.schema.json uses:
   type, required, properties, additionalProperties (false), const, enum,
-  minLength, minimum, items, $ref (into root $defs), anyOf, pattern,
-  uniqueItems, contains.
+  minLength, maxLength, minimum, items, $ref (into root $defs), anyOf,
+  pattern, uniqueItems, minItems, contains.
 
 Usage
 -----
@@ -123,6 +123,10 @@ def validate(instance: object, schema: dict, root: dict | None = None) -> list[s
         if len(instance) < schema["minLength"]:
             errors.append(f"String {instance!r} is shorter than minLength={schema['minLength']}")
 
+    if "maxLength" in schema and isinstance(instance, str):
+        if len(instance) > schema["maxLength"]:
+            errors.append(f"String {instance!r} is longer than maxLength={schema['maxLength']}")
+
     # ---- minimum (numbers/integers) ------------------------------------------
     if "minimum" in schema and isinstance(instance, (int, float)):
         if instance < schema["minimum"]:
@@ -159,6 +163,12 @@ def validate(instance: object, schema: dict, root: dict | None = None) -> list[s
 
     # ---- Array keywords ------------------------------------------------------
     if isinstance(instance, list):
+        if "minItems" in schema and len(instance) < schema["minItems"]:
+            errors.append(f"Array is shorter than minItems={schema['minItems']}")
+
+        if "maxItems" in schema and len(instance) > schema["maxItems"]:
+            errors.append(f"Array is longer than maxItems={schema['maxItems']}")
+
         # items
         if "items" in schema:
             item_schema = schema["items"]

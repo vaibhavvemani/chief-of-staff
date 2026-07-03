@@ -1,0 +1,38 @@
+{
+  "course_id": "coffee-demo",
+  "artifact_type": "course_outcomes",
+  "produced_by_step": "outcomes",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": ["brief"],
+  "updated_at": "2026-07-01T00:00:00+00:00",
+  "body": {
+    "course_title": "Better Coffee at Home",
+    "audience_summary": "Curious adult beginners who make coffee at home and want more consistent results.",
+    "outcomes": [
+      {
+        "id": "co1",
+        "statement": "Explain the core brewing variables that affect coffee extraction and taste.",
+        "cognitive_level": "understand",
+        "evidence": "Learner explains grind, water, ratio, and time in plain language.",
+        "priority": "core"
+      },
+      {
+        "id": "co2",
+        "statement": "Apply a repeatable home brewing workflow to produce a balanced cup.",
+        "cognitive_level": "apply",
+        "evidence": "Learner follows and adjusts a brewing recipe using observable results.",
+        "priority": "core"
+      },
+      {
+        "id": "co3",
+        "statement": "Analyze common taste problems and choose an appropriate adjustment.",
+        "cognitive_level": "analyze",
+        "evidence": "Learner diagnoses sour, bitter, weak, or muddy coffee scenarios.",
+        "priority": "core"
+      }
+    ]
+  }
+}

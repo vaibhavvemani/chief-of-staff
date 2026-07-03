@@ -3,6 +3,9 @@
 These fixtures demonstrate the domain-neutral planning contracts without
 replacing the legacy `courses/frm-demo/` artifacts.
 
+- `coffee_demo.subject_request`, `coffee_demo.brief`, `coffee_demo.course_outcomes`,
+  and `coffee_demo.research_dossier` are the Sprint 1 non-FRM fixtures for the
+  sparse-request through mocked source-selection path.
 - `course_outcomes` records the human-approved course-level outcomes that guide
   research and structure.
 - `research_dossier` records competitor findings and every proposed, approved,

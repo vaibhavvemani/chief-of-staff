@@ -12,8 +12,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from agents import revision, student_content, verification
+from agents import intake, outcomes, revision, student_content, verification
 from orchestrator import load_artifact, make_artifact
+from source_selection import (
+    apply_source_decision,
+    approved_source_registry,
+    source_choice_prompt,
+)
 
 CONTENT_PACKAGE_SCHEMA_VERSION = "0.2"
 DESIGN_SCHEMA_VERSION = "0.2"
@@ -22,6 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parent
 FIXTURE_DIR = REPO_ROOT / "course_models"
 COURSE_OUTCOMES_FIXTURE = FIXTURE_DIR / "frm_demo.course_outcomes.json"
 RESEARCH_DOSSIER_FIXTURE = FIXTURE_DIR / "frm_demo.research_dossier.json"
+COFFEE_RESEARCH_DOSSIER_FIXTURE = FIXTURE_DIR / "coffee_demo.research_dossier.json"
 COURSE_MODEL_FIXTURE = FIXTURE_DIR / "frm_demo.course_model.json"
 BLUEPRINT_FIXTURE = FIXTURE_DIR / "frm_demo.blueprint.json"
 
@@ -30,39 +36,88 @@ def _fixture_body(path: Path, artifact_type: str) -> dict:
     if not path.exists():
         raise FileNotFoundError(f"{artifact_type} fixture not found: {path}")
     artifact = json.loads(path.read_text(encoding="utf-8"))
-    if artifact.get("artifact_type") != artifact_type or not isinstance(
-        artifact.get("body"), dict
-    ):
+    if artifact.get("artifact_type") != artifact_type or not isinstance(artifact.get("body"), dict):
         raise ValueError(f"invalid {artifact_type} fixture: {path}")
     return artifact["body"]
 
 
+def intake_step(inputs: dict, feedback: str | None) -> dict:
+    """Sparse Subject Request -> schema-valid Course Brief v0.2."""
+    subject_request = inputs["subject_request"]
+    answers = {}
+    if feedback:
+        answers["purpose"] = feedback
+    artifact = intake.build_brief_artifact(subject_request, answers)
+    return {"brief": artifact}
+
+
 def course_outcomes_step(inputs: dict, feedback: str | None) -> dict:
-    """Approved Course Brief -> course-level outcomes (Phase 2 replacement target)."""
-    course_id = inputs["brief"]["course_id"]
-    artifact = make_artifact(
-        course_id,
-        "course_outcomes",
-        "outcomes",
-        body=_fixture_body(COURSE_OUTCOMES_FIXTURE, "course_outcomes"),
-        inputs=["brief"],
-        schema_version=DESIGN_SCHEMA_VERSION,
-    )
+    """Approved Course Brief -> course-level outcomes."""
+    candidates = outcomes.draft_outcomes_from_brief(inputs["brief"])
+    if feedback:
+        candidates[0]["statement"] = feedback
+    artifact = outcomes.build_course_outcomes_artifact(inputs["brief"], candidates)
     return {"course_outcomes": artifact}
 
 
 def research_step(inputs: dict, feedback: str | None) -> dict:
     """Brief + approved outcomes -> dossier (Phase 2 replacement target)."""
     course_id = inputs["brief"]["course_id"]
+    fixture = _research_fixture_for(inputs["brief"])
     artifact = make_artifact(
         course_id,
         "research_dossier",
         "research",
-        body=_fixture_body(RESEARCH_DOSSIER_FIXTURE, "research_dossier"),
+        body=_fixture_body(fixture, "research_dossier"),
         inputs=["brief", "course_outcomes"],
         schema_version=DESIGN_SCHEMA_VERSION,
     )
     return {"research_dossier": artifact}
+
+
+def source_selection_step(inputs: dict, feedback: str | None) -> dict:
+    """Apply explicit source choices to a mocked downstream registry."""
+    course_id = inputs["research_dossier"]["course_id"]
+    prompt = source_choice_prompt(inputs["research_dossier"])
+    if feedback:
+        selected_ids = tuple(item.strip() for item in feedback.split(",") if item.strip())
+    else:
+        selected_ids = prompt.default_selected_ids()
+    decided_dossier = apply_source_decision(inputs["research_dossier"], selected_ids)
+    registry = approved_source_registry(decided_dossier)
+    artifact = make_artifact(
+        course_id,
+        "approved_source_registry",
+        "source_selection",
+        body={
+            "choice_prompt": {
+                "id": prompt.id,
+                "stage": prompt.stage,
+                "target_artifact": prompt.target_artifact,
+                "mode": prompt.mode,
+                "options": [
+                    {
+                        "id": option.id,
+                        "label": option.label,
+                        "description": option.description,
+                        "recommended": option.selected_by_default,
+                        "recommendation_rationale": option.recommendation_rationale,
+                    }
+                    for option in prompt.options
+                ],
+            },
+            "decision": {
+                "selected_ids": list(selected_ids),
+                "rejected_ids": [
+                    option.id for option in prompt.options if option.id not in selected_ids
+                ],
+            },
+            "source_registry": registry,
+        },
+        inputs=["research_dossier"],
+        schema_version=DESIGN_SCHEMA_VERSION,
+    )
+    return {"approved_source_registry": artifact}
 
 
 def structure_step(inputs: dict, feedback: str | None) -> dict:
@@ -149,9 +204,15 @@ def student_content_step(inputs: dict, feedback: str | None) -> dict:
 
         package_body = {
             "asset_vocabulary": [
-                "learning_objectives", "course_content", "summary",
-                "case_study", "important_person", "did_you_know",
-                "assessment", "activities", "resources",
+                "learning_objectives",
+                "course_content",
+                "summary",
+                "case_study",
+                "important_person",
+                "did_you_know",
+                "assessment",
+                "activities",
+                "resources",
             ],
             "subtopics": [{"subtopic_id": subtopic_id, "assets": assets}],
         }
@@ -166,7 +227,9 @@ def student_content_step(inputs: dict, feedback: str | None) -> dict:
     _print_verification_summaries(package_body)
 
     content = make_artifact(
-        course_id, "content_package", "student_content",
+        course_id,
+        "content_package",
+        "student_content",
         body=package_body,
         inputs=["course_model", "blueprint", "course_outcomes"],
         schema_version=CONTENT_PACKAGE_SCHEMA_VERSION,
@@ -203,25 +266,33 @@ def lesson_plan_step(inputs: dict, feedback: str | None) -> dict:
     course_id = inputs["content_package"]["course_id"]
 
     plan = make_artifact(
-        course_id, "lesson_plan", "lesson_plan",
+        course_id,
+        "lesson_plan",
+        "lesson_plan",
         body={
             "sessions": [
                 {
-                    "id": "sess1", "order": 1,
+                    "id": "sess1",
+                    "order": 1,
                     "title": "Foundations of Financial Risk",
                     "duration_hours": 2.5,
                     "covers": [
-                        {"subtopic_id": "m1_s1", "mode": "live",
-                         "talking_points": [
-                             "Open with the Lehman collapse as a hook",
-                             "Draw the risk-vs-uncertainty distinction (Knight)",
-                         ]},
-                        {"subtopic_id": "m1_s2", "mode": "live",
-                         "talking_points": [
-                             "Walk through the risk classification framework",
-                         ]},
-                        {"subtopic_id": "m1_s3", "mode": "self_study",
-                         "talking_points": []},
+                        {
+                            "subtopic_id": "m1_s1",
+                            "mode": "live",
+                            "talking_points": [
+                                "Open with the Lehman collapse as a hook",
+                                "Draw the risk-vs-uncertainty distinction (Knight)",
+                            ],
+                        },
+                        {
+                            "subtopic_id": "m1_s2",
+                            "mode": "live",
+                            "talking_points": [
+                                "Walk through the risk classification framework",
+                            ],
+                        },
+                        {"subtopic_id": "m1_s3", "mode": "self_study", "talking_points": []},
                     ],
                 },
             ],
@@ -229,3 +300,10 @@ def lesson_plan_step(inputs: dict, feedback: str | None) -> dict:
         inputs=["content_package", "blueprint"],
     )
     return {"lesson_plan": plan}
+
+
+def _research_fixture_for(brief: dict) -> Path:
+    subject = brief.get("body", {}).get("subject", "").casefold()
+    if brief.get("course_id") == "coffee-demo" or "coffee" in subject:
+        return COFFEE_RESEARCH_DOSSIER_FIXTURE
+    return RESEARCH_DOSSIER_FIXTURE

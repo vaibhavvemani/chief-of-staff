@@ -17,8 +17,50 @@
         "offering": "Financial Risk Manager curriculum",
         "locator": "https://www.garp.org/frm",
         "audience": "Finance professionals preparing for professional risk-management practice.",
+        "level": "professional intermediate",
+        "duration": null,
+        "delivery_format": "self-study and exam preparation",
+        "assessment_approach": "professional certification exam",
+        "outline_status": "partial",
+        "outline_sections": [
+          {
+            "id": "rf1_sec1",
+            "order": 1,
+            "raw_label": "Foundations of Risk Management",
+            "normalized_topic_id": "nt_risk_foundations",
+            "locator": "https://www.garp.org/frm",
+            "parent_label": null
+          },
+          {
+            "id": "rf1_sec2",
+            "order": 2,
+            "raw_label": "Quantitative Analysis",
+            "normalized_topic_id": "nt_quantitative_analysis",
+            "locator": "https://www.garp.org/frm",
+            "parent_label": null
+          },
+          {
+            "id": "rf1_sec3",
+            "order": 3,
+            "raw_label": "Market, Credit, Operational, and Liquidity Risk",
+            "normalized_topic_id": "nt_risk_categories",
+            "locator": "https://www.garp.org/frm",
+            "parent_label": null
+          }
+        ],
+        "normalized_topic_ids": [
+          "nt_risk_foundations",
+          "nt_quantitative_analysis",
+          "nt_risk_categories"
+        ],
         "structure_summary": "Progresses from foundations and quantitative analysis into market, credit, operational, liquidity, and investment risk.",
-        "notable_topics": ["risk foundations", "quantitative analysis", "market risk", "credit risk", "operational risk"],
+        "notable_topics": [
+          "risk foundations",
+          "quantitative analysis",
+          "market risk",
+          "credit risk",
+          "operational risk"
+        ],
         "differentiation_opportunity": "Use shorter concept-to-case loops and explicit human selection of source and asset plans."
       },
       {
@@ -27,9 +69,111 @@
         "offering": "Nature of Financial Risk reference materials",
         "locator": null,
         "audience": "Postgraduate learners encountering financial risk categories for the first time.",
+        "level": "intermediate",
+        "duration": "one benchmark subtopic",
+        "delivery_format": "blended course materials",
+        "assessment_approach": "short applied checks and scenario questions",
+        "outline_status": "usable",
+        "outline_sections": [
+          {
+            "id": "rf2_sec1",
+            "order": 1,
+            "raw_label": "Risk versus uncertainty",
+            "normalized_topic_id": "nt_risk_foundations",
+            "locator": null,
+            "parent_label": "Nature of Financial Risk"
+          },
+          {
+            "id": "rf2_sec2",
+            "order": 2,
+            "raw_label": "Four risk categories",
+            "normalized_topic_id": "nt_risk_categories",
+            "locator": null,
+            "parent_label": "Nature of Financial Risk"
+          },
+          {
+            "id": "rf2_sec3",
+            "order": 3,
+            "raw_label": "Lehman Brothers case",
+            "normalized_topic_id": "nt_crisis_case",
+            "locator": null,
+            "parent_label": "Nature of Financial Risk"
+          }
+        ],
+        "normalized_topic_ids": [
+          "nt_risk_foundations",
+          "nt_risk_categories",
+          "nt_crisis_case"
+        ],
         "structure_summary": "Combines concept exposition, objectives, summary, case, personality, fact, assessment, activities, and resources.",
-        "notable_topics": ["risk versus uncertainty", "four risk categories", "Lehman Brothers case"],
+        "notable_topics": [
+          "risk versus uncertainty",
+          "four risk categories",
+          "Lehman Brothers case"
+        ],
         "differentiation_opportunity": "Generate only the assets selected for each subtopic and tune depth independently."
+      }
+    ],
+    "normalized_topics": [
+      {
+        "id": "nt_risk_foundations",
+        "label": "Risk foundations",
+        "aliases": ["foundations of risk management", "risk versus uncertainty"]
+      },
+      {
+        "id": "nt_quantitative_analysis",
+        "label": "Quantitative analysis",
+        "aliases": ["measurement", "quantitative tools"]
+      },
+      {
+        "id": "nt_risk_categories",
+        "label": "Financial risk categories",
+        "aliases": ["market risk", "credit risk", "operational risk", "liquidity risk"]
+      },
+      {
+        "id": "nt_crisis_case",
+        "label": "Crisis case evidence",
+        "aliases": ["Lehman Brothers case", "financial crisis example"]
+      }
+    ],
+    "coverage_matrix": [
+      {
+        "normalized_topic_id": "nt_risk_foundations",
+        "competitor_course_ids": ["rf1", "rf2"]
+      },
+      {
+        "normalized_topic_id": "nt_quantitative_analysis",
+        "competitor_course_ids": ["rf1"]
+      },
+      {
+        "normalized_topic_id": "nt_risk_categories",
+        "competitor_course_ids": ["rf1", "rf2"]
+      },
+      {
+        "normalized_topic_id": "nt_crisis_case",
+        "competitor_course_ids": ["rf2"]
+      }
+    ],
+    "common_core_topic_ids": ["nt_risk_foundations", "nt_risk_categories"],
+    "sequence_observations": [
+      {
+        "statement": "Both usable outlines introduce risk foundations before category-level treatment.",
+        "evidence_competitor_ids": ["rf1", "rf2"]
+      }
+    ],
+    "gap_observations": [
+      {
+        "statement": "Competitor pages expose limited teaching-detail evidence, so source approval must drive factual grounding.",
+        "evidence_competitor_ids": ["rf1"]
+      }
+    ],
+    "structural_implications": [
+      {
+        "id": "si1",
+        "implication": "Open the course with a compact risk-foundations module before specialized categories.",
+        "rationale": "The approved outcomes and competitor sequence both require a shared language for risk, uncertainty, and category boundaries.",
+        "related_outcome_ids": ["co1", "co2"],
+        "related_topic_ids": ["nt_risk_foundations", "nt_risk_categories"]
       }
     ],
     "source_candidates": [
@@ -43,7 +187,8 @@
         "status": "approved",
         "trust_notes": "Foundational primary text for the risk-versus-uncertainty distinction.",
         "relevance": "Supports measurable risk, uncertainty, and the limits of quantitative management.",
-        "assigned_node_ids": ["m1_s1"]
+        "assigned_node_ids": ["m1_s1"],
+        "decision_rationale": "Approved for the narrow conceptual distinction required by co1."
       },
       {
         "id": "g2",
@@ -55,7 +200,8 @@
         "status": "approved",
         "trust_notes": "Authoritative banking-supervision source.",
         "relevance": "Supports credit-risk definitions, exposure examples, and interaction with other risks.",
-        "assigned_node_ids": ["m1_s1"]
+        "assigned_node_ids": ["m1_s1"],
+        "decision_rationale": "Approved as an authoritative source for category definitions."
       },
       {
         "id": "g3",
@@ -67,7 +213,8 @@
         "status": "approved",
         "trust_notes": "Authoritative banking-supervision source.",
         "relevance": "Supports liquidity-risk definitions, funding stress, and risk interaction.",
-        "assigned_node_ids": ["m1_s1"]
+        "assigned_node_ids": ["m1_s1"],
+        "decision_rationale": "Approved as an authoritative source for category definitions."
       },
       {
         "id": "g4",
@@ -79,7 +226,8 @@
         "status": "approved",
         "trust_notes": "Authoritative regulatory source.",
         "relevance": "Supports market-risk and operational-risk definitions and examples.",
-        "assigned_node_ids": ["m1_s1"]
+        "assigned_node_ids": ["m1_s1"],
+        "decision_rationale": "Approved as an authoritative source for category definitions."
       },
       {
         "id": "g5",
@@ -91,7 +239,8 @@
         "status": "approved",
         "trust_notes": "Official investigation with detailed case evidence.",
         "relevance": "Supports the Lehman Brothers layered-risk case.",
-        "assigned_node_ids": ["m1_s1"]
+        "assigned_node_ids": ["m1_s1"],
+        "decision_rationale": "Approved because the case study requires auditable crisis evidence."
       },
       {
         "id": "g6",
@@ -103,7 +252,8 @@
         "status": "approved",
         "trust_notes": "Useful contemporaneous industry source; use only for the narrow history claim.",
         "relevance": "Supports the emergence of the CRO role and integrated risk oversight.",
-        "assigned_node_ids": ["m1_s1", "m1_s6"]
+        "assigned_node_ids": ["m1_s1", "m1_s6"],
+        "decision_rationale": "Approved with a narrow-use note because the source is not a general definition authority."
       },
       {
         "id": "cand1",
@@ -115,7 +265,8 @@
         "status": "proposed",
         "trust_notes": "Requires expert identification, consent, and transcript review.",
         "relevance": "Could add current practitioner judgment to the governance module.",
-        "assigned_node_ids": ["m1_s6"]
+        "assigned_node_ids": ["m1_s6"],
+        "decision_rationale": null
       },
       {
         "id": "cand2",
@@ -127,7 +278,16 @@
         "status": "rejected",
         "trust_notes": "Rejected by the human reviewer because authorship and evidence are unclear.",
         "relevance": "Overlaps with approved definitions but adds no trustworthy evidence.",
-        "assigned_node_ids": []
+        "assigned_node_ids": [],
+        "decision_rationale": "Rejected because authorship and evidence were unclear."
+      }
+    ],
+    "source_failures": [
+      {
+        "id": "sf1",
+        "title": "Login-only proprietary course slides",
+        "locator": null,
+        "reason": "Could not inspect or cite hidden material, so it cannot ground learner content."
       }
     ]
   }

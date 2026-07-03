@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://course-builder.local/schemas/subject_request.v0.2.schema.json",
+  "title": "Course Builder Subject Request v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "course_id",
+    "artifact_type",
+    "produced_by_step",
+    "schema_version",
+    "status",
+    "revision",
+    "revision_note",
+    "inputs",
+    "updated_at",
+    "body"
+  ],
+  "properties": {
+    "course_id": { "$ref": "#/$defs/id" },
+    "artifact_type": { "const": "subject_request" },
+    "produced_by_step": { "enum": ["intake", "human"] },
+    "schema_version": { "const": "0.2" },
+    "status": { "enum": ["draft", "in_review", "approved", "rejected"] },
+    "revision": { "type": "integer", "minimum": 0 },
+    "revision_note": { "type": ["string", "null"], "maxLength": 500 },
+    "inputs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "body": { "$ref": "#/$defs/body" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "locator": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject",
+        "description",
+        "known_source_locators",
+        "constraints"
+      ],
+      "properties": {
+        "subject": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": ["string", "null"], "maxLength": 1000 },
+        "known_source_locators": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/locator" },
+          "uniqueItems": true
+        },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

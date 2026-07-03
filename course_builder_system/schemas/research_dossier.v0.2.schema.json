@@ -44,6 +44,31 @@
         { "type": "null" }
       ]
     },
+    "id_list": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/id" },
+      "uniqueItems": true
+    },
+    "outline_section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "order",
+        "raw_label",
+        "normalized_topic_id",
+        "locator",
+        "parent_label"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "order": { "type": "integer", "minimum": 1 },
+        "raw_label": { "type": "string", "minLength": 1, "maxLength": 250 },
+        "normalized_topic_id": { "$ref": "#/$defs/id" },
+        "locator": { "$ref": "#/$defs/locator" },
+        "parent_label": { "$ref": "#/$defs/locator" }
+      }
+    },
     "competitor_finding": {
       "type": "object",
       "additionalProperties": false,
@@ -53,6 +78,13 @@
         "offering",
         "locator",
         "audience",
+        "level",
+        "duration",
+        "delivery_format",
+        "assessment_approach",
+        "outline_status",
+        "outline_sections",
+        "normalized_topic_ids",
         "structure_summary",
         "notable_topics",
         "differentiation_opportunity"
@@ -63,6 +95,18 @@
         "offering": { "type": "string", "minLength": 1, "maxLength": 200 },
         "locator": { "$ref": "#/$defs/locator" },
         "audience": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "level": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "duration": { "$ref": "#/$defs/locator" },
+        "delivery_format": { "$ref": "#/$defs/locator" },
+        "assessment_approach": { "$ref": "#/$defs/locator" },
+        "outline_status": {
+          "enum": ["usable", "partial", "inaccessible", "behind_login", "stale"]
+        },
+        "outline_sections": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/outline_section" }
+        },
+        "normalized_topic_ids": { "$ref": "#/$defs/id_list" },
         "structure_summary": { "type": "string", "minLength": 1, "maxLength": 500 },
         "notable_topics": {
           "type": "array",
@@ -74,6 +118,56 @@
           "minLength": 1,
           "maxLength": 500
         }
+      }
+    },
+    "normalized_topic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "aliases"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string", "minLength": 1, "maxLength": 180 },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 180 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "coverage_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["normalized_topic_id", "competitor_course_ids"],
+      "properties": {
+        "normalized_topic_id": { "$ref": "#/$defs/id" },
+        "competitor_course_ids": { "$ref": "#/$defs/id_list" }
+      }
+    },
+    "evidence_statement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "evidence_competitor_ids"],
+      "properties": {
+        "statement": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "evidence_competitor_ids": { "$ref": "#/$defs/id_list" }
+      }
+    },
+    "structural_implication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "implication",
+        "rationale",
+        "related_outcome_ids",
+        "related_topic_ids"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "implication": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "rationale": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "related_outcome_ids": { "$ref": "#/$defs/id_list" },
+        "related_topic_ids": { "$ref": "#/$defs/id_list" }
       }
     },
     "source_candidate": {
@@ -89,7 +183,8 @@
         "status",
         "trust_notes",
         "relevance",
-        "assigned_node_ids"
+        "assigned_node_ids",
+        "decision_rationale"
       ],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
@@ -101,26 +196,70 @@
         "status": { "enum": ["proposed", "approved", "rejected"] },
         "trust_notes": { "type": "string", "minLength": 1, "maxLength": 500 },
         "relevance": { "type": "string", "minLength": 1, "maxLength": 500 },
-        "assigned_node_ids": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/id" },
-          "uniqueItems": true
-        }
+        "assigned_node_ids": { "$ref": "#/$defs/id_list" },
+        "decision_rationale": { "$ref": "#/$defs/locator" }
+      }
+    },
+    "source_failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "locator", "reason"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "locator": { "$ref": "#/$defs/locator" },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
       }
     },
     "body": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["research_scope", "competitor_findings", "source_candidates"],
+      "required": [
+        "research_scope",
+        "competitor_findings",
+        "normalized_topics",
+        "coverage_matrix",
+        "common_core_topic_ids",
+        "sequence_observations",
+        "gap_observations",
+        "structural_implications",
+        "source_candidates",
+        "source_failures"
+      ],
       "properties": {
         "research_scope": { "type": "string", "minLength": 1, "maxLength": 500 },
         "competitor_findings": {
           "type": "array",
           "items": { "$ref": "#/$defs/competitor_finding" }
         },
+        "normalized_topics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/normalized_topic" }
+        },
+        "coverage_matrix": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/coverage_row" }
+        },
+        "common_core_topic_ids": { "$ref": "#/$defs/id_list" },
+        "sequence_observations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence_statement" }
+        },
+        "gap_observations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence_statement" }
+        },
+        "structural_implications": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/structural_implication" }
+        },
         "source_candidates": {
           "type": "array",
           "items": { "$ref": "#/$defs/source_candidate" }
+        },
+        "source_failures": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source_failure" }
         }
       }
     }

@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import argparse
+
 import integrity
 import steps
+from agents import intake
 from orchestrator import Step, console_approver, make_artifact, run_pipeline
 
 
@@ -52,7 +55,62 @@ def build_pipeline() -> list[Step]:
     ]
 
 
+def build_sprint1_pipeline() -> list[Step]:
+    """Sparse request -> Brief -> Outcomes -> mocked source-selection gate."""
+    return [
+        Step(
+            name="intake",
+            consumes=["subject_request"],
+            produces=["brief"],
+            run=steps.intake_step,
+        ),
+        Step(
+            name="course_outcomes",
+            consumes=["brief"],
+            produces=["course_outcomes"],
+            run=steps.course_outcomes_step,
+        ),
+        Step(
+            name="research",
+            consumes=["brief", "course_outcomes"],
+            produces=["research_dossier"],
+            run=steps.research_step,
+        ),
+        Step(
+            name="source_selection",
+            consumes=["research_dossier"],
+            produces=["approved_source_registry"],
+            run=steps.source_selection_step,
+        ),
+    ]
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Run Course Builder pipelines.")
+    parser.add_argument(
+        "--sprint1-demo",
+        action="store_true",
+        help="Run the Sprint 1 sparse-request to source-selection checkpoint.",
+    )
+    parser.add_argument("--subject", default="Coffee making")
+    parser.add_argument("--course-id", default=None)
+    args = parser.parse_args()
+
+    if args.sprint1_demo:
+        subject_request = intake.subject_request_artifact(
+            subject=args.subject,
+            description=("A practical beginner course for people who want better results quickly."),
+            constraints=["Keep the course compact for the prototype run."],
+            course_id=args.course_id or intake.slugify_course_id(args.subject),
+        )
+        run_pipeline(
+            course_id=subject_request["course_id"],
+            pipeline=build_sprint1_pipeline(),
+            seed_artifacts={"subject_request": subject_request},
+            approver=console_approver,
+        )
+        return
+
     course_id = "frm-demo"
 
     # This approved seed stands in for the conversational intake agent that will

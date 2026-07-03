@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://course-builder.local/schemas/brief.v0.2.schema.json",
+  "title": "Course Builder Course Brief v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "course_id",
+    "artifact_type",
+    "produced_by_step",
+    "schema_version",
+    "status",
+    "revision",
+    "revision_note",
+    "inputs",
+    "updated_at",
+    "body"
+  ],
+  "properties": {
+    "course_id": { "$ref": "#/$defs/id" },
+    "artifact_type": { "const": "brief" },
+    "produced_by_step": { "enum": ["intake", "human"] },
+    "schema_version": { "const": "0.2" },
+    "status": { "enum": ["draft", "in_review", "approved", "rejected"] },
+    "revision": { "type": "integer", "minimum": 0 },
+    "revision_note": { "type": ["string", "null"], "maxLength": 500 },
+    "inputs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "contains": { "const": "subject_request" },
+      "uniqueItems": true
+    },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "body": { "$ref": "#/$defs/body" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "text_list": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 300 },
+      "uniqueItems": true
+    },
+    "nullable_text": {
+      "type": ["string", "null"],
+      "maxLength": 500
+    },
+    "assumption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "value", "rationale"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "value": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "rationale": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "provenance_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "source", "confidence"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "source": { "enum": ["user", "default", "inferred", "followup"] },
+        "confidence": { "enum": ["explicit", "assumed", "needs_review"] }
+      }
+    },
+    "unresolved_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "reason", "blocking"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "blocking": { "type": "boolean" }
+      }
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "course_title",
+        "subject",
+        "audience",
+        "prior_knowledge",
+        "purpose",
+        "level",
+        "duration",
+        "modality",
+        "language",
+        "in_scope",
+        "out_of_scope",
+        "must_have_topics",
+        "constraints",
+        "available_materials",
+        "jurisdiction",
+        "accessibility_requirements",
+        "assessment_expectations",
+        "live_teaching_constraints",
+        "tools_or_equipment",
+        "freshness_requirement",
+        "assumptions",
+        "provenance",
+        "unresolved_decisions"
+      ],
+      "properties": {
+        "course_title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "subject": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "audience": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "prior_knowledge": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "purpose": { "type": "string", "minLength": 1, "maxLength": 700 },
+        "level": {
+          "enum": ["introductory", "beginner", "intermediate", "advanced", "mixed", "custom"]
+        },
+        "duration": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "modality": {
+          "enum": ["self_paced", "live", "blended", "workshop", "custom"]
+        },
+        "language": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "in_scope": { "$ref": "#/$defs/text_list" },
+        "out_of_scope": { "$ref": "#/$defs/text_list" },
+        "must_have_topics": { "$ref": "#/$defs/text_list" },
+        "constraints": { "$ref": "#/$defs/text_list" },
+        "available_materials": { "$ref": "#/$defs/text_list" },
+        "jurisdiction": { "$ref": "#/$defs/nullable_text" },
+        "accessibility_requirements": { "$ref": "#/$defs/nullable_text" },
+        "assessment_expectations": { "$ref": "#/$defs/nullable_text" },
+        "live_teaching_constraints": { "$ref": "#/$defs/nullable_text" },
+        "tools_or_equipment": { "$ref": "#/$defs/nullable_text" },
+        "freshness_requirement": { "$ref": "#/$defs/nullable_text" },
+        "assumptions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/assumption" }
+        },
+        "provenance": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/provenance_item" }
+        },
+        "unresolved_decisions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/unresolved_decision" }
+        }
+      }
+    }
+  }
+}

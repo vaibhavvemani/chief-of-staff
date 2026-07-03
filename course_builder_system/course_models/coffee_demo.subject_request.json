@@ -1,0 +1,17 @@
+{
+  "course_id": "coffee-demo",
+  "artifact_type": "subject_request",
+  "produced_by_step": "human",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [],
+  "updated_at": "2026-07-01T00:00:00+00:00",
+  "body": {
+    "subject": "Coffee making",
+    "description": "A practical beginner course for people who want better coffee at home.",
+    "known_source_locators": [],
+    "constraints": ["Use common home equipment rather than commercial cafe gear."]
+  }
+}

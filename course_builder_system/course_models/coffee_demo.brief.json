@@ -1,0 +1,68 @@
+{
+  "course_id": "coffee-demo",
+  "artifact_type": "brief",
+  "produced_by_step": "intake",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": ["subject_request"],
+  "updated_at": "2026-07-01T00:00:00+00:00",
+  "body": {
+    "course_title": "Better Coffee at Home",
+    "subject": "Coffee making",
+    "audience": "Curious adult beginners who make coffee at home and want more consistent results.",
+    "prior_knowledge": "No formal coffee knowledge; learners can follow simple kitchen measurements.",
+    "purpose": "Help learners understand brewing variables and use a repeatable tasting loop to improve common home coffee.",
+    "level": "beginner",
+    "duration": "3 hours of self-paced learning",
+    "modality": "self_paced",
+    "language": "English",
+    "in_scope": [
+      "basic extraction variables",
+      "grind size",
+      "water temperature",
+      "brew ratio",
+      "simple tasting diagnosis"
+    ],
+    "out_of_scope": [
+      "commercial roasting",
+      "espresso machine repair",
+      "cafe operations"
+    ],
+    "must_have_topics": [
+      "common brewing mistakes",
+      "a practical home brewing workflow"
+    ],
+    "constraints": [
+      "Use common home equipment rather than commercial cafe gear."
+    ],
+    "available_materials": [],
+    "jurisdiction": null,
+    "accessibility_requirements": null,
+    "assessment_expectations": "Short practical checks and scenario questions.",
+    "live_teaching_constraints": null,
+    "tools_or_equipment": "Kettle, brewer, grinder, scale where available.",
+    "freshness_requirement": null,
+    "assumptions": [
+      {
+        "field": "duration",
+        "value": "3 hours of self-paced learning",
+        "rationale": "The user did not specify duration; a short course is enough for a prototype acceptance run."
+      }
+    ],
+    "provenance": [
+      {
+        "field": "subject",
+        "source": "user",
+        "confidence": "explicit"
+      },
+      {
+        "field": "duration",
+        "source": "default",
+        "confidence": "assumed"
+      }
+    ],
+    "unresolved_decisions": []
+  }
+}
