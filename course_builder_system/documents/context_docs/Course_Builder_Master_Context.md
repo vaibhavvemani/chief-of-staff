@@ -195,7 +195,7 @@ The 2026-06-30 migration rules are recorded in `Course_Builder_Architecture_Deci
 ## 11. Open questions (to resolve during phasing)
 
 - **Target LMS and packaging format. RESOLVED — SCORM 1.2.** A standalone converter (`.docx`/`.pptx` → self-contained SCORM 1.2 `.zip`, via a LibreOffice→PDF→JPEG pipeline) is built and tested against an LMS; see `scorm_converter.md`. It does not affect the brief, research, Course Model, or Blueprint contracts. The remaining Phase 5 work is wiring the builder's generated course folder into it (see §16).
-- **Phase 1 benchmark gate.** The FRM reference subtopic and review rubric are selected. The remaining decision is whether live generated output clears the blind human quality and review-time gate.
+- **Phase 1 benchmark gate. RESOLVED — PASSED.** The final FRM outputs were fully reviewed and accepted on 2026-07-01. Phase 1 is closed; the FRM package remains benchmark evidence and fixture data.
 - **Source context scale threshold.** Measure prompt size and source coverage as courses grow; define the evidence that would justify moving beyond deterministic source-to-subtopic mapping to retrieval.
 - **Cost-vs-depth policy.** Use the Blueprint's dynamic depth budget and logged runs to decide how thorough — and therefore how slow/expensive — generation and verification should be.
 - **How each agent is actually built.** All technical implementation is decided per-phase with the Chief-of-Staff vision in view.
@@ -275,9 +275,9 @@ Defaults chosen to minimise moving parts while learning. Change any of them late
 
 **Phase 0 — Foundations & Walking Skeleton. COMPLETE.** The artifact schemas, orchestrator, approval loop, resumability, hardcoded real-shaped stubs, and referential-integrity check are in place. The archived Phase 0 handoff remains as historical implementation context only.
 
-**Phase 1 — Make Student Content real, on ONE subtopic. CURRENT FOCUS.** Retire the biggest risk. Use one FRM subtopic as benchmark data for the domain-agnostic generation path. Build the trust machinery: scoped grounding, separate verification, attribution, coverage/depth checks, targeted revision, and a human review rubric. Iterate against the human-made version until quality is acceptable. *Done when:* the generic path produces this benchmark at least as well as the manual version and review takes minutes, not a rewrite.
+**Phase 1 — Make Student Content real, on ONE subtopic. COMPLETE.** The FRM benchmark exercised the domain-agnostic generation path, scoped grounding, separate verification, claim-level attribution, coverage/depth checks, targeted revision, and the human review rubric. The final outputs were reviewed and accepted on 2026-07-01. See `Course_Builder_Phase1_Handoff.md`.
 
-**Phase 2 — Make intent, research, and structure real.** Starting from a subject as broad as “coffee making,” run a conversational clarification loop, obtain approval of the Course Brief and course-level outcomes, research competitors and candidate sources, let the human approve sources, and produce one compact Course Model. Reuse Phase 1 grounding and attribution machinery, but keep research evidence and full sources outside the Course Model. *Done when:* a sparse initial request becomes approved intent, outcomes, research/source decisions, and a human-approved Course Model without domain-specific prompt logic.
+**Phase 2 — Make intent, research, and structure real. CURRENT FOCUS.** Starting from a subject as broad as “coffee making,” run a conversational clarification loop, obtain approval of the Course Brief and course-level outcomes, research competitors and candidate sources, let the human approve sources, and produce one compact Course Model. Reuse Phase 1 grounding and attribution machinery, but keep research evidence and full sources outside the Course Model. *Done when:* a sparse initial request becomes approved intent, outcomes, research/source decisions, and a human-approved Course Model without domain-specific prompt logic.
 
 **Phase 3 — Make Blueprint real.** Turn the Course Model into a runnable, human-editable plan: timing, target depth/learning minutes/word ranges, required concepts and examples, case and assessment complexity, slide/speaker planning where relevant, and selected assets per subtopic. *Done when:* the Blueprint expresses intentional differences between subtopics and a human signs off with only minor tweaks.
 
@@ -317,7 +317,7 @@ A clean split is **bones versus intelligence**. It keeps the two builders out of
 
 ## 19. Phase 0 completion snapshot
 
-**Status:** Phase 0 is complete. Phase 1 uses the existing FRM artifacts as a narrow quality benchmark while reusable contracts migrate to the domain-agnostic architecture above.
+**Status:** Phases 0 and 1 are complete. Phase 2 is active; existing FRM artifacts remain a narrow quality benchmark while the fixture-backed upstream steps are replaced with domain-agnostic intent, research, source-approval, and Course Model agents.
 
 What Phase 0 left behind as durable project context:
 
@@ -336,10 +336,10 @@ The Phase 0 handoff has been archived at `documents/context_docs/archive/Course_
 ## 20. Team & current state
 
 - **Team:** two engineers, both new to agentic AI.
-- **Current state:** Phase 0 is complete. Phase 1 engineering has migrated the reusable contracts, prompts, context builder, verification, and integrity path to the compact Course Model architecture. The FRM one-subtopic live quality gate remains; FRM-specific fixtures are benchmark data, not reusable prompt or contract assumptions.
+- **Current state:** Phases 0 and 1 are complete. The reusable contracts, prompts, context builder, verification, integrity path, and FRM benchmark are in place. Phase 2 now replaces the fixture-backed intake, outcomes, research, and Course Model steps; FRM-specific fixtures remain benchmark data, not reusable prompt or contract assumptions.
 - **Building method:** the project is being built largely with AI assistance — this document exists to give any AI collaborator full context.
 - **Key asset:** existing, manually-built courses (risk & governance subjects). These are the reference for designing the artifacts AND the quality bar the agent's output is measured against.
-- **Immediate next action:** with explicit approval for external API use, run the FRM live quality gate through the migrated generic path, ratify the scorecard/review-time gate, and write the Phase 1 handoff.
+- **Immediate next action:** execute Sprint 1 in `Course_Builder_Four_Week_Sprint_Plan.md`: jointly lock the interaction/upstream contracts, then build the guided Brief/Outcomes path and mocked research/source-choice checkpoint in parallel.
 
 ---
 

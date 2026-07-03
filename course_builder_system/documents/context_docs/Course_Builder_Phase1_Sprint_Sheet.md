@@ -1,5 +1,6 @@
 # Course Builder — Phase 1 Sprint Sheet
 
+> **Status:** ✅ COMPLETE — final outputs accepted 2026-07-01. Retained as the historical schedule record; active work moves to Phase 2.
 > **Audience:** leadership / timeline overview. This is the plan for *when* things happen and *who* does what. The technical detail lives in the companion `Course_Builder_Phase1_Plan.md`.
 > **Created:** 2026-06-08.
 

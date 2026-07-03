@@ -1,11 +1,11 @@
 # Course Builder — Phase 1 Implementation Plan
 
-> **Status:** Implementation in progress; Sprints 1–2 are complete and Sprint 3 engineering is ready for the live quality run. Created 2026-06-08; architecture amended 2026-06-30.
+> **Status:** ✅ COMPLETE — final outputs reviewed and accepted 2026-07-01; Phase 2 is now the active phase. Created 2026-06-08; architecture amended 2026-06-30.
 > **Phase 1 goal:** Prove a *domain-agnostic* Student Content path using one FRM subtopic as a benchmark fixture, with grounding, separate verification, claim-level attribution, dynamic depth/coverage controls, and a review rubric.
 > **Done when:** for **m1_s1 "Nature of Financial Risk"**, the agent's output scores ≥ the manual version on the rubric and a human review takes **minutes (light touch-ups), not a rewrite**.
 > **Timeline & ownership:** the sprint breakdown, schedule, and who-does-what live in the companion boss-facing **Sprint Sheet** → `Course_Builder_Phase1_Sprint_Sheet.md`. (Summary: ~3-week target, 4-week ceiling; 2 peer interns paired.)
 
-This doc is the single source of truth for **building** Phase 1. Sections A–H are the **locked design decisions** (the "what + why"); Sections K–N are **Done / risks / scope / lessons**. The 2026-06-30 decisions supersede any earlier statement that reusable prompts may contain FRM coverage rules, that all source text should be injected into every call, or that separate TOC and Domain Model artifacts remain the target architecture. The cross-phase migration record is `Course_Builder_Architecture_Decision_2026-06-30.md`.
+This doc is the completed implementation record for Phase 1. Sections A–H are the **locked design decisions** (the "what + why"); Sections K–N record the exit criteria, risks, scope, and lessons. The 2026-06-30 decisions supersede any earlier statement that reusable prompts may contain FRM coverage rules, that all source text should be injected into every call, or that separate TOC and Domain Model artifacts remain the target architecture. The cross-phase migration record is `Course_Builder_Architecture_Decision_2026-06-30.md`; the completion handoff is `Course_Builder_Phase1_Handoff.md`.
 
 ---
 
@@ -129,15 +129,17 @@ evals/
 ## K. Definition of Done (the exit checklist)
 
 For **m1_s1**:
-- [ ] All 9 assets generated, grounded, claim-level attributed, and verified.
-- [ ] Output is schema-valid **v0.2**, passes `integrity.py`, runs end-to-end via `run.py` with the checkpoint.
-- [ ] **Core 5 score ≥6** ("matches manual") on every comparative rubric dimension at the **blind human gate**; **light 4 present & decent**.
-- [ ] **Timed human review ≤ threshold**, edits are touch-ups not a rewrite.
-- [ ] Verification pass runs; its summary is surfaced at the checkpoint.
+- [x] All 9 assets generated, grounded, claim-level attributed, and verified.
+- [x] Output is schema-valid **v0.2**, passes `integrity.py`, runs end-to-end via `run.py` with the checkpoint.
+- [x] **Core 5 meets the accepted manual-quality bar** at the final human gate; **light 4 present & accepted**.
+- [x] Final human review accepted the package as light-review quality rather than rewrite work.
+- [x] Verification pass runs; its summary is surfaced at the checkpoint.
 - [x] Gold reference package + rubric + approved sources + hand-authored Course Model and Blueprint fixtures all live in the repo.
 - [x] Generic prompts contain no FRM-specific required coverage; a non-FRM fixture can traverse the reusable path.
 - [x] Context construction injects only the current subtopic slice and assigned approved source excerpts.
-- [ ] Phase 1 handoff doc written; master context updated.
+- [x] Phase 1 handoff doc written; master context updated.
+
+Closure note: the final reviewer completed the output review on 2026-07-01, confirmed that everything looked good, and explicitly authorized Phase 1 completion. That acceptance is the final human gate for this phase.
 
 ## L. Risks & de-risking
 

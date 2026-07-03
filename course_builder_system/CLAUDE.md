@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-The Course Builder turns a subject brief into a complete course folder by running an ordered pipeline of steps, pausing for human approval after each. See `documents/context_docs/` for the full spec and handoff (Master Context, Phase 1 Plan, Sprint Sheet, Source Files Reference).
+The Course Builder turns a subject brief into a complete course folder by running an ordered pipeline of steps, pausing for human approval after each. Phases 0 and 1 are complete; Phase 2 is the active phase. See `documents/context_docs/` for the Master Context, Phase 1 handoff, architecture decision, and phase plans.
 
 ## Commands
 
@@ -18,7 +18,7 @@ The local plumbing and contract tests have no service dependency. `anthropic` is
 ## Architecture invariants — do not break these
 
 - **The orchestrator is an opaque engine.** `orchestrator.py` only ever touches the fixed metadata *envelope* built by `make_artifact` (course_id, artifact_type, status, revision, inputs, …) — never the artifact `body`. Changing an artifact's *body* shape must NOT require editing `orchestrator.py`; schema/content work happens in `steps.py`. The *envelope* may still gain orchestrator-owned fields — e.g. `make_artifact`'s optional `schema_version` override, which lets one artifact pin a newer schema (Content Package v0.2) while the rest stay v0.1. That is an envelope-contract change, not a body change.
-- **The pipeline is data.** Steps are an ordered list of `Step(name, consumes, produces, run)` in `run.py:build_pipeline()`. Intake/outcomes/research/structure are fixture-backed in Phase 1; Student Content and verification make real LLM calls outside tests.
+- **The pipeline is data.** Steps are an ordered list of `Step(name, consumes, produces, run)` in `run.py:build_pipeline()`. Intake/outcomes/research/structure remain fixture-backed at the start of Phase 2 and are the next replacement targets; Student Content and verification make real LLM calls outside tests.
 - **The Course Model is the structural and compact knowledge source of truth.** Blueprint, Content Package, and Lesson Plan reference its IDs. Full research/source bodies stay separate. `integrity.py` enforces this; run it after changing a contract or step.
 - **Generation context is sliced.** A call receives the current Course Model node, its Blueprint depth/asset plan, and only that asset's routed subset of human-approved source excerpts. Do not dump the full model or corpus into prompts.
 - **Reusable prompts are domain-neutral.** Course-specific coverage belongs in Course Outcomes, Course Model, Blueprint, and sources—not in prompt prose.

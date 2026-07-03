@@ -1,4 +1,4 @@
-"""Course Builder entry point for the Phase 1 domain-agnostic walking path."""
+"""Course Builder entry point for the domain-agnostic walking path."""
 
 from __future__ import annotations
 
@@ -10,7 +10,8 @@ from orchestrator import Step, console_approver, make_artifact, run_pipeline
 def build_pipeline() -> list[Step]:
     """The pipeline is just data: an ordered list of steps, each declaring
     what it consumes and produces. This is the spine. Phase 1+ only swaps the
-    `run=` stubs for real agents."""
+    `run=` stubs for real agents. Phase 2 replaces the remaining upstream
+    fixtures while preserving this ordered contract."""
     return [
         Step(
             name="course_outcomes",

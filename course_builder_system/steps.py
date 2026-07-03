@@ -1,9 +1,10 @@
 """Course Builder pipeline steps.
 
-Phase 1 keeps upstream intelligence as fixture-backed stubs while exercising a
-real Student Content agent. The target artifact flow is Course Brief -> approved
-Course Outcomes -> Research Dossier/source decisions -> compact Course Model ->
-Blueprint -> verified Content Package -> Lesson Plan.
+At the start of Phase 2, upstream intelligence remains fixture-backed while the
+real Student Content path is preserved. Phase 2 replaces those fixtures in
+contract order. The target flow is Course Brief -> approved Course Outcomes ->
+Research Dossier/source decisions -> compact Course Model -> Blueprint ->
+verified Content Package -> Lesson Plan.
 """
 
 from __future__ import annotations
@@ -37,7 +38,7 @@ def _fixture_body(path: Path, artifact_type: str) -> dict:
 
 
 def course_outcomes_step(inputs: dict, feedback: str | None) -> dict:
-    """Approved Course Brief -> course-level outcomes (fixture-backed in Phase 1)."""
+    """Approved Course Brief -> course-level outcomes (Phase 2 replacement target)."""
     course_id = inputs["brief"]["course_id"]
     artifact = make_artifact(
         course_id,
@@ -51,7 +52,7 @@ def course_outcomes_step(inputs: dict, feedback: str | None) -> dict:
 
 
 def research_step(inputs: dict, feedback: str | None) -> dict:
-    """Brief + approved outcomes -> competitor/source dossier (Phase 1 fixture)."""
+    """Brief + approved outcomes -> dossier (Phase 2 replacement target)."""
     course_id = inputs["brief"]["course_id"]
     artifact = make_artifact(
         course_id,
