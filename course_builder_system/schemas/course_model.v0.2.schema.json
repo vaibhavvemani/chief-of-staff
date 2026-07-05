@@ -190,12 +190,44 @@
         "course_outcome_ids": { "$ref": "#/$defs/id_list" }
       }
     },
+    "rationale_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "statement",
+        "evidence_artifact_refs",
+        "related_outcome_ids",
+        "related_topic_ids"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "statement": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "evidence_artifact_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "uniqueItems": true
+        },
+        "related_outcome_ids": { "$ref": "#/$defs/id_list" },
+        "related_topic_ids": { "$ref": "#/$defs/id_list" }
+      }
+    },
     "body": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["course_metadata", "modules", "source_registry"],
+      "required": [
+        "course_metadata",
+        "structural_rationale",
+        "modules",
+        "source_registry"
+      ],
       "properties": {
         "course_metadata": { "$ref": "#/$defs/metadata" },
+        "structural_rationale": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/rationale_item" }
+        },
         "modules": {
           "type": "array",
           "minItems": 1,

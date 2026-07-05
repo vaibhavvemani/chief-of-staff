@@ -37,7 +37,11 @@ def test_mock_research_provider_extracts_ordered_outlines_and_coverage_matrix() 
     grind_row = next(
         row for row in analysis["coverage_matrix"] if row["normalized_topic_id"] == "nt_grind_size"
     )
-    assert grind_row["competitor_course_ids"] == ["comp_barista", "comp_homebrew"]
+    assert grind_row["competitor_course_ids"] == [
+        "comp_barista",
+        "comp_brewlab",
+        "comp_homebrew",
+    ]
     assert "nt_grind_size" in analysis["common_core_topic_ids"]
 
 

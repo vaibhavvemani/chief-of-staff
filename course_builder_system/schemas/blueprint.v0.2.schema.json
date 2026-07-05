@@ -102,7 +102,13 @@
     "subtopic_plan": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["subtopic_id", "depth_budget", "asset_plan"],
+      "required": [
+        "subtopic_id",
+        "depth_budget",
+        "asset_plan",
+        "source_routing_notes",
+        "anchor_asset_waiver_confirmed"
+      ],
       "properties": {
         "subtopic_id": { "$ref": "#/$defs/id" },
         "depth_budget": { "$ref": "#/$defs/depth_budget" },
@@ -110,18 +116,60 @@
           "type": "array",
           "minItems": 1,
           "items": { "$ref": "#/$defs/asset" }
+        },
+        "source_routing_notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "anchor_asset_waiver_confirmed": { "type": "boolean" }
+      }
+    },
+    "course_defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["depth_budget", "default_asset_types", "source_routing_policy"],
+      "properties": {
+        "depth_budget": { "$ref": "#/$defs/depth_budget" },
+        "default_asset_types": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "uniqueItems": true
+        },
+        "source_routing_policy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
         }
+      }
+    },
+    "decision_log_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "scope", "decision", "rationale"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "scope": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "decision": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "rationale": { "type": "string", "minLength": 1, "maxLength": 500 }
       }
     },
     "body": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["subtopic_plans"],
+      "required": ["course_defaults", "subtopic_plans", "decision_log"],
       "properties": {
+        "course_defaults": { "$ref": "#/$defs/course_defaults" },
         "subtopic_plans": {
           "type": "array",
           "minItems": 1,
           "items": { "$ref": "#/$defs/subtopic_plan" }
+        },
+        "decision_log": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/decision_log_item" }
         }
       }
     }
