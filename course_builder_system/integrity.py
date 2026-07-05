@@ -57,11 +57,13 @@ def _check_course_model_integrity(course_id: str, course_model: dict) -> list[st
     """Validate the v0.2 Course Model graph and all downstream references."""
     outcomes = load_artifact(course_id, "course_outcomes")
     research = load_artifact(course_id, "research_dossier")
+    source_registry = load_artifact(course_id, "approved_source_registry")
     blueprint = load_artifact(course_id, "blueprint")
     problems = validate_course_model_semantics(
         course_model,
         course_outcomes=outcomes,
         research_dossier=research,
+        approved_source_registry=source_registry,
         blueprint=blueprint,
     )
 
@@ -212,8 +214,7 @@ def check_referential_integrity(course_id: str) -> list[str]:
             for dep in c.get("depends_on", []):
                 if dep not in concept_ids:
                     problems.append(
-                        f"domain_model: concept '{c['id']}' depends_on missing "
-                        f"concept '{dep}'"
+                        f"domain_model: concept '{c['id']}' depends_on missing concept '{dep}'"
                     )
 
     # Blueprint references.
@@ -221,21 +222,15 @@ def check_referential_integrity(course_id: str) -> list[str]:
     if bp is not None:
         for a in bp["body"].get("allocations", []):
             if a["node_id"] not in all_nodes:
-                problems.append(
-                    f"blueprint: allocation node_id '{a['node_id']}' is not a "
-                    f"TOC node"
-                )
+                problems.append(f"blueprint: allocation node_id '{a['node_id']}' is not a TOC node")
         for dep in bp["body"].get("dependencies", []):
             if dep["module_id"] not in module_ids:
                 problems.append(
-                    f"blueprint: dependency module_id '{dep['module_id']}' is "
-                    f"not a TOC module"
+                    f"blueprint: dependency module_id '{dep['module_id']}' is not a TOC module"
                 )
             for pr in dep.get("prerequisites", []):
                 if pr not in module_ids:
-                    problems.append(
-                        f"blueprint: prerequisite '{pr}' is not a TOC module"
-                    )
+                    problems.append(f"blueprint: prerequisite '{pr}' is not a TOC module")
         for sp in bp["body"].get("speakers", []):
             if sp.get("placed_at") not in all_nodes:
                 problems.append(
@@ -250,8 +245,7 @@ def check_referential_integrity(course_id: str) -> list[str]:
         for st in cp["body"].get("subtopics", []):
             if st["subtopic_id"] not in subtopic_ids:
                 problems.append(
-                    f"content_package: subtopic_id '{st['subtopic_id']}' is not "
-                    f"a TOC subtopic"
+                    f"content_package: subtopic_id '{st['subtopic_id']}' is not a TOC subtopic"
                 )
             for asset in st.get("assets", []):
                 asset_sources = set(asset.get("sources", []))
@@ -266,8 +260,7 @@ def check_referential_integrity(course_id: str) -> list[str]:
 
                 if "claims" not in asset:
                     problems.append(
-                        f"content_package: v0.2 asset '{asset['id']}' is missing "
-                        "claims[]"
+                        f"content_package: v0.2 asset '{asset['id']}' is missing claims[]"
                     )
                     continue
 
@@ -312,13 +305,11 @@ def report(course_id: str) -> bool:
     """
     problems = check_referential_integrity(course_id)
     if problems:
-        print(f"\n[integrity] FAIL - {len(problems)} dangling reference(s) "
-              f"in '{course_id}':")
+        print(f"\n[integrity] FAIL - {len(problems)} dangling reference(s) in '{course_id}':")
         for p in problems:
             print(f"  - {p}")
         return False
-    print(f"\n[integrity] OK - all cross-artifact references resolve for "
-          f"'{course_id}'")
+    print(f"\n[integrity] OK - all cross-artifact references resolve for '{course_id}'")
     return True
 
 

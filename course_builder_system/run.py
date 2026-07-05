@@ -85,12 +85,70 @@ def build_sprint1_pipeline() -> list[Step]:
     ]
 
 
+def build_sprint2_pipeline(*, live_research: bool = False) -> list[Step]:
+    """Sparse request -> approved sources -> generated Course Model/Blueprint."""
+    research_run = steps.live_research_step if live_research else steps.sprint2_research_step
+    return [
+        Step(
+            name="intake",
+            consumes=["subject_request"],
+            produces=["brief"],
+            run=steps.intake_step,
+        ),
+        Step(
+            name="course_outcomes",
+            consumes=["brief"],
+            produces=["course_outcomes"],
+            run=steps.course_outcomes_step,
+        ),
+        Step(
+            name="research",
+            consumes=["brief", "course_outcomes"],
+            produces=["research_dossier"],
+            run=research_run,
+        ),
+        Step(
+            name="source_selection",
+            consumes=["research_dossier"],
+            produces=["approved_source_registry"],
+            run=steps.source_selection_step,
+        ),
+        Step(
+            name="structure",
+            consumes=[
+                "brief",
+                "course_outcomes",
+                "research_dossier",
+                "approved_source_registry",
+            ],
+            produces=["course_model"],
+            run=steps.structure_step,
+        ),
+        Step(
+            name="blueprint",
+            consumes=["course_model"],
+            produces=["blueprint"],
+            run=steps.blueprint_step,
+        ),
+    ]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run Course Builder pipelines.")
     parser.add_argument(
         "--sprint1-demo",
         action="store_true",
         help="Run the Sprint 1 sparse-request to source-selection checkpoint.",
+    )
+    parser.add_argument(
+        "--sprint2-demo",
+        action="store_true",
+        help="Run the Sprint 2 sparse-request to generated Blueprint checkpoint.",
+    )
+    parser.add_argument(
+        "--live-research",
+        action="store_true",
+        help="Use the live bounded research provider for Sprint 2 instead of the mock provider.",
     )
     parser.add_argument("--subject", default="Coffee making")
     parser.add_argument("--course-id", default=None)
@@ -109,6 +167,22 @@ def main() -> None:
             seed_artifacts={"subject_request": subject_request},
             approver=console_approver,
         )
+        return
+
+    if args.sprint2_demo:
+        subject_request = intake.subject_request_artifact(
+            subject=args.subject,
+            description=("A practical beginner course for people who want better results quickly."),
+            constraints=["Keep the course compact for the prototype run."],
+            course_id=args.course_id or intake.slugify_course_id(args.subject),
+        )
+        run_pipeline(
+            course_id=subject_request["course_id"],
+            pipeline=build_sprint2_pipeline(live_research=args.live_research),
+            seed_artifacts={"subject_request": subject_request},
+            approver=console_approver,
+        )
+        integrity.report(subject_request["course_id"])
         return
 
     course_id = "frm-demo"

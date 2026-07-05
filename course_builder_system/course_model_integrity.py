@@ -63,6 +63,7 @@ def validate_course_model_semantics(
     *,
     course_outcomes: dict | None = None,
     research_dossier: dict | None = None,
+    approved_source_registry: dict | None = None,
     blueprint: dict | None = None,
 ) -> list[str]:
     """Validate references, dependency graphs, source approval, and plans.
@@ -107,6 +108,11 @@ def validate_course_model_semantics(
     source_id_set = {value for value in source_ids if isinstance(value, str)}
     for duplicate in sorted(_duplicates(source_ids)):
         errors.append(f"Duplicate source id: {duplicate}")
+
+    rationale_items = body.get("structural_rationale", [])
+    rationale_ids = [item.get("id") for item in rationale_items]
+    for duplicate in sorted(_duplicates(rationale_ids)):
+        errors.append(f"Duplicate structural rationale id: {duplicate}")
 
     concept_ids: list[str] = []
     concept_dependencies: dict[str, list[str]] = {}
@@ -184,27 +190,52 @@ def validate_course_model_semantics(
         outcome_ids = {
             outcome.get("id") for outcome in course_outcomes.get("body", {}).get("outcomes", [])
         }
+        referenced_outcome_ids = set(body.get("course_metadata", {}).get("course_outcome_ids", []))
         for outcome_id in body.get("course_metadata", {}).get("course_outcome_ids", []):
             if outcome_id not in outcome_ids:
                 errors.append(f"Course model references unknown course outcome {outcome_id}")
+        for outcome_id in sorted(outcome_ids - referenced_outcome_ids):
+            errors.append(f"Course model does not resolve course outcome {outcome_id}")
+        for item in rationale_items:
+            for outcome_id in item.get("related_outcome_ids", []):
+                if outcome_id not in outcome_ids:
+                    errors.append(
+                        f"Structural rationale {item.get('id')} references unknown "
+                        f"course outcome {outcome_id}"
+                    )
 
     if research_dossier is not None:
         if research_dossier.get("course_id") != course_model.get("course_id"):
             errors.append("Research dossier and course model course_id values differ")
-        approved_candidate_ids = {
-            candidate.get("id")
-            for candidate in research_dossier.get("body", {}).get("source_candidates", [])
-            if candidate.get("status") == "approved"
-        }
+        if approved_source_registry is not None:
+            approved_candidate_ids = {
+                source.get("id")
+                for source in approved_source_registry.get("body", {}).get("source_registry", [])
+            }
+        else:
+            approved_candidate_ids = {
+                candidate.get("id")
+                for candidate in research_dossier.get("body", {}).get("source_candidates", [])
+                if candidate.get("status") == "approved"
+            }
         for source_id in sorted(source_id_set - approved_candidate_ids):
-            errors.append(
-                f"Course model source {source_id} is not approved in the research dossier"
-            )
+            errors.append(f"Course model source {source_id} is not approved for downstream use")
         for candidate in research_dossier.get("body", {}).get("source_candidates", []):
             for node_id in candidate.get("assigned_node_ids", []):
                 if node_id not in module_id_set | subtopic_id_set:
                     errors.append(
                         f"Source candidate {candidate.get('id')} has unknown node {node_id}"
+                    )
+        topic_ids = {
+            topic.get("id")
+            for topic in research_dossier.get("body", {}).get("normalized_topics", [])
+        }
+        for item in rationale_items:
+            for topic_id in item.get("related_topic_ids", []):
+                if topic_ids and topic_id not in topic_ids:
+                    errors.append(
+                        f"Structural rationale {item.get('id')} references unknown "
+                        f"research topic {topic_id}"
                     )
 
     if blueprint is not None:
@@ -232,6 +263,9 @@ def _validate_blueprint_semantics(
         errors.append("Blueprint and course model course_id values differ")
 
     plans = blueprint.get("body", {}).get("subtopic_plans", [])
+    defaults = blueprint.get("body", {}).get("course_defaults", {})
+    if defaults:
+        errors.extend(_validate_depth_budget_range(defaults.get("depth_budget", {}), "defaults"))
     plan_ids = [plan.get("subtopic_id") for plan in plans]
     for duplicate in sorted(_duplicates(plan_ids)):
         errors.append(f"Duplicate Blueprint plan for subtopic {duplicate}")
@@ -247,33 +281,26 @@ def _validate_blueprint_semantics(
         if subtopic_id not in subtopic_id_set:
             errors.append(f"Blueprint references unknown subtopic {subtopic_id}")
         budget = plan.get("depth_budget", {})
-        word_range = budget.get("target_word_range", {})
-        minimum = word_range.get("minimum", 0)
-        target = word_range.get("target", 0)
-        maximum = word_range.get("maximum", 0)
-        if not minimum <= target <= maximum:
-            errors.append(
-                f"Blueprint word range for {subtopic_id} must satisfy minimum <= target <= maximum"
-            )
+        errors.extend(_validate_depth_budget_range(budget, str(subtopic_id)))
         for concept_id in budget.get("required_concept_ids", []):
             if concept_id not in concept_id_set:
                 errors.append(f"Blueprint {subtopic_id} requires unknown concept {concept_id}")
         assets = plan.get("asset_plan", [])
         if not any(asset.get("selection_status") == "selected" for asset in assets):
             errors.append(f"Blueprint {subtopic_id} must select at least one asset")
-        if not any(
+        has_anchor = any(
             asset.get("asset_type") == "course_content"
             and asset.get("selection_status") == "selected"
             for asset in assets
-        ):
+        )
+        if not has_anchor and not plan.get("anchor_asset_waiver_confirmed"):
             errors.append(
-                f"Blueprint {subtopic_id} must select course_content as its anchor"
+                f"Blueprint {subtopic_id} must select course_content as its anchor "
+                "or confirm an anchor waiver"
             )
         asset_types = [asset.get("asset_type") for asset in assets]
         for duplicate in sorted(_duplicates(asset_types)):
-            errors.append(
-                f"Duplicate Blueprint asset type for {subtopic_id}: {duplicate}"
-            )
+            errors.append(f"Duplicate Blueprint asset type for {subtopic_id}: {duplicate}")
         for asset in assets:
             for source_id in asset.get("source_ids", []):
                 if source_id not in subtopic_approvals.get(subtopic_id, set()):
@@ -286,3 +313,13 @@ def _validate_blueprint_semantics(
     for duplicate in sorted(_duplicates(asset_ids)):
         errors.append(f"Duplicate Blueprint asset id: {duplicate}")
     return errors
+
+
+def _validate_depth_budget_range(budget: dict, label: str) -> list[str]:
+    word_range = budget.get("target_word_range", {})
+    minimum = word_range.get("minimum", 0)
+    target = word_range.get("target", 0)
+    maximum = word_range.get("maximum", 0)
+    if minimum <= target <= maximum:
+        return []
+    return [f"Blueprint word range for {label} must satisfy minimum <= target <= maximum"]

@@ -9,6 +9,29 @@
   "inputs": ["course_model"],
   "updated_at": "2026-06-30T00:00:00+00:00",
   "body": {
+    "course_defaults": {
+      "depth_budget": {
+        "level": "intermediate",
+        "target_learning_minutes": 30,
+        "target_word_range": {
+          "minimum": 1600,
+          "target": 2200,
+          "maximum": 2800
+        },
+        "required_concept_ids": [],
+        "required_example_count": 4,
+        "case_depth": "detailed",
+        "assessment_complexity": "analysis",
+        "expansion_policy": "targeted_by_coverage_gap"
+      },
+      "default_asset_types": [
+        "learning_objectives",
+        "course_content",
+        "summary",
+        "assessment"
+      ],
+      "source_routing_policy": "Route only sources approved for the subtopic; do not route rejected, proposed, unavailable, or contentless sources."
+    },
     "subtopic_plans": [
       {
         "subtopic_id": "m1_s1",
@@ -108,7 +131,17 @@
             "purpose": "Offer vetted paths for further study.",
             "source_ids": ["g1", "g2", "g3", "g4", "g5", "g6"]
           }
-        ]
+        ],
+        "source_routing_notes": "All selected benchmark assets route only the approved m1_s1 source ids.",
+        "anchor_asset_waiver_confirmed": false
+      }
+    ],
+    "decision_log": [
+      {
+        "id": "bd1",
+        "scope": "m1_s1",
+        "decision": "selected_all_phase1_benchmark_assets",
+        "rationale": "The Phase 1 benchmark required all nine asset types for the first subtopic."
       }
     ]
   }

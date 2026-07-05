@@ -18,6 +18,19 @@
       "jurisdiction": null,
       "course_outcome_ids": ["co1", "co2", "co3", "co4"]
     },
+    "structural_rationale": [
+      {
+        "id": "sr1",
+        "statement": "The compact model preserves the Phase 1 benchmark sequence while keeping evidence in approved source files only.",
+        "evidence_artifact_refs": [
+          "brief.scope",
+          "course_outcomes.outcomes",
+          "research_dossier.structural_implications"
+        ],
+        "related_outcome_ids": ["co1", "co2", "co3", "co4"],
+        "related_topic_ids": ["nt_risk_foundations"]
+      }
+    ],
     "modules": [
       {
         "id": "m1",

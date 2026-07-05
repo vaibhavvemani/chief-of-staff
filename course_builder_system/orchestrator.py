@@ -58,12 +58,12 @@ def make_artifact(
         "artifact_type": artifact_type,
         "produced_by_step": produced_by_step,
         "schema_version": schema_version or SCHEMA_VERSION,
-        "status": "draft",          # draft -> approved (set by orchestrator)
-        "revision": 0,              # bumped by orchestrator on re-run
-        "revision_note": None,      # the feedback that triggered the re-run
-        "inputs": inputs,           # which artifact_types this consumed
+        "status": "draft",  # draft -> approved (set by orchestrator)
+        "revision": 0,  # bumped by orchestrator on re-run
+        "revision_note": None,  # the feedback that triggered the re-run
+        "inputs": inputs,  # which artifact_types this consumed
         "updated_at": _now(),
-        "body": body,               # OPAQUE to the engine
+        "body": body,  # OPAQUE to the engine
     }
 
 
@@ -78,9 +78,9 @@ def _now() -> str:
 # --------------------------------------------------------------------------
 @dataclass
 class Step:
-    name: str                                  # e.g. "structure"
-    consumes: list[str]                         # artifact_types it reads
-    produces: list[str]                         # artifact_types it writes
+    name: str  # e.g. "structure"
+    consumes: list[str]  # artifact_types it reads
+    produces: list[str]  # artifact_types it writes
     run: Callable[[dict, str | None], dict]
     # run(inputs, feedback) -> {artifact_type: artifact_envelope}
     # inputs is {artifact_type: artifact_envelope}
@@ -116,6 +116,24 @@ def load_artifact(course_id: str, artifact_type: str) -> dict | None:
     if not path.exists():
         return None
     return json.loads(path.read_text())
+
+
+def _approved_outputs_current(existing: list[dict | None], inputs: dict[str, dict]) -> bool:
+    """Return True when approved outputs are current for the loaded inputs."""
+    if not existing or not all(existing):
+        return False
+    if not all(artifact["status"] == "approved" for artifact in existing if artifact):
+        return False
+    latest_input_update = max(
+        (artifact.get("updated_at", "") for artifact in inputs.values()),
+        default="",
+    )
+    return all(
+        artifact
+        and artifact.get("updated_at")
+        and artifact.get("updated_at", "") >= latest_input_update
+        for artifact in existing
+    )
 
 
 # --------------------------------------------------------------------------
@@ -159,28 +177,25 @@ def run_pipeline(
         save_artifact(art)
 
     for step in pipeline:
-        # --- resume: skip a step whose outputs are already approved on disk.
-        # (Saves re-approving Steps 1-2 every time you tweak Step 3. To force a
-        # redo of an approved step, delete its .json files and re-run.)
-        existing = [load_artifact(course_id, t) for t in step.produces]
-        if existing and all(
-            a
-            and a["status"] == "approved"
-            and set(a.get("inputs", [])) == set(step.consumes)
-            for a in existing
-        ):
-            print(f"[skip]  '{step.name}' already approved - resuming past it")
-            continue
-
         # --- gather inputs this step consumes
         inputs = {}
         for t in step.consumes:
             art = load_artifact(course_id, t)
             if art is None:
-                raise RuntimeError(
-                    f"step '{step.name}' needs '{t}', but it is not on disk"
-                )
+                raise RuntimeError(f"step '{step.name}' needs '{t}', but it is not on disk")
             inputs[t] = art
+
+        # --- resume: skip a step whose outputs are already approved on disk.
+        # (Saves re-approving Steps 1-2 every time you tweak Step 3. To force a
+        # redo of an approved step, delete its .json files and re-run. If an
+        # input was revised after an output was approved, the step is no longer
+        # considered current and will rerun.)
+        existing = [load_artifact(course_id, t) for t in step.produces]
+        if _approved_outputs_current(existing, inputs) and all(
+            a and set(a.get("inputs", [])) == set(step.consumes) for a in existing
+        ):
+            print(f"[skip]  '{step.name}' already approved - resuming past it")
+            continue
 
         # --- run / approve loop: re-runs ONLY this step until approved
         feedback: str | None = None

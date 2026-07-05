@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Any
 
 from interaction import QuestionSpec, ScriptedResponder
 from orchestrator import make_artifact
 
 DESIGN_SCHEMA_VERSION = "0.2"
+INTAKE_FOLLOWUP_MODEL = "claude-haiku-4-5"
 
 BRIEF_FIELD_ORDER = (
     "audience",
@@ -161,6 +163,15 @@ COURSE_BRIEF_QUESTIONS: tuple[QuestionSpec, ...] = (
 )
 
 
+@dataclass(frozen=True)
+class IntakeGap:
+    id: str
+    kind: str
+    field: str
+    severity: str
+    message: str
+
+
 def slugify_course_id(subject: str, suffix: str = "demo") -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", subject.lower()).strip("-")
     slug = re.sub(r"-+", "-", slug)
@@ -219,6 +230,7 @@ def validated_followups(
     max_questions: int = 3,
 ) -> list[QuestionSpec]:
     """Validate bounded agent follow-up candidates for the brief stage."""
+    max_questions = min(max_questions, 3)
     allowed_fields = {
         question.field for question in COURSE_BRIEF_QUESTIONS if question.allow_agent_followup
     }
@@ -244,6 +256,84 @@ def validated_followups(
         seen_ids.add(question.id)
         seen_fields.add(question.field)
     return accepted
+
+
+def analyze_intake_gaps(subject_request: dict, answers: dict[str, Any]) -> list[IntakeGap]:
+    """Detect ambiguity/conflicts before asking any agent follow-up questions."""
+    body = subject_request.get("body", subject_request)
+    gaps: list[IntakeGap] = []
+    subject = str(body.get("subject", "")).strip()
+    seeded = _seed_answers(subject_request if "body" in subject_request else {"body": body})
+    merged = {**seeded, **answers}
+
+    if len(_tokens(subject)) < 2 and not body.get("description"):
+        gaps.append(
+            IntakeGap(
+                id="gap_subject_context",
+                kind="ambiguity",
+                field="purpose",
+                severity="medium",
+                message="The subject is too sparse to infer a useful course purpose.",
+            )
+        )
+    audience = str(merged.get("audience", "")).strip().lower()
+    if audience in {"", "everyone", "anyone", "general"}:
+        gaps.append(
+            IntakeGap(
+                id="gap_audience_generic",
+                kind="ambiguity",
+                field="audience",
+                severity="medium",
+                message="The audience is generic, which makes depth and examples ambiguous.",
+            )
+        )
+    if _scope_overlap(merged.get("in_scope"), merged.get("out_of_scope")):
+        gaps.append(
+            IntakeGap(
+                id="gap_scope_overlap",
+                kind="conflict",
+                field="purpose",
+                severity="high",
+                message="At least one topic appears in both in-scope and out-of-scope inputs.",
+            )
+        )
+    prior = str(merged.get("prior_knowledge", "")).lower()
+    level = str(merged.get("level", "")).lower()
+    if level in {"beginner", "introductory"} and any(
+        marker in prior for marker in ("advanced", "expert", "professional")
+    ):
+        gaps.append(
+            IntakeGap(
+                id="gap_level_prior_conflict",
+                kind="conflict",
+                field="prior_knowledge",
+                severity="medium",
+                message="The requested beginner level conflicts with advanced prior knowledge.",
+            )
+        )
+    return gaps
+
+
+def gap_followups(
+    subject_request: dict,
+    answers: dict[str, Any],
+    *,
+    max_questions: int = 3,
+) -> list[QuestionSpec]:
+    """Turn detected gaps into validated, stage-safe follow-up questions."""
+    proposed = []
+    for gap in analyze_intake_gaps(subject_request, answers):
+        proposed.append(
+            QuestionSpec(
+                id=f"brief_followup_{gap.field}_{gap.id}",
+                field=gap.field,
+                prompt=gap.message,
+                why="Resolving this improves the Course Brief before research starts.",
+                answer_type="free_text",
+                allow_agent_followup=True,
+            )
+        )
+    return validated_followups(answers, proposed, max_questions=max_questions)
 
 
 def run_scripted_intake(subject_request: dict, responder: ScriptedResponder) -> dict:
@@ -390,3 +480,17 @@ def _nullable(value: Any) -> str | None:
     if value in (None, "", []):
         return None
     return str(value)
+
+
+def _scope_overlap(in_scope: Any, out_of_scope: Any) -> bool:
+    in_items = {_normalize_scope_item(item) for item in _as_list(in_scope)}
+    out_items = {_normalize_scope_item(item) for item in _as_list(out_of_scope)}
+    return bool((in_items - {""}) & (out_items - {""}))
+
+
+def _normalize_scope_item(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+
+
+def _tokens(value: str) -> set[str]:
+    return {token for token in re.split(r"[^a-z0-9]+", value.lower()) if token}
