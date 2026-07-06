@@ -35,7 +35,7 @@
   "$defs": {
     "source_id": {
       "type": "string",
-      "pattern": "^g[0-9]+$"
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
     },
     "asset_type": {
       "enum": [

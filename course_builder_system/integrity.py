@@ -25,6 +25,7 @@ Checks performed:
 
 from __future__ import annotations
 
+from agents import lesson_plan as lesson_plan_agent
 from course_model_integrity import validate_course_model_semantics
 from orchestrator import load_artifact
 
@@ -69,6 +70,7 @@ def _check_course_model_integrity(course_id: str, course_model: dict) -> list[st
 
     _, subtopic_ids, source_ids, approvals = _course_model_ids(course_model["body"])
     asset_routes: dict[tuple[str, str], set[str]] = {}
+    selected_assets_by_subtopic: dict[str, set[str]] = {}
     if blueprint is not None:
         for plan in blueprint.get("body", {}).get("subtopic_plans", []):
             subtopic_id = plan.get("subtopic_id")
@@ -77,16 +79,47 @@ def _check_course_model_integrity(course_id: str, course_model: dict) -> list[st
                 for identity in (configured.get("id"), configured.get("asset_type")):
                     if isinstance(subtopic_id, str) and isinstance(identity, str):
                         asset_routes[(subtopic_id, identity)] = routed
+                if (
+                    isinstance(subtopic_id, str)
+                    and isinstance(configured.get("id"), str)
+                    and configured.get("selection_status") == "selected"
+                ):
+                    selected_assets_by_subtopic.setdefault(subtopic_id, set()).add(configured["id"])
 
     content_package = load_artifact(course_id, "content_package")
     if content_package is not None:
         is_v02 = content_package.get("schema_version") == "0.2"
+        actual_content_subtopics = {
+            subtopic.get("subtopic_id")
+            for subtopic in content_package["body"].get("subtopics", [])
+            if isinstance(subtopic.get("subtopic_id"), str)
+        }
+        if blueprint is not None:
+            for subtopic_id in sorted(set(selected_assets_by_subtopic) - actual_content_subtopics):
+                problems.append(
+                    f"content_package: selected Blueprint subtopic '{subtopic_id}' is missing"
+                )
         for subtopic in content_package["body"].get("subtopics", []):
             subtopic_id = subtopic.get("subtopic_id")
             if subtopic_id not in subtopic_ids:
                 problems.append(
                     f"content_package: subtopic_id '{subtopic_id}' is not a Course Model subtopic"
                 )
+            if blueprint is not None:
+                actual_asset_ids = {
+                    asset.get("id")
+                    for asset in subtopic.get("assets", [])
+                    if isinstance(asset.get("id"), str)
+                }
+                expected_asset_ids = selected_assets_by_subtopic.get(subtopic_id, set())
+                for asset_id in sorted(actual_asset_ids - expected_asset_ids):
+                    problems.append(
+                        f"content_package: asset '{asset_id}' was not selected by the Blueprint"
+                    )
+                for asset_id in sorted(expected_asset_ids - actual_asset_ids):
+                    problems.append(
+                        f"content_package: selected Blueprint asset '{asset_id}' is missing"
+                    )
             approved_sources = approvals.get(subtopic_id, set())
             for asset in subtopic.get("assets", []):
                 asset_sources = set(asset.get("sources", []))
@@ -149,6 +182,20 @@ def _check_course_model_integrity(course_id: str, course_model: dict) -> list[st
 
     lesson_plan = load_artifact(course_id, "lesson_plan")
     if lesson_plan is not None:
+        expected_lesson_subtopics = []
+        if content_package is not None and "session_constraints" in lesson_plan.get("body", {}):
+            expected_lesson_subtopics = [
+                subtopic.get("subtopic_id")
+                for subtopic in content_package["body"].get("subtopics", [])
+                if isinstance(subtopic.get("subtopic_id"), str)
+            ]
+            problems.extend(
+                f"lesson_plan: {problem}"
+                for problem in lesson_plan_agent.validate_lesson_plan_body(
+                    lesson_plan["body"],
+                    expected_subtopic_ids=expected_lesson_subtopics,
+                )
+            )
         for session in lesson_plan["body"].get("sessions", []):
             for coverage in session.get("covers", []):
                 subtopic_id = coverage.get("subtopic_id")

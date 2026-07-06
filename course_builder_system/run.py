@@ -48,7 +48,7 @@ def build_pipeline() -> list[Step]:
         ),
         Step(
             name="lesson_plan",
-            consumes=["content_package", "blueprint"],
+            consumes=["content_package", "blueprint", "course_model"],
             produces=["lesson_plan"],
             run=steps.lesson_plan_step,
         ),
@@ -133,6 +133,48 @@ def build_sprint2_pipeline(*, live_research: bool = False) -> list[Step]:
     ]
 
 
+def build_sprint3_pipeline(*, live_research: bool = False) -> list[Step]:
+    """Sparse request -> Markdown course folder and resumable run summary."""
+    return [
+        *build_sprint2_pipeline(live_research=live_research),
+        Step(
+            name="student_content",
+            consumes=["course_model", "blueprint", "course_outcomes"],
+            produces=["content_package", "content_progress"],
+            run=steps.student_content_step,
+        ),
+        Step(
+            name="lesson_plan",
+            consumes=["content_package", "blueprint", "course_model"],
+            produces=["lesson_plan"],
+            run=steps.lesson_plan_step,
+        ),
+        Step(
+            name="render_course_folder",
+            consumes=["course_model", "blueprint", "content_package", "lesson_plan"],
+            produces=["render_manifest"],
+            run=steps.render_course_folder_step,
+        ),
+        Step(
+            name="run_summary",
+            consumes=[
+                "brief",
+                "course_outcomes",
+                "research_dossier",
+                "approved_source_registry",
+                "course_model",
+                "blueprint",
+                "content_package",
+                "content_progress",
+                "lesson_plan",
+                "render_manifest",
+            ],
+            produces=["run_summary"],
+            run=steps.run_summary_step,
+        ),
+    ]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run Course Builder pipelines.")
     parser.add_argument(
@@ -144,6 +186,11 @@ def main() -> None:
         "--sprint2-demo",
         action="store_true",
         help="Run the Sprint 2 sparse-request to generated Blueprint checkpoint.",
+    )
+    parser.add_argument(
+        "--sprint3-demo",
+        action="store_true",
+        help="Run the Sprint 3 sparse-request to Markdown course-folder checkpoint.",
     )
     parser.add_argument(
         "--live-research",
@@ -169,7 +216,7 @@ def main() -> None:
         )
         return
 
-    if args.sprint2_demo:
+    if args.sprint2_demo or args.sprint3_demo:
         subject_request = intake.subject_request_artifact(
             subject=args.subject,
             description=("A practical beginner course for people who want better results quickly."),
@@ -178,7 +225,9 @@ def main() -> None:
         )
         run_pipeline(
             course_id=subject_request["course_id"],
-            pipeline=build_sprint2_pipeline(live_research=args.live_research),
+            pipeline=build_sprint3_pipeline(live_research=args.live_research)
+            if args.sprint3_demo
+            else build_sprint2_pipeline(live_research=args.live_research),
             seed_artifacts={"subject_request": subject_request},
             approver=console_approver,
         )

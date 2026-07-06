@@ -244,8 +244,29 @@ def resolve_asset_spec(spec: AssetSpec, inputs: dict[str, Any]) -> AssetSpec:
     )
 
 
+def ensure_asset_selected(spec: AssetSpec, inputs: dict[str, Any]) -> None:
+    """Raise if the Blueprint did not select this asset for generation."""
+    blueprint_body = _artifact_body(inputs["blueprint"], "blueprint")
+    plan = _find_blueprint_subtopic_plan(blueprint_body, _subtopic_id(inputs))
+    raw_assets = _raw_asset_plan(plan)
+    if raw_assets is None:
+        return
+    for item in raw_assets:
+        if not isinstance(item, dict):
+            continue
+        if item.get("asset_type", item.get("type")) != spec.asset_type:
+            continue
+        if item.get("selection_status") == "selected" or (
+            item.get("selection_status") is None and item.get("selected", item.get("enabled", True))
+        ):
+            return
+        raise ValueError(f"Blueprint did not select asset type {spec.asset_type!r}")
+    raise ValueError(f"Blueprint does not plan asset type {spec.asset_type!r}")
+
+
 def routed_source_ids(spec: AssetSpec, inputs: dict[str, Any]) -> list[str]:
     """Return the approved source subset assigned to one asset."""
+    ensure_asset_selected(spec, inputs)
     course_body = _artifact_body(inputs["course_model"], "course_model")
     blueprint_body = _artifact_body(inputs["blueprint"], "blueprint")
     subtopic_id = _subtopic_id(inputs)
@@ -292,6 +313,7 @@ def generate_asset(
     Returns the validated, normalised asset dict.
     """
     spec = resolve_asset_spec(spec, inputs)
+    ensure_asset_selected(spec, inputs)
     context = _build_prompt_context(spec, inputs)
     prompt = _render_prompt(spec, context, course_content, feedback)
     schema = _build_asset_schema(spec)
@@ -852,9 +874,7 @@ def _asset_depth_requirements(spec: AssetSpec, inputs: dict[str, Any]) -> dict[s
     # The subtopic-level word/learning budget governs the anchor lesson. Other
     # assets opt into their own mechanical limits through their asset-plan
     # entry; a summary must not inherit a 1,600-word Course Content minimum.
-    requirements = (
-        dict(plan.get("depth_budget", {})) if spec.asset_type == "course_content" else {}
-    )
+    requirements = dict(plan.get("depth_budget", {})) if spec.asset_type == "course_content" else {}
     word_range = requirements.get("target_word_range")
     if isinstance(word_range, dict):
         requirements.setdefault("min_words", word_range.get("minimum"))
