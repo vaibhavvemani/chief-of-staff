@@ -1,9 +1,11 @@
 # Course Builder — Phase 2 Implementation Plan
 
-> **Status:** INCORPORATED INTO THE APPROVED FOUR-WEEK PROTOTYPE AND SPRINT PLANS — retained as detailed upstream design context
+> **Status:** COMPLETE WITHIN THE FOUR-WEEK PROTOTYPE — retained as detailed upstream design context
 > **Goal:** Replace the fixture-backed upstream path with real, domain-agnostic intent, outcomes, research/source-approval, and Course Model agents.
 > **Acceptance course:** A non-FRM course beginning from a sparse request; “coffee making” is the default unless the project owner selects another subject before the live run.
 > **Downstream boundary:** Produce an approved Course Model that the existing Blueprint and Student Content contracts can consume without domain-specific changes.
+
+> **Completion note:** The upstream path is now implemented in the prototype and has been exercised in deterministic and live runs. Remaining work is not "Phase 2 completion"; it is source-quality hardening, verifier-driven repair, operator UX, and productionization. See `Course_Builder_Four_Week_Prototype_Completion_Handoff.md`.
 
 ## Definition of Done
 
@@ -110,5 +112,7 @@ The gate requires:
 | Upstream agents overfit to the acceptance subject | Static prompt checks plus FRM and a second tiny subject fixture for contract-only traversal. |
 
 ## First executable slice
+
+This section is retained as historical implementation guidance. It is not the current next action after prototype completion.
 
 Begin with **P2.1**: add the Course Brief v0.2 contract, define the sparse subject-request boundary, and create the non-FRM mocked contract test. Do not call live research APIs until that chain is green.

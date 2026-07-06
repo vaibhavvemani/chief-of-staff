@@ -4,9 +4,26 @@
 
 ---
 
+## Current status - 2026-07-06
+
+The four-week Course Builder prototype is complete as a working vertical product prototype. It has passed deterministic local acceptance, a second-topic domain-neutral smoke test, and one full live end-to-end run using live research, live LLM-backed content generation, live verification, lesson-plan generation, and Markdown rendering.
+
+Read `Course_Builder_Four_Week_Prototype_Completion_Handoff.md` before starting new work. It is the current prototype closeout record and supersedes the pre-build sprint assumptions for status, known gaps, and recommended next work.
+
+The most important current conclusion:
+
+- the pipeline works end to end;
+- source enforcement, asset selection, resume, rendering, and integrity checks work;
+- live generation can complete at acceptable cost after source-excerpt bounding;
+- first-pass live content is not automatically learner-ready;
+- verifier blockers must drive source repair and targeted revision before a live course is considered final.
+
+---
+
 ## 0. How to use this document (for AI assistants)
 
 - Read this whole document first. It is self-contained — you should not need any other file to understand the project.
+- Then read `Course_Builder_Four_Week_Prototype_Completion_Handoff.md` for the current implementation state, validation evidence, and next work package.
 - **Intent wins on vision; detail wins on implementation.** Sections 1–11 define *what* we are building and the decisions already locked. Sections 12–19 define *how* we are building it.
 - **Do not re-litigate locked decisions** (Section 10) unless we explicitly reopen one. If a request seems to contradict a locked decision or a core principle, flag it rather than quietly drifting.
 - **Push back when warranted.** We prefer direct, rigorous collaboration over agreeable drift. Do not add scope, components, or "nice to haves" without genuine justification. If we are over-engineering, say so.
@@ -264,12 +281,12 @@ Defaults chosen to minimise moving parts while learning. Change any of them late
 | Phase | Focus | What you prove or get |
 |---|---|---|
 | **0** | Foundations & walking skeleton | **Complete:** pipeline runs end to end with real-shaped stubs, approvals, resumability, and contract checks |
-| **1** | Student content (one subtopic) | The core risk is retired: trustworthy content with light review |
-| **2** | Intent, research & Course Model | Clarified brief → approved outcomes → research/source approval → compact Course Model |
-| **3** | Blueprint | A runnable per-subtopic plan: depth, time, assets, examples/cases, assessments, slides and speakers where relevant |
-| **4** | Integrate & scale content | A whole course's content generated from a subject |
-| **5** | Lesson plan + LMS packaging *(packaging tool built early — see §11)* | Teacher materials and platform-ready output |
-| **6** | Hardening | Reliable, observable, pleasant to run |
+| **1** | Student content (one subtopic) | **Complete:** core generation, attribution, verification, and targeted revision risk retired on FRM benchmark |
+| **2** | Intent, research & Course Model | **Complete in prototype:** clarified brief → outcomes → research/source approval → compact Course Model |
+| **3** | Blueprint | **Complete in prototype:** runnable per-subtopic plan with depth, time, assets, examples/cases, assessments, and source routing |
+| **4** | Integrate & scale content | **Complete in prototype:** whole-course selected content generation from approved artifacts |
+| **5** | Lesson plan + output folder | **Complete in prototype for Markdown:** teacher lesson plan and organized Markdown course folder; native DOCX/PPTX/SCORM wiring remains later |
+| **6** | Hardening | **Partially complete:** resume, negative gates, source-context cost control, run-summary attention gate; production UX/observability remains later |
 
 ### Phase details
 
@@ -277,15 +294,15 @@ Defaults chosen to minimise moving parts while learning. Change any of them late
 
 **Phase 1 — Make Student Content real, on ONE subtopic. COMPLETE.** The FRM benchmark exercised the domain-agnostic generation path, scoped grounding, separate verification, claim-level attribution, coverage/depth checks, targeted revision, and the human review rubric. The final outputs were reviewed and accepted on 2026-07-01. See `Course_Builder_Phase1_Handoff.md`.
 
-**Phase 2 — Make intent, research, and structure real. CURRENT FOCUS.** Starting from a subject as broad as “coffee making,” run a conversational clarification loop, obtain approval of the Course Brief and course-level outcomes, research competitors and candidate sources, let the human approve sources, and produce one compact Course Model. Reuse Phase 1 grounding and attribution machinery, but keep research evidence and full sources outside the Course Model. *Done when:* a sparse initial request becomes approved intent, outcomes, research/source decisions, and a human-approved Course Model without domain-specific prompt logic.
+**Phase 2 — Make intent, research, and structure real. COMPLETE IN PROTOTYPE.** Starting from a subject as broad as “coffee making,” the prototype can run clarification, approve a Course Brief and course-level outcomes, research competitors and candidate sources, apply explicit source decisions, and produce one compact Course Model. Research evidence and source content remain outside the Course Model. The remaining work is source-quality hardening, not Phase 2 contract completion.
 
-**Phase 3 — Make Blueprint real.** Turn the Course Model into a runnable, human-editable plan: timing, target depth/learning minutes/word ranges, required concepts and examples, case and assessment complexity, slide/speaker planning where relevant, and selected assets per subtopic. *Done when:* the Blueprint expresses intentional differences between subtopics and a human signs off with only minor tweaks.
+**Phase 3 — Make Blueprint real. COMPLETE IN PROTOTYPE.** The Blueprint turns the Course Model into a runnable plan with timing, depth budgets, word ranges, concepts/examples/cases/assessment complexity, selected assets, and per-asset source routing.
 
-**Phase 4 — Integrate, then scale content.** Let content generation consume deterministic per-subtopic slices from the Course Model, Blueprint, and approved source store. Generate only selected assets, using the outline/draft/coverage/depth/targeted-expansion loop for long-form content, with tracking, retries, and partial-failure handling. Do not parallelize before this point. *Done when:* a whole, non-FRM course can generate from a subject with approvals at every material gate.
+**Phase 4 — Integrate, then scale content. COMPLETE IN PROTOTYPE.** Content generation consumes deterministic per-subtopic slices from the Course Model, Blueprint, and approved source store. It generates only selected assets and supports verification, retry states, resume, and targeted revision. The next scale work is source repair, verifier-driven revision, cost controls, and eventually parallelization.
 
-**Phase 5 — Lesson Plan + LMS packaging.** A lesson-plan agent (per-class plans, live-vs-self-study, talking points) and packaging that exports the course folder into the target LMS format. **The packaging format and tool are now decided and built ahead of schedule:** a standalone converter turns `.docx`/`.pptx` into self-contained SCORM 1.2 `.zip` packages (see `scorm_converter.md`), and already round-trips the hand-authored `m1_s1` assets end-to-end into an LMS. What remains for this phase is the lesson-plan agent and wiring the builder's *generated* course folder into the converter. The freed packaging effort is **banked as schedule buffer** against the tight overall timeline rather than used to pull the end date in. *Done when:* the folder is complete and uploads cleanly into the target LMS.
+**Phase 5 — Lesson Plan + output packaging. COMPLETE IN PROTOTYPE FOR MARKDOWN.** The lesson-plan agent maps approved content into a basic schedule, and the renderer exports an organized Markdown course folder. Native DOCX/PPTX and wiring generated output into the existing SCORM converter remain later work.
 
-**Phase 6 — Hardening.** A better approval interface, tracing/observability, retries, cost control, polished single-folder output. Polish after it works, never before. *Done when:* someone who didn't build it could run a course and trust the result.
+**Phase 6 — Hardening. PARTIAL.** The prototype now has resume behavior, local acceptance, negative tests, source-context cost control, and a run-summary attention gate. It still needs better operator UX, source repair, verifier-driven revision, richer observability, and production packaging before a non-builder can run it confidently.
 
 ---
 
@@ -315,9 +332,9 @@ A clean split is **bones versus intelligence**. It keeps the two builders out of
 
 ---
 
-## 19. Phase 0 completion snapshot
+## 19. Prototype completion snapshot
 
-**Status:** Phases 0 and 1 are complete. Phase 2 is active; existing FRM artifacts remain a narrow quality benchmark while the fixture-backed upstream steps are replaced with domain-agnostic intent, research, source-approval, and Course Model agents.
+**Status:** The four-week prototype is complete as an engineering prototype. Existing FRM artifacts remain a narrow quality benchmark; the non-FRM coffee acceptance path and indoor herb smoke path prove the domain-neutral contracts.
 
 What Phase 0 left behind as durable project context:
 
@@ -336,10 +353,10 @@ The Phase 0 handoff has been archived at `documents/context_docs/archive/Course_
 ## 20. Team & current state
 
 - **Team:** two engineers, both new to agentic AI.
-- **Current state:** Phases 0 and 1 are complete. The reusable contracts, prompts, context builder, verification, integrity path, and FRM benchmark are in place. Phase 2 now replaces the fixture-backed intake, outcomes, research, and Course Model steps; FRM-specific fixtures remain benchmark data, not reusable prompt or contract assumptions.
+- **Current state:** The four-week prototype is complete. The reusable contracts, prompts, context builder, verification, integrity path, local acceptance course, live-run evidence, and FRM benchmark are in place. FRM-specific fixtures remain benchmark data, not reusable prompt or contract assumptions.
 - **Building method:** the project is being built largely with AI assistance — this document exists to give any AI collaborator full context.
 - **Key asset:** existing, manually-built courses (risk & governance subjects). These are the reference for designing the artifacts AND the quality bar the agent's output is measured against.
-- **Immediate next action:** execute Sprint 1 in `Course_Builder_Four_Week_Sprint_Plan.md`: jointly lock the interaction/upstream contracts, then build the guided Brief/Outcomes path and mocked research/source-choice checkpoint in parallel.
+- **Immediate next action:** execute the next work package from `Course_Builder_Four_Week_Prototype_Completion_Handoff.md`: source repair plus verifier-driven targeted revision, so live courses can move from `requires_attention` to learner-ready without broad regeneration.
 
 ---
 

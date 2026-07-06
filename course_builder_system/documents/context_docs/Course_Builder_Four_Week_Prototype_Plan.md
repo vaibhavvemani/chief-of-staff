@@ -1,11 +1,13 @@
 # Course Builder — Four-Week Prototype Plan
 
-> **Status:** ✅ APPROVED FOR SPRINT PLANNING — 2026-07-01
+> **Status:** ✅ PROTOTYPE COMPLETE — validated locally and with one full live run on 2026-07-06
 > **Prepared:** 2026-07-01
 > **Team:** Two developers
 > **Delivery window:** Four weeks after approval of this plan
 > **Purpose:** Define what the prototype must do, how it must behave, what foundations must be implemented, and what is deliberately deferred.
 > **Execution plan:** See `Course_Builder_Four_Week_Sprint_Plan.md` for sprint gates, estimates, dependencies, and assignments.
+
+> **Completion record:** See `Course_Builder_Four_Week_Prototype_Completion_Handoff.md` for the actual delivered state, validation evidence, known gaps, and recommended next work. This plan remains the scope authority for what was intended; the completion handoff is the authority for what exists now.
 
 ## 1. Delivery decision
 
@@ -52,6 +54,19 @@ The prototype is complete only when all of the following are true:
 14. All approved artifacts, selected sources, generated learner material, teacher material, and a run summary are written into one organized course folder.
 15. A stopped or failed run can resume without repeating already approved stages or regenerating unaffected content.
 16. The full path is demonstrated on one non-FRM acceptance course and smoke-tested on a second unrelated topic.
+
+### Completion status as of 2026-07-06
+
+The prototype Definition of Done is met for the engineering prototype:
+
+- deterministic local acceptance passes for `coffee-acceptance`;
+- the second-topic domain-neutral smoke test passes for indoor herb gardening;
+- rejected-source, competitor-source, invalid-ID, evidence-gap, and unselected-asset negative gates pass;
+- resume after cancellation and targeted revision behavior pass;
+- a full live run completed from sparse request through rendered Markdown folder;
+- live run integrity passed and generated all selected assets.
+
+The live run also exposed the key next quality gap: first-pass live content may contain verifier blockers when the approved sources are too broad. The system now surfaces this correctly through verifier findings and run-summary `operator_status: requires_attention`, but the next phase must add a stronger source-repair and verifier-driven targeted-revision workflow before live output can be treated as learner-ready after one pass.
 
 ## 4. End-to-end user experience
 

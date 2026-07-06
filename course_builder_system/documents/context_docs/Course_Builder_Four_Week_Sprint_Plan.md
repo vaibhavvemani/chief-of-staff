@@ -1,12 +1,14 @@
 # Course Builder — Four-Week Sprint Plan
 
-> **Status:** READY TO EXECUTE
+> **Status:** COMPLETE — all four prototype sprints implemented and merged
 > **Created:** 2026-07-01
 > **Scope authority:** `Course_Builder_Four_Week_Prototype_Plan.md`
 > **Team:** Developer A — **Vaibhav**; Developer B — **Siddarth**
 > **Cadence:** Four one-week sprints; five focused working days per sprint
 > **Capacity assumption:** Approximately 25–30 focused hours per developer per week
 > **Delivery goal:** A domain-neutral, human-directed prototype that builds a modest complete course from a sparse topic request.
+
+> **Closeout:** See `Course_Builder_Four_Week_Prototype_Completion_Handoff.md` for the actual delivered state, validation evidence, live-run findings, and recommended next work.
 
 ## 1. Ownership model
 
@@ -326,4 +328,25 @@ At every sprint gate, record:
 - token/cost observations;
 - decision on whether the next sprint may begin.
 
-This plan is ready to execute once the actual Sprint 1 start date and normal branch/merge workflow are confirmed by the two developers.
+## 11. Sprint Closeout - 2026-07-06
+
+All four sprint gates have been implemented and merged into `main`.
+
+Final automated validation after prototype closeout:
+
+- `ruff check .` passed;
+- `python3 -m pytest -q` passed with `92 passed`;
+- deterministic local acceptance passed for `coffee-acceptance`;
+- integrity passed for local and live acceptance artifacts;
+- full live run completed through rendered Markdown output.
+
+Delivered sprint outcomes:
+
+- Sprint 1: sparse request, Course Brief, Course Outcomes, typed questions/choices, mocked research/source-choice checkpoint.
+- Sprint 2: live bounded research, source capture, deterministic source approval, Course Model, Blueprint, source/integrity enforcement.
+- Sprint 3: whole-course selected content generation, verification, targeted revision, Lesson Plan, Markdown renderer, run summary.
+- Sprint 4: deterministic acceptance harness, resume/revision drills, second-topic smoke, live-flow source-context efficiency fix, verifier attention gate, operator/demo documentation.
+
+Known closeout caveat:
+
+The live run proved that the system works end to end, but also showed that first-pass live content can include unsupported or weakly grounded claims if the approved sources are too broad. The prototype now marks such runs as `requires_attention`, but the next work package should add source repair and verifier-driven targeted revision before treating live output as final courseware.
