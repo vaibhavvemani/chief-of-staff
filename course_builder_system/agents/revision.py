@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
@@ -147,6 +148,8 @@ def revise_content_package(
     subtopic_id: str = "m1_s1",
     model: str = llm.DEFAULT_MODEL,
     use_cache: bool = True,
+    asset_generator: Callable[..., dict[str, Any]] | None = None,
+    asset_verifier: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Regenerate and reverify only the assets selected by *raw_feedback*."""
     revised_package = deepcopy(content_package)
@@ -192,7 +195,9 @@ def revise_content_package(
         if current is None:
             raise ValueError(f"content package is missing selected asset {spec.asset_id!r}")
         feedback = _build_asset_feedback(current, request.feedback, request.include_verifier_flags)
-        generated = student_content.generate_asset_to_depth(
+        generate_asset = asset_generator or student_content.generate_asset_to_depth
+        verify_asset = asset_verifier or verification.verify_asset
+        generated = generate_asset(
             spec,
             generation_inputs,
             course_content=course_content if spec.conditioned_on_course_content else None,
@@ -200,7 +205,7 @@ def revise_content_package(
             model=model,
             use_cache=use_cache,
         )
-        verified = verification.verify_asset(
+        verified = verify_asset(
             generated,
             course_model,
             model=model,

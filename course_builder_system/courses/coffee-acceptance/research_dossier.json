@@ -1,0 +1,604 @@
+{
+  "course_id": "coffee-acceptance",
+  "artifact_type": "research_dossier",
+  "produced_by_step": "research",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "brief",
+    "course_outcomes"
+  ],
+  "updated_at": "2026-07-06T06:16:41+00:00",
+  "body": {
+    "research_scope": "Bounded competitor and factual-source research for Coffee making; competitor outlines inform structure, while only approved factual sources may ground learner content.",
+    "competitor_findings": [
+      {
+        "id": "comp_homebrew",
+        "provider": "Example Learning",
+        "offering": "Home Coffee Brewing Basics",
+        "locator": "https://example.test/home-coffee",
+        "audience": "Home brewers and beginners.",
+        "level": "beginner",
+        "duration": "2 hours",
+        "delivery_format": "self-paced",
+        "assessment_approach": "short quizzes",
+        "outline_status": "usable",
+        "outline_sections": [
+          {
+            "id": "comp_homebrew_sec1",
+            "order": 1,
+            "raw_label": "Coffee beans and freshness",
+            "normalized_topic_id": "nt_coffee_beans_and_freshness",
+            "locator": "https://example.test/home-coffee",
+            "parent_label": "Home Coffee Brewing Basics"
+          },
+          {
+            "id": "comp_homebrew_sec2",
+            "order": 2,
+            "raw_label": "Grind size",
+            "normalized_topic_id": "nt_grind_size",
+            "locator": "https://example.test/home-coffee",
+            "parent_label": "Home Coffee Brewing Basics"
+          },
+          {
+            "id": "comp_homebrew_sec3",
+            "order": 3,
+            "raw_label": "Water temperature",
+            "normalized_topic_id": "nt_water_temperature",
+            "locator": "https://example.test/home-coffee",
+            "parent_label": "Home Coffee Brewing Basics"
+          },
+          {
+            "id": "comp_homebrew_sec4",
+            "order": 4,
+            "raw_label": "Brew ratio",
+            "normalized_topic_id": "nt_brew_ratio",
+            "locator": "https://example.test/home-coffee",
+            "parent_label": "Home Coffee Brewing Basics"
+          },
+          {
+            "id": "comp_homebrew_sec5",
+            "order": 5,
+            "raw_label": "Tasting and adjustment",
+            "normalized_topic_id": "nt_tasting_and_adjustment",
+            "locator": "https://example.test/home-coffee",
+            "parent_label": "Home Coffee Brewing Basics"
+          }
+        ],
+        "normalized_topic_ids": [
+          "nt_coffee_beans_and_freshness",
+          "nt_grind_size",
+          "nt_water_temperature",
+          "nt_brew_ratio",
+          "nt_tasting_and_adjustment"
+        ],
+        "structure_summary": "Moves from Coffee beans and freshness toward Tasting and adjustment across 5 visible sections.",
+        "notable_topics": [
+          "Coffee beans and freshness",
+          "Grind size",
+          "Water temperature",
+          "Brew ratio",
+          "Tasting and adjustment"
+        ],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "comp_barista",
+        "provider": "Example Academy",
+        "offering": "Barista Fundamentals",
+        "locator": "https://example.test/barista",
+        "audience": "New baristas and serious home brewers.",
+        "level": "beginner to intermediate",
+        "duration": "1 day",
+        "delivery_format": "workshop",
+        "assessment_approach": "practical demonstration",
+        "outline_status": "usable",
+        "outline_sections": [
+          {
+            "id": "comp_barista_sec1",
+            "order": 1,
+            "raw_label": "Extraction basics",
+            "normalized_topic_id": "nt_extraction",
+            "locator": "https://example.test/barista",
+            "parent_label": "Barista Fundamentals"
+          },
+          {
+            "id": "comp_barista_sec2",
+            "order": 2,
+            "raw_label": "Grind adjustment",
+            "normalized_topic_id": "nt_grind_size",
+            "locator": "https://example.test/barista",
+            "parent_label": "Barista Fundamentals"
+          },
+          {
+            "id": "comp_barista_sec3",
+            "order": 3,
+            "raw_label": "Water and recipe control",
+            "normalized_topic_id": "nt_brew_ratio",
+            "locator": "https://example.test/barista",
+            "parent_label": "Barista Fundamentals"
+          },
+          {
+            "id": "comp_barista_sec4",
+            "order": 4,
+            "raw_label": "Milk texture",
+            "normalized_topic_id": "nt_milk_texture",
+            "locator": "https://example.test/barista",
+            "parent_label": "Barista Fundamentals"
+          },
+          {
+            "id": "comp_barista_sec5",
+            "order": 5,
+            "raw_label": "Troubleshooting taste",
+            "normalized_topic_id": "nt_tasting_and_adjustment",
+            "locator": "https://example.test/barista",
+            "parent_label": "Barista Fundamentals"
+          }
+        ],
+        "normalized_topic_ids": [
+          "nt_extraction",
+          "nt_grind_size",
+          "nt_brew_ratio",
+          "nt_milk_texture",
+          "nt_tasting_and_adjustment"
+        ],
+        "structure_summary": "Moves from Extraction basics toward Troubleshooting taste across 5 visible sections.",
+        "notable_topics": [
+          "Extraction basics",
+          "Grind adjustment",
+          "Water and recipe control",
+          "Milk texture",
+          "Troubleshooting taste"
+        ],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "comp_brewlab",
+        "provider": "Example Brew Lab",
+        "offering": "Brew Better Coffee at Home",
+        "locator": "https://example.test/brewlab",
+        "audience": "Home coffee beginners.",
+        "level": "beginner",
+        "duration": "3 hours",
+        "delivery_format": "self-paced",
+        "assessment_approach": "brew log and short quiz",
+        "outline_status": "usable",
+        "outline_sections": [
+          {
+            "id": "comp_brewlab_sec1",
+            "order": 1,
+            "raw_label": "Fresh beans and storage",
+            "normalized_topic_id": "nt_fresh_beans_and_storage",
+            "locator": "https://example.test/brewlab",
+            "parent_label": "Brew Better Coffee at Home"
+          },
+          {
+            "id": "comp_brewlab_sec2",
+            "order": 2,
+            "raw_label": "Recipe basics",
+            "normalized_topic_id": "nt_recipe_basics",
+            "locator": "https://example.test/brewlab",
+            "parent_label": "Brew Better Coffee at Home"
+          },
+          {
+            "id": "comp_brewlab_sec3",
+            "order": 3,
+            "raw_label": "Grind size",
+            "normalized_topic_id": "nt_grind_size",
+            "locator": "https://example.test/brewlab",
+            "parent_label": "Brew Better Coffee at Home"
+          },
+          {
+            "id": "comp_brewlab_sec4",
+            "order": 4,
+            "raw_label": "Water quality",
+            "normalized_topic_id": "nt_water_quality",
+            "locator": "https://example.test/brewlab",
+            "parent_label": "Brew Better Coffee at Home"
+          },
+          {
+            "id": "comp_brewlab_sec5",
+            "order": 5,
+            "raw_label": "Taste correction loop",
+            "normalized_topic_id": "nt_taste_correction_loop",
+            "locator": "https://example.test/brewlab",
+            "parent_label": "Brew Better Coffee at Home"
+          }
+        ],
+        "normalized_topic_ids": [
+          "nt_fresh_beans_and_storage",
+          "nt_recipe_basics",
+          "nt_grind_size",
+          "nt_water_quality",
+          "nt_taste_correction_loop"
+        ],
+        "structure_summary": "Moves from Fresh beans and storage toward Taste correction loop across 5 visible sections.",
+        "notable_topics": [
+          "Fresh beans and storage",
+          "Recipe basics",
+          "Grind size",
+          "Water quality",
+          "Taste correction loop"
+        ],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "comp_locked",
+        "provider": "Unknown",
+        "offering": "Professional Cafe Course",
+        "locator": "https://example.test/locked",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "inaccessible",
+        "outline_sections": [],
+        "normalized_topic_ids": [],
+        "structure_summary": "No public outline was available.",
+        "notable_topics": [],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "coffee_g1",
+        "provider": "Unknown",
+        "offering": "Coffee Brewing Basics Notes",
+        "locator": "https://example.test/coffee-brewing",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "inaccessible",
+        "outline_sections": [],
+        "normalized_topic_ids": [],
+        "structure_summary": "No public outline was available.",
+        "notable_topics": [],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "coffee_g2",
+        "provider": "Unknown",
+        "offering": "Water Quality for Coffee",
+        "locator": "https://example.test/water-quality",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "inaccessible",
+        "outline_sections": [],
+        "normalized_topic_ids": [],
+        "structure_summary": "No public outline was available.",
+        "notable_topics": [],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "coffee_g4",
+        "provider": "Unknown",
+        "offering": "Coffee Brewing Troubleshooting Chart",
+        "locator": "https://example.test/troubleshooting-chart",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "inaccessible",
+        "outline_sections": [],
+        "normalized_topic_ids": [],
+        "structure_summary": "No public outline was available.",
+        "notable_topics": [],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "coffee_g3",
+        "provider": "Unknown",
+        "offering": "Anonymous Espresso Hack List",
+        "locator": "https://example.test/espresso-hacks",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "inaccessible",
+        "outline_sections": [],
+        "normalized_topic_ids": [],
+        "structure_summary": "No public outline was available.",
+        "notable_topics": [],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      }
+    ],
+    "normalized_topics": [
+      {
+        "id": "nt_brew_ratio",
+        "label": "Brew Ratio",
+        "aliases": [
+          "Brew Ratio",
+          "Brew ratio",
+          "Water and recipe control"
+        ]
+      },
+      {
+        "id": "nt_coffee_beans_and_freshness",
+        "label": "Coffee Beans And Freshness",
+        "aliases": [
+          "Coffee Beans And Freshness",
+          "Coffee beans and freshness"
+        ]
+      },
+      {
+        "id": "nt_extraction",
+        "label": "Extraction",
+        "aliases": [
+          "Extraction",
+          "Extraction basics"
+        ]
+      },
+      {
+        "id": "nt_fresh_beans_and_storage",
+        "label": "Fresh Beans And Storage",
+        "aliases": [
+          "Fresh Beans And Storage",
+          "Fresh beans and storage"
+        ]
+      },
+      {
+        "id": "nt_grind_size",
+        "label": "Grind Size",
+        "aliases": [
+          "Grind Size",
+          "Grind adjustment",
+          "Grind size"
+        ]
+      },
+      {
+        "id": "nt_milk_texture",
+        "label": "Milk texture",
+        "aliases": [
+          "Milk Texture",
+          "Milk texture"
+        ]
+      },
+      {
+        "id": "nt_recipe_basics",
+        "label": "Recipe Basics",
+        "aliases": [
+          "Recipe Basics",
+          "Recipe basics"
+        ]
+      },
+      {
+        "id": "nt_taste_correction_loop",
+        "label": "Taste Correction Loop",
+        "aliases": [
+          "Taste Correction Loop",
+          "Taste correction loop"
+        ]
+      },
+      {
+        "id": "nt_tasting_and_adjustment",
+        "label": "Troubleshooting taste",
+        "aliases": [
+          "Tasting And Adjustment",
+          "Tasting and adjustment",
+          "Troubleshooting taste"
+        ]
+      },
+      {
+        "id": "nt_water_quality",
+        "label": "Water quality",
+        "aliases": [
+          "Water Quality",
+          "Water quality"
+        ]
+      },
+      {
+        "id": "nt_water_temperature",
+        "label": "Water Temperature",
+        "aliases": [
+          "Water Temperature",
+          "Water temperature"
+        ]
+      }
+    ],
+    "coverage_matrix": [
+      {
+        "normalized_topic_id": "nt_brew_ratio",
+        "competitor_course_ids": [
+          "comp_barista",
+          "comp_homebrew"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_coffee_beans_and_freshness",
+        "competitor_course_ids": [
+          "comp_homebrew"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_extraction",
+        "competitor_course_ids": [
+          "comp_barista"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_fresh_beans_and_storage",
+        "competitor_course_ids": [
+          "comp_brewlab"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_grind_size",
+        "competitor_course_ids": [
+          "comp_barista",
+          "comp_brewlab",
+          "comp_homebrew"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_milk_texture",
+        "competitor_course_ids": [
+          "comp_barista"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_recipe_basics",
+        "competitor_course_ids": [
+          "comp_brewlab"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_taste_correction_loop",
+        "competitor_course_ids": [
+          "comp_brewlab"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_tasting_and_adjustment",
+        "competitor_course_ids": [
+          "comp_barista",
+          "comp_homebrew"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_water_quality",
+        "competitor_course_ids": [
+          "comp_brewlab"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_water_temperature",
+        "competitor_course_ids": [
+          "comp_homebrew"
+        ]
+      }
+    ],
+    "common_core_topic_ids": [
+      "nt_grind_size"
+    ],
+    "sequence_observations": [
+      {
+        "statement": "Usable outlines introduce fundamentals before troubleshooting or specialized applications.",
+        "evidence_competitor_ids": [
+          "comp_barista",
+          "comp_brewlab",
+          "comp_homebrew"
+        ]
+      }
+    ],
+    "gap_observations": [
+      {
+        "statement": "Competitor outlines do not by themselves approve factual grounding sources.",
+        "evidence_competitor_ids": [
+          "comp_barista",
+          "comp_brewlab",
+          "comp_homebrew"
+        ]
+      }
+    ],
+    "structural_implications": [
+      {
+        "id": "si1",
+        "implication": "Start with the shared common-core topics, then add differentiators only when the brief requires them.",
+        "rationale": "Frequency is useful evidence but must remain subordinate to approved intent and outcomes.",
+        "related_outcome_ids": [
+          "co1",
+          "co2",
+          "co3",
+          "co4"
+        ],
+        "related_topic_ids": [
+          "nt_grind_size"
+        ]
+      }
+    ],
+    "source_candidates": [
+      {
+        "id": "coffee_g1",
+        "title": "Coffee Brewing Basics Notes",
+        "publisher": "example.test",
+        "source_type": "web page",
+        "locator": "https://example.test/coffee-brewing",
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Candidate discovered through bounded search; human approval is required before fetching and storing source text.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Auditable source for extraction variables, grind size, water temperature, and ratio.",
+        "assigned_node_ids": [],
+        "decision_rationale": null
+      },
+      {
+        "id": "coffee_g2",
+        "title": "Water Quality for Coffee",
+        "publisher": "example.test",
+        "source_type": "web page",
+        "locator": "https://example.test/water-quality",
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Candidate discovered through bounded search; human approval is required before fetching and storing source text.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Auditable source for water quality, temperature, and extraction control.",
+        "assigned_node_ids": [],
+        "decision_rationale": null
+      },
+      {
+        "id": "coffee_g4",
+        "title": "Coffee Brewing Troubleshooting Chart",
+        "publisher": "example.test",
+        "source_type": "web page",
+        "locator": "https://example.test/troubleshooting-chart",
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Candidate discovered through bounded search; human approval is required before fetching and storing source text.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Auditable source for diagnosing sour, bitter, weak, and muddy coffee.",
+        "assigned_node_ids": [],
+        "decision_rationale": null
+      },
+      {
+        "id": "coffee_g3",
+        "title": "Anonymous Espresso Hack List",
+        "publisher": "example.test",
+        "source_type": "web page",
+        "locator": "https://example.test/espresso-hacks",
+        "content_ref": null,
+        "status": "rejected",
+        "trust_notes": "Authorship, publication quality, or evidence trail is unclear.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Unattributed coffee and espresso advice outside beginner home brewing scope.",
+        "assigned_node_ids": [],
+        "decision_rationale": "Rejected before ingestion because authorship or scope looked weak."
+      }
+    ],
+    "source_failures": [
+      {
+        "id": "sf_comp_locked",
+        "title": "Professional Cafe Course",
+        "locator": "https://example.test/locked",
+        "reason": "The page did not expose a usable public course outline."
+      },
+      {
+        "id": "sf_coffee_g1",
+        "title": "Coffee Brewing Basics Notes",
+        "locator": "https://example.test/coffee-brewing",
+        "reason": "The page did not expose a usable public course outline."
+      },
+      {
+        "id": "sf_coffee_g2",
+        "title": "Water Quality for Coffee",
+        "locator": "https://example.test/water-quality",
+        "reason": "The page did not expose a usable public course outline."
+      },
+      {
+        "id": "sf_coffee_g4",
+        "title": "Coffee Brewing Troubleshooting Chart",
+        "locator": "https://example.test/troubleshooting-chart",
+        "reason": "The page did not expose a usable public course outline."
+      },
+      {
+        "id": "sf_coffee_g3",
+        "title": "Anonymous Espresso Hack List",
+        "locator": "https://example.test/espresso-hacks",
+        "reason": "The page did not expose a usable public course outline."
+      }
+    ]
+  }
+}

@@ -3,11 +3,20 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
+import acceptance
 import integrity
 import steps
 from agents import intake
-from orchestrator import Step, console_approver, make_artifact, run_pipeline
+from orchestrator import (
+    Decision,
+    PipelineCancelled,
+    Step,
+    console_approver,
+    make_artifact,
+    run_pipeline,
+)
 
 
 def build_pipeline() -> list[Step]:
@@ -175,6 +184,61 @@ def build_sprint3_pipeline(*, live_research: bool = False) -> list[Step]:
     ]
 
 
+def build_sprint4_acceptance_pipeline(
+    *,
+    live_research: bool = False,
+    output_root: Path = Path("rendered_courses"),
+) -> list[Step]:
+    """Acceptance pipeline with deterministic local content and verification."""
+    return [
+        *build_sprint2_pipeline(live_research=live_research),
+        Step(
+            name="student_content",
+            consumes=["course_model", "blueprint", "course_outcomes"],
+            produces=["content_package", "content_progress"],
+            run=steps.make_student_content_step(
+                asset_generator=acceptance.deterministic_generate_asset,
+                package_verifier=acceptance.deterministic_verify_content_package,
+                asset_verifier=acceptance.deterministic_verify_asset,
+            ),
+        ),
+        Step(
+            name="lesson_plan",
+            consumes=["content_package", "blueprint", "course_model"],
+            produces=["lesson_plan"],
+            run=steps.lesson_plan_step,
+        ),
+        Step(
+            name="render_course_folder",
+            consumes=["course_model", "blueprint", "content_package", "lesson_plan"],
+            produces=["render_manifest"],
+            run=steps.make_render_course_folder_step(output_root=output_root),
+        ),
+        Step(
+            name="run_summary",
+            consumes=[
+                "brief",
+                "course_outcomes",
+                "research_dossier",
+                "approved_source_registry",
+                "course_model",
+                "blueprint",
+                "content_package",
+                "content_progress",
+                "lesson_plan",
+                "render_manifest",
+            ],
+            produces=["run_summary"],
+            run=steps.run_summary_step,
+        ),
+    ]
+
+
+def auto_approver(step_name: str, produced: dict) -> Decision:
+    """Approve every checkpoint for non-interactive acceptance and smoke runs."""
+    return Decision(approved=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run Course Builder pipelines.")
     parser.add_argument(
@@ -193,79 +257,125 @@ def main() -> None:
         help="Run the Sprint 3 sparse-request to Markdown course-folder checkpoint.",
     )
     parser.add_argument(
+        "--acceptance-demo",
+        action="store_true",
+        help=(
+            "Run the Sprint 4 local acceptance path with deterministic content "
+            "and verification."
+        ),
+    )
+    parser.add_argument(
+        "--auto-approve",
+        action="store_true",
+        help="Approve every checkpoint without prompting. Intended for tests and demos.",
+    )
+    parser.add_argument(
         "--live-research",
         action="store_true",
-        help="Use the live bounded research provider for Sprint 2 instead of the mock provider.",
+        help="Use the live bounded research provider instead of the mock provider.",
     )
     parser.add_argument("--subject", default="Coffee making")
     parser.add_argument("--course-id", default=None)
     args = parser.parse_args()
+    approver = auto_approver if args.auto_approve else console_approver
 
-    if args.sprint1_demo:
-        subject_request = intake.subject_request_artifact(
-            subject=args.subject,
-            description=("A practical beginner course for people who want better results quickly."),
-            constraints=["Keep the course compact for the prototype run."],
-            course_id=args.course_id or intake.slugify_course_id(args.subject),
+    try:
+        if args.acceptance_demo:
+            subject_request = intake.subject_request_artifact(
+                subject=args.subject,
+                description=(
+                    "A practical beginner course for people who want better results quickly."
+                ),
+                constraints=["Keep the course compact for the prototype run."],
+                course_id=args.course_id or intake.slugify_course_id(args.subject),
+            )
+            run_pipeline(
+                course_id=subject_request["course_id"],
+                pipeline=build_sprint4_acceptance_pipeline(
+                    live_research=args.live_research,
+                ),
+                seed_artifacts={"subject_request": subject_request},
+                approver=approver,
+            )
+            if not integrity.report(subject_request["course_id"]):
+                raise SystemExit(1)
+            return
+
+        if args.sprint1_demo:
+            subject_request = intake.subject_request_artifact(
+                subject=args.subject,
+                description=(
+                    "A practical beginner course for people who want better results quickly."
+                ),
+                constraints=["Keep the course compact for the prototype run."],
+                course_id=args.course_id or intake.slugify_course_id(args.subject),
+            )
+            run_pipeline(
+                course_id=subject_request["course_id"],
+                pipeline=build_sprint1_pipeline(),
+                seed_artifacts={"subject_request": subject_request},
+                approver=approver,
+            )
+            return
+
+        if args.sprint2_demo or args.sprint3_demo:
+            subject_request = intake.subject_request_artifact(
+                subject=args.subject,
+                description=(
+                    "A practical beginner course for people who want better results quickly."
+                ),
+                constraints=["Keep the course compact for the prototype run."],
+                course_id=args.course_id or intake.slugify_course_id(args.subject),
+            )
+            run_pipeline(
+                course_id=subject_request["course_id"],
+                pipeline=build_sprint3_pipeline(live_research=args.live_research)
+                if args.sprint3_demo
+                else build_sprint2_pipeline(live_research=args.live_research),
+                seed_artifacts={"subject_request": subject_request},
+                approver=approver,
+            )
+            integrity.report(subject_request["course_id"])
+            return
+
+        course_id = "frm-demo"
+
+        # This approved seed stands in for the conversational intake agent that will
+        # ask only unresolved, high-impact clarifying questions in the full product.
+        brief = make_artifact(
+            course_id,
+            artifact_type="brief",
+            produced_by_step="human",
+            body={
+                "subject": "Financial Risk Management",
+                "audience": "Postgraduate learners with foundational finance knowledge",
+                "prior_knowledge": "Foundational finance and accounting",
+                "level": "intermediate",
+                "goals": "Understand, distinguish, and apply foundational financial-risk concepts",
+                "scope": "Foundations of financial risk; quantitative implementation is excluded",
+                "duration": "30 minutes for the Phase 1 benchmark subtopic",
+                "modality": "blended",
+                "language": "English",
+                "jurisdiction": None,
+            },
+            inputs=[],
         )
+
         run_pipeline(
-            course_id=subject_request["course_id"],
-            pipeline=build_sprint1_pipeline(),
-            seed_artifacts={"subject_request": subject_request},
-            approver=console_approver,
+            course_id=course_id,
+            pipeline=build_pipeline(),
+            seed_artifacts={"brief": brief},
+            approver=approver,
+        )
+
+        # Cheap guard that Course Model hierarchy/source references remain sound.
+        integrity.report(course_id)
+    except PipelineCancelled as exc:
+        print(
+            f"\n[cancelled] Stopped at '{exc.step_name}'. "
+            "Rerun the same command to resume from approved checkpoints."
         )
         return
-
-    if args.sprint2_demo or args.sprint3_demo:
-        subject_request = intake.subject_request_artifact(
-            subject=args.subject,
-            description=("A practical beginner course for people who want better results quickly."),
-            constraints=["Keep the course compact for the prototype run."],
-            course_id=args.course_id or intake.slugify_course_id(args.subject),
-        )
-        run_pipeline(
-            course_id=subject_request["course_id"],
-            pipeline=build_sprint3_pipeline(live_research=args.live_research)
-            if args.sprint3_demo
-            else build_sprint2_pipeline(live_research=args.live_research),
-            seed_artifacts={"subject_request": subject_request},
-            approver=console_approver,
-        )
-        integrity.report(subject_request["course_id"])
-        return
-
-    course_id = "frm-demo"
-
-    # This approved seed stands in for the conversational intake agent that will
-    # ask only unresolved, high-impact clarifying questions in the full product.
-    brief = make_artifact(
-        course_id,
-        artifact_type="brief",
-        produced_by_step="human",
-        body={
-            "subject": "Financial Risk Management",
-            "audience": "Postgraduate learners with foundational finance knowledge",
-            "prior_knowledge": "Foundational finance and accounting",
-            "level": "intermediate",
-            "goals": "Understand, distinguish, and apply foundational financial-risk concepts",
-            "scope": "Foundations of financial risk; quantitative implementation is excluded",
-            "duration": "30 minutes for the Phase 1 benchmark subtopic",
-            "modality": "blended",
-            "language": "English",
-            "jurisdiction": None,
-        },
-        inputs=[],
-    )
-
-    run_pipeline(
-        course_id=course_id,
-        pipeline=build_pipeline(),
-        seed_artifacts={"brief": brief},
-        approver=console_approver,
-    )
-
-    # Cheap guard that Course Model hierarchy/source references remain sound.
-    integrity.report(course_id)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,561 @@
+{
+  "course_id": "coffee-acceptance",
+  "artifact_type": "content_package",
+  "produced_by_step": "student_content",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "course_model",
+    "blueprint",
+    "course_outcomes"
+  ],
+  "updated_at": "2026-07-06T06:16:41+00:00",
+  "body": {
+    "asset_vocabulary": [
+      "learning_objectives",
+      "course_content",
+      "summary",
+      "case_study",
+      "important_person",
+      "did_you_know",
+      "assessment",
+      "activities",
+      "resources"
+    ],
+    "subtopics": [
+      {
+        "subtopic_id": "m1_s1",
+        "assets": [
+          {
+            "id": "m1_s1_cc",
+            "type": "course_content",
+            "title": "Grind Size",
+            "format": "pptx",
+            "content": "# Grind Size\n\nThis course content supports Grind Size inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.",
+            "claims": [
+              {
+                "id": "m1_s1_cc_c1",
+                "text": "Grind Size is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s1_lo",
+            "type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "content": "# Learning Objectives\n\nThis learning objectives supports Grind Size inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s1_cc.",
+            "claims": [
+              {
+                "id": "m1_s1_lo_c1",
+                "text": "Learning Objectives is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s1_summary",
+            "type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "content": "# Summary\n\nThis summary supports Grind Size inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s1_cc.",
+            "claims": [
+              {
+                "id": "m1_s1_summary_c1",
+                "text": "Summary is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s1_resources",
+            "type": "resources",
+            "title": "Additional Resources",
+            "format": "docx",
+            "content": "# Additional Resources\n\nThis resources supports Grind Size inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s1_cc.",
+            "claims": [
+              {
+                "id": "m1_s1_resources_c1",
+                "text": "Additional Resources is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          }
+        ]
+      },
+      {
+        "subtopic_id": "m1_s2",
+        "assets": [
+          {
+            "id": "m1_s2_cc",
+            "type": "course_content",
+            "title": "Core Concepts In Coffee Making",
+            "format": "pptx",
+            "content": "# Core Concepts In Coffee Making\n\nThis course content supports Core Concepts In Coffee Making inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.",
+            "claims": [
+              {
+                "id": "m1_s2_cc_c1",
+                "text": "Core Concepts In Coffee Making is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s2_lo",
+            "type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "content": "# Learning Objectives\n\nThis learning objectives supports Core Concepts In Coffee Making inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s2_cc.",
+            "claims": [
+              {
+                "id": "m1_s2_lo_c1",
+                "text": "Learning Objectives is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s2_summary",
+            "type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "content": "# Summary\n\nThis summary supports Core Concepts In Coffee Making inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s2_cc.",
+            "claims": [
+              {
+                "id": "m1_s2_summary_c1",
+                "text": "Summary is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s2_activities",
+            "type": "activities",
+            "title": "Activities",
+            "format": "docx",
+            "content": "# Activities\n\nThis activities supports Core Concepts In Coffee Making inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s2_cc.",
+            "claims": [
+              {
+                "id": "m1_s2_activities_c1",
+                "text": "Activities is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          }
+        ]
+      },
+      {
+        "subtopic_id": "m1_s3",
+        "assets": [
+          {
+            "id": "m1_s3_cc",
+            "type": "course_content",
+            "title": "Practical Examples",
+            "format": "pptx",
+            "content": "# Practical Examples\n\nThis course content supports Practical Examples inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.",
+            "claims": [
+              {
+                "id": "m1_s3_cc_c1",
+                "text": "Practical Examples is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s3_lo",
+            "type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "content": "# Learning Objectives\n\nThis learning objectives supports Practical Examples inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s3_cc.",
+            "claims": [
+              {
+                "id": "m1_s3_lo_c1",
+                "text": "Learning Objectives is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s3_summary",
+            "type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "content": "# Summary\n\nThis summary supports Practical Examples inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s3_cc.",
+            "claims": [
+              {
+                "id": "m1_s3_summary_c1",
+                "text": "Summary is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          }
+        ]
+      },
+      {
+        "subtopic_id": "m1_s4",
+        "assets": [
+          {
+            "id": "m1_s4_cc",
+            "type": "course_content",
+            "title": "Coffee Making Troubleshooting",
+            "format": "pptx",
+            "content": "# Coffee Making Troubleshooting\n\nThis course content supports Coffee Making Troubleshooting inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.",
+            "claims": [
+              {
+                "id": "m1_s4_cc_c1",
+                "text": "Coffee Making Troubleshooting is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s4_lo",
+            "type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "content": "# Learning Objectives\n\nThis learning objectives supports Coffee Making Troubleshooting inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s4_cc.",
+            "claims": [
+              {
+                "id": "m1_s4_lo_c1",
+                "text": "Learning Objectives is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s4_summary",
+            "type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "content": "# Summary\n\nThis summary supports Coffee Making Troubleshooting inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s4_cc.",
+            "claims": [
+              {
+                "id": "m1_s4_summary_c1",
+                "text": "Summary is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s4_case",
+            "type": "case_study",
+            "title": "Case Study",
+            "format": "pptx",
+            "content": "# Case Study\n\nThis case study supports Coffee Making Troubleshooting inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s4_cc.",
+            "claims": [
+              {
+                "id": "m1_s4_case_c1",
+                "text": "Case Study is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s4_assess",
+            "type": "assessment",
+            "title": "Assessment",
+            "format": "pptx",
+            "content": "# Assessment\n\nThis assessment supports Coffee Making Troubleshooting inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s4_cc.",
+            "claims": [
+              {
+                "id": "m1_s4_assess_c1",
+                "text": "Assessment is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done",
+            "solution": "Acceptance answer key: compare the learner response to the approved source evidence."
+          },
+          {
+            "id": "m1_s4_activities",
+            "type": "activities",
+            "title": "Activities",
+            "format": "docx",
+            "content": "# Activities\n\nThis activities supports Coffee Making Troubleshooting inside Coffee making.\n\nIt is grounded in approved source coffee_g1 (Coffee Brewing Basics Notes) and uses only sources routed through the approved Blueprint asset plan.\n\nLearners should connect the approved concepts to a practical decision, then check that decision against the stated source evidence.\n\nThis asset is conditioned on anchor asset m1_s4_cc.",
+            "claims": [
+              {
+                "id": "m1_s4_activities_c1",
+                "text": "Activities is grounded in approved source coffee_g1.",
+                "source_id": "coffee_g1",
+                "support": "supported",
+                "supporting_excerpt": "Deterministic acceptance evidence.",
+                "note": "Supported by the local acceptance verifier."
+              }
+            ],
+            "sources": [
+              "coffee_g1"
+            ],
+            "verification": {
+              "supported": 1,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T00:00:00+00:00"
+            },
+            "file": null,
+            "status": "done"
+          }
+        ]
+      }
+    ]
+  }
+}

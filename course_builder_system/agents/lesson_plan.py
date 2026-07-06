@@ -49,7 +49,13 @@ def build_lesson_plan_body(
         raise ValueError("Lesson Plan requires at least one generated subtopic")
 
     planned = [
-        _subtopic_lesson_item(subtopic_id, content_package, blueprint, course_model)
+        _subtopic_lesson_item(
+            subtopic_id,
+            content_package,
+            blueprint,
+            course_model,
+            default_mode=constraints["default_mode"],
+        )
         for subtopic_id in subtopic_ids
     ]
     sessions: list[dict[str, Any]] = []
@@ -67,9 +73,21 @@ def build_lesson_plan_body(
     if current:
         sessions.append(_session(len(sessions) + 1, current))
 
+    unresolved = _unresolved_constraints(session_constraints)
+    unresolved.extend(
+        f"{item['subtopic_id']}:duration_exceeds_max_session_hours"
+        for item in planned
+        if item["duration_minutes"] > max_minutes
+    )
+    covered = [item["subtopic_id"] for item in planned]
     body = {
         "session_constraints": constraints,
-        "unresolved_session_constraints": _unresolved_constraints(session_constraints),
+        "unresolved_session_constraints": unresolved,
+        "coverage_summary": {
+            "expected_subtopic_ids": list(subtopic_ids),
+            "covered_subtopic_ids": covered,
+            "total_duration_minutes": sum(item["duration_minutes"] for item in planned),
+        },
         "sessions": sessions,
     }
     problems = validate_lesson_plan_body(body, expected_subtopic_ids=subtopic_ids)
@@ -102,6 +120,18 @@ def validate_lesson_plan_body(
         duration = session.get("duration_hours")
         if not isinstance(duration, int | float) or duration <= 0:
             errors.append(f"Lesson Plan session {session_id} duration_hours must be positive")
+        duration_minutes = session.get("duration_minutes")
+        if not isinstance(duration_minutes, int) or duration_minutes <= 0:
+            errors.append(f"Lesson Plan session {session_id} duration_minutes must be positive")
+        constraints = body.get("session_constraints", {})
+        max_hours = constraints.get("max_session_hours")
+        if (
+            isinstance(max_hours, int | float)
+            and isinstance(duration, int | float)
+            and duration > max_hours
+            and len(session.get("covers", [])) > 1
+        ):
+            errors.append(f"Lesson Plan session {session_id} exceeds max_session_hours")
         covers = session.get("covers")
         if not isinstance(covers, list) or not covers:
             errors.append(f"Lesson Plan session {session_id} must cover at least one subtopic")
@@ -155,6 +185,8 @@ def _subtopic_lesson_item(
     content_package: dict[str, Any],
     blueprint: dict[str, Any],
     course_model: dict[str, Any] | None,
+    *,
+    default_mode: str,
 ) -> dict[str, Any]:
     plan = _blueprint_plan(blueprint, subtopic_id)
     subtopic = _content_subtopic(content_package, subtopic_id)
@@ -164,7 +196,9 @@ def _subtopic_lesson_item(
         minutes = 30
     selected_types = [asset["type"] for asset in subtopic.get("assets", [])]
     mode = (
-        "live" if {"activities", "case_study", "assessment"} & set(selected_types) else "self_study"
+        "live"
+        if {"activities", "case_study", "assessment"} & set(selected_types)
+        else default_mode
     )
     return {
         "subtopic_id": subtopic_id,
@@ -182,6 +216,7 @@ def _session(order: int, items: list[dict[str, Any]]) -> dict[str, Any]:
         "id": f"sess{order}",
         "order": order,
         "title": " / ".join(titles)[:120],
+        "duration_minutes": total_minutes,
         "duration_hours": round(total_minutes / 60, 2),
         "covers": [
             {

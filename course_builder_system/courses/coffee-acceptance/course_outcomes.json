@@ -1,0 +1,47 @@
+{
+  "course_id": "coffee-acceptance",
+  "artifact_type": "course_outcomes",
+  "produced_by_step": "outcomes",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "brief"
+  ],
+  "updated_at": "2026-07-06T06:16:41+00:00",
+  "body": {
+    "course_title": "Coffee making",
+    "audience_summary": "General adult learners who are new to the subject.",
+    "outcomes": [
+      {
+        "id": "co1",
+        "statement": "Explain the core concepts and vocabulary needed to work with Coffee making.",
+        "cognitive_level": "understand",
+        "evidence": "Learner accurately explains key terms in their own words.",
+        "priority": "core"
+      },
+      {
+        "id": "co2",
+        "statement": "Apply a repeatable process for core concepts in Coffee making.",
+        "cognitive_level": "apply",
+        "evidence": "Learner completes a realistic task using the process.",
+        "priority": "core"
+      },
+      {
+        "id": "co3",
+        "statement": "Analyze common problems or tradeoffs encountered while pursuing: Build practical working knowledge of Coffee making.",
+        "cognitive_level": "analyze",
+        "evidence": "Learner diagnoses a scenario and justifies a next step.",
+        "priority": "core"
+      },
+      {
+        "id": "co4",
+        "statement": "Evaluate whether a chosen approach fits the learner's constraints for Coffee making.",
+        "cognitive_level": "evaluate",
+        "evidence": "Learner compares options against explicit criteria.",
+        "priority": "supporting"
+      }
+    ]
+  }
+}

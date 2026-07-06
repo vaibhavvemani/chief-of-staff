@@ -1,0 +1,1 @@
+Extraction is shaped by grind size, water temperature, brew ratio, and contact time. A repeatable recipe makes adjustments easier.

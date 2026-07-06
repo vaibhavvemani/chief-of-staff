@@ -1,0 +1,1 @@
+Water quality affects extraction and flavor clarity. Beginner courses can treat it as a useful adjustment after recipe basics are stable.

@@ -1,0 +1,76 @@
+{
+  "course_id": "coffee-acceptance",
+  "artifact_type": "approved_source_registry",
+  "produced_by_step": "source_selection",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "research_dossier"
+  ],
+  "updated_at": "2026-07-06T06:16:41+00:00",
+  "body": {
+    "choice_prompt": {
+      "id": "source_select",
+      "stage": "research",
+      "target_artifact": "research_dossier",
+      "mode": "multi",
+      "options": [
+        {
+          "id": "coffee_g1",
+          "label": "Coffee Brewing Basics Notes",
+          "description": "example.test - Search snippet suggests relevance to core concepts in Coffee making, practical examples: Auditable source for extraction variables, grind size, water temperature, and ratio.",
+          "recommended": false,
+          "recommendation_rationale": "Candidate discovered through bounded search; human approval is required before fetching and storing source text."
+        },
+        {
+          "id": "coffee_g2",
+          "label": "Water Quality for Coffee",
+          "description": "example.test - Search snippet suggests relevance to core concepts in Coffee making, practical examples: Auditable source for water quality, temperature, and extraction control.",
+          "recommended": false,
+          "recommendation_rationale": "Candidate discovered through bounded search; human approval is required before fetching and storing source text."
+        },
+        {
+          "id": "coffee_g4",
+          "label": "Coffee Brewing Troubleshooting Chart",
+          "description": "example.test - Search snippet suggests relevance to core concepts in Coffee making, practical examples: Auditable source for diagnosing sour, bitter, weak, and muddy coffee.",
+          "recommended": false,
+          "recommendation_rationale": "Candidate discovered through bounded search; human approval is required before fetching and storing source text."
+        }
+      ]
+    },
+    "decision": {
+      "selected_ids": [
+        "coffee_g1",
+        "coffee_g2"
+      ],
+      "approved_ids": [
+        "coffee_g1",
+        "coffee_g2"
+      ],
+      "rejected_ids": [
+        "coffee_g4",
+        "coffee_g3"
+      ]
+    },
+    "source_registry": [
+      {
+        "id": "coffee_g1",
+        "title": "Coffee Brewing Basics Notes",
+        "publisher": "example.test",
+        "source_type": "web page",
+        "locator": "https://example.test/coffee-brewing",
+        "content_ref": "courses/coffee-acceptance/sources/coffee-acceptance/coffee_g1.md"
+      },
+      {
+        "id": "coffee_g2",
+        "title": "Water Quality for Coffee",
+        "publisher": "example.test",
+        "source_type": "web page",
+        "locator": "https://example.test/water-quality",
+        "content_ref": "courses/coffee-acceptance/sources/coffee-acceptance/coffee_g2.md"
+      }
+    ]
+  }
+}
