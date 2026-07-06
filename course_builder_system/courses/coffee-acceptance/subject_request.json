@@ -1,0 +1,19 @@
+{
+  "course_id": "coffee-acceptance",
+  "artifact_type": "subject_request",
+  "produced_by_step": "human",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [],
+  "updated_at": "2026-07-06T06:16:41+00:00",
+  "body": {
+    "subject": "Coffee making",
+    "description": "A practical beginner course for people who want better results quickly.",
+    "known_source_locators": [],
+    "constraints": [
+      "Keep the course compact for the prototype run."
+    ]
+  }
+}

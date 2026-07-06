@@ -40,6 +40,7 @@ class WorkUnit:
 
 
 ProgressCallback = Callable[[dict[str, Any]], None]
+AssetGenerator = Callable[..., dict[str, Any]]
 
 
 def build_work_units(
@@ -103,6 +104,7 @@ def generate_content_package_body(
     use_cache: bool = True,
     continue_on_error: bool = True,
     progress_callback: ProgressCallback | None = None,
+    asset_generator: AssetGenerator | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Generate selected assets and return ``(content_package_body, progress)``.
 
@@ -118,6 +120,7 @@ def generate_content_package_body(
     target_ids = list(target_subtopic_ids) if target_subtopic_ids is not None else None
     units = build_work_units(inputs, target_subtopic_ids=target_ids)
     current_anchor_by_subtopic: dict[str, dict[str, Any]] = {}
+    generate_asset = asset_generator or student_content.generate_asset_to_depth
 
     for unit in units:
         scoped = {**inputs, "subtopic_id": unit.subtopic_id}
@@ -172,7 +175,7 @@ def generate_content_package_body(
         for attempt in range(1, attempts + 1):
             attempt_count = attempt
             try:
-                generated = student_content.generate_asset_to_depth(
+                generated = generate_asset(
                     spec,
                     scoped,
                     course_content=current_anchor_by_subtopic.get(unit.subtopic_id)

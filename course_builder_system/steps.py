@@ -10,7 +10,9 @@ verified Content Package -> Lesson Plan.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import course_renderer
 import run_summary
@@ -219,7 +221,38 @@ def blueprint_step(inputs: dict, feedback: str | None) -> dict:
     return {"blueprint": blueprint}
 
 
+def make_student_content_step(
+    *,
+    asset_generator: Callable[..., dict[str, Any]] | None = None,
+    package_verifier: Callable[..., dict[str, Any]] | None = None,
+    asset_verifier: Callable[..., dict[str, Any]] | None = None,
+) -> Callable[[dict, str | None], dict]:
+    """Return a Student Content step with injectable generation services."""
+
+    def run(inputs: dict, feedback: str | None) -> dict:
+        return _student_content_step(
+            inputs,
+            feedback,
+            asset_generator=asset_generator,
+            package_verifier=package_verifier,
+            asset_verifier=asset_verifier,
+        )
+
+    return run
+
+
 def student_content_step(inputs: dict, feedback: str | None) -> dict:
+    return _student_content_step(inputs, feedback)
+
+
+def _student_content_step(
+    inputs: dict,
+    feedback: str | None,
+    *,
+    asset_generator: Callable[..., dict[str, Any]] | None = None,
+    package_verifier: Callable[..., dict[str, Any]] | None = None,
+    asset_verifier: Callable[..., dict[str, Any]] | None = None,
+) -> dict:
     """Course Model + Blueprint -> verified v0.2 Content Package.
 
     The Phase 1 Blueprint selects all nine assets, while arbitrary courses may
@@ -260,6 +293,8 @@ def student_content_step(inputs: dict, feedback: str | None) -> dict:
             inputs["course_model"],
             feedback,
             subtopic_id=subtopic_id,
+            asset_generator=asset_generator,
+            asset_verifier=asset_verifier,
         )
         progress_body = {
             "stage": "student_content",
@@ -286,12 +321,14 @@ def student_content_step(inputs: dict, feedback: str | None) -> dict:
             existing_body=existing["body"] if existing is not None else None,
             target_subtopic_ids=target_subtopic_ids,
             max_retries=1,
+            asset_generator=asset_generator,
         )
 
         if progress_body["complete"]:
             # Separate adversarial calls annotate every generated asset before the
             # package is assembled. Learner content and source unions remain intact.
-            package_body = verification.verify_content_package(
+            verify_package = package_verifier or verification.verify_content_package
+            package_body = verify_package(
                 package_body,
                 inputs["course_model"],
                 blueprint=inputs["blueprint"],
@@ -350,16 +387,40 @@ def lesson_plan_step(inputs: dict, feedback: str | None) -> dict:
     return {"lesson_plan": plan}
 
 
+def make_render_course_folder_step(
+    *,
+    output_root: Path = Path("rendered_courses"),
+) -> Callable[[dict, str | None], dict]:
+    """Return a renderer step pinned to an output root."""
+
+    def run(inputs: dict, feedback: str | None) -> dict:
+        return _render_course_folder_step(inputs, feedback, output_root=output_root)
+
+    return run
+
+
 def render_course_folder_step(inputs: dict, feedback: str | None) -> dict:
+    return _render_course_folder_step(inputs, feedback)
+
+
+def _render_course_folder_step(
+    inputs: dict,
+    feedback: str | None,
+    *,
+    output_root: Path = Path("rendered_courses"),
+) -> dict:
     """Render generated course deliverables as deterministic Markdown files."""
     course_id = inputs["content_package"]["course_id"]
-    paths = course_renderer.render_course_folder(
-        course_id=course_id,
-        course_model=inputs["course_model"],
-        blueprint=inputs["blueprint"],
-        content_package=inputs["content_package"],
-        lesson_plan=inputs["lesson_plan"],
-    )
+    render_kwargs = {
+        "course_id": course_id,
+        "course_model": inputs["course_model"],
+        "blueprint": inputs["blueprint"],
+        "content_package": inputs["content_package"],
+        "lesson_plan": inputs["lesson_plan"],
+    }
+    if output_root != Path("rendered_courses"):
+        render_kwargs["output_root"] = output_root
+    paths = course_renderer.render_course_folder(**render_kwargs)
     manifest = make_artifact(
         course_id,
         "render_manifest",
@@ -401,6 +462,7 @@ def run_summary_step(inputs: dict, feedback: str | None) -> dict:
         stage_records=stage_records,
         output_paths=inputs.get("render_manifest", {}).get("body", {}).get("paths", {}),
         unit_records=progress_body.get("units", []),
+        inputs=list(inputs),
     )
     return {"run_summary": summary}
 

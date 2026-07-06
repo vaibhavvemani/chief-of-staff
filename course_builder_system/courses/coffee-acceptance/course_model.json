@@ -1,0 +1,270 @@
+{
+  "course_id": "coffee-acceptance",
+  "artifact_type": "course_model",
+  "produced_by_step": "structure",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "brief",
+    "course_outcomes",
+    "research_dossier",
+    "approved_source_registry"
+  ],
+  "updated_at": "2026-07-06T06:16:41+00:00",
+  "body": {
+    "course_metadata": {
+      "course_title": "Coffee making",
+      "subject": "Coffee making",
+      "audience_summary": "General adult learners who are new to the subject.",
+      "level": "beginner",
+      "language": "English",
+      "jurisdiction": null,
+      "course_outcome_ids": [
+        "co1",
+        "co2",
+        "co3",
+        "co4"
+      ]
+    },
+    "structural_rationale": [
+      {
+        "id": "sr1",
+        "statement": "The first structure pass follows the common competitor core, then adds brief-specific practice and troubleshooting scope.",
+        "evidence_artifact_refs": [
+          "research_dossier.common_core_topic_ids",
+          "brief.in_scope",
+          "brief.must_have_topics"
+        ],
+        "related_outcome_ids": [
+          "co1",
+          "co2",
+          "co3",
+          "co4"
+        ],
+        "related_topic_ids": [
+          "nt_grind_size"
+        ]
+      }
+    ],
+    "modules": [
+      {
+        "id": "m1",
+        "order": 1,
+        "title": "Coffee making Foundations",
+        "context": {
+          "purpose": "Build the shared foundations needed to achieve: Build practical working knowledge of Coffee making.",
+          "in_scope": [
+            "core concepts in Coffee making",
+            "practical examples"
+          ],
+          "out_of_scope": [
+            "advanced specialist topics"
+          ]
+        },
+        "prerequisite_module_ids": [],
+        "subtopics": [
+          {
+            "id": "m1_s1",
+            "order": 1,
+            "title": "Grind Size",
+            "context": {
+              "purpose": "Teach grind size within the approved scope for General adult learners who are new to the subject..",
+              "in_scope": [
+                "Grind Size",
+                "practical examples"
+              ],
+              "out_of_scope": [
+                "advanced specialist topics"
+              ]
+            },
+            "prerequisite_subtopic_ids": [],
+            "concepts": [
+              {
+                "id": "c_m1_s1_1",
+                "name": "Grind Size",
+                "summary": "Core decisions and vocabulary learners need for grind size.",
+                "depends_on": [],
+                "source_ids": [
+                  "coffee_g1"
+                ]
+              }
+            ],
+            "coverage_requirements": [
+              {
+                "id": "cr_m1_s1_1",
+                "statement": "Explain grind size and connect it to a practical learner decision.",
+                "concept_ids": [
+                  "c_m1_s1_1"
+                ],
+                "source_ids": [
+                  "coffee_g1"
+                ]
+              }
+            ],
+            "approved_source_ids": [
+              "coffee_g1"
+            ]
+          },
+          {
+            "id": "m1_s2",
+            "order": 2,
+            "title": "Core Concepts In Coffee Making",
+            "context": {
+              "purpose": "Teach core concepts in coffee making within the approved scope for General adult learners who are new to the subject..",
+              "in_scope": [
+                "Core Concepts In Coffee Making",
+                "practical examples"
+              ],
+              "out_of_scope": [
+                "advanced specialist topics"
+              ]
+            },
+            "prerequisite_subtopic_ids": [
+              "m1_s1"
+            ],
+            "concepts": [
+              {
+                "id": "c_m1_s2_1",
+                "name": "Core Concepts In Coffee Making",
+                "summary": "Core decisions and vocabulary learners need for core concepts in coffee making.",
+                "depends_on": [],
+                "source_ids": [
+                  "coffee_g1",
+                  "coffee_g2"
+                ]
+              }
+            ],
+            "coverage_requirements": [
+              {
+                "id": "cr_m1_s2_1",
+                "statement": "Explain core concepts in coffee making and connect it to a practical learner decision.",
+                "concept_ids": [
+                  "c_m1_s2_1"
+                ],
+                "source_ids": [
+                  "coffee_g1",
+                  "coffee_g2"
+                ]
+              }
+            ],
+            "approved_source_ids": [
+              "coffee_g1",
+              "coffee_g2"
+            ]
+          },
+          {
+            "id": "m1_s3",
+            "order": 3,
+            "title": "Practical Examples",
+            "context": {
+              "purpose": "Teach practical examples within the approved scope for General adult learners who are new to the subject..",
+              "in_scope": [
+                "Practical Examples",
+                "practical examples"
+              ],
+              "out_of_scope": [
+                "advanced specialist topics"
+              ]
+            },
+            "prerequisite_subtopic_ids": [
+              "m1_s2"
+            ],
+            "concepts": [
+              {
+                "id": "c_m1_s3_1",
+                "name": "Practical Examples",
+                "summary": "Core decisions and vocabulary learners need for practical examples.",
+                "depends_on": [],
+                "source_ids": [
+                  "coffee_g1"
+                ]
+              }
+            ],
+            "coverage_requirements": [
+              {
+                "id": "cr_m1_s3_1",
+                "statement": "Explain practical examples and connect it to a practical learner decision.",
+                "concept_ids": [
+                  "c_m1_s3_1"
+                ],
+                "source_ids": [
+                  "coffee_g1"
+                ]
+              }
+            ],
+            "approved_source_ids": [
+              "coffee_g1"
+            ]
+          },
+          {
+            "id": "m1_s4",
+            "order": 4,
+            "title": "Coffee Making Troubleshooting",
+            "context": {
+              "purpose": "Teach coffee making troubleshooting within the approved scope for General adult learners who are new to the subject..",
+              "in_scope": [
+                "Coffee Making Troubleshooting",
+                "practical examples"
+              ],
+              "out_of_scope": [
+                "advanced specialist topics"
+              ]
+            },
+            "prerequisite_subtopic_ids": [
+              "m1_s3"
+            ],
+            "concepts": [
+              {
+                "id": "c_m1_s4_1",
+                "name": "Coffee Making Troubleshooting",
+                "summary": "Core decisions and vocabulary learners need for coffee making troubleshooting.",
+                "depends_on": [],
+                "source_ids": [
+                  "coffee_g1",
+                  "coffee_g2"
+                ]
+              }
+            ],
+            "coverage_requirements": [
+              {
+                "id": "cr_m1_s4_1",
+                "statement": "Explain coffee making troubleshooting and connect it to a practical learner decision.",
+                "concept_ids": [
+                  "c_m1_s4_1"
+                ],
+                "source_ids": [
+                  "coffee_g1",
+                  "coffee_g2"
+                ]
+              }
+            ],
+            "approved_source_ids": [
+              "coffee_g1",
+              "coffee_g2"
+            ]
+          }
+        ]
+      }
+    ],
+    "source_registry": [
+      {
+        "id": "coffee_g1",
+        "title": "Coffee Brewing Basics Notes",
+        "publisher": "example.test",
+        "source_type": "web page",
+        "locator": "https://example.test/coffee-brewing",
+        "content_ref": "courses/coffee-acceptance/sources/coffee-acceptance/coffee_g1.md"
+      },
+      {
+        "id": "coffee_g2",
+        "title": "Water Quality for Coffee",
+        "publisher": "example.test",
+        "source_type": "web page",
+        "locator": "https://example.test/water-quality",
+        "content_ref": "courses/coffee-acceptance/sources/coffee-acceptance/coffee_g2.md"
+      }
+    ]
+  }
+}

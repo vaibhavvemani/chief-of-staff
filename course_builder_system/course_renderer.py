@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -15,10 +16,13 @@ def render_course_folder(
     content_package: dict[str, Any],
     lesson_plan: dict[str, Any],
     output_root: Path = Path("rendered_courses"),
+    reset_existing: bool = True,
 ) -> dict[str, str]:
     """Render course deliverables as Markdown files and return path metadata."""
     course_dir = output_root / course_id
     paths: dict[str, str] = {}
+    if reset_existing:
+        _reset_course_dir(course_dir, output_root)
     course_dir.mkdir(parents=True, exist_ok=True)
 
     paths["index"] = _write(course_dir / "README.md", _index(course_model, content_package))
@@ -55,6 +59,19 @@ def _write(path: Path, content: str) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content.rstrip() + "\n", encoding="utf-8")
     return str(path)
+
+
+def _reset_course_dir(course_dir: Path, output_root: Path) -> None:
+    """Remove stale files from a previous render of the same course."""
+    if not course_dir.exists():
+        return
+    resolved_root = output_root.resolve()
+    resolved_course = course_dir.resolve()
+    if resolved_course == resolved_root or resolved_root not in resolved_course.parents:
+        raise ValueError(f"refusing to reset unsafe render path: {course_dir}")
+    if course_dir.is_symlink():
+        raise ValueError(f"refusing to reset symlink render path: {course_dir}")
+    shutil.rmtree(course_dir)
 
 
 def _index(course_model: dict[str, Any], content_package: dict[str, Any]) -> str:

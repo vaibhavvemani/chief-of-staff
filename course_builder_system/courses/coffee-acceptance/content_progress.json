@@ -1,0 +1,214 @@
+{
+  "course_id": "coffee-acceptance",
+  "artifact_type": "content_progress",
+  "produced_by_step": "student_content",
+  "schema_version": "0.1",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "course_model",
+    "blueprint",
+    "course_outcomes"
+  ],
+  "updated_at": "2026-07-06T06:16:41+00:00",
+  "body": {
+    "stage": "student_content",
+    "current": null,
+    "units": [
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s1",
+        "asset_type": "course_content",
+        "asset_id": "m1_s1_cc",
+        "title": "Grind Size",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s1",
+        "asset_type": "learning_objectives",
+        "asset_id": "m1_s1_lo",
+        "title": "Learning Objectives",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s1",
+        "asset_type": "summary",
+        "asset_id": "m1_s1_summary",
+        "title": "Summary",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s1",
+        "asset_type": "resources",
+        "asset_id": "m1_s1_resources",
+        "title": "Additional Resources",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s2",
+        "asset_type": "course_content",
+        "asset_id": "m1_s2_cc",
+        "title": "Core Concepts In Coffee Making",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s2",
+        "asset_type": "learning_objectives",
+        "asset_id": "m1_s2_lo",
+        "title": "Learning Objectives",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s2",
+        "asset_type": "summary",
+        "asset_id": "m1_s2_summary",
+        "title": "Summary",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s2",
+        "asset_type": "activities",
+        "asset_id": "m1_s2_activities",
+        "title": "Activities",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s3",
+        "asset_type": "course_content",
+        "asset_id": "m1_s3_cc",
+        "title": "Practical Examples",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s3",
+        "asset_type": "learning_objectives",
+        "asset_id": "m1_s3_lo",
+        "title": "Learning Objectives",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s3",
+        "asset_type": "summary",
+        "asset_id": "m1_s3_summary",
+        "title": "Summary",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "course_content",
+        "asset_id": "m1_s4_cc",
+        "title": "Coffee Making Troubleshooting",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "learning_objectives",
+        "asset_id": "m1_s4_lo",
+        "title": "Learning Objectives",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "summary",
+        "asset_id": "m1_s4_summary",
+        "title": "Summary",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "case_study",
+        "asset_id": "m1_s4_case",
+        "title": "Case Study",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "assessment",
+        "asset_id": "m1_s4_assess",
+        "title": "Assessment",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "activities",
+        "asset_id": "m1_s4_activities",
+        "title": "Activities",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      }
+    ],
+    "totals": {
+      "completed": 17
+    },
+    "expected_asset_count": 17,
+    "completed_asset_count": 17,
+    "complete": true
+  }
+}

@@ -92,6 +92,14 @@ class Decision:
     feedback: str | None = None
 
 
+class PipelineCancelled(RuntimeError):
+    """Raised when an operator intentionally stops a pipeline at a checkpoint."""
+
+    def __init__(self, step_name: str) -> None:
+        super().__init__(f"pipeline cancelled at checkpoint '{step_name}'")
+        self.step_name = step_name
+
+
 # --------------------------------------------------------------------------
 # Storage: plain JSON files, one folder per course. No database (Phase 6+).
 # --------------------------------------------------------------------------
@@ -109,6 +117,21 @@ def save_artifact(artifact: dict) -> Path:
     artifact["updated_at"] = _now()
     path.write_text(json.dumps(artifact, indent=2))
     return path
+
+
+def save_seed_artifact(artifact: dict) -> Path | None:
+    """Save a seed artifact only when its meaningful content changed."""
+    existing = load_artifact(artifact["course_id"], artifact["artifact_type"])
+    if (
+        existing is not None
+        and existing.get("status") == "approved"
+        and existing.get("body") == artifact.get("body")
+        and existing.get("inputs") == artifact.get("inputs")
+        and existing.get("schema_version") == artifact.get("schema_version")
+    ):
+        return None
+    artifact["status"] = "approved"
+    return save_artifact(artifact)
 
 
 def load_artifact(course_id: str, artifact_type: str) -> dict | None:
@@ -145,17 +168,47 @@ def console_approver(step_name: str, produced: dict) -> Decision:
     print(f"\n=== Step '{step_name}' produced: {', '.join(produced)} ===")
     for atype, art in produced.items():
         print(f"\n--- {atype}  (revision {art['revision']}) ---")
+        summary = artifact_summary(art)
+        if summary:
+            print(f"Summary: {summary}")
         print(json.dumps(art["body"], indent=2))
     while True:
-        choice = input(f"\n[{step_name}] (a)pprove / (c)hanges / (q)uit > ").strip().lower()
+        choice = input(
+            f"\n[{step_name}] approve / changes / quit [a/c/q] > "
+        ).strip().lower()
         if choice in ("a", "approve"):
             return Decision(approved=True)
         if choice in ("c", "changes"):
             fb = input("  what should change? > ").strip()
+            if not fb:
+                print("  change feedback cannot be empty")
+                continue
             return Decision(approved=False, feedback=fb)
         if choice in ("q", "quit"):
-            raise KeyboardInterrupt
-        print("  please type: a, c, or q")
+            raise PipelineCancelled(step_name)
+        print("  please type approve, changes, or quit")
+
+
+def artifact_summary(artifact: dict) -> str:
+    """Return a compact generic summary for terminal checkpoint review."""
+    body = artifact.get("body")
+    if not isinstance(body, dict):
+        return ""
+    parts: list[str] = []
+    for key in sorted(body):
+        value = body[key]
+        if isinstance(value, list):
+            parts.append(f"{key}: {len(value)} item(s)")
+        elif isinstance(value, dict):
+            parts.append(f"{key}: {len(value)} field(s)")
+        elif value is None:
+            parts.append(f"{key}: null")
+        else:
+            label = str(value).replace("\n", " ")
+            parts.append(f"{key}: {label[:80]}")
+        if len(parts) >= 8:
+            break
+    return "; ".join(parts)
 
 
 # --------------------------------------------------------------------------
@@ -173,8 +226,7 @@ def run_pipeline(
                     Saved pre-approved so Step 1 can consume them.
     """
     for art in seed_artifacts.values():
-        art["status"] = "approved"
-        save_artifact(art)
+        save_seed_artifact(art)
 
     for step in pipeline:
         # --- gather inputs this step consumes
