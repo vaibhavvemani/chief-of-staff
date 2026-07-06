@@ -6,6 +6,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+MAX_SOURCE_EXCERPT_CHARS = 12_000
+
 
 @dataclass(frozen=True)
 class StoredSource:
@@ -37,7 +39,7 @@ class SourceStore:
             raise ValueError("source content must not be empty")
         path = self.root / course_id / f"{source_id}.md"
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
+        path.write_text(prepare_source_excerpt(content), encoding="utf-8")
         return StoredSource(
             course_id=course_id,
             source_id=source_id,
@@ -77,3 +79,32 @@ class SourceStore:
 def _validate_id(value: str, label: str) -> None:
     if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", value):
         raise ValueError(f"{label} must be a stable lowercase id, got {value!r}")
+
+
+def prepare_source_excerpt(
+    content: str,
+    *,
+    max_chars: int = MAX_SOURCE_EXCERPT_CHARS,
+) -> str:
+    """Normalize and bound stored source text for prototype prompts."""
+    if max_chars < 1:
+        raise ValueError("max_chars must be positive")
+    normalized = _normalize_source_text(content)
+    if len(normalized) <= max_chars:
+        return normalized
+    return normalized[:max_chars].rstrip()
+
+
+def _normalize_source_text(content: str) -> str:
+    lines = []
+    blank_seen = False
+    for raw_line in content.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        line = re.sub(r"\s+", " ", raw_line).strip()
+        if not line:
+            if not blank_seen and lines:
+                lines.append("")
+            blank_seen = True
+            continue
+        lines.append(line)
+        blank_seen = False
+    return "\n".join(lines).strip()
