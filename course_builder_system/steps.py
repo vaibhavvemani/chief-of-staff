@@ -462,6 +462,7 @@ def run_summary_step(inputs: dict, feedback: str | None) -> dict:
         stage_records=stage_records,
         output_paths=inputs.get("render_manifest", {}).get("body", {}).get("paths", {}),
         unit_records=progress_body.get("units", []),
+        content_package=inputs.get("content_package"),
         inputs=list(inputs),
     )
     return {"run_summary": summary}
