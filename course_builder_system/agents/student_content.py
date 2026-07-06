@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import llm
+from source_store import prepare_source_excerpt
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 COURSES_DIR = REPO_ROOT / "courses"
@@ -953,7 +954,7 @@ def _load_registered_sources(
                 "category": category_name or item.get("source_type"),
                 "url": item.get("url", item.get("locator")),
                 "file": source_file,
-                "text": source_path.read_text(encoding="utf-8"),
+                "text": prepare_source_excerpt(source_path.read_text(encoding="utf-8")),
             }
     if not sources:
         raise ValueError("Course Model has no registered grounding sources")

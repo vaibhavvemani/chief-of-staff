@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import llm
+from source_store import prepare_source_excerpt
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PROMPT_PATH = REPO_ROOT / "prompts" / "verification.md"
@@ -594,7 +595,7 @@ def _load_registered_sources(
                 "category": category.get("category") or item.get("source_type"),
                 "url": item.get("url", item.get("locator")),
                 "file": source_file,
-                "text": source_path.read_text(encoding="utf-8"),
+                "text": prepare_source_excerpt(source_path.read_text(encoding="utf-8")),
             }
     if not sources:
         raise ValueError("course_model has no registered grounding sources")

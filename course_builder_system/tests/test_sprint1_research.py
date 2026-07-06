@@ -12,7 +12,7 @@ from competitor_analysis import build_competitor_analysis, competitor_finding_fr
 from interaction import ScriptedResponder
 from research_adapter import coffee_mock_provider
 from source_selection import apply_source_decision, approved_source_registry, source_choice_prompt
-from source_store import SourceStore
+from source_store import MAX_SOURCE_EXCERPT_CHARS, SourceStore
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MODEL_DIR = REPO_ROOT / "course_models"
@@ -73,6 +73,23 @@ def test_source_store_persists_available_sources_and_records_unavailable(tmp_pat
     assert store.validate_content_ref(missing.content_ref) is False
     with pytest.raises(ValueError, match="stable lowercase id"):
         store.persist(course_id="Coffee Demo", source_id="bad", content="x")
+
+
+def test_source_store_bounds_large_live_source_excerpts(tmp_path) -> None:
+    store = SourceStore(tmp_path / "source_store")
+    raw = (" Important source fact.   \n\n" * 2_000) + "Tail that should not enter prompts."
+
+    stored = store.persist(
+        course_id="coffee-demo",
+        source_id="large_source",
+        content=raw,
+        locator="https://example.test/large",
+    )
+
+    text = Path(stored.content_ref).read_text(encoding="utf-8")
+    assert len(text) <= MAX_SOURCE_EXCERPT_CHARS
+    assert "   " not in text
+    assert text.startswith("Important source fact.")
 
 
 def test_source_selection_reducer_excludes_rejected_and_merely_proposed_sources() -> None:
