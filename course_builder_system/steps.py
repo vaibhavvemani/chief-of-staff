@@ -12,9 +12,22 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import course_renderer
+import run_summary
 from agents import blueprint as blueprint_agent
 from agents import course_model as course_model_agent
-from agents import intake, outcomes, research, revision, student_content, verification
+from agents import (
+    intake,
+    outcomes,
+    research,
+    revision,
+    student_content,
+    verification,
+    whole_course,
+)
+from agents import (
+    lesson_plan as lesson_plan_agent,
+)
 from orchestrator import course_dir, load_artifact, make_artifact
 from research_adapter import BoundedLiveResearchProvider, coffee_mock_provider
 from source_selection import (
@@ -36,6 +49,10 @@ RESEARCH_DOSSIER_FIXTURE = FIXTURE_DIR / "frm_demo.research_dossier.json"
 COFFEE_RESEARCH_DOSSIER_FIXTURE = FIXTURE_DIR / "coffee_demo.research_dossier.json"
 COURSE_MODEL_FIXTURE = FIXTURE_DIR / "frm_demo.course_model.json"
 BLUEPRINT_FIXTURE = FIXTURE_DIR / "frm_demo.blueprint.json"
+
+# Public patch surface retained for tests and operator tooling that monkeypatch
+# ``steps.student_content.generate_asset_to_depth``.
+STUDENT_CONTENT_PATCH_SURFACE = student_content
 
 
 def _fixture_body(path: Path, artifact_type: str) -> dict:
@@ -220,64 +237,65 @@ def student_content_step(inputs: dict, feedback: str | None) -> dict:
     unchanged calls are reused while a changed feedback prompt gets a new key.
     """
     course_id = inputs["course_model"]["course_id"]
-    subtopic_id = inputs.get("subtopic_id", "m1_s1")
-
     gen_inputs = {
         "course_model": inputs["course_model"],
         "blueprint": inputs["blueprint"],
         "course_outcomes": inputs.get("course_outcomes"),
-        "subtopic_id": subtopic_id,
     }
+    if "subtopic_id" in inputs:
+        gen_inputs["subtopic_id"] = inputs["subtopic_id"]
 
     if feedback:
         existing = load_artifact(course_id, "content_package")
         if existing is None:
             raise ValueError("cannot revise Student Content before a baseline package exists")
+        subtopic_id = inputs.get("subtopic_id") or revision.infer_revision_subtopic_id(
+            existing["body"],
+            feedback,
+        )
+        gen_inputs["subtopic_id"] = subtopic_id
         package_body = revision.revise_content_package(
             existing["body"],
             gen_inputs,
             inputs["course_model"],
             feedback,
+            subtopic_id=subtopic_id,
         )
-    else:
-        selected_specs = student_content.selected_asset_specs(gen_inputs)
-        cc_spec = next(spec for spec in selected_specs if spec.asset_type == "course_content")
-        cc = student_content.generate_asset_to_depth(cc_spec, gen_inputs)
-        assets = [cc]
-        for spec in selected_specs:
-            if spec.asset_type == "course_content":
-                continue
-            course_content = cc if spec.conditioned_on_course_content else None
-            assets.append(
-                student_content.generate_asset_to_depth(
-                    spec,
-                    gen_inputs,
-                    course_content=course_content,
-                )
-            )
-
-        package_body = {
-            "asset_vocabulary": [
-                "learning_objectives",
-                "course_content",
-                "summary",
-                "case_study",
-                "important_person",
-                "did_you_know",
-                "assessment",
-                "activities",
-                "resources",
+        progress_body = {
+            "stage": "student_content",
+            "current": None,
+            "units": [
+                {
+                    "stage": "student_content",
+                    "subtopic_id": subtopic_id,
+                    "asset_type": "targeted_revision",
+                    "asset_id": "targeted_revision",
+                    "status": "completed",
+                    "attempts": 1,
+                    "error": None,
+                }
             ],
-            "subtopics": [{"subtopic_id": subtopic_id, "assets": assets}],
+            "totals": {"completed": 1},
+            "complete": True,
         }
-
-        # Separate adversarial calls annotate every generated asset before the
-        # package is assembled. Learner content and source unions remain intact.
-        package_body = verification.verify_content_package(
-            package_body,
-            inputs["course_model"],
-            blueprint=inputs["blueprint"],
+    else:
+        existing = load_artifact(course_id, "content_package")
+        target_subtopic_ids = [inputs["subtopic_id"]] if "subtopic_id" in inputs else None
+        package_body, progress_body = whole_course.generate_content_package_body(
+            gen_inputs,
+            existing_body=existing["body"] if existing is not None else None,
+            target_subtopic_ids=target_subtopic_ids,
+            max_retries=1,
         )
+
+        if progress_body["complete"]:
+            # Separate adversarial calls annotate every generated asset before the
+            # package is assembled. Learner content and source unions remain intact.
+            package_body = verification.verify_content_package(
+                package_body,
+                inputs["course_model"],
+                blueprint=inputs["blueprint"],
+            )
     _print_verification_summaries(package_body)
 
     content = make_artifact(
@@ -288,7 +306,14 @@ def student_content_step(inputs: dict, feedback: str | None) -> dict:
         inputs=["course_model", "blueprint", "course_outcomes"],
         schema_version=CONTENT_PACKAGE_SCHEMA_VERSION,
     )
-    return {"content_package": content}
+    progress = make_artifact(
+        course_id,
+        "content_progress",
+        "student_content",
+        body=progress_body,
+        inputs=["course_model", "blueprint", "course_outcomes"],
+    )
+    return {"content_package": content, "content_progress": progress}
 
 
 def _print_verification_summaries(package_body: dict) -> None:
@@ -317,43 +342,67 @@ def lesson_plan_step(inputs: dict, feedback: str | None) -> dict:
     Organized by session (a class). covers[].subtopic_id references Course Model
     subtopics; mode is live | self_study; talking_points are teacher-facing.
     """
-    course_id = inputs["content_package"]["course_id"]
-
-    plan = make_artifact(
-        course_id,
-        "lesson_plan",
-        "lesson_plan",
-        body={
-            "sessions": [
-                {
-                    "id": "sess1",
-                    "order": 1,
-                    "title": "Foundations of Financial Risk",
-                    "duration_hours": 2.5,
-                    "covers": [
-                        {
-                            "subtopic_id": "m1_s1",
-                            "mode": "live",
-                            "talking_points": [
-                                "Open with the Lehman collapse as a hook",
-                                "Draw the risk-vs-uncertainty distinction (Knight)",
-                            ],
-                        },
-                        {
-                            "subtopic_id": "m1_s2",
-                            "mode": "live",
-                            "talking_points": [
-                                "Walk through the risk classification framework",
-                            ],
-                        },
-                        {"subtopic_id": "m1_s3", "mode": "self_study", "talking_points": []},
-                    ],
-                },
-            ],
-        },
-        inputs=["content_package", "blueprint"],
+    plan = lesson_plan_agent.build_lesson_plan_artifact(
+        inputs["content_package"],
+        inputs["blueprint"],
+        course_model=inputs.get("course_model"),
     )
     return {"lesson_plan": plan}
+
+
+def render_course_folder_step(inputs: dict, feedback: str | None) -> dict:
+    """Render generated course deliverables as deterministic Markdown files."""
+    course_id = inputs["content_package"]["course_id"]
+    paths = course_renderer.render_course_folder(
+        course_id=course_id,
+        course_model=inputs["course_model"],
+        blueprint=inputs["blueprint"],
+        content_package=inputs["content_package"],
+        lesson_plan=inputs["lesson_plan"],
+    )
+    manifest = make_artifact(
+        course_id,
+        "render_manifest",
+        "renderer",
+        body={"format": "markdown", "paths": paths},
+        inputs=["course_model", "blueprint", "content_package", "lesson_plan"],
+    )
+    return {"render_manifest": manifest}
+
+
+def run_summary_step(inputs: dict, feedback: str | None) -> dict:
+    """Summarize completed/skipped/failed stages, unit statuses, and output paths."""
+    course_id = inputs["content_package"]["course_id"]
+    stage_records = [
+        run_summary.stage_record(
+            name=artifact_type,
+            status="completed" if artifact.get("status") == "approved" else "pending_review",
+            artifact_types=[artifact_type],
+        )
+        for artifact_type, artifact in inputs.items()
+        if artifact_type != "content_progress"
+    ]
+    progress_body = inputs.get("content_progress", {}).get("body", {})
+    failed_units = [
+        unit
+        for unit in progress_body.get("units", [])
+        if unit.get("status") in {"failed", "pending", "evidence_gap"}
+    ]
+    if failed_units:
+        stage_records.append(
+            run_summary.stage_record(
+                "student_content_units",
+                "failed",
+                error=f"{len(failed_units)} unit(s) require retry or source repair.",
+            )
+        )
+    summary = run_summary.build_run_summary_artifact(
+        course_id=course_id,
+        stage_records=stage_records,
+        output_paths=inputs.get("render_manifest", {}).get("body", {}).get("paths", {}),
+        unit_records=progress_body.get("units", []),
+    )
+    return {"run_summary": summary}
 
 
 def _research_fixture_for(brief: dict) -> Path:

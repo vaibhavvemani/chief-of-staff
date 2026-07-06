@@ -42,7 +42,7 @@ def parse_revision_request(
             raise ValueError(f"revision feedback JSON is invalid: {exc}") from exc
         if not isinstance(payload, dict):
             raise ValueError("revision feedback JSON must be an object")
-        allowed = {"asset", "assets", "feedback", "verifier"}
+        allowed = {"asset", "assets", "feedback", "verifier", "subtopic_id"}
         unknown = sorted(set(payload) - allowed)
         if unknown:
             raise ValueError(f"unknown revision feedback fields: {', '.join(unknown)}")
@@ -87,6 +87,55 @@ def parse_revision_request(
         "target the revision as '<asset id or type>: <feedback>', use 'verifier', "
         "or pass a JSON object with assets/feedback/verifier fields"
     )
+
+
+def infer_revision_subtopic_id(content_package_body: dict[str, Any], raw_feedback: str) -> str:
+    """Infer a single revision subtopic from compact feedback.
+
+    The whole-course path requires revisions to stay targeted. If feedback
+    cannot be mapped to exactly one generated subtopic, the caller must pass an
+    explicit ``subtopic_id``.
+    """
+    subtopics = content_package_body.get("subtopics", [])
+    if not isinstance(subtopics, list) or not subtopics:
+        raise ValueError("content package contains no subtopics to revise")
+
+    if raw_feedback.strip().startswith("{"):
+        try:
+            payload = json.loads(raw_feedback)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"revision feedback JSON is invalid: {exc}") from exc
+        subtopic_id = payload.get("subtopic_id") if isinstance(payload, dict) else None
+        if isinstance(subtopic_id, str) and subtopic_id:
+            _ensure_subtopic_exists(subtopics, subtopic_id)
+            return subtopic_id
+
+    selector = raw_feedback.partition(":")[0].strip().lower()
+    if selector == "verifier":
+        flagged = [
+            subtopic["subtopic_id"]
+            for subtopic in subtopics
+            if _flagged_asset_keys(subtopic.get("assets", []))
+        ]
+        unique = tuple(dict.fromkeys(flagged))
+        if len(unique) == 1:
+            return unique[0]
+        raise ValueError(
+            "verifier revision spans zero or multiple subtopics; pass an explicit subtopic_id"
+        )
+
+    selectors = [part.strip().lower() for part in selector.split(",") if part.strip()]
+    matches = {
+        subtopic["subtopic_id"]
+        for subtopic in subtopics
+        for asset in subtopic.get("assets", [])
+        if str(asset.get("id", "")).lower() in selectors
+    }
+    if len(matches) == 1:
+        return next(iter(matches))
+    if len(subtopics) == 1:
+        return subtopics[0]["subtopic_id"]
+    raise ValueError("revision feedback must identify exactly one subtopic or asset id")
 
 
 def revise_content_package(
@@ -200,6 +249,11 @@ def _ordered_union(left: tuple[str, ...], right: tuple[str, ...]) -> tuple[str, 
 ASSET_KEYS_BY_TYPE = {spec.asset_type: key for key, spec in student_content.ASSET_SPECS.items()}
 
 
+def _ensure_subtopic_exists(subtopics: list[dict[str, Any]], subtopic_id: str) -> None:
+    if not any(subtopic.get("subtopic_id") == subtopic_id for subtopic in subtopics):
+        raise ValueError(f"content package has no subtopic {subtopic_id!r}")
+
+
 def _flagged_asset_keys(assets: list[dict[str, Any]]) -> tuple[str, ...]:
     aliases = _asset_aliases(assets)
     flagged = []
@@ -207,8 +261,7 @@ def _flagged_asset_keys(assets: list[dict[str, Any]]) -> tuple[str, ...]:
         claims = asset.get("claims", [])
         summary = asset.get("verification", {})
         has_claim_flags = any(
-            claim.get("source_id") is None
-            or claim.get("support") in {"partial", "unsupported"}
+            claim.get("source_id") is None or claim.get("support") in {"partial", "unsupported"}
             for claim in claims
             if isinstance(claim, dict)
         )

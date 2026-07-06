@@ -247,9 +247,9 @@ def test_light_asset_specs_and_prompt_contract(name, expected):
 def _planning_artifacts(brief: dict) -> dict[str, dict]:
     """Build the approved fixture-backed planning chain for a brief."""
     outcomes = steps.course_outcomes_step({"brief": brief}, None)["course_outcomes"]
-    research = steps.research_step(
-        {"brief": brief, "course_outcomes": outcomes}, None
-    )["research_dossier"]
+    research = steps.research_step({"brief": brief, "course_outcomes": outcomes}, None)[
+        "research_dossier"
+    ]
     course_model = steps.structure_step(
         {
             "brief": brief,
@@ -378,19 +378,19 @@ def test_schema_validator_negatives():
     errs_c = validate_content_package(bad_c)
     assert errs_c, "Validator must catch an asset type not in the enum"
 
-    # (d) a claim source_id = "x9" violates the ^g[0-9]+$ pattern
+    # (d) a claim source_id with spaces violates the generic source-id pattern
     bad_d = copy.deepcopy(good)
     assets = bad_d["body"]["subtopics"][0]["assets"]
     # Find an asset with at least one claim (course_content has one)
     for asset in assets:
         if asset.get("claims"):
-            asset["claims"][0]["source_id"] = "x9"
+            asset["claims"][0]["source_id"] = "Bad Source!"
             # Keep sources consistent with the (now-invalid) claim for a clean
             # test that only the pattern check fires.
-            asset["sources"] = ["x9"]
+            asset["sources"] = ["Bad Source!"]
             break
     errs_d = validate_content_package(bad_d)
-    assert errs_d, "Validator must catch source_id 'x9' violating ^g[0-9]+$ pattern"
+    assert errs_d, "Validator must catch invalid source_id syntax"
 
     # (e) extra unexpected key on an asset (violates additionalProperties:false)
     bad_e = copy.deepcopy(good)
@@ -449,12 +449,12 @@ def test_all_nine_assets_present():
     # assets, all conditioned on that anchor.
     expected_ids_types = [
         ("m1_s1_cc", "course_content"),
-            ("m1_s1_lo", "learning_objectives"),
-            ("m1_s1_summary", "summary"),
-            ("m1_s1_case", "case_study"),
-            ("m1_s1_person", "important_person"),
-            ("m1_s1_dyk", "did_you_know"),
-            ("m1_s1_assess", "assessment"),
+        ("m1_s1_lo", "learning_objectives"),
+        ("m1_s1_summary", "summary"),
+        ("m1_s1_case", "case_study"),
+        ("m1_s1_person", "important_person"),
+        ("m1_s1_dyk", "did_you_know"),
+        ("m1_s1_assess", "assessment"),
         ("m1_s1_activities", "activities"),
         ("m1_s1_resources", "resources"),
     ]
