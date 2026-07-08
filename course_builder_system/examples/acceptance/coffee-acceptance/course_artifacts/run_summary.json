@@ -309,35 +309,35 @@
     "resume": {
       "safe_to_rerun": true,
       "behavior": "Rerunning the same command skips approved current artifacts and regenerates only missing, stale, rejected, or revised steps.",
-      "checkpoint_directory": "courses/coffee-acceptance"
+      "checkpoint_directory": "examples/acceptance/coffee-acceptance/course_artifacts"
     },
     "token_and_cost_references": {
       "llm_log_path": "logs/llm_calls.jsonl",
       "pricing_reference": "llm.py::_MODEL_PRICING_PER_MTOK"
     },
     "output_paths": {
-      "index": "rendered_courses/coffee-acceptance/README.md",
-      "course_overview": "rendered_courses/coffee-acceptance/course_overview.md",
-      "source_index": "rendered_courses/coffee-acceptance/source_index.md",
-      "lesson_plan": "rendered_courses/coffee-acceptance/lesson_plan.md",
+      "index": "examples/acceptance/coffee-acceptance/rendered_course/README.md",
+      "course_overview": "examples/acceptance/coffee-acceptance/rendered_course/course_overview.md",
+      "source_index": "examples/acceptance/coffee-acceptance/rendered_course/source_index.md",
+      "lesson_plan": "examples/acceptance/coffee-acceptance/rendered_course/lesson_plan.md",
       "assets": {
-        "m1_s1_cc": "rendered_courses/coffee-acceptance/modules/01_m1-s1_grind-size/01_m1-s1-cc_course-content.md",
-        "m1_s1_lo": "rendered_courses/coffee-acceptance/modules/01_m1-s1_grind-size/02_m1-s1-lo_learning-objectives.md",
-        "m1_s1_summary": "rendered_courses/coffee-acceptance/modules/01_m1-s1_grind-size/03_m1-s1-summary_summary.md",
-        "m1_s1_resources": "rendered_courses/coffee-acceptance/modules/01_m1-s1_grind-size/04_m1-s1-resources_resources.md",
-        "m1_s2_cc": "rendered_courses/coffee-acceptance/modules/02_m1-s2_core-concepts-in-coffee-making/01_m1-s2-cc_course-content.md",
-        "m1_s2_lo": "rendered_courses/coffee-acceptance/modules/02_m1-s2_core-concepts-in-coffee-making/02_m1-s2-lo_learning-objectives.md",
-        "m1_s2_summary": "rendered_courses/coffee-acceptance/modules/02_m1-s2_core-concepts-in-coffee-making/03_m1-s2-summary_summary.md",
-        "m1_s2_activities": "rendered_courses/coffee-acceptance/modules/02_m1-s2_core-concepts-in-coffee-making/04_m1-s2-activities_activities.md",
-        "m1_s3_cc": "rendered_courses/coffee-acceptance/modules/03_m1-s3_practical-examples/01_m1-s3-cc_course-content.md",
-        "m1_s3_lo": "rendered_courses/coffee-acceptance/modules/03_m1-s3_practical-examples/02_m1-s3-lo_learning-objectives.md",
-        "m1_s3_summary": "rendered_courses/coffee-acceptance/modules/03_m1-s3_practical-examples/03_m1-s3-summary_summary.md",
-        "m1_s4_cc": "rendered_courses/coffee-acceptance/modules/04_m1-s4_coffee-making-troubleshooting/01_m1-s4-cc_course-content.md",
-        "m1_s4_lo": "rendered_courses/coffee-acceptance/modules/04_m1-s4_coffee-making-troubleshooting/02_m1-s4-lo_learning-objectives.md",
-        "m1_s4_summary": "rendered_courses/coffee-acceptance/modules/04_m1-s4_coffee-making-troubleshooting/03_m1-s4-summary_summary.md",
-        "m1_s4_case": "rendered_courses/coffee-acceptance/modules/04_m1-s4_coffee-making-troubleshooting/04_m1-s4-case_case-study.md",
-        "m1_s4_assess": "rendered_courses/coffee-acceptance/modules/04_m1-s4_coffee-making-troubleshooting/05_m1-s4-assess_assessment.md",
-        "m1_s4_activities": "rendered_courses/coffee-acceptance/modules/04_m1-s4_coffee-making-troubleshooting/06_m1-s4-activities_activities.md"
+        "m1_s1_cc": "examples/acceptance/coffee-acceptance/rendered_course/modules/01_m1-s1_grind-size/01_m1-s1-cc_course-content.md",
+        "m1_s1_lo": "examples/acceptance/coffee-acceptance/rendered_course/modules/01_m1-s1_grind-size/02_m1-s1-lo_learning-objectives.md",
+        "m1_s1_summary": "examples/acceptance/coffee-acceptance/rendered_course/modules/01_m1-s1_grind-size/03_m1-s1-summary_summary.md",
+        "m1_s1_resources": "examples/acceptance/coffee-acceptance/rendered_course/modules/01_m1-s1_grind-size/04_m1-s1-resources_resources.md",
+        "m1_s2_cc": "examples/acceptance/coffee-acceptance/rendered_course/modules/02_m1-s2_core-concepts-in-coffee-making/01_m1-s2-cc_course-content.md",
+        "m1_s2_lo": "examples/acceptance/coffee-acceptance/rendered_course/modules/02_m1-s2_core-concepts-in-coffee-making/02_m1-s2-lo_learning-objectives.md",
+        "m1_s2_summary": "examples/acceptance/coffee-acceptance/rendered_course/modules/02_m1-s2_core-concepts-in-coffee-making/03_m1-s2-summary_summary.md",
+        "m1_s2_activities": "examples/acceptance/coffee-acceptance/rendered_course/modules/02_m1-s2_core-concepts-in-coffee-making/04_m1-s2-activities_activities.md",
+        "m1_s3_cc": "examples/acceptance/coffee-acceptance/rendered_course/modules/03_m1-s3_practical-examples/01_m1-s3-cc_course-content.md",
+        "m1_s3_lo": "examples/acceptance/coffee-acceptance/rendered_course/modules/03_m1-s3_practical-examples/02_m1-s3-lo_learning-objectives.md",
+        "m1_s3_summary": "examples/acceptance/coffee-acceptance/rendered_course/modules/03_m1-s3_practical-examples/03_m1-s3-summary_summary.md",
+        "m1_s4_cc": "examples/acceptance/coffee-acceptance/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/01_m1-s4-cc_course-content.md",
+        "m1_s4_lo": "examples/acceptance/coffee-acceptance/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/02_m1-s4-lo_learning-objectives.md",
+        "m1_s4_summary": "examples/acceptance/coffee-acceptance/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/03_m1-s4-summary_summary.md",
+        "m1_s4_case": "examples/acceptance/coffee-acceptance/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/04_m1-s4-case_case-study.md",
+        "m1_s4_assess": "examples/acceptance/coffee-acceptance/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/05_m1-s4-assess_assessment.md",
+        "m1_s4_activities": "examples/acceptance/coffee-acceptance/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/06_m1-s4-activities_activities.md"
       }
     }
   }

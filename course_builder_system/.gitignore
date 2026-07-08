@@ -1,0 +1,27 @@
+# Local secrets and user/tool state
+.env
+CLAUDE.local.md
+.claude/
+.codex_work/
+
+# Runtime LLM/cache/output state
+.llm_cache/
+logs/
+outputs/
+rendered_courses/
+
+# Course run checkpoints are generated at runtime. Keep only curated fixtures.
+courses/*/
+!courses/README.md
+!courses/frm-demo/
+!courses/frm-demo/**
+
+# Python/tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# OS/editor clutter
+.DS_Store
+

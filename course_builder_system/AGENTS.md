@@ -68,6 +68,7 @@ Live generation and verification use Anthropic via `anthropic`; set
 - Resume skips approved outputs only when their recorded inputs are current and match the step contract. Rerunning the same command is normally safe.
 - Content generation is per asset, not one monolithic model call. For each subtopic, `course_content` is generated first; dependent assets then use it for coherence.
 - The canonical generated content artifact is `courses/<course_id>/content_package.json`. Learner-facing inspection output is rendered as separate Markdown files under `rendered_courses/<course_id>/modules/`.
+- Committed generated snapshots live under `examples/`; runtime-generated course folders should stay out of git unless they are intentionally promoted to fixtures.
 - `--auto-approve` is for deterministic acceptance and unattended plumbing checks. It is not a quality workflow for live courseware.
 - Live runs can make many Claude calls. Check `logs/llm_calls.jsonl` for token and estimated cost records. Cache hits are stored under `.llm_cache/`.
 - Source excerpts are intentionally bounded before generation and verification. Do not remove that guardrail.

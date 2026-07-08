@@ -37,6 +37,9 @@ Expected primary outputs:
 - `rendered_courses/coffee-acceptance/lesson_plan.md`
 - `rendered_courses/coffee-acceptance/modules/`
 
+Those runtime folders are ignored by git. The committed deterministic acceptance
+snapshot lives under `examples/acceptance/coffee-acceptance/`.
+
 ## Interactive Operation
 
 Run without `--auto-approve` to review each checkpoint:
