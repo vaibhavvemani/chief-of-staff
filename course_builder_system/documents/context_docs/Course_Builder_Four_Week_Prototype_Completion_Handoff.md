@@ -93,8 +93,9 @@ python3 integrity.py coffee-acceptance
 
 Evidence:
 
-- deterministic `coffee-acceptance` artifacts exist under `courses/coffee-acceptance/`;
-- rendered Markdown exists under `rendered_courses/coffee-acceptance/`;
+- deterministic `coffee-acceptance` artifacts were generated under `courses/coffee-acceptance/`;
+- rendered Markdown was generated under `rendered_courses/coffee-acceptance/`;
+- the committed snapshot now lives under `examples/acceptance/coffee-acceptance/`;
 - integrity passes;
 - resume rerun skips approved current stages;
 - local acceptance proves orchestration, source routing, rendering, run summary, resume, targeted revision, and negative gates.

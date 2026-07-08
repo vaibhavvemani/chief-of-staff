@@ -19,6 +19,10 @@
 
    ```text
    rendered_courses/coffee-acceptance/
+
+   The committed deterministic snapshot is stored under:
+
+   examples/acceptance/coffee-acceptance/
    ```
 
 5. Review:

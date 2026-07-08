@@ -255,7 +255,7 @@
         "publisher": "example.test",
         "source_type": "web page",
         "locator": "https://example.test/coffee-brewing",
-        "content_ref": "courses/coffee-acceptance/sources/coffee-acceptance/coffee_g1.md"
+        "content_ref": "examples/acceptance/coffee-acceptance/course_artifacts/sources/coffee-acceptance/coffee_g1.md"
       },
       {
         "id": "coffee_g2",
@@ -263,7 +263,7 @@
         "publisher": "example.test",
         "source_type": "web page",
         "locator": "https://example.test/water-quality",
-        "content_ref": "courses/coffee-acceptance/sources/coffee-acceptance/coffee_g2.md"
+        "content_ref": "examples/acceptance/coffee-acceptance/course_artifacts/sources/coffee-acceptance/coffee_g2.md"
       }
     ]
   }

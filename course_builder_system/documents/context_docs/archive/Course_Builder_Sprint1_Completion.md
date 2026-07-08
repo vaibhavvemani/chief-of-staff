@@ -19,7 +19,7 @@ Sprint 1 built the **quality bar + inputs + plumbing** for the Phase 1 target su
 | **S1.4** Hand-built gold `content_package.json` | Vaibhav | `benchmark/m1_s1.gold.content_package.json` | Valid JSON; matches the locked `content_package` shape; `subtopic_id: m1_s1`; **all 9 assets populated** (course_content ≈22K chars; assessment carries a `solution`/answer key) |
 | **S1.5** Rubric (7 dims) + review-time threshold | Vaibhav | `evals/rubric.md` | 7 dimensions; 1–10 scale with **6 = "matches manual"**; review-time threshold **≤60 min for the core 5** (per-asset breakdown); hybrid scorer table |
 | **S1.6** Curate 3–6 grounding sources | Siddarth | `sources/g1–g5.md` + `README.md` | 5 curated sources with stable ids + id→category mapping |
-| **S1.7** Hand-author Domain Model | Siddarth | `domain/m1_s1_domain_model.json` | Deep `m1_s1` (8 concepts + 8 key-points) + 5 thin sibling stubs; all source/dependency refs resolve; subtopics match the TOC |
+| **S1.7** Hand-author Domain Model | Siddarth | `examples/phase1/domain/m1_s1_domain_model.json` | Deep `m1_s1` (8 concepts + 8 key-points) + 5 thin sibling stubs; all source/dependency refs resolve; subtopics match the TOC |
 | **S1.8** `llm.py` wrapper + `.env` | Siddarth | `llm.py`, `.env` | Live Anthropic round-trip verified; token-log + prompt-hash cache fire; SDK retry built in |
 | **S1.9** Throwaway end-to-end smoke run | Siddarth | `logs/smoke_s1_9_output.md` (+ `smoke_s1_9.py`) | DM + sources → prompt → `llm.call()` → output; cited all 5 sources inline, stayed in `m1_s1` scope; log + cache incremented |
 | **S1.M** Milestone gate | — | (S1.4 + S1.5 + S1.9) | All three dependencies satisfied → gate passed |
