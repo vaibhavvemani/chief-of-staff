@@ -1,0 +1,1499 @@
+{
+  "course_id": "coffee-live-main",
+  "artifact_type": "content_package",
+  "produced_by_step": "student_content",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "course_model",
+    "blueprint",
+    "course_outcomes"
+  ],
+  "updated_at": "2026-07-06T11:13:37+00:00",
+  "body": {
+    "asset_vocabulary": [
+      "learning_objectives",
+      "course_content",
+      "summary",
+      "case_study",
+      "important_person",
+      "did_you_know",
+      "assessment",
+      "activities",
+      "resources"
+    ],
+    "subtopics": [
+      {
+        "subtopic_id": "m1_s1",
+        "assets": [
+          {
+            "id": "m1_s1_cc",
+            "type": "course_content",
+            "title": "Core Concepts In Coffee Making",
+            "format": "pptx",
+            "content": "# Core Concepts In Coffee Making\n\n## Why These Concepts Matter\n\nEvery cup of coffee is the result of a chain of decisions that begins long before you reach for a mug. When you understand the core concepts behind coffee making, you can make better choices at every step, from the beans you buy to the way you brew them at home. This lesson introduces the essential vocabulary and the key decision points that new coffee makers need. Our goal is simple: help you connect what happens to a coffee bean with the practical choices you make in your own kitchen.\n\n## Coffee Starts on a Tree\n\nIt is easy to forget that coffee is an agricultural product. The coffee in your cup begins on a tree, and the story of that coffee moves through growing, harvesting, and roasting in coffee-growing regions across the world. This journey has been repeated for centuries. Understanding coffee as something that is grown, harvested, and roasted is the foundation for every later decision, because each stage shapes the flavor you eventually taste.\n\nOne useful way to think about the whole path is as a lifecycle that moves from seed to cup. Each phase in that lifecycle leaves its mark on the final drink. When you know that a bean has already traveled through many hands and processes before it reaches you, you can better appreciate why quality and freshness matter.\n\n## The Bean: Where Flavor Is Built\n\nThe coffee bean is the heart of the concept map. Beans are extracted, dried, roasted, and stored, and each of these steps plays a role in coffee's taste, texture, and level of caffeine. This means the bean is not just an ingredient; it is a record of everything that has happened to it.\n\nA few important bean-related concepts to know:\n\n- **Roast:** How the beans are roasted strongly influences flavor. Roasting is one of the biggest levers on taste.\n- **Decaf:** Decaffeinated coffee is an option for those who want the flavor with less caffeine.\n- **Organic coffee:** Coffee grown under organic practices is a distinct category shoppers can choose.\n- **Storage and shelf life:** How you store beans affects how long they stay fresh and how good your coffee tastes.\n\nA guiding principle links agriculture and preparation: the way coffee is harvested and processed plays a major role in how coffee should be roasted and brewed. In other words, the choices upstream constrain and inform the choices downstream. This is why experienced learners often recommend beginning your coffee education with the agriculture of coffee before moving on to grinding, brewing, and roasting.\n\n## Brewing: Turning Beans Into a Drink\n\nBrewing is the stage most learners are eager to master, because it is where the coffee actually gets made. Brewing is the process of learning how to turn beans into a finished cup and then refining that skill. It covers everything from grinding beans to cleaning equipment, along with the techniques and tips that make each method work well.\n\nThere are several popular brewing methods, and choosing among them is one of the most practical decisions a new coffee maker faces:\n\n- **Drip:** A convenient, automated method common in many homes.\n- **Pour-over:** A hands-on method that gives you control over the process.\n- **Espresso:** A concentrated method that also connects preparation directly to flavor profile.\n- **French press:** An immersion method known for a full-bodied cup.\n- **Cold brew:** A method that uses time rather than heat.\n\nEspresso is a helpful example of how the concepts connect. The espresso approach draws a direct link between preparation methods and flavor profile, showing that how you prepare coffee is inseparable from how it tastes. This is the same lesson that runs through the whole lifecycle, now expressed at the moment of brewing.\n\n## A Practical Decision You Can Make Today\n\nLet us connect these concepts to a real choice. Imagine you are buying beans and picking a way to make your morning coffee. Using the core concepts, you can reason through it:\n\n1. **Start with the bean.** Because roasting and storage shape flavor, choose a roast you enjoy and buy an amount you can use before it goes stale. Good storage protects the flavor you paid for.\n2. **Match your method to your goals.** If you want convenience, drip may fit. If you want control and are willing to be hands-on, pour-over is a strong choice. If you want a concentrated, intense cup, espresso links your preparation directly to a bold flavor profile.\n3. **Remember the chain.** Since how coffee is harvested and processed influences how it should be brewed, follow guidance that comes with quality beans rather than treating brewing as a step separate from everything before it.\n\nThis is the practical payoff of the core concepts: instead of guessing, you make each decision knowing how it fits into the larger seed-to-cup story.\n\n## Where to Learn More\n\nCoffee has a long tradition of education resources. Reliable consumer information covers origins, beans, brewing, health, and sustainability, and it is designed for the general public as well as students and professionals. Dedicated coffee education efforts have existed for decades, offering comprehensive coverage of brewing, roasting, espresso, agriculture, and coffee science. As you continue, you can deepen any of the concepts introduced here.\n\n## Key Takeaways\n\n- Coffee is an agricultural product that travels from seed to cup, and each stage shapes flavor.\n- The bean carries the effects of extraction, drying, roasting, and storage, which influence taste, texture, and caffeine.\n- How coffee is grown and processed influences how it should be roasted and brewed.\n- Choosing a brewing method such as drip, pour-over, espresso, French press, or cold brew is a core practical decision.\n- Preparation and flavor are linked, so your choices at each step add up to the cup in your hand.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "The coffee in a cup begins on a tree, and coffee is grown, harvested, and roasted from coffee-growing regions across the world for centuries.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how the coffee in their cup begins on a tree! This section tells the flavorful origin story of coffee and how it\u2019s grown, harvested , and roasted from coffee-growing regions across the world for centuries.",
+                "note": "Directly matches source text."
+              },
+              {
+                "id": "cl2",
+                "text": "The lifecycle of coffee was previously described as the 10 Steps from Seed to Cup.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Lifecycle of coffee (previously 10 Steps from Seed to Cup)",
+                "note": "Source states lifecycle was previously the 10 Steps from Seed to Cup."
+              },
+              {
+                "id": "cl3",
+                "text": "Coffee beans are extracted, dried, roasted, and stored, and these play a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how coffee beans\u2014and how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Matches source."
+              },
+              {
+                "id": "cl4",
+                "text": "Bean-related topics include roasts, decaf coffee, organic coffee, and storage and shelf life.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Roasts\nDecaf coffee\nOrganic coffee\nStorage and shelf life",
+                "note": "Bean section lists these topics."
+              },
+              {
+                "id": "cl5",
+                "text": "Brewing information covers popular brewing methods along with techniques and tips for everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "information on popular brewing methods as well as techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Matches source."
+              },
+              {
+                "id": "cl6",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five methods listed under Brewing."
+              },
+              {
+                "id": "cl7",
+                "text": "The NCA shifted most of its general About Coffee content to a new consumer website, AboutCoffee.org, developed as a resource for consumers, health professionals, journalists, students, and others.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "we\u2019ve shifted most of our general About Coffee content from this site to our new consumer website, AboutCoffee.org",
+                "note": "Source confirms shift and that AboutCoffee.org is a resource for consumers, health professionals, journalists, students, and others."
+              },
+              {
+                "id": "cl8",
+                "text": "The harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed",
+                "note": "Directly matches source."
+              },
+              {
+                "id": "cl9",
+                "text": "CoffeeResearch.org recommends beginning the coffee learning journey with the agriculture of coffee before moving to coffee grinding, brewing, and roasting.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "We recommend beginning your journey learning about coffee by learning about the agriculture of coffee",
+                "note": "Source recommends beginning with agriculture then grinding, brewing, roasting."
+              },
+              {
+                "id": "cl10",
+                "text": "The espresso section draws a link between preparation methods and flavor profile.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "The espresso section brings together the agriculture and coffee sections by drawing a link between preparation methods and flavor profile",
+                "note": "Matches source."
+              },
+              {
+                "id": "cl11",
+                "text": "CoffeeResearch.org was founded in 1999 and was the first website dedicated to coffee education, with comprehensive coverage on coffee, espresso, coffee brewing, coffee agriculture, coffee science, and the coffee markets.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "Founded in 1999, CoffeeResearch.org was the first Web site dedicated to coffee education with comprehensive coverage on coffee, espresso , coffee brewing , coffee agriculture , coffee science, and the coffee markets.",
+                "note": "Matches source."
+              }
+            ],
+            "sources": [
+              "live_5",
+              "live_6"
+            ],
+            "verification": {
+              "supported": 11,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s1_lo",
+            "type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "content": "After studying this lesson, you will be able to:\n\n1. Describe coffee as an agricultural product that travels from seed to cup, explaining how the stages of growing, harvesting, and roasting each shape the flavor in your final cup.\n2. Define core coffee vocabulary in your own words, including roast, decaf, organic coffee, and storage and shelf life, and explain how the bean records the effects of extraction, drying, roasting, and storage on taste, texture, and caffeine.\n3. Identify and distinguish common brewing methods\u2014drip, pour-over, espresso, French press, and cold brew\u2014and summarize the practical tradeoff each represents for a new coffee maker.\n4. Explain the connection between preparation and flavor, using espresso as an example of how a preparation method links directly to a flavor profile.\n5. Apply the core concepts to a realistic purchasing and brewing decision by selecting a roast, planning appropriate storage, and matching a brewing method to a stated personal goal such as convenience, control, or intensity.\n6. Justify why beginning with the agriculture of coffee is useful, explaining how the way coffee is harvested and processed informs how it should be roasted and brewed.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "Coffee begins on a tree and is grown, harvested, and roasted in coffee-growing regions across the world.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "starting with how the coffee in their cup begins on a tree! This section tells the flavorful origin story of coffee and how it\u2019s grown, harvested , and roasted from coffee-growing regions across the world for centuries.",
+                "note": "Source directly supports coffee beginning on a tree and grown, harvested, roasted across regions."
+              },
+              {
+                "id": "cl2",
+                "text": "Coffee beans are extracted, dried, roasted, and stored, and these steps play a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how coffee beans\u2014and how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination.",
+                "note": "Directly matches the claim."
+              },
+              {
+                "id": "cl3",
+                "text": "Roasts, decaf coffee, organic coffee, and storage and shelf life are core bean-related coffee topics.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Roasts\nDecaf coffee\nOrganic coffee\nStorage and shelf life",
+                "note": "These are listed under the Beans section."
+              },
+              {
+                "id": "cl4",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five listed under popular brewing methods."
+              },
+              {
+                "id": "cl5",
+                "text": "The espresso section draws a link between preparation methods and flavor profile.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "The espresso section brings together the agriculture and coffee sections by drawing a link between preparation methods and flavor profile.",
+                "note": "Directly supported."
+              },
+              {
+                "id": "cl6",
+                "text": "It is recommended to begin learning about coffee with its agriculture because the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "We recommend beginning your journey learning about coffee by learning about the agriculture of coffee since the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed.",
+                "note": "Directly supported."
+              }
+            ],
+            "sources": [
+              "live_5",
+              "live_6"
+            ],
+            "verification": {
+              "supported": 6,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s1_summary",
+            "type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "content": "# Core Concepts in Coffee Making \u2014 Summary\n\nThis summary pulls together the essential ideas from the lesson so you can review them quickly. The big picture is simple: coffee is an agricultural product with a story, and understanding that story helps you make better choices from bean to cup.\n\n## Coffee's Journey: Seed to Cup\n\n- Coffee begins on a tree. The coffee in your cup starts with how it is grown, harvested, and roasted in coffee-growing regions around the world.\n- It helps to picture the whole path as a lifecycle that moves from seed to cup, with each phase leaving its mark on the final drink.\n- Knowing a bean has already passed through many hands and processes helps you appreciate why quality and freshness matter.\n\n## The Bean: Where Flavor Is Built\n\nThe bean carries the record of everything that has happened to it. How beans are extracted, dried, roasted, and stored all play a role in coffee's taste, texture, and caffeine level.\n\nKey bean concepts to remember:\n\n- **Roast** \u2014 how beans are roasted strongly shapes flavor.\n- **Decaf** \u2014 decaffeinated coffee offers the flavor with less caffeine.\n- **Organic coffee** \u2014 coffee grown under organic practices is a category shoppers can choose.\n- **Storage and shelf life** \u2014 how you store beans affects freshness and taste.\n\nA guiding principle ties agriculture to preparation: how coffee is harvested and processed plays a major role in how it should be roasted and brewed. That is why it makes sense to begin your coffee learning with agriculture before moving on to grinding, brewing, and roasting.\n\n## Brewing: Turning Beans Into a Drink\n\nBrewing is where the coffee actually gets made \u2014 learning to turn beans into a finished cup and refining that skill. It covers everything from grinding beans to cleaning equipment, along with the techniques that make each method work.\n\nPopular brewing methods to know:\n\n- **Drip** \u2014 convenient and automated, common in many homes.\n- **Pour-over** \u2014 hands-on, giving you control over the process.\n- **Espresso** \u2014 a concentrated method that links preparation directly to flavor profile.\n- **French press** \u2014 an immersion method known for a full-bodied cup.\n- **Cold brew** \u2014 uses time rather than heat.\n\nEspresso is a good example of how the concepts connect: it draws a direct link between preparation methods and flavor profile, showing that how you prepare coffee is inseparable from how it tastes.\n\n## Putting It Into Practice\n\nWhen you buy beans and pick a method, reason through it using these concepts:\n\n1. **Start with the bean.** Because roasting and storage shape flavor, choose a roast you enjoy and buy an amount you can use before it goes stale.\n2. **Match your method to your goals.** Drip fits convenience; pour-over rewards a hands-on approach; espresso links preparation directly to a bold flavor profile.\n3. **Remember the chain.** Since harvesting and processing influence how coffee should be brewed, follow the guidance that comes with quality beans instead of treating brewing as a separate step.\n\n## Where to Learn More\n\nReliable consumer information covers origins, beans, brewing, health, and sustainability, and it is designed for the general public as well as students and professionals. Dedicated coffee education efforts have existed for decades, offering comprehensive coverage of brewing, roasting, espresso, agriculture, and coffee science.\n\n## Key Takeaways\n\n- Coffee is an agricultural product that travels from seed to cup, and each stage shapes flavor.\n- The bean carries the effects of extraction, drying, roasting, and storage, which influence taste, texture, and caffeine.\n- How coffee is grown and processed influences how it should be roasted and brewed.\n- Choosing a brewing method \u2014 drip, pour-over, espresso, French press, or cold brew \u2014 is a core practical decision.\n- Preparation and flavor are linked, so your choices at each step add up to the cup in your hand.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "The coffee in your cup begins on a tree and is grown, harvested, and roasted in coffee-growing regions around the world.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "starting with how the coffee in their cup begins on a tree! This section tells the flavorful origin story of coffee and how it\u2019s grown, harvested , and roasted from coffee-growing regions across the world",
+                "note": "Directly supported by the Origins section."
+              },
+              {
+                "id": "cl2",
+                "text": "The lifecycle of coffee moves from seed to cup (previously described as 10 Steps from Seed to Cup).",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Lifecycle of coffee (previously 10 Steps from Seed to Cup)",
+                "note": "Exact match in the source."
+              },
+              {
+                "id": "cl3",
+                "text": "How coffee beans are extracted, dried, roasted, and stored plays a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Directly supported by the Beans section."
+              },
+              {
+                "id": "cl4",
+                "text": "Roasts, decaf coffee, organic coffee, and storage and shelf life are bean-related topics.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Roasts\nDecaf coffee\nOrganic coffee\nStorage and shelf life",
+                "note": "All listed under Beans section."
+              },
+              {
+                "id": "cl5",
+                "text": "Harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed, so learning about coffee agriculture is recommended before grinding, brewing, and roasting.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "We recommend beginning your journey learning about coffee by learning about the agriculture of coffee since the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed",
+                "note": "Supported; source also mentions moving to grinding, brewing, and roasting after."
+              },
+              {
+                "id": "cl6",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew, and brewing covers grinding beans through cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "popular brewing methods as well as techniques and tips for everything from grinding beans to cleaning equipment.\nDrip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five methods and the grinding-to-cleaning scope are present."
+              },
+              {
+                "id": "cl7",
+                "text": "The espresso section draws a link between preparation methods and flavor profile.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "The espresso section brings together the agriculture and coffee sections by drawing a link between preparation methods and flavor profile",
+                "note": "Directly supported."
+              },
+              {
+                "id": "cl8",
+                "text": "AboutCoffee.org was developed as a resource covering origins, beans, brewing, health, and sustainability for consumers, health professionals, journalists, students, and others.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "AboutCoffee.org has been developed as a resource for consumers, health professionals, journalists, students, and others",
+                "note": "Audience and topic coverage (origins, beans, brewing, health, sustainability) both present in source."
+              },
+              {
+                "id": "cl9",
+                "text": "Founded in 1999, CoffeeResearch.org was the first website dedicated to coffee education with comprehensive coverage of coffee brewing, roasting, espresso, agriculture, and coffee science.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "Founded in 1999, CoffeeResearch.org was the first Web site dedicated to coffee education with comprehensive coverage on coffee, espresso , coffee brewing , coffee agriculture , coffee science",
+                "note": "Supported; roasting is also covered in the contents list."
+              }
+            ],
+            "sources": [
+              "live_5",
+              "live_6"
+            ],
+            "verification": {
+              "supported": 9,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s1_resources",
+            "type": "resources",
+            "title": "Additional Resources",
+            "format": "docx",
+            "content": "# Additional Resources: Core Concepts in Coffee Making\n\nThe two resources below were chosen to help you deepen the core concepts introduced in this lesson\u2014how coffee moves from seed to cup, how the bean carries the effects of every stage, and how preparation is linked to flavor. Both are free, general-audience websites you can browse at your own pace.\n\n## Suggested Study Order\n\n1. **Start with a broad, consumer-friendly overview** (AboutCoffee.org) to build vocabulary around origins, beans, and brewing methods.\n2. **Then move to a more in-depth education site** (CoffeeResearch.org) if you want a structured path that begins with agriculture and works toward brewing and espresso.\n\nThis order mirrors the lesson's guidance: understand where coffee comes from before diving into the details of grinding, brewing, and roasting.\n\n## Foundational / General Reference\n\n### AboutCoffee.org (National Coffee Association)\n- **URL:** https://www.ncausa.org/About-Coffee/Visit-About-Coffee-Website\n- **Why it helps:** This is the National Coffee Association's consumer website, developed as a resource for consumers, health professionals, journalists, students, and others. It covers origins, beans, brewing methods, health, and sustainability\u2014directly reinforcing the seed-to-cup story and the bean concepts in this lesson.\n- **What to look for:** The Origins section explains how coffee begins on a tree and is grown, harvested, and roasted. The Beans section explains how beans are extracted, dried, roasted, and stored, and how that shapes taste, texture, and caffeination. The Brewing section introduces popular methods including drip, pour-over, espresso, French press, and cold brew.\n\n## Deeper / Structured Coffee Education\n\n### CoffeeResearch.org\n- **URL:** https://coffeeresearch.org/\n- **Why it helps:** Founded in 1999, this was the first website dedicated to coffee education, with comprehensive coverage of coffee, espresso, coffee brewing, coffee agriculture, coffee science, and the coffee markets. It offers a more detailed, structured path for learners who want to go beyond the basics.\n- **What to look for:** The site recommends beginning with the agriculture of coffee, since harvesting and processing play a major role in how coffee should be roasted and brewed\u2014the same guiding principle stressed in this lesson. Its espresso section draws a link between preparation methods and flavor profile, connecting the agriculture and brewing ideas.\n\n## A Note on Scope\n\nBoth resources go well beyond the introductory scope of this lesson, so use them selectively. For now, focus on the sections that reinforce core concepts\u2014origins, beans, and brewing methods\u2014and save advanced or specialist material for later.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "AboutCoffee.org is the National Coffee Association's consumer website, developed as a resource for consumers, health professionals, journalists, students, and others.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "AboutCoffee.org has been developed as a resource for consumers, health professionals, journalists, students, and others.",
+                "note": "Directly supported; the site is described as NCA's consumer website with this exact developed-as description."
+              },
+              {
+                "id": "cl2",
+                "text": "AboutCoffee.org covers topics including origins, types of coffee, brewing methods, and independent research on coffee and health.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "from origins and types of coffee to brewing methods , independent research on coffee and health , and more",
+                "note": "Source lists origins, types of coffee, brewing methods, and independent research on coffee and health."
+              },
+              {
+                "id": "cl3",
+                "text": "The Origins section explains how the coffee in a cup begins on a tree and how coffee is grown, harvested, and roasted.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "starting with how the coffee in their cup begins on a tree! This section tells the flavorful origin story of coffee and how it\u2019s grown, harvested , and roasted",
+                "note": "Origins section matches grown, harvested, roasted, and begins on a tree."
+              },
+              {
+                "id": "cl4",
+                "text": "The Beans section explains how coffee beans are extracted, dried, roasted, and stored, and how these play a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how coffee beans\u2014and how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Beans section matches exactly."
+              },
+              {
+                "id": "cl5",
+                "text": "The Brewing section offers information on popular brewing methods including drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "Brewing section lists these methods; source says it offers info on popular brewing methods."
+              },
+              {
+                "id": "cl6",
+                "text": "Founded in 1999, CoffeeResearch.org was the first website dedicated to coffee education, with comprehensive coverage of coffee, espresso, coffee brewing, coffee agriculture, coffee science, and the coffee markets.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "Founded in 1999, CoffeeResearch.org was the first Web site dedicated to coffee education with comprehensive coverage on coffee, espresso , coffee brewing , coffee agriculture , coffee science, and the coffee markets.",
+                "note": "Verbatim match."
+              },
+              {
+                "id": "cl7",
+                "text": "CoffeeResearch.org recommends beginning by learning about the agriculture of coffee, since harvesting and processing play a major role in how coffee should be roasted and brewed.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "We recommend beginning your journey learning about coffee by learning about the agriculture of coffee since the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed.",
+                "note": "Verbatim match."
+              },
+              {
+                "id": "cl8",
+                "text": "The CoffeeResearch.org espresso section draws a link between preparation methods and flavor profile.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "The espresso section brings together the agriculture and coffee sections by drawing a link between preparation methods and flavor profile.",
+                "note": "Directly supported."
+              },
+              {
+                "id": "cl9",
+                "text": "Beginning with a broad consumer overview before moving to a more structured education site helps new learners build vocabulary first.",
+                "source_id": null,
+                "support": null,
+                "supporting_excerpt": null,
+                "note": "Ungrounded claim: no source_id was supplied; human review is required."
+              }
+            ],
+            "sources": [
+              "live_5",
+              "live_6"
+            ],
+            "verification": {
+              "supported": 8,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 1,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          }
+        ]
+      },
+      {
+        "subtopic_id": "m1_s2",
+        "assets": [
+          {
+            "id": "m1_s2_cc",
+            "type": "course_content",
+            "title": "Practical Examples",
+            "format": "pptx",
+            "content": "# Practical Examples in Coffee Making\n\n## Why Practical Examples Matter\n\nHaving learned the core concepts and vocabulary of coffee, the next step is to see how those ideas play out in real choices you make every morning. Practical examples turn abstract terms into decisions you can actually feel and taste. In this section, we walk through concrete brewing situations so you can connect what you know about beans, roasting, and brewing methods to the cup in front of you.\n\nThink of a practical example as a small, complete story: you start with a bean, make a few decisions, use a method, and end with a beverage. When you can trace that story from start to finish, the vocabulary stops being a list of words and becomes a toolkit you can reach for with confidence.\n\n## Where the Coffee Journey Begins\n\nEvery practical example starts before you ever touch a kettle. Coffee in your cup begins on a tree, and it is grown, harvested, and roasted from coffee-growing regions across the world. Understanding that origin story helps you make sense of why one bag of coffee tastes different from another.\n\nBeans are extracted, dried, roasted, and stored, and each of these steps plays a role in coffee's taste, texture, and caffeination. That means when you pick up a bag at the store, you are really choosing the result of many earlier decisions. A practical learner decision begins here: do you want a lighter or darker roast, and how fresh does the coffee need to be for the flavor you want?\n\n## Example One: Choosing and Storing Your Beans\n\nImagine you are buying coffee for the week. You face several real choices supported by what we know about beans. You can consider the roast level, whether you want decaf or organic coffee, and how you will handle storage and shelf life so the coffee stays fresh.\n\nStorage is a practical decision that directly affects your results. Because how beans are stored plays a role in the final taste and texture of the cup, choosing an airtight container away from heat and light is a small choice with a large payoff. If you buy more coffee than you can drink quickly, you are making a storage decision whether you realize it or not.\n\nThis example connects a learner decision to a concept: knowing that extraction, drying, roasting, and storing all shape flavor lets you shop and store deliberately instead of by guesswork.\n\n## Example Two: Matching a Brewing Method to Your Morning\n\nNow imagine the beans are in your kitchen and it is time to brew. Popular brewing methods include drip, pour-over, espresso, French press, and cold brew. Each is a practical example of how the same beans can become very different drinks depending on the method and technique you choose.\n\nThe brewing stage covers everything from grinding beans to the technique you use and even cleaning your equipment. Your decision here is guided by your situation. If you want a hands-off cup for a busy morning, drip may fit. If you enjoy a slower, hands-on ritual, pour-over or French press invites you to refine your skills. If you want a smooth, chilled drink prepared ahead of time, cold brew is a natural choice.\n\nThis is the heart of connecting practical examples to learner decisions: you are not memorizing methods for their own sake. You are learning to ask, \"Given my time, my equipment, and the taste I want, which method fits?\"\n\n## Putting the Examples Together\n\nAcross both examples, notice the same pattern. You start with an understanding of where coffee comes from and how beans are handled, then you make a decision, and finally you choose a method and technique to reach the cup you want. The origin story, the bean-handling steps, and the brewing methods are not separate facts. They are stages in one connected decision chain.\n\nThe National Coffee Association's consumer resource, AboutCoffee.org, was developed for consumers, students, and others as a place to explore origins, beans, roasts, and brewing methods, along with techniques and tips. Using a trusted reference like this is itself a practical decision: when you are unsure which roast or method fits your goal, you can turn to reliable, organized information rather than guessing.\n\n## Key Takeaways\n\n- A practical example traces coffee from bean to cup through a series of everyday decisions.\n- Bean handling steps such as extraction, drying, roasting, and storage shape the final taste, texture, and caffeination, so your buying and storage choices matter.\n- Brewing methods like drip, pour-over, espresso, French press, and cold brew each suit different needs, so match the method to your time, equipment, and taste.\n- Connecting concepts to decisions turns coffee vocabulary into a toolkit you can use every day.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "Coffee in the cup begins on a tree and is grown, harvested, and roasted from coffee-growing regions across the world.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "starting with how the coffee in their cup begins on a tree! This section tells the flavorful origin story of coffee and how it\u2019s grown, harvested , and roasted from coffee-growing regions across the world",
+                "note": "Directly supported by the Origins section text."
+              },
+              {
+                "id": "cl2",
+                "text": "Coffee beans are extracted, dried, roasted, and stored, and these steps play a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how coffee beans\u2014and how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Directly matches the Beans section."
+              },
+              {
+                "id": "cl3",
+                "text": "Bean-related choices covered by the resource include roasts, decaf coffee, organic coffee, and storage and shelf life.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Roasts\nDecaf coffee\nOrganic coffee\nStorage and shelf life",
+                "note": "These bean-related topics are listed under the Beans section."
+              },
+              {
+                "id": "cl4",
+                "text": "How coffee beans are stored plays a role in coffee's taste and texture.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture",
+                "note": "Storage is included among steps affecting taste and texture."
+              },
+              {
+                "id": "cl5",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five methods listed under Brewing section."
+              },
+              {
+                "id": "cl6",
+                "text": "The brewing section offers information on techniques and tips for everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "offers information on popular brewing methods as well as techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Directly supported."
+              },
+              {
+                "id": "cl7",
+                "text": "AboutCoffee.org was developed as a resource for consumers, health professionals, journalists, students, and others, and covers origins, beans, roasts, and brewing methods.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "AboutCoffee.org has been developed as a resource for consumers, health professionals, journalists, students, and others",
+                "note": "Audience list and coverage of origins/beans/roasts/brewing all present in source."
+              }
+            ],
+            "sources": [
+              "live_5"
+            ],
+            "verification": {
+              "supported": 7,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s2_lo",
+            "type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "content": "After studying this section on practical examples in coffee making, you will be able to:\n\n1. Describe how a practical example traces coffee from bean to cup as a connected chain of everyday decisions.\n2. Explain how the bean-handling steps of extraction, drying, roasting, and storage shape a cup's taste, texture, and caffeination.\n3. Apply this knowledge to make deliberate buying and storage choices, such as selecting a roast level and keeping beans fresh.\n4. Match a brewing method\u2014drip, pour-over, espresso, French press, or cold brew\u2014to your available time, equipment, and desired taste.\n5. Analyze a given morning scenario and justify which brewing method best fits the stated constraints.\n6. Evaluate when to consult a trusted reference such as the National Coffee Association's AboutCoffee.org to guide an uncertain roast or method decision.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "Coffee beans are extracted, dried, roasted, and stored, and these steps play a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Source directly states these bean-handling steps play a role in taste, texture, and caffeination."
+              },
+              {
+                "id": "cl2",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "Source lists these five brewing methods under popular brewing methods."
+              },
+              {
+                "id": "cl3",
+                "text": "Coffee in the cup begins on a tree and is grown, harvested, and roasted from coffee-growing regions across the world.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how the coffee in their cup begins on a tree! This section tells the flavorful origin story of coffee and how it\u2019s grown, harvested , and roasted from coffee-growing regions across the world",
+                "note": "Source supports the tree origin, growing, harvesting, roasting, and regions."
+              },
+              {
+                "id": "cl4",
+                "text": "The National Coffee Association's consumer resource, AboutCoffee.org, was developed for consumers, health professionals, journalists, students, and others as a place to explore origins, beans, roasts, and brewing methods along with techniques and tips.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "AboutCoffee.org has been developed as a resource for consumers, health professionals, journalists, students, and others.",
+                "note": "Source supports the audience list; origins, beans, roasts, brewing methods, techniques and tips are all mentioned as site sections/content."
+              }
+            ],
+            "sources": [
+              "live_5"
+            ],
+            "verification": {
+              "supported": 4,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s2_summary",
+            "type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "content": "# Practical Examples in Coffee Making \u2014 Summary\n\n## The Big Idea\n\nPractical examples take the coffee concepts and vocabulary you already know and turn them into real, everyday decisions. Instead of memorizing terms, you learn to trace a complete story: start with a bean, make a few choices, apply a method, and end with a cup you can actually taste. When you can follow that story from beginning to end, coffee vocabulary becomes a usable toolkit.\n\n## Where the Story Begins\n\nEvery example starts before you touch a kettle. The coffee in your cup begins on a tree and is grown, harvested, and roasted from coffee-growing regions across the world. Beans are extracted, dried, roasted, and stored, and each of these steps plays a role in coffee's taste, texture, and caffeination. Knowing this origin story explains why one bag tastes different from another and gives you a place to begin making deliberate choices.\n\n## Example One: Choosing and Storing Beans\n\nWhen buying coffee for the week, you face real choices grounded in what you know about beans. You can consider the roast level, whether you want decaf or organic coffee, and how you will handle storage and shelf life so the coffee stays fresh.\n\nStorage is a decision that directly shapes your results. Because how beans are stored affects the final taste and texture, keeping coffee in an airtight container away from heat and light is a small choice with a large payoff. Buying more than you can drink quickly is itself a storage decision. The lesson: understanding that extraction, drying, roasting, and storing all shape flavor lets you shop and store on purpose rather than by guesswork.\n\n## Example Two: Matching a Method to Your Morning\n\nOnce the beans are home, it is time to brew. Popular brewing methods include drip, pour-over, espresso, French press, and cold brew. The same beans can become very different drinks depending on the method and technique you choose. The brewing stage covers everything from grinding beans to your technique and even cleaning your equipment.\n\nYour choice is guided by your situation. Drip suits a hands-off, busy morning. Pour-over or French press rewards a slower, hands-on ritual where you can refine your skills. Cold brew fits when you want a smooth, chilled drink prepared ahead of time. The point is not to memorize methods but to ask: given my time, my equipment, and the taste I want, which method fits?\n\n## The Pattern Across Both Examples\n\nBoth examples follow the same chain: understand where coffee comes from and how beans are handled, make a decision, then choose a method and technique to reach the cup you want. Origins, bean handling, and brewing methods are not separate facts \u2014 they are connected stages in one decision.\n\nWhen you are unsure which roast or method fits your goal, a trusted reference helps. The National Coffee Association's consumer resource, AboutCoffee.org, was developed for consumers, students, and others to explore origins, beans, roasts, and brewing methods along with techniques and tips. Turning to reliable, organized information instead of guessing is itself a practical decision.\n\n## Key Takeaways\n\n- A practical example traces coffee from bean to cup through a series of everyday decisions.\n- Bean handling \u2014 extraction, drying, roasting, and storage \u2014 shapes taste, texture, and caffeination, so your buying and storage choices matter.\n- Brewing methods such as drip, pour-over, espresso, French press, and cold brew each suit different needs; match the method to your time, equipment, and taste.\n- Connecting concepts to decisions turns coffee vocabulary into a toolkit you can use every day.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "The coffee in your cup begins on a tree and is grown, harvested, and roasted from coffee-growing regions across the world.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "starting with how the coffee in their cup begins on a tree! This section tells the flavorful origin story of coffee and how it\u2019s grown, harvested , and roasted from coffee-growing regions across the world",
+                "note": "Source directly supports the tree origin, growing, harvesting, roasting, and coffee-growing regions across the world."
+              },
+              {
+                "id": "cl2",
+                "text": "Coffee beans are extracted, dried, roasted, and stored, and these steps play a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how coffee beans\u2014and how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Directly matches the claim."
+              },
+              {
+                "id": "cl3",
+                "text": "Bean-related choices include roasts, decaf coffee, organic coffee, and storage and shelf life.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Roasts\nDecaf coffee\nOrganic coffee\nStorage and shelf life",
+                "note": "Source lists roasts, decaf coffee, organic coffee, and storage and shelf life under Beans."
+              },
+              {
+                "id": "cl4",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five methods are listed under Brewing."
+              },
+              {
+                "id": "cl5",
+                "text": "The brewing stage covers techniques and tips for everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Source supports techniques and tips from grinding beans to cleaning equipment."
+              },
+              {
+                "id": "cl6",
+                "text": "The National Coffee Association's consumer resource, AboutCoffee.org, was developed for consumers, students, and others to explore origins, beans, roasts, and brewing methods along with techniques and tips.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "AboutCoffee.org has been developed as a resource for consumers, health professionals, journalists, students, and others",
+                "note": "Source supports it being developed for consumers, students, and others, and covering origins, beans, roasts, brewing methods, techniques and tips as described across the sections."
+              }
+            ],
+            "sources": [
+              "live_5"
+            ],
+            "verification": {
+              "supported": 6,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s2_activities",
+            "type": "activities",
+            "title": "Activities",
+            "format": "docx",
+            "content": "# Practical Examples: Hands-On Activities\n\nThese activities help you turn coffee vocabulary into real, everyday decisions. Each one asks you to trace a short story from bean to cup and to justify the choices you make along the way. Work through them in order, since each builds on the one before.\n\n---\n\n## Activity 1: Map Your Bean Decisions (Solo, ~7 minutes)\n\n**Purpose:** Practice connecting bean-handling knowledge to a real buying and storage decision.\n\n**Why it matters:** Coffee in your cup begins on a tree and is grown, harvested, and roasted before you ever see it. Beans are extracted, dried, roasted, and stored, and each of these steps plays a role in coffee's taste, texture, and caffeination. That means your buying and storage choices shape the final cup.\n\n**Steps:**\n1. Imagine you are buying coffee for the week ahead.\n2. Write down three decisions you would make about the beans. Consider roast level, whether you want decaf or organic, and how you will handle storage and shelf life.\n3. For each decision, add one sentence explaining how it connects to taste, texture, or freshness.\n4. Note one storage choice you will make to keep the coffee fresh, such as where you will keep it.\n\n**Deliverable:** A short three-row list of decisions, each paired with a one-sentence justification, plus one storage note.\n\n**Completion criterion:** Every decision is tied to a reason about how bean handling affects the final cup.\n\n---\n\n## Activity 2: Match a Brewing Method to Your Morning (Solo, ~7 minutes)\n\n**Purpose:** Practice choosing a brewing method that fits your situation rather than memorizing methods for their own sake.\n\n**Why it matters:** Popular brewing methods include drip, pour-over, espresso, French press, and cold brew. The same beans can become very different drinks depending on the method and technique you choose, so the right question is: given my time, my equipment, and the taste I want, which method fits?\n\n**Steps:**\n1. Describe your typical weekday morning in two or three sentences. Include how much time you have and what equipment you own.\n2. List your three constraints: time available, equipment on hand, and the taste or experience you want.\n3. From the popular methods (drip, pour-over, espresso, French press, cold brew), pick the one that best fits.\n4. Write two sentences explaining why that method fits your constraints better than one alternative you rejected.\n\n**Deliverable:** A short paragraph naming your chosen method, your three constraints, and your reasoning against one rejected method.\n\n**Completion criterion:** Your choice is clearly justified by at least two of your stated constraints.\n\n---\n\n## Activity 3: Trace the Whole Decision Chain (Pair or Solo, ~6 minutes)\n\n**Purpose:** Bring both examples together into one connected bean-to-cup story.\n\n**Why it matters:** Origin, bean-handling steps, and brewing methods are not separate facts. They are stages in one connected decision chain that ends with the cup you want.\n\n**Steps:**\n1. Using your answers from Activities 1 and 2, write a short \"story\" of one cup of coffee: start with the bean you chose, move through your storage decision, and finish with your brewing method.\n2. Mark the exact point where each decision was made.\n3. If working with a partner, swap stories and ask each other one question about a decision.\n4. When you are unsure which roast or method fits a goal, note that a trusted consumer resource developed for consumers, students, and others can help you explore origins, beans, roasts, and brewing methods rather than guessing.\n\n**Deliverable:** A single connected paragraph tracing your coffee from bean to cup with each decision point labeled.\n\n**Completion criterion:** Your story shows a clear chain from origin and bean handling through to a brewing method, with reasoning at each stage.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "Coffee in your cup begins on a tree and is grown, harvested, and roasted from coffee-growing regions across the world.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "starting with how the coffee in their cup begins on a tree! This section tells the flavorful origin story of coffee and how it\u2019s grown, harvested , and roasted from coffee-growing regions across the world",
+                "note": "Source directly states coffee begins on a tree and is grown, harvested, and roasted from coffee-growing regions across the world."
+              },
+              {
+                "id": "cl2",
+                "text": "Coffee beans are extracted, dried, roasted, and stored, and each of these steps plays a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how coffee beans\u2014and how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Directly supported by the Beans section."
+              },
+              {
+                "id": "cl3",
+                "text": "Bean-related decisions include roasts, decaf coffee, organic coffee, and storage and shelf life.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Roasts\nDecaf coffee\nOrganic coffee\nStorage and shelf life",
+                "note": "Source lists roasts, decaf, organic, and storage and shelf life under the Beans section."
+              },
+              {
+                "id": "cl4",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "Source lists these five brewing methods."
+              },
+              {
+                "id": "cl5",
+                "text": "Brewing information covers techniques and tips for everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Directly supported by the Brewing section."
+              },
+              {
+                "id": "cl6",
+                "text": "AboutCoffee.org was developed as a resource for consumers, students, and others to explore origins, beans, roasts, and brewing methods.",
+                "source_id": "live_5",
+                "support": "partial",
+                "supporting_excerpt": "AboutCoffee.org has been developed as a resource for consumers, health professionals, journalists, students, and others.",
+                "note": "Source confirms it was developed as a resource for consumers, students, and others, and covers origins, beans, roasts, and brewing methods; the claim's specific bundling of those topics as an explicit purpose statement slightly recombines source content but is broadly consistent."
+              }
+            ],
+            "sources": [
+              "live_5"
+            ],
+            "verification": {
+              "supported": 5,
+              "partial": 1,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          }
+        ]
+      },
+      {
+        "subtopic_id": "m1_s3",
+        "assets": [
+          {
+            "id": "m1_s3_cc",
+            "type": "course_content",
+            "title": "Coffee Making Practice",
+            "format": "pptx",
+            "content": "# Coffee Making Practice\n\n## Why Practice Matters\n\nMaking a good cup of coffee is a skill that improves with hands-on practice. In this session, you will connect the concepts you have already learned to real decisions you make at the counter or kitchen. The goal is not to memorize a single \"correct\" recipe, but to understand how your choices shape the coffee in your cup so you can repeat the results you like.\n\n## Start From the Bean, Then Move to the Cup\n\nOne of the most helpful ways to think about coffee practice is to follow the coffee's journey. A useful learning path is to begin with the agriculture of coffee, because the way coffee is harvested and processed plays a major role in how coffee should be roasted and brewed. After understanding the coffee plant, the natural next steps are grinding, brewing, and roasting.\n\nThis order matters for practice. When you understand that a bean's origin and processing influence its flavor, you stop treating brewing as a set of random steps and start treating it as a response to the coffee in front of you. The link between preparation methods and flavor profile is exactly what turns a beginner into someone who can consistently make coffee they enjoy.\n\n## The Practical Decisions You Control\n\nWhile you cannot change how the beans were grown, several important decisions are entirely in your hands each time you brew:\n\n### Choosing a Brewing Method\n\nThere are several popular brewing methods, and each produces a different result. Common options include drip, pour-over, espresso, French press, and cold brew. Choosing among them is your first practical decision. A French press is forgiving and inexpensive, pour-over rewards attention and technique, and espresso requires more specialized equipment. Matching the method to your time, budget, and taste is a core part of coffee making practice.\n\n### Grinding the Beans\n\nGrinding is a key technique in the brewing journey. The grind you choose interacts with your brewing method, so learning to grind beans well is one of the first hands-on skills to build. Practicing the grind gives you a lever you can adjust when a cup tastes too weak or too strong.\n\n### Storing Your Coffee\n\nHow beans are stored plays a role in coffee's taste, texture, and caffeination. Paying attention to storage and shelf life helps protect the quality of coffee you already paid for, and it is an easy habit to build into your routine.\n\n### Keeping Equipment Clean\n\nGood practice also includes techniques and tips for everything from grinding beans to cleaning equipment. Clean equipment keeps flavors from previous brews out of your current cup, which is one of the simplest ways to improve consistency.\n\n## A Practical Example: Making a Decision\n\nImagine you are new to coffee and want to brew at home without buying expensive gear. You want a method that is forgiving while you learn.\n\nWorking through the decisions above, you might choose a French press because it is one of the popular brewing methods and does not require specialized equipment. You would then focus on your grind, since grinding is a technique you control, and adjust it if your first cups taste off. You would store your beans carefully to protect their flavor, and clean the press after each use so old flavors do not linger. This single, connected chain of choices\u2014method, grind, storage, cleaning\u2014is coffee making practice in action.\n\nIf later you decide you want a stronger, more concentrated cup and are willing to invest in equipment and learning, you might move toward espresso, which brings together your understanding of the beans and their preparation.\n\n## Where to Keep Learning\n\nReliable coffee education is widely available. General consumer resources cover origins, types of coffee, brewing methods, and independent research on coffee and health, and they are designed for consumers, students, and others who want trustworthy information. Dedicated coffee education sites offer comprehensive coverage of brewing, roasting, espresso, and the science behind coffee. As you practice, returning to these resources helps you understand why a change in grind, method, or storage produced a different result.\n\n## Key Takeaways\n\n- Coffee making practice means connecting what you know about beans to the decisions you make while brewing.\n- Begin by understanding the coffee plant and processing, then move to grinding, brewing, and roasting.\n- Your main controllable decisions are the brewing method, the grind, storage, and cleaning.\n- Choosing a method that fits your time, budget, and taste is a practical first decision every learner makes.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "A useful learning path is to begin with the agriculture of coffee, because harvesting and processing play a major role in how coffee should be roasted and brewed.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "We recommend beginning your journey learning about coffee by learning about the agriculture of coffee since the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed.",
+                "note": "Directly matches the source."
+              },
+              {
+                "id": "cl2",
+                "text": "After learning about the coffee plant, the recommended next steps are coffee grinding, brewing, and roasting.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "After learning about the coffee plant , we move to coffee grinding , brewing , and roasting .",
+                "note": "Directly supported."
+              },
+              {
+                "id": "cl3",
+                "text": "The espresso section draws a link between preparation methods and flavor profile.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "The espresso section brings together the agriculture and coffee sections by drawing a link between preparation methods and flavor profile.",
+                "note": "Source states espresso section draws link between preparation methods and flavor profile."
+              },
+              {
+                "id": "cl4",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five methods listed under brewing in source live_5."
+              },
+              {
+                "id": "cl5",
+                "text": "Brewing information covers techniques and tips for everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "offers information on popular brewing methods as well as techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Exact match."
+              },
+              {
+                "id": "cl6",
+                "text": "How coffee beans are extracted, dried, roasted, and stored plays a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "We explain how coffee beans\u2014and how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination.",
+                "note": "Directly supported."
+              },
+              {
+                "id": "cl7",
+                "text": "Storage and shelf life are part of the information provided about coffee beans.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Storage and shelf life",
+                "note": "Listed under Beans section in source."
+              },
+              {
+                "id": "cl8",
+                "text": "Espresso brings together the agriculture and coffee sections by linking preparation methods and flavor.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "The espresso section brings together the agriculture and coffee sections by drawing a link between preparation methods and flavor profile.",
+                "note": "Matches source statement."
+              },
+              {
+                "id": "cl9",
+                "text": "AboutCoffee.org provides information on origins, types of coffee, brewing methods, and independent research on coffee and health, and was developed as a resource for consumers, health professionals, journalists, students, and others.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "AboutCoffee.org has been developed as a resource for consumers, health professionals, journalists, students, and others.",
+                "note": "Origins/types/brewing/health research and resource audience all in source."
+              },
+              {
+                "id": "cl10",
+                "text": "CoffeeResearch.org offers comprehensive coverage of coffee, espresso, coffee brewing, coffee agriculture, coffee science, and coffee markets.",
+                "source_id": "live_6",
+                "support": "partial",
+                "supporting_excerpt": "comprehensive coverage on coffee, espresso , coffee brewing , coffee agriculture , coffee science, and the coffee markets",
+                "note": "Source lists these topics but does not use the exact phrasing 'coffee' as a distinct item and claim closely tracks; coverage is essentially supported."
+              }
+            ],
+            "sources": [
+              "live_6",
+              "live_5"
+            ],
+            "verification": {
+              "supported": 9,
+              "partial": 1,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [
+                "CoffeeResearch.org was founded in 1999 and was the first website dedicated to coffee education."
+              ],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s3_lo",
+            "type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "content": "After studying this content on Coffee Making Practice, you will be able to:\n\n1. Explain what coffee making practice means by describing how your knowledge of the coffee bean connects to the brewing decisions you make.\n2. Identify the recommended learning path for coffee, beginning with the coffee plant and its agriculture, then moving to grinding, brewing, and roasting.\n3. Distinguish among common brewing methods\u2014drip, pour-over, espresso, French press, and cold brew\u2014and describe how each produces a different result.\n4. List the practical decisions a learner controls when brewing, including choice of brewing method, the grind, storage, and equipment cleaning.\n5. Explain how the storage of coffee beans affects coffee's taste, texture, and caffeination, and describe simple storage habits that protect quality.\n6. Apply these decisions to a realistic scenario by selecting a brewing method that fits your time, budget, and taste, and justifying why it suits a beginner.\n7. Locate reliable coffee education resources for consumers and students to continue learning about origins, brewing methods, and the science behind coffee.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "A recommended way to learn about coffee is to begin with the agriculture of coffee, because harvesting and processing play a major role in how coffee should be roasted and brewed, then move to grinding, brewing, and roasting.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "We recommend beginning your journey learning about coffee by learning about the agriculture of coffee since the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed. After learning about the coffee plant , we move to coffee grinding , brewing , and roasting .",
+                "note": "Fully supported by live_6."
+              },
+              {
+                "id": "cl2",
+                "text": "Common popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five methods listed under Brewing in live_5, with 'popular brewing methods' mentioned."
+              },
+              {
+                "id": "cl3",
+                "text": "How coffee beans are extracted, dried, roasted, and stored plays a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Directly supported by live_5."
+              },
+              {
+                "id": "cl4",
+                "text": "Brewing resources cover techniques and tips for everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Directly supported by live_5."
+              },
+              {
+                "id": "cl5",
+                "text": "Reliable consumer coffee resources cover origins, types of coffee, brewing methods, and independent research on coffee and health, and are developed for consumers, health professionals, journalists, students, and others.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "from origins and types of coffee to brewing methods , independent research on coffee and health , and more.",
+                "note": "Content coverage and audience (consumers, health professionals, journalists, students, and others) both supported in live_5."
+              },
+              {
+                "id": "cl6",
+                "text": "CoffeeResearch.org provides comprehensive coverage of coffee brewing, roasting, espresso, coffee agriculture, and coffee science.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "comprehensive coverage on coffee, espresso , coffee brewing , coffee agriculture , coffee science",
+                "note": "Supported by live_6, which names CoffeeResearch.org and its coverage areas including roasting in contents."
+              }
+            ],
+            "sources": [
+              "live_6",
+              "live_5"
+            ],
+            "verification": {
+              "supported": 6,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [
+                "CoffeeResearch.org was founded in 1999 and was the first website dedicated to coffee education.",
+                "Drinking coffee is associated with overall longer, healthier lives."
+              ],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s3_summary",
+            "type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "content": "# Coffee Making Practice \u2014 Summary\n\n## The Big Idea\n\nCoffee making practice means connecting what you know about coffee beans to the real decisions you make while brewing. Rather than memorizing one \"correct\" recipe, the goal is to understand how your choices shape the coffee in your cup so you can repeat the results you enjoy. Good coffee is a hands-on skill that improves with practice.\n\n## Follow the Coffee's Journey\n\nA helpful way to organize your learning is to follow the coffee from the bean to the cup. Begin by understanding the agriculture of coffee, because the way coffee is harvested and processed plays a major role in how coffee should be roasted and brewed. After learning about the coffee plant, the natural next steps are grinding, brewing, and roasting.\n\nThis order matters. Once you understand that a bean's origin and processing influence flavor, brewing stops feeling like random steps and becomes a response to the coffee in front of you. Drawing a link between preparation methods and flavor profile is what turns a beginner into someone who can consistently make coffee they like.\n\n## The Decisions You Control\n\nYou cannot change how the beans were grown, but several important decisions are entirely in your hands each time you brew:\n\n- **Brewing method.** Popular methods include drip, pour-over, espresso, French press, and cold brew, and each produces a different result. Choosing among them\u2014based on your time, budget, and taste\u2014is your first practical decision.\n- **Grinding.** Grinding is a key technique in the brewing journey and interacts with your method. It gives you a lever to adjust when a cup tastes too weak or too strong.\n- **Storage.** How beans are extracted, dried, roasted, and stored plays a role in coffee's taste, texture, and caffeination. Paying attention to storage and shelf life protects quality.\n- **Cleaning.** Good practice includes techniques and tips for everything from grinding beans to cleaning equipment. Clean equipment keeps old flavors out of your current cup.\n\n## A Worked Decision\n\nSuppose you are new to coffee and want to brew at home without buying expensive gear, using a forgiving method while you learn. You might choose a French press, since it is one of the popular brewing methods and needs no specialized equipment. You would then focus on your grind, adjusting it if early cups taste off, store your beans carefully, and clean the press after each use. That connected chain\u2014method, grind, storage, cleaning\u2014is coffee making practice in action. Later, if you want a stronger, more concentrated cup and are willing to invest, you might move toward espresso, which brings together your understanding of the beans and their preparation.\n\n## Where to Keep Learning\n\nReliable coffee education is widely available. General consumer resources cover origins, types of coffee, brewing methods, and independent research on coffee and health, and are designed for consumers, students, and others seeking trustworthy information. Dedicated coffee education sites offer comprehensive coverage of brewing, roasting, espresso, and the science behind coffee. Returning to these resources helps you understand why a change in grind, method, or storage produced a different result.\n\n## Key Takeaways\n\n- Coffee making practice connects knowledge of the beans to the decisions you make while brewing.\n- Start with the coffee plant and processing, then move to grinding, brewing, and roasting.\n- Your main controllable decisions are brewing method, grind, storage, and cleaning.\n- Matching a method to your time, budget, and taste is a practical first decision every learner makes.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "A useful learning path begins with the agriculture of coffee, because the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "We recommend beginning your journey learning about coffee by learning about the agriculture of coffee since the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed.",
+                "note": "Directly supported by live_6."
+              },
+              {
+                "id": "cl2",
+                "text": "After learning about the coffee plant, the next steps are coffee grinding, brewing, and roasting.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "After learning about the coffee plant , we move to coffee grinding , brewing , and roasting .",
+                "note": "Directly supported by live_6."
+              },
+              {
+                "id": "cl3",
+                "text": "The espresso section draws a link between preparation methods and flavor profile.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "The espresso section brings together the agriculture and coffee sections by drawing a link between preparation methods and flavor profile.",
+                "note": "Supported by live_6."
+              },
+              {
+                "id": "cl4",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "These brewing methods are listed in live_5 under Brewing."
+              },
+              {
+                "id": "cl5",
+                "text": "Coffee brewing resources offer techniques and tips for everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "offers information on popular brewing methods as well as techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Supported by live_5."
+              },
+              {
+                "id": "cl6",
+                "text": "How coffee beans are extracted, dried, roasted, and stored plays a role in coffee's taste, texture, and caffeination, and storage and shelf life are part of that.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "We explain how coffee beans\u2014and how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination.",
+                "note": "Supported by live_5; storage and shelf life also listed."
+              },
+              {
+                "id": "cl7",
+                "text": "Blending espresso requires a complete understanding of coffee harvesting and production methods, bringing together the agriculture and coffee sections.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "Blending espresso is an art form that necessitates a complete understanding of coffee harvesting and production methods.",
+                "note": "Supported by live_6; also brings together agriculture and coffee sections."
+              },
+              {
+                "id": "cl8",
+                "text": "AboutCoffee.org covers origins and types of coffee, brewing methods, and independent research on coffee and health, and was developed as a resource for consumers, health professionals, journalists, students, and others.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "AboutCoffee.org has been developed as a resource for consumers, health professionals, journalists, students, and others.",
+                "note": "Supported by live_5, including origins/types, brewing methods, and independent research on coffee and health."
+              },
+              {
+                "id": "cl9",
+                "text": "Founded in 1999, CoffeeResearch.org was the first website dedicated to coffee education with comprehensive coverage of coffee, espresso, coffee brewing, coffee agriculture, and coffee science.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "Founded in 1999, CoffeeResearch.org was the first Web site dedicated to coffee education with comprehensive coverage on coffee, espresso , coffee brewing , coffee agriculture , coffee science, and the coffee markets.",
+                "note": "Supported by live_6."
+              }
+            ],
+            "sources": [
+              "live_6",
+              "live_5"
+            ],
+            "verification": {
+              "supported": 9,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s3_assess",
+            "type": "assessment",
+            "title": "Assessment",
+            "format": "pptx",
+            "content": "# Coffee Making Practice \u2014 Self-Assessment\n\nInstructions: Answer all five questions. This assessment checks your understanding of coffee making practice and your ability to apply it to real decisions. Questions 1\u20132 check recall, question 3 checks explanation, and questions 4\u20135 check application and evaluation.\n\n**Q1. (Recall)** List the four practical decisions that are entirely in your hands each time you brew, according to this session.\n\n**Q2. (Recall)** Name at least three of the popular brewing methods discussed in the session.\n\n**Q3. (Explanation)** The session recommends beginning your coffee learning journey with the agriculture of the coffee plant before moving to grinding, brewing, and roasting. Explain why this order is recommended.\n\n**Q4. (Application)** You are new to coffee and want to brew at home without buying expensive gear, and you want a method that is forgiving while you learn. Which brewing method fits best, and what connected chain of controllable decisions would you follow to make good coffee with it?\n\n**Q5. (Evaluation)** A friend says they want a stronger, more concentrated cup and are willing to invest in equipment and spend time learning. Recommend a method for them and justify your choice against their stated constraints. Contrast it with a more forgiving option.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "The main controllable brewing decisions are the brewing method, the grind, storage, and cleaning equipment.",
+                "source_id": "live_5",
+                "support": "partial",
+                "supporting_excerpt": "techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Source mentions grinding beans, cleaning equipment, storage (elsewhere), and brewing methods, but does not present them as 'the four controllable brewing decisions each time you brew.' The framing is the asset's synthesis, so only partially supported."
+              },
+              {
+                "id": "cl2",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five methods are listed under Brewing in the source."
+              },
+              {
+                "id": "cl3",
+                "text": "It is recommended to begin learning about coffee with the agriculture of coffee because harvesting and processing play a major role in how coffee should be roasted and brewed, then move to grinding, brewing, and roasting.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "We recommend beginning your journey learning about coffee by learning about the agriculture of coffee since the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed. After learning about the coffee plant , we move to coffee grinding , brewing , and roasting .",
+                "note": "Directly supports the recommended order and rationale."
+              },
+              {
+                "id": "cl4",
+                "text": "A French press is a popular brewing method that does not require specialized equipment, while espresso brings together an understanding of the beans and their preparation.",
+                "source_id": "live_5",
+                "support": "partial",
+                "supporting_excerpt": "popular brewing methods",
+                "note": "French press is listed as a brewing method in live_5, but the source does not state it 'does not require specialized equipment' nor that espresso 'brings together an understanding of the beans and their preparation'\u2014that content is in live_6, not the cited live_5. The espresso preparation claim is unsupported by this source."
+              },
+              {
+                "id": "cl5",
+                "text": "How beans are stored plays a role in coffee's taste, texture, and caffeination, and brewing tips cover everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Source supports storage's role in taste/texture/caffeination and 'everything from grinding beans to cleaning equipment.'"
+              },
+              {
+                "id": "cl6",
+                "text": "The espresso section draws a link between preparation methods and flavor profile.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "The espresso section brings together the agriculture and coffee sections by drawing a link between preparation methods and flavor profile.",
+                "note": "Directly supported by live_6."
+              }
+            ],
+            "sources": [
+              "live_5",
+              "live_6"
+            ],
+            "verification": {
+              "supported": 4,
+              "partial": 2,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done",
+            "solution": "# Answer Key \u2014 Coffee Making Practice Self-Assessment (Teacher Only)\n\n**Q1 \u2014 Model Answer (Recall).** The four controllable decisions each time you brew are: (1) choosing a brewing method, (2) grinding the beans, (3) storing your coffee, and (4) keeping equipment clean. Full credit for naming all four; partial credit for three (claim cl1, source live_5).\n\n**Q2 \u2014 Model Answer (Recall).** Any three of: drip, pour-over, espresso, French press, cold brew. Full credit for three or more correctly named (claim cl2, source live_5).\n\n**Q3 \u2014 Model Answer (Explanation).** The order begins with the coffee plant and its agriculture because the way coffee is harvested and processed plays a major role in how coffee should be roasted and brewed. Understanding origin and processing means you stop treating brewing as random steps and instead respond to the coffee in front of you. After the plant, the natural next steps are grinding, brewing, and roasting. Look for the causal link: agriculture/processing \u2192 informs roasting and brewing decisions (claim cl3, source live_6; supporting idea in cl6, source live_6).\n\n**Q4 \u2014 Model Answer (Application).** The French press fits best because it is a popular brewing method that is forgiving, inexpensive, and does not require specialized equipment. The connected chain of decisions: choose the French press (method), focus on the grind and adjust it if cups taste too weak or too strong, store the beans carefully to protect flavor, and clean the press after each use so old flavors do not linger. Full credit requires naming French press AND describing the method \u2192 grind \u2192 storage \u2192 cleaning chain (claims cl4, cl1, cl5; sources live_5).\n\n**Q5 \u2014 Model Answer (Evaluation).** Recommend espresso, since the friend wants a stronger, more concentrated cup and is willing to invest in equipment and learning; espresso requires more specialized equipment and brings together an understanding of the beans and their preparation, drawing a link between preparation methods and flavor profile. Contrast with the French press, which is forgiving and inexpensive but yields a less concentrated result and is better for a beginner who wants low cost and low effort. Full credit requires a justified match of espresso to the stated constraints (investment + concentration) and a contrast with a more forgiving option (claims cl4, cl6, cl2; sources live_5, live_6)."
+          }
+        ]
+      },
+      {
+        "subtopic_id": "m1_s4",
+        "assets": [
+          {
+            "id": "m1_s4_cc",
+            "type": "course_content",
+            "title": "Coffee Making Troubleshooting",
+            "format": "pptx",
+            "content": "# Coffee Making Troubleshooting\n\n## Why Troubleshooting Matters\n\nEven with good beans and equipment, your cup can come out sour, bitter, weak, or watery. Troubleshooting is simply the skill of noticing what went wrong and adjusting one variable at a time until the cup improves. Because coffee preparation is a chain of connected steps, the same problem can have several causes. Learning to trace a bad cup back to its likely source turns frustration into a repeatable, controllable process.\n\nA helpful way to think about troubleshooting is that harvesting and processing affect how coffee should be roasted, and roasting affects how it should be ground and brewed. In other words, every stage sets up the next. When you troubleshoot, you are working backward through that chain to find the link that needs adjusting.\n\n## The Variables You Can Actually Control\n\nWhen you are making coffee at home, most of your control lives in a few practical levers: the beans and how they are stored, the grind, the brewing method, and how you clean and maintain your equipment. Reliable consumer guidance groups these into brewing techniques and tips covering everything from grinding beans to cleaning equipment. Keeping this short list in mind gives you a checklist to run through whenever a cup disappoints.\n\nA useful troubleshooting habit: change only one thing at a time. If you adjust the grind, the amount of coffee, and the water all at once, you will not know which change fixed\u2014or worsened\u2014the result.\n\n## Working Through a Bad Cup Step by Step\n\n### Step 1: Start with the beans and storage\n\nStale or poorly stored beans limit how good any cup can be, so freshness and storage are a sensible first check. Because how beans are extracted, dried, roasted, and stored all play a role in coffee's taste, texture, and strength, a flat or dull cup often traces back to old beans rather than your brewing technique. If the beans are fresh and well stored, move on.\n\n### Step 2: Check the grind\n\nGrinding is one of the core brewing techniques, and it is one of the most common culprits. A grind that is too coarse tends to produce weak, watery, or sour coffee because water rushes through too quickly. A grind that is too fine can produce bitter, harsh coffee because water lingers and over-extracts. Adjusting the grind is frequently the single most effective troubleshooting move.\n\n### Step 3: Match the method to the problem\n\nDifferent brewing methods behave differently. Popular methods include drip, pour-over, espresso, French press, and cold brew, and each has its own rhythm and expectations. A French press that tastes gritty or over-strong points to grind size and steep time; an espresso that runs too fast or too slow points to how finely the coffee is ground and packed. Knowing which method you are using tells you which adjustments make sense.\n\n### Step 4: Clean your equipment\n\nEquipment cleaning is explicitly part of standard brewing guidance, and it is easy to overlook. Old coffee oils and residue build up and add stale, bitter off-flavors to every cup, no matter how fresh your beans are. When a cup tastes 'off' in a way that grind and freshness cannot explain, cleaning is the next logical suspect.\n\n## Connecting Troubleshooting to a Real Decision\n\nTroubleshooting is not abstract\u2014it feeds a concrete choice: what one change should I make before my next cup? Here are two detailed examples of that decision in action.\n\n### Example 1: The weak, watery drip cup\n\nYou brew a pot of drip coffee and it tastes thin and slightly sour. Working backward: the beans are only a week old and stored in a sealed container, so freshness is fine. That points you to grind. Because coarse grinds let water pass too quickly, you decide to grind a little finer for the next pot and keep everything else the same. The practical decision is 'grind finer, change nothing else,' and the next cup tells you whether you were right.\n\n### Example 2: The bitter French press\n\nYou make a French press and it comes out harsh and bitter. Your beans are fresh, and you have been grinding fine because that worked for espresso. Since fine grinds over-extract in a long steep, and French press relies on extended contact between water and grounds, the sensible single change is to grind coarser for the press. You are choosing the adjustment that matches the method rather than blaming the beans.\n\n## Putting It Together\n\nGood troubleshooting follows the same path every time: run through beans and storage, grind, method, and cleaning; change one variable; taste again. Because coffee is a chain where each step influences the next, this ordered approach helps you find the real cause instead of guessing. For deeper reference, consumer-focused resources such as AboutCoffee.org and long-standing coffee education libraries like CoffeeResearch.org cover brewing methods, grinding, roasting, and storage in more detail if you want to keep refining your skills.\n\nThe payoff is confidence: instead of hoping the next cup is better, you make a deliberate, informed decision about the one thing to change\u2014and you learn something useful whether it works or not.",
+            "claims": [
+              {
+                "id": "clm1",
+                "text": "Reliable consumer guidance groups brewing know-how into techniques and tips covering everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "offers information on popular brewing methods as well as techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Source describes brewing techniques and tips covering grinding to cleaning equipment."
+              },
+              {
+                "id": "clm2",
+                "text": "How coffee beans are extracted, dried, roasted, and stored all play a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Source directly supports all elements including caffeination."
+              },
+              {
+                "id": "clm3",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "Source lists these brewing methods under the popular brewing methods section."
+              },
+              {
+                "id": "clm4",
+                "text": "The harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed",
+                "note": "Directly matches the claim."
+              },
+              {
+                "id": "clm5",
+                "text": "CoffeeResearch.org, founded in 1999, was the first website dedicated to coffee education, with coverage including coffee brewing, roasting, and grinding.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "Founded in 1999, CoffeeResearch.org was the first Web site dedicated to coffee education with comprehensive coverage on coffee, espresso , coffee brewing , coffee agriculture",
+                "note": "Source confirms 1999 founding, first coffee education site, and coverage of brewing, roasting, and grinding (grinding mentioned later)."
+              },
+              {
+                "id": "clm6",
+                "text": "The National Coffee Association moved most of its general About Coffee content to a consumer website, AboutCoffee.org, covering brewing methods and more.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "we\u2019ve shifted most of our general About Coffee content from this site to our new consumer website, AboutCoffee.org",
+                "note": "NCA moved content to AboutCoffee.org covering brewing methods and more, as stated."
+              }
+            ],
+            "sources": [
+              "live_5",
+              "live_6"
+            ],
+            "verification": {
+              "supported": 6,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s4_lo",
+            "type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "content": "By the end of this subtopic, you will be able to:\n\n1. Define coffee making troubleshooting as the practice of noticing what went wrong and adjusting one variable at a time until the cup improves.\n2. Explain why the same coffee problem can have several causes by describing coffee preparation as a connected chain in which each stage\u2014such as how beans are extracted, dried, roasted, and stored\u2014affects the next.\n3. List the practical variables a home brewer can control, including the beans and their storage, the grind, the brewing method, and equipment cleaning.\n4. Apply an ordered troubleshooting sequence\u2014beans and storage, grind, method, then cleaning\u2014changing only one variable at a time and tasting again.\n5. Diagnose a weak, watery, or sour cup by relating a too-coarse grind to water passing through too quickly, and a bitter, harsh cup to a too-fine grind that over-extracts.\n6. Match a troubleshooting adjustment to the brewing method in use, distinguishing among common methods such as drip, pour-over, espresso, French press, and cold brew.\n7. Identify when stale oils and residue from uncleaned equipment are the likely cause of persistent off-flavors that grind and freshness cannot explain.\n8. Decide on the single most sensible change to make before the next cup, and justify that choice using the troubleshooting chain.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "How coffee beans are extracted, dried, roasted, and stored plays a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "We explain how coffee beans\u2014and how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination.",
+                "note": "Directly supported by the Beans section text."
+              },
+              {
+                "id": "cl2",
+                "text": "Standard consumer brewing guidance covers techniques and tips for everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "offers information on popular brewing methods as well as techniques and tips for everything from grinding beans to cleaning equipment.",
+                "note": "Directly supported by the Brewing section text."
+              },
+              {
+                "id": "cl3",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five methods listed under Brewing, described as popular brewing methods."
+              },
+              {
+                "id": "cl4",
+                "text": "The harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed, and after the coffee plant the recommended learning path moves to grinding, brewing, and roasting.",
+                "source_id": "live_6",
+                "support": "partial",
+                "supporting_excerpt": "the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed. After learning about the coffee plant , we move to coffee grinding , brewing , and roasting",
+                "note": "Source supports both parts, but the source order is grinding, brewing, roasting; the claim lists grinding, brewing, and roasting which matches. Fully supported actually."
+              }
+            ],
+            "sources": [
+              "live_5",
+              "live_6"
+            ],
+            "verification": {
+              "supported": 3,
+              "partial": 1,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s4_summary",
+            "type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "content": "# Coffee Making Troubleshooting \u2014 Summary\n\n## The Core Idea\n\nTroubleshooting coffee is the skill of noticing what went wrong and adjusting one variable at a time until the cup improves. Because coffee preparation is a chain of connected steps, the same problem\u2014sour, bitter, weak, or watery coffee\u2014can trace back to several possible causes. The whole practice is about working backward through that chain to find the link that needs adjusting.\n\nThis mindset works because each stage sets up the next. How coffee is harvested and processed shapes how it should be roasted, and roasting shapes how it should be ground and brewed. When you troubleshoot, you are reversing that flow to locate the real source of the problem instead of guessing.\n\n## The Levers You Control at Home\n\nMost of your control at home lives in a short list of practical levers: the beans and how they are stored, the grind, the brewing method, and how you clean and maintain your equipment. Consumer brewing guidance groups these together, covering everything from grinding beans to cleaning equipment. Keeping this short list in mind gives you a reliable checklist whenever a cup disappoints.\n\nThe golden rule: **change only one thing at a time.** If you adjust the grind, the dose, and the water all at once, you cannot tell which change helped or hurt.\n\n## The Step-by-Step Path\n\n**Step 1 \u2014 Beans and storage.** Stale or poorly stored beans limit how good any cup can be, so freshness is a sensible first check. Because how beans are extracted, dried, roasted, and stored all play a role in coffee's taste, texture, and strength, a flat or dull cup often traces back to old beans rather than technique.\n\n**Step 2 \u2014 The grind.** Grinding is a core brewing technique and one of the most common culprits. A grind that is too coarse lets water rush through too quickly, producing weak, watery, or sour coffee. A grind that is too fine makes water linger and over-extract, producing bitter, harsh coffee. Adjusting the grind is frequently the single most effective fix.\n\n**Step 3 \u2014 Match method to problem.** Popular methods include drip, pour-over, espresso, French press, and cold brew, and each has its own rhythm. Knowing which method you are using tells you which adjustments make sense\u2014for example, a gritty or over-strong French press points to grind size and steep time.\n\n**Step 4 \u2014 Clean the equipment.** Equipment cleaning is explicitly part of standard brewing guidance and is easy to overlook. Old oils and residue add stale, bitter off-flavors no matter how fresh the beans are. When a cup tastes 'off' in a way grind and freshness cannot explain, cleaning is the next suspect.\n\n## Turning Diagnosis into a Decision\n\nTroubleshooting always feeds one concrete choice: what single change should I make before my next cup? Two worked examples show this in action.\n\n**The weak, watery drip cup.** The coffee tastes thin and slightly sour. The beans are only a week old and sealed, so freshness is fine\u2014which points to grind. Since coarse grinds let water pass too quickly, the decision is to grind a little finer next time and change nothing else. The next cup confirms whether that was right.\n\n**The bitter French press.** The cup comes out harsh and bitter. The beans are fresh, but you had been grinding fine because that worked for espresso. Since fine grinds over-extract during a long steep, and the French press relies on extended contact between water and grounds, the sensible single change is to grind coarser for the press\u2014matching the adjustment to the method rather than blaming the beans.\n\n## The Takeaway\n\nGood troubleshooting follows the same path every time: run through beans and storage, grind, method, and cleaning; change one variable; taste again. Because coffee is a chain where each step influences the next, this ordered approach helps you find the real cause instead of guessing. For deeper reference, consumer resources such as AboutCoffee.org and coffee education libraries like CoffeeResearch.org cover brewing methods, grinding, roasting, and storage in more detail.\n\nThe payoff is confidence: instead of hoping the next cup improves, you make a deliberate, informed decision about the one thing to change\u2014and you learn something useful whether it works or not.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "Consumer brewing guidance covers techniques and tips for everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "offers information on popular brewing methods as well as techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Directly matches the source's description of the Brewing section."
+              },
+              {
+                "id": "cl2",
+                "text": "How coffee beans are extracted, dried, roasted, and stored plays a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Claim accurately reflects the source wording including caffeination."
+              },
+              {
+                "id": "cl3",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five methods are listed under Brewing in the source."
+              },
+              {
+                "id": "cl4",
+                "text": "The harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed, and the recommended learning path moves from the coffee plant to grinding, brewing, and roasting.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed. After learning about the coffee plant , we move to coffee grinding , brewing , and roasting",
+                "note": "Both parts of the claim are supported by the source."
+              },
+              {
+                "id": "cl5",
+                "text": "CoffeeResearch.org, founded in 1999, was the first website dedicated to coffee education with comprehensive coverage of coffee brewing, roasting, agriculture, and science.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "Founded in 1999, CoffeeResearch.org was the first Web site dedicated to coffee education with comprehensive coverage on coffee, espresso , coffee brewing , coffee agriculture , coffee science",
+                "note": "Founding year, first-website status, and coverage areas all match."
+              },
+              {
+                "id": "cl6",
+                "text": "AboutCoffee.org is a consumer resource covering coffee brewing methods among other topics.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "AboutCoffee.org has been developed as a resource for consumers",
+                "note": "Source confirms AboutCoffee.org is a consumer resource covering brewing methods."
+              }
+            ],
+            "sources": [
+              "live_5",
+              "live_6"
+            ],
+            "verification": {
+              "supported": 6,
+              "partial": 0,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s4_case",
+            "type": "case_study",
+            "title": "Case Study",
+            "format": "pptx",
+            "content": "# Case Study: Diagnosing the Caf\u00e9's Complaint Board\n\n## Slide 1 \u2014 Title\n**The Monday Morning Mystery: Troubleshooting a Batch of Bad Cups**\n\nA hands-on case that walks through diagnosing coffee problems one variable at a time.\n\n---\n\n## Slide 2 \u2014 The Setting\n\nImagine a small home-based coffee enthusiast, Dana, who has recently started making coffee for a weekend gathering of friends. Over one weekend, several guests leave comments on a little chalkboard Dana set out: \"too sour,\" \"weak and watery,\" and \"bitter, almost burnt.\"\n\nDana is new to the craft and wants a reliable way to figure out what went wrong\u2014rather than guessing and hoping the next pot is better. This case follows Dana's reasoning as a model for the troubleshooting mindset.\n\n*(This scenario is illustrative, built to apply the troubleshooting process.)*\n\n---\n\n## Slide 3 \u2014 The Framework Dana Uses\n\nDana remembers a key idea: coffee preparation is a connected chain of steps. How beans are extracted, dried, roasted, and stored all play a role in coffee's taste, texture, and strength. Because harvesting and processing shape how coffee should be roasted, ground, and brewed, each stage sets up the next.\n\nSo Dana decides to work backward through the chain and change only one thing at a time.\n\nThe checklist:\n1. Beans and storage\n2. Grind\n3. Method\n4. Equipment cleaning\n\n---\n\n## Slide 4 \u2014 Complaint 1: \"Weak and Watery\" (Drip)\n\nDana's first pot was drip coffee, and it tasted thin and slightly sour.\n\n**Working backward:**\n- Beans were purchased days earlier and kept sealed\u2014freshness checks out. Since storage and shelf life affect the cup, Dana rules this out.\n- That points to grind. A coarse grind lets water rush through too quickly, producing weak, watery, or sour results.\n\n**The single decision:** grind a little finer for the next drip pot, and change nothing else. Grinding is one of the core brewing techniques covered in reliable brewing guidance, and adjusting it is often the most effective move.\n\n---\n\n## Slide 5 \u2014 Complaint 2: \"Bitter, Almost Burnt\" (French Press)\n\nDana's French press came out harsh and bitter. The beans were the same fresh batch, so freshness is not the culprit.\n\n**The clue:** Dana had ground fine because that setting worked earlier for espresso. But French press relies on extended contact between water and grounds, so a fine grind over-extracts during the long steep and turns bitter.\n\n**The single decision:** grind coarser for the press\u2014matching the adjustment to the method rather than blaming the beans. Popular methods like drip, pour-over, espresso, French press, and cold brew each have their own rhythm.\n\n---\n\n## Slide 6 \u2014 Complaint 3: \"Off\" Flavor Grind Can't Explain\n\nOne guest simply wrote that the coffee tasted \"stale\" in a way that did not match sourness or bitterness. Dana had already confirmed fresh beans and an appropriate grind.\n\n**Next logical suspect:** the equipment. Cleaning equipment is explicitly part of standard brewing guidance, alongside techniques from grinding beans to maintenance. Old oils and residue build up and add stale, bitter off-flavors to every cup regardless of bean freshness.\n\n**The single decision:** clean the brewer thoroughly before the next round.\n\n---\n\n## Slide 7 \u2014 Why This Ordered Approach Works\n\nDana never changed two things at once. Each complaint became a chain to trace: beans \u2192 grind \u2192 method \u2192 cleaning. Because coffee is a chain where each step influences the next, this ordered path reveals the real cause instead of leaving Dana guessing.\n\nDana also knew where to go deeper: consumer-focused resources like AboutCoffee.org and long-standing education libraries like CoffeeResearch.org\u2014founded in 1999 as the first website dedicated to coffee education\u2014cover brewing methods, grinding, roasting, and storage in more detail.\n\n---\n\n## Slide 8 \u2014 Takeaways\n\n- Troubleshooting is a repeatable skill: notice the fault, trace it backward, adjust one variable, taste again.\n- Grind is the most common culprit\u2014coarse tends toward weak/sour, fine toward bitter.\n- Match the fix to the method; the same grind that suits espresso can ruin a French press.\n- When grind and freshness can't explain an \"off\" taste, suspect dirty equipment.\n- The payoff is confidence: a deliberate, informed decision about the one thing to change\u2014and a lesson learned either way.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "How beans are extracted, dried, roasted, and stored all play a role in coffee's taste, texture, and caffeination.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Source directly states beans extracted, dried, roasted, and stored affect taste, texture, and caffeination."
+              },
+              {
+                "id": "cl2",
+                "text": "Harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed",
+                "note": "Directly matches the claim."
+              },
+              {
+                "id": "cl3",
+                "text": "Storage and shelf life is a topic covered in coffee bean guidance.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Storage and shelf life",
+                "note": "Listed under Beans section of the source."
+              },
+              {
+                "id": "cl4",
+                "text": "Grinding beans is one of the brewing techniques and tips covered in reliable brewing guidance.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Grinding beans is covered as a brewing technique."
+              },
+              {
+                "id": "cl5",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five methods listed under Brewing."
+              },
+              {
+                "id": "cl6",
+                "text": "Cleaning equipment is explicitly included in standard brewing techniques and tips, which cover everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Cleaning equipment is explicitly included."
+              },
+              {
+                "id": "cl7",
+                "text": "CoffeeResearch.org was founded in 1999 as the first website dedicated to coffee education.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "Founded in 1999, CoffeeResearch.org was the first Web site dedicated to coffee education",
+                "note": "Directly supported."
+              },
+              {
+                "id": "cl8",
+                "text": "CoffeeResearch.org offers comprehensive coverage on coffee brewing, roasting, and coffee grinding.",
+                "source_id": "live_6",
+                "support": "supported",
+                "supporting_excerpt": "comprehensive coverage on coffee, espresso , coffee brewing , coffee agriculture",
+                "note": "Source mentions comprehensive coverage on brewing, roasting (Coffee Roasting in contents), and grinding (coffee grinding). Supported."
+              },
+              {
+                "id": "cl9",
+                "text": "AboutCoffee.org provides reliable consumer information on brewing methods and coffee bean storage.",
+                "source_id": "live_5",
+                "support": "partial",
+                "supporting_excerpt": "AboutCoffee.org has been developed as a resource for consumers",
+                "note": "Source confirms consumer resource covering brewing methods and storage, but does not use the exact framing 'coffee bean storage' as reliable consumer info\u2014still, brewing methods and storage/shelf life are both covered. Claim is largely supported but 'reliable' phrasing is source-adjacent; treating as supported-partial."
+              }
+            ],
+            "sources": [
+              "live_5",
+              "live_6"
+            ],
+            "verification": {
+              "supported": 8,
+              "partial": 1,
+              "unsupported": 0,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          },
+          {
+            "id": "m1_s4_assess",
+            "type": "assessment",
+            "title": "Assessment",
+            "format": "pptx",
+            "content": "# Coffee Making Troubleshooting \u2014 Self-Assessment\n\nThis short assessment checks how well you understand coffee making troubleshooting and can apply it to real decisions. Answer each question in your own words. Aim to explain your reasoning, not just give a one-word answer.\n\n---\n\n## Q1. Core habit (Understand)\nIn coffee troubleshooting, why is it important to change only one variable at a time when a cup disappoints? Explain in one or two sentences.\n\n## Q2. Vocabulary and control (Understand)\nList the main practical levers a home coffee maker can actually control when troubleshooting a bad cup, and briefly state why keeping this short list in mind is useful.\n\n## Q3. Grind effects (Understand/Apply)\nDescribe what tends to happen to the taste of coffee when the grind is (a) too coarse and (b) too fine, and explain the reason behind each result.\n\n## Q4. The chain idea (Understand)\nThe course describes coffee preparation as a connected chain of steps. Explain what this means and how it guides the order in which you troubleshoot a bad cup.\n\n## Q5. Diagnose a scenario (Analyze)\nYou brew a pot of drip coffee that tastes thin and slightly sour. The beans are one week old and stored in a sealed container. Working backward through the troubleshooting steps, identify the most likely cause and state the single change you would make before the next pot. Justify your answer.\n\n## Q6. Match method to problem (Analyze)\nYou make a French press using a fine grind that you normally use for espresso, and the result is harsh and bitter. Diagnose why this happens and recommend one adjustment. Explain why your adjustment fits this brewing method.\n\n## Q7. Cleaning as a suspect (Analyze/Apply)\nA cup tastes stale and bitter in a way that fresh beans and a correct grind cannot explain. What is the next logical suspect, and why can this problem occur no matter how fresh your beans are?",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "Troubleshooting means noticing what went wrong and adjusting one variable at a time until the cup improves; changing several things at once makes it impossible to know which change fixed or worsened the result.",
+                "source_id": "live_5",
+                "support": "unsupported",
+                "supporting_excerpt": null,
+                "note": "Source live_5 is a site navigation/index page describing content categories. It contains nothing about troubleshooting or changing one variable at a time."
+              },
+              {
+                "id": "cl2",
+                "text": "The practical levers a home coffee maker controls include the beans and their storage, the grind, the brewing method, and cleaning/maintaining equipment; reliable consumer guidance groups these into brewing techniques and tips covering everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "partial",
+                "supporting_excerpt": "techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "The source supports the 'grinding beans to cleaning equipment' guidance phrasing, but does not frame these as a troubleshooting lever list including beans/storage, grind, method, and cleaning as controllable variables."
+              },
+              {
+                "id": "cl3",
+                "text": "A grind that is too coarse tends to produce weak, watery, or sour coffee because water rushes through too quickly, while a grind that is too fine can produce bitter, harsh coffee because water lingers and over-extracts.",
+                "source_id": "live_5",
+                "support": "unsupported",
+                "supporting_excerpt": null,
+                "note": "Source live_5 says nothing about grind coarseness/fineness effects, extraction, sourness, or bitterness. No support for extraction claims."
+              },
+              {
+                "id": "cl4",
+                "text": "Coffee preparation is a chain of connected steps in which harvesting and processing affect how coffee should be roasted, and roasting affects how it should be ground and brewed, so troubleshooting works backward through that chain.",
+                "source_id": "live_6",
+                "support": "partial",
+                "supporting_excerpt": "harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed",
+                "note": "live_6 supports that harvesting/processing affects roasting and brewing, but does not state roasting affects grinding, nor that troubleshooting works backward through the chain."
+              },
+              {
+                "id": "cl5",
+                "text": "How beans are extracted, dried, roasted, and stored all play a role in coffee's taste, texture, and strength, so a flat or dull cup can trace back to old beans.",
+                "source_id": "live_5",
+                "support": "partial",
+                "supporting_excerpt": "how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Source supports the extraction/drying/roasting/storage role in taste and texture, but says 'caffeination' not 'strength,' and makes no claim about old beans causing a flat/dull cup."
+              },
+              {
+                "id": "cl6",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew, and French press relies on extended contact between water and grounds, so fine grinds over-extract during its long steep.",
+                "source_id": "live_5",
+                "support": "partial",
+                "supporting_excerpt": "popular brewing methods as well as techniques and tips",
+                "note": "The source lists Drip, Pour-over, Espresso, French press, Cold brew as methods, supporting the list. However, it does not state French press relies on extended contact or that fine grinds over-extract during its steep."
+              },
+              {
+                "id": "cl7",
+                "text": "Equipment cleaning is explicitly part of standard brewing guidance; old coffee oils and residue build up and add stale, bitter off-flavors to every cup no matter how fresh the beans are.",
+                "source_id": "live_5",
+                "support": "partial",
+                "supporting_excerpt": "everything from grinding beans to cleaning equipment",
+                "note": "Source confirms cleaning equipment is part of brewing guidance, but says nothing about coffee oils/residue building up or adding stale, bitter off-flavors regardless of bean freshness."
+              }
+            ],
+            "sources": [
+              "live_5",
+              "live_6"
+            ],
+            "verification": {
+              "supported": 0,
+              "partial": 5,
+              "unsupported": 2,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done",
+            "solution": "# Teacher Answer Key \u2014 Coffee Making Troubleshooting\n\nUse these model answers to score learner responses. Award credit for reasoning that matches the ideas below, even if wording differs.\n\n## Q1 (Understand)\nModel answer: Coffee preparation is a chain of connected steps, so a single problem can have several causes. If you change the grind, the coffee amount, and the water all at once, you will not know which change actually fixed or worsened the cup. Changing one variable at a time isolates the cause and makes the process repeatable and controllable. (Grounds: cl1.)\n\n## Q2 (Understand)\nModel answer: The main controllable levers are (1) the beans and how they are stored, (2) the grind, (3) the brewing method, and (4) cleaning and maintaining equipment. Reliable consumer guidance groups these as brewing techniques and tips covering everything from grinding beans to cleaning equipment. Keeping this short list in mind gives a ready checklist to run through whenever a cup disappoints. (Grounds: cl2.)\n\n## Q3 (Understand/Apply)\nModel answer: (a) Too coarse \u2192 weak, watery, or sour coffee, because water rushes through the grounds too quickly and under-extracts. (b) Too fine \u2192 bitter, harsh coffee, because water lingers and over-extracts. Adjusting the grind is often the single most effective troubleshooting move. (Grounds: cl3.)\n\n## Q4 (Understand)\nModel answer: The chain idea means each stage sets up the next \u2014 harvesting and processing affect how coffee should be roasted, and roasting affects how it should be ground and brewed. When troubleshooting, you work backward through that chain to find the link that needs adjusting, which is why the ordered path is beans/storage \u2192 grind \u2192 method \u2192 cleaning. (Grounds: cl4.)\n\n## Q5 (Analyze)\nModel answer: Because the beans are fresh (one week old) and well stored in a sealed container, freshness is fine, so that is not the cause. Thin and sour points to the grind: a grind that is too coarse lets water pass too quickly and under-extracts, producing weak, watery, sour coffee. The single change is to grind a little finer for the next pot and keep everything else the same, then taste again. (Grounds: cl3, cl5.)\n\n## Q6 (Analyze)\nModel answer: A French press relies on extended contact between water and grounds (a long steep). A fine espresso grind over-extracts during that long steep, producing harsh, bitter coffee. The correct single adjustment is to grind coarser for the French press. This fits the method because you are matching grind size to the way the method extracts, rather than blaming the beans. (Grounds: cl3, cl6.)\n\n## Q7 (Analyze/Apply)\nModel answer: The next logical suspect is equipment cleaning. Old coffee oils and residue build up on equipment and add stale, bitter off-flavors to every cup, so even perfectly fresh beans and a correct grind cannot prevent the off taste. Cleaning the equipment is the sensible next change. (Grounds: cl7.)\n\n**Scoring guidance:** Q1\u2013Q4 assess recall and explanation; award partial credit for correct core idea with incomplete reasoning. Q5\u2013Q7 assess analysis and transfer; full credit requires both a correct diagnosis and a justified single next change consistent with the troubleshooting order."
+          },
+          {
+            "id": "m1_s4_activities",
+            "type": "activities",
+            "title": "Activities",
+            "format": "docx",
+            "content": "# Coffee Making Troubleshooting: Practice Activities\n\nThese activities let you practice diagnosing a disappointing cup and choosing a single, deliberate change to try next. Work through them in order. Each one builds the core troubleshooting habit: run through the variables you control, change one thing at a time, and taste again.\n\n---\n\n## Activity 1: Build Your Troubleshooting Checklist\n\n**Purpose:** Turn the four things you can actually control into a quick, reusable checklist you can run through whenever a cup disappoints.\n\n**Time:** About 4 minutes.\n\n**Grouping:** Individual.\n\n**Steps:**\n\n1. On paper or a note app, write the four practical levers you control at home: the beans and how they are stored, the grind, the brewing method, and how you clean and maintain your equipment.\n2. Next to each lever, write one short question you would ask yourself to check it (for example, for beans: \"Are these fresh and well stored?\").\n3. Order the four items the way the lesson recommends working through a bad cup, from the first sensible check to the last logical suspect.\n4. Add a one-line reminder at the bottom about how many variables to change at a time.\n\n**Deliverable:** A four-item ordered checklist, each with a diagnostic question, plus your one-line rule about changing variables. You are done when your list moves from beans and storage through to cleaning and states the one-variable rule.\n\n---\n\n## Activity 2: Diagnose the Weak, Watery Cup\n\n**Purpose:** Practice tracing a specific fault backward through the chain to a likely cause.\n\n**Time:** About 5 minutes.\n\n**Grouping:** Individual or pairs.\n\n**Scenario:** A pot of drip coffee tastes thin and slightly sour. The beans are about a week old and stored in a sealed container.\n\n**Steps:**\n\n1. Run through your checklist from Activity 1 in order.\n2. For each lever, write \"likely fine\" or \"suspect,\" and briefly say why. Consider what a grind that is too coarse tends to do to a cup.\n3. Identify the single most likely cause based on your reasoning.\n4. State the one change you would make before the next pot, and note what you will keep the same.\n\n**Deliverable:** A short written diagnosis naming one suspected cause and one specific single change, with everything else held constant. You are done when your answer names exactly one change and explains why the other levers were ruled out.\n\n---\n\n## Activity 3: Match the Fix to the Method\n\n**Purpose:** Practice choosing an adjustment that fits the brewing method rather than blaming the beans.\n\n**Time:** About 5 minutes.\n\n**Grouping:** Pairs or small groups.\n\n**Scenario:** A French press comes out harsh and bitter. The beans are fresh, and the maker has been grinding fine because that worked well for espresso.\n\n**Steps:**\n\n1. As a pair, name which brewing method is in use and describe, in one sentence, how it brews compared with espresso.\n2. Discuss what a grind that is too fine tends to do during a long steep.\n3. Agree on the single change that best matches this method.\n4. Write one sentence explaining why this is a better first move than replacing the beans.\n\n**Deliverable:** A shared written recommendation of one method-appropriate change plus your one-sentence justification. You are done when your recommendation names one change and ties it to how the method brews.\n\n---\n\n## Activity 4: Bring Your Own Bad Cup\n\n**Purpose:** Apply the full troubleshooting path to a real cup from your own life.\n\n**Time:** About 6 minutes.\n\n**Grouping:** Individual, shared aloud if in a group.\n\n**Steps:**\n\n1. Recall a recent cup of coffee that disappointed you, or describe the next one you plan to make. Note the brewing method you used or will use.\n2. Describe the flaw in a few words (for example, weak, watery, sour, bitter, or \"off\").\n3. Work backward through beans and storage, grind, method, and cleaning, marking each as likely fine or suspect.\n4. Choose the one variable you would change first, and predict what should happen to the taste.\n5. Write a one-line reflection on what you would learn from the result whether or not the change works.\n\n**Deliverable:** A written mini-plan for one real or upcoming cup: the flaw, your ordered check, one chosen change, your prediction, and your reflection. You are done when your plan commits to a single change and states what you will observe next.\n\n---\n\n## Wrap-Up Reflection\n\nIn one or two sentences, describe how changing only one variable at a time makes it easier to learn from each cup. Keep this note with your checklist so you can reuse the whole process next time a cup disappoints.",
+            "claims": [
+              {
+                "id": "cl1",
+                "text": "The practical levers a home coffee maker controls are the beans and how they are stored, the grind, the brewing method, and how equipment is cleaned and maintained.",
+                "source_id": "live_5",
+                "support": "partial",
+                "supporting_excerpt": "This sectio n offers information on popular brewing methods as well as techniques and tips for everything from grinding beans to cleaning equipment.",
+                "note": "Source mentions grinding beans, brewing methods, cleaning equipment, and bean storage separately, but does not frame these as the four levers a home maker controls. Partial support at best."
+              },
+              {
+                "id": "cl2",
+                "text": "Brewing techniques and tips cover everything from grinding beans to cleaning equipment.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Directly stated in source."
+              },
+              {
+                "id": "cl3",
+                "text": "A grind that is too coarse tends to produce weak, watery, or sour coffee because water passes through too quickly.",
+                "source_id": "live_6",
+                "support": "unsupported",
+                "supporting_excerpt": null,
+                "note": "live_6 is a general site index for CoffeeResearch.org and contains no discussion of coarse grinds, extraction speed, or flavor outcomes."
+              },
+              {
+                "id": "cl4",
+                "text": "A grind that is too fine can produce bitter, harsh coffee because water lingers and over-extracts.",
+                "source_id": "live_6",
+                "support": "unsupported",
+                "supporting_excerpt": null,
+                "note": "live_6 contains no explanation of fine grinds, over-extraction, or bitterness. It only lists topics."
+              },
+              {
+                "id": "cl5",
+                "text": "French press relies on extended contact between water and grounds, so fine grinds over-extract during its long steep.",
+                "source_id": "live_6",
+                "support": "unsupported",
+                "supporting_excerpt": null,
+                "note": "live_6 does not describe French press contact time or over-extraction; it is only a table of contents/overview page."
+              },
+              {
+                "id": "cl6",
+                "text": "How beans are extracted, dried, roasted, and stored plays a role in coffee's taste, texture, and strength, so stale beans can limit any cup.",
+                "source_id": "live_5",
+                "support": "partial",
+                "supporting_excerpt": "how they are extracted, dried, roasted, and stored\u2014play a role in coffee\u2019s taste, texture, and caffeination",
+                "note": "Source supports extraction/drying/roasting/storage affecting taste and texture, but says 'caffeination' not 'strength,' and does not state that stale beans limit any cup."
+              },
+              {
+                "id": "cl7",
+                "text": "Popular brewing methods include drip, pour-over, espresso, French press, and cold brew.",
+                "source_id": "live_5",
+                "support": "supported",
+                "supporting_excerpt": "Drip\nPour-over\nEspresso\nFrench press\nCold brew",
+                "note": "All five listed methods appear in the source."
+              },
+              {
+                "id": "cl8",
+                "text": "Equipment cleaning is part of standard brewing guidance because old oils and residue add stale, bitter off-flavors.",
+                "source_id": "live_5",
+                "support": "partial",
+                "supporting_excerpt": "techniques and tips for everything from grinding beans to cleaning equipment",
+                "note": "Source confirms cleaning equipment is part of brewing guidance, but does not state that old oils/residue add stale, bitter off-flavors."
+              }
+            ],
+            "sources": [
+              "live_5",
+              "live_6"
+            ],
+            "verification": {
+              "supported": 2,
+              "partial": 3,
+              "unsupported": 3,
+              "ungrounded": 0,
+              "unattributed_found": [],
+              "checked_at": "2026-07-06T11:10:32+00:00"
+            },
+            "file": null,
+            "status": "done"
+          }
+        ]
+      }
+    ]
+  }
+}

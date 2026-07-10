@@ -1,0 +1,86 @@
+{
+  "course_id": "coffee-live-main",
+  "artifact_type": "lesson_plan",
+  "produced_by_step": "lesson_plan",
+  "schema_version": "0.1",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "content_package",
+    "blueprint",
+    "course_model"
+  ],
+  "updated_at": "2026-07-06T11:13:37+00:00",
+  "body": {
+    "session_constraints": {
+      "max_session_hours": 2.0,
+      "default_mode": "live"
+    },
+    "unresolved_session_constraints": [
+      "calendar_dates",
+      "instructor_count",
+      "delivery_platform"
+    ],
+    "coverage_summary": {
+      "expected_subtopic_ids": [
+        "m1_s1",
+        "m1_s2",
+        "m1_s3",
+        "m1_s4"
+      ],
+      "covered_subtopic_ids": [
+        "m1_s1",
+        "m1_s2",
+        "m1_s3",
+        "m1_s4"
+      ],
+      "total_duration_minutes": 80
+    },
+    "sessions": [
+      {
+        "id": "sess1",
+        "order": 1,
+        "title": "Core Concepts In Coffee Making / Practical Examples / Coffee Making Practice / Coffee Making Troubleshooting",
+        "duration_minutes": 80,
+        "duration_hours": 1.33,
+        "covers": [
+          {
+            "subtopic_id": "m1_s1",
+            "mode": "live",
+            "talking_points": [
+              "Introduce Core Concepts In Coffee Making through the approved Course Content.",
+              "Use the summary asset for consolidation and self-study follow-up."
+            ]
+          },
+          {
+            "subtopic_id": "m1_s2",
+            "mode": "live",
+            "talking_points": [
+              "Introduce Practical Examples through the approved Course Content.",
+              "Use the selected activity asset for learner practice."
+            ]
+          },
+          {
+            "subtopic_id": "m1_s3",
+            "mode": "live",
+            "talking_points": [
+              "Introduce Coffee Making Practice through the approved Course Content.",
+              "Close with the selected assessment and answer-key review."
+            ]
+          },
+          {
+            "subtopic_id": "m1_s4",
+            "mode": "live",
+            "talking_points": [
+              "Introduce Coffee Making Troubleshooting through the approved Course Content.",
+              "Use the selected activity asset for learner practice.",
+              "Discuss the selected case study before debriefing concepts.",
+              "Close with the selected assessment and answer-key review."
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

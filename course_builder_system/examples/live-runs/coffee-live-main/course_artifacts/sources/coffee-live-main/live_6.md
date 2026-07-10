@@ -1,0 +1,13 @@
+Coffee - CoffeeResearch.org
+Coffee
+Founded in 1999, CoffeeResearch.org was the first Web site dedicated to coffee education with comprehensive coverage on coffee, espresso , coffee brewing , coffee agriculture , coffee science, and the coffee markets. The research is the culimination of a year of travel studying coffee with the foremost experts around the world.
+Contents
+1. Coffee Brewing 2. Coffee Roasting 3. Espresso 4. Espresso Tamping 5. Latte Art 6. Coffee Plant 7. Harvesting Coffee 8. Coffee Science 9. Organic Coffees 10. Trade and Consumption Statistics
+Coffee Education
+Our intention is to improve coffee quality through education and research. This 300 page coffee Web site was developed as a platform to share our passion for specialty coffee.
+We recommend beginning your journey learning about coffee by learning about the agriculture of coffee since the harvesting and processing of coffee plays a major role in how coffee should be roasted and brewed. After learning about the coffee plant , we move to coffee grinding , brewing , and roasting . Once you have a grasp on the basics of single origin coffees, explore our espresso section.
+The espresso section brings together the agriculture and coffee sections by drawing a link between preparation methods and flavor profile. Blending espresso is an art form that necessitates a complete understanding of coffee harvesting and production methods.
+The final sections about coffee science, coffee politics, and the coffee market are more detailed views of the coffee world. The market section gives coffee consumption statistics as well as coffee production statistics. The politics section gives an overview of current social issues of coffee including fair trade coffee, organic coffee, and bird safe coffee. Pour yourself a cup of joe and enjoy our library, coffee photo galleries , and original coffee training videos.
+CoffeeReseach.org Featured on Over 17,000 Web sites
+history espresso agriculture science politics market
+Coffee : coffee history , brewing and buying Espresso : espresso , espresso machines and brewing Agriculture : coffee agriculture , coffee plant and coffee processing Science : coffee science , chemistry and decaffeination Politics : organic coffee , fair trade and sustainable coffees Market : market, coffee statistics , prices and coffee consumption Newsletter 1 (pdf) Newsletter 2 (pdf) Newsletter 3 (pdf) Newsletter 4 (pdf) Web Design by Gerard Flores

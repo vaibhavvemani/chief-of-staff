@@ -8,6 +8,9 @@ that are useful for review but should not live in runtime output folders.
 - `acceptance/coffee-acceptance/` - deterministic Sprint 4 acceptance snapshot:
   - `course_artifacts/` contains the JSON pipeline artifacts.
   - `rendered_course/` contains the rendered Markdown course folder.
+- `live-runs/coffee-live-main/` - recovered full live LLM-backed coffee course:
+  - `course_artifacts/` contains the complete live pipeline artifacts.
+  - `rendered_course/` contains all 18 rendered Markdown assets.
 - `phase1/domain/` - legacy hand-authored Phase 1 domain model.
 - `phase1/generated_assets/` - legacy single-asset generation outputs.
 
@@ -16,4 +19,3 @@ Fresh runs still write to the runtime folders:
 - `courses/<course_id>/`
 - `rendered_courses/<course_id>/`
 - `outputs/`
-

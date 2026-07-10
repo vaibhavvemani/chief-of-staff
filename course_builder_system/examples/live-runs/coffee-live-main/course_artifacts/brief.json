@@ -1,0 +1,159 @@
+{
+  "course_id": "coffee-live-main",
+  "artifact_type": "brief",
+  "produced_by_step": "intake",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "subject_request"
+  ],
+  "updated_at": "2026-07-06T11:02:07+00:00",
+  "body": {
+    "course_title": "Coffee making",
+    "subject": "Coffee making",
+    "audience": "General adult learners who are new to the subject.",
+    "prior_knowledge": "No prior knowledge assumed.",
+    "purpose": "Build practical working knowledge of Coffee making.",
+    "level": "beginner",
+    "duration": "3 hours of self-paced learning",
+    "modality": "self_paced",
+    "language": "English",
+    "in_scope": [
+      "core concepts in Coffee making",
+      "practical examples"
+    ],
+    "out_of_scope": [
+      "advanced specialist topics"
+    ],
+    "must_have_topics": [
+      "practical examples"
+    ],
+    "constraints": [
+      "Keep the course compact for the live prototype validation run."
+    ],
+    "available_materials": [],
+    "jurisdiction": null,
+    "accessibility_requirements": null,
+    "assessment_expectations": "Short practical checks and scenario questions.",
+    "live_teaching_constraints": null,
+    "tools_or_equipment": null,
+    "freshness_requirement": null,
+    "assumptions": [
+      {
+        "field": "audience",
+        "value": "General adult learners who are new to the subject.",
+        "rationale": "No explicit answer was supplied; the prototype used a safe default."
+      },
+      {
+        "field": "prior_knowledge",
+        "value": "No prior knowledge assumed.",
+        "rationale": "No explicit answer was supplied; the prototype used a safe default."
+      },
+      {
+        "field": "purpose",
+        "value": "Build practical working knowledge of Coffee making.",
+        "rationale": "No explicit answer was supplied; the prototype used a safe default."
+      },
+      {
+        "field": "level",
+        "value": "beginner",
+        "rationale": "No explicit answer was supplied; the prototype used a safe default."
+      },
+      {
+        "field": "duration",
+        "value": "3 hours of self-paced learning",
+        "rationale": "No explicit answer was supplied; the prototype used a safe default."
+      },
+      {
+        "field": "modality",
+        "value": "self_paced",
+        "rationale": "No explicit answer was supplied; the prototype used a safe default."
+      },
+      {
+        "field": "language",
+        "value": "English",
+        "rationale": "No explicit answer was supplied; the prototype used a safe default."
+      },
+      {
+        "field": "in_scope",
+        "value": "['core concepts in Coffee making', 'practical examples']",
+        "rationale": "No explicit answer was supplied; the prototype used a safe default."
+      },
+      {
+        "field": "out_of_scope",
+        "value": "['advanced specialist topics']",
+        "rationale": "No explicit answer was supplied; the prototype used a safe default."
+      },
+      {
+        "field": "must_have_topics",
+        "value": "['practical examples']",
+        "rationale": "No explicit answer was supplied; the prototype used a safe default."
+      },
+      {
+        "field": "assessment_expectations",
+        "value": "Short practical checks and scenario questions.",
+        "rationale": "No explicit answer was supplied; the prototype used a safe default."
+      }
+    ],
+    "provenance": [
+      {
+        "field": "audience",
+        "source": "default",
+        "confidence": "assumed"
+      },
+      {
+        "field": "prior_knowledge",
+        "source": "default",
+        "confidence": "assumed"
+      },
+      {
+        "field": "purpose",
+        "source": "default",
+        "confidence": "assumed"
+      },
+      {
+        "field": "level",
+        "source": "default",
+        "confidence": "assumed"
+      },
+      {
+        "field": "duration",
+        "source": "default",
+        "confidence": "assumed"
+      },
+      {
+        "field": "modality",
+        "source": "default",
+        "confidence": "assumed"
+      },
+      {
+        "field": "language",
+        "source": "default",
+        "confidence": "assumed"
+      },
+      {
+        "field": "in_scope",
+        "source": "default",
+        "confidence": "assumed"
+      },
+      {
+        "field": "out_of_scope",
+        "source": "default",
+        "confidence": "assumed"
+      },
+      {
+        "field": "must_have_topics",
+        "source": "default",
+        "confidence": "assumed"
+      },
+      {
+        "field": "assessment_expectations",
+        "source": "default",
+        "confidence": "assumed"
+      }
+    ],
+    "unresolved_decisions": []
+  }
+}

@@ -1,0 +1,356 @@
+{
+  "course_id": "coffee-live-main",
+  "artifact_type": "run_summary",
+  "produced_by_step": "run_summary",
+  "schema_version": "0.1",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "brief",
+    "course_outcomes",
+    "research_dossier",
+    "approved_source_registry",
+    "course_model",
+    "blueprint",
+    "content_package",
+    "content_progress",
+    "lesson_plan",
+    "render_manifest"
+  ],
+  "updated_at": "2026-07-06T11:13:37+00:00",
+  "body": {
+    "course_id": "coffee-live-main",
+    "operator_status": "complete",
+    "stages": [
+      {
+        "name": "brief",
+        "status": "completed",
+        "artifact_types": [
+          "brief"
+        ],
+        "output_path": null,
+        "error": null
+      },
+      {
+        "name": "course_outcomes",
+        "status": "completed",
+        "artifact_types": [
+          "course_outcomes"
+        ],
+        "output_path": null,
+        "error": null
+      },
+      {
+        "name": "research_dossier",
+        "status": "completed",
+        "artifact_types": [
+          "research_dossier"
+        ],
+        "output_path": null,
+        "error": null
+      },
+      {
+        "name": "approved_source_registry",
+        "status": "completed",
+        "artifact_types": [
+          "approved_source_registry"
+        ],
+        "output_path": null,
+        "error": null
+      },
+      {
+        "name": "course_model",
+        "status": "completed",
+        "artifact_types": [
+          "course_model"
+        ],
+        "output_path": null,
+        "error": null
+      },
+      {
+        "name": "blueprint",
+        "status": "completed",
+        "artifact_types": [
+          "blueprint"
+        ],
+        "output_path": null,
+        "error": null
+      },
+      {
+        "name": "content_package",
+        "status": "completed",
+        "artifact_types": [
+          "content_package"
+        ],
+        "output_path": null,
+        "error": null
+      },
+      {
+        "name": "lesson_plan",
+        "status": "completed",
+        "artifact_types": [
+          "lesson_plan"
+        ],
+        "output_path": null,
+        "error": null
+      },
+      {
+        "name": "render_manifest",
+        "status": "completed",
+        "artifact_types": [
+          "render_manifest"
+        ],
+        "output_path": null,
+        "error": null
+      }
+    ],
+    "stage_totals": {
+      "completed": 9,
+      "skipped": 0,
+      "failed": 0,
+      "pending_review": 0
+    },
+    "student_content_units": [
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s1",
+        "asset_type": "course_content",
+        "asset_id": "m1_s1_cc",
+        "title": "Core Concepts In Coffee Making",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s1",
+        "asset_type": "learning_objectives",
+        "asset_id": "m1_s1_lo",
+        "title": "Learning Objectives",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s1",
+        "asset_type": "summary",
+        "asset_id": "m1_s1_summary",
+        "title": "Summary",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s1",
+        "asset_type": "resources",
+        "asset_id": "m1_s1_resources",
+        "title": "Additional Resources",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s2",
+        "asset_type": "course_content",
+        "asset_id": "m1_s2_cc",
+        "title": "Practical Examples",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s2",
+        "asset_type": "learning_objectives",
+        "asset_id": "m1_s2_lo",
+        "title": "Learning Objectives",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s2",
+        "asset_type": "summary",
+        "asset_id": "m1_s2_summary",
+        "title": "Summary",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s2",
+        "asset_type": "activities",
+        "asset_id": "m1_s2_activities",
+        "title": "Activities",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s3",
+        "asset_type": "course_content",
+        "asset_id": "m1_s3_cc",
+        "title": "Coffee Making Practice",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s3",
+        "asset_type": "learning_objectives",
+        "asset_id": "m1_s3_lo",
+        "title": "Learning Objectives",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s3",
+        "asset_type": "summary",
+        "asset_id": "m1_s3_summary",
+        "title": "Summary",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s3",
+        "asset_type": "assessment",
+        "asset_id": "m1_s3_assess",
+        "title": "Assessment",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "course_content",
+        "asset_id": "m1_s4_cc",
+        "title": "Coffee Making Troubleshooting",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "learning_objectives",
+        "asset_id": "m1_s4_lo",
+        "title": "Learning Objectives",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "summary",
+        "asset_id": "m1_s4_summary",
+        "title": "Summary",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "case_study",
+        "asset_id": "m1_s4_case",
+        "title": "Case Study",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "assessment",
+        "asset_id": "m1_s4_assess",
+        "title": "Assessment",
+        "format": "pptx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      },
+      {
+        "stage": "student_content",
+        "subtopic_id": "m1_s4",
+        "asset_type": "activities",
+        "asset_id": "m1_s4_activities",
+        "title": "Activities",
+        "format": "docx",
+        "status": "completed",
+        "attempts": 1,
+        "error": null
+      }
+    ],
+    "student_content_totals": {
+      "completed": 18,
+      "skipped": 0,
+      "failed": 0,
+      "pending_review": 0
+    },
+    "resume": {
+      "safe_to_rerun": true,
+      "behavior": "Rerunning the same command skips approved current artifacts and regenerates only missing, stale, rejected, or revised steps.",
+      "checkpoint_directory": "examples/live-runs/coffee-live-main/course_artifacts"
+    },
+    "token_and_cost_references": {
+      "llm_log_path": "logs/llm_calls.jsonl",
+      "pricing_reference": "llm.py::_MODEL_PRICING_PER_MTOK"
+    },
+    "output_paths": {
+      "index": "examples/live-runs/coffee-live-main/rendered_course/README.md",
+      "course_overview": "examples/live-runs/coffee-live-main/rendered_course/course_overview.md",
+      "source_index": "examples/live-runs/coffee-live-main/rendered_course/source_index.md",
+      "lesson_plan": "examples/live-runs/coffee-live-main/rendered_course/lesson_plan.md",
+      "assets": {
+        "m1_s1_cc": "examples/live-runs/coffee-live-main/rendered_course/modules/01_m1-s1_core-concepts-in-coffee-making/01_m1-s1-cc_course-content.md",
+        "m1_s1_lo": "examples/live-runs/coffee-live-main/rendered_course/modules/01_m1-s1_core-concepts-in-coffee-making/02_m1-s1-lo_learning-objectives.md",
+        "m1_s1_summary": "examples/live-runs/coffee-live-main/rendered_course/modules/01_m1-s1_core-concepts-in-coffee-making/03_m1-s1-summary_summary.md",
+        "m1_s1_resources": "examples/live-runs/coffee-live-main/rendered_course/modules/01_m1-s1_core-concepts-in-coffee-making/04_m1-s1-resources_resources.md",
+        "m1_s2_cc": "examples/live-runs/coffee-live-main/rendered_course/modules/02_m1-s2_practical-examples/01_m1-s2-cc_course-content.md",
+        "m1_s2_lo": "examples/live-runs/coffee-live-main/rendered_course/modules/02_m1-s2_practical-examples/02_m1-s2-lo_learning-objectives.md",
+        "m1_s2_summary": "examples/live-runs/coffee-live-main/rendered_course/modules/02_m1-s2_practical-examples/03_m1-s2-summary_summary.md",
+        "m1_s2_activities": "examples/live-runs/coffee-live-main/rendered_course/modules/02_m1-s2_practical-examples/04_m1-s2-activities_activities.md",
+        "m1_s3_cc": "examples/live-runs/coffee-live-main/rendered_course/modules/03_m1-s3_coffee-making-practice/01_m1-s3-cc_course-content.md",
+        "m1_s3_lo": "examples/live-runs/coffee-live-main/rendered_course/modules/03_m1-s3_coffee-making-practice/02_m1-s3-lo_learning-objectives.md",
+        "m1_s3_summary": "examples/live-runs/coffee-live-main/rendered_course/modules/03_m1-s3_coffee-making-practice/03_m1-s3-summary_summary.md",
+        "m1_s3_assess": "examples/live-runs/coffee-live-main/rendered_course/modules/03_m1-s3_coffee-making-practice/04_m1-s3-assess_assessment.md",
+        "m1_s4_cc": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/01_m1-s4-cc_course-content.md",
+        "m1_s4_lo": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/02_m1-s4-lo_learning-objectives.md",
+        "m1_s4_summary": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/03_m1-s4-summary_summary.md",
+        "m1_s4_case": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/04_m1-s4-case_case-study.md",
+        "m1_s4_assess": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/05_m1-s4-assess_assessment.md",
+        "m1_s4_activities": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/06_m1-s4-activities_activities.md"
+      }
+    }
+  }
+}

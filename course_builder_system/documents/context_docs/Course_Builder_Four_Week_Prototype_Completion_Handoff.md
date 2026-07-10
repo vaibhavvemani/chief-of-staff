@@ -135,7 +135,10 @@ Observed live-run metrics:
 - 18 rendered Markdown files;
 - rejected source leakage: none.
 
-The live output was created in a temporary artifact root and intentionally not committed as durable course content.
+The live output was originally created in a temporary artifact root. It was
+recovered and promoted on 2026-07-10 to
+`examples/live-runs/coffee-live-main/`, with the complete pipeline artifacts
+and all 18 rendered Markdown assets retained for durable review.
 
 ## 4. What Works
 

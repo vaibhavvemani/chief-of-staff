@@ -1,0 +1,19 @@
+{
+  "course_id": "coffee-live-main",
+  "artifact_type": "subject_request",
+  "produced_by_step": "human",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [],
+  "updated_at": "2026-07-06T11:02:07+00:00",
+  "body": {
+    "subject": "Coffee making",
+    "description": "A practical beginner course for people who want better coffee at home.",
+    "known_source_locators": [],
+    "constraints": [
+      "Keep the course compact for the live prototype validation run."
+    ]
+  }
+}

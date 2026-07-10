@@ -1,0 +1,119 @@
+{
+  "course_id": "coffee-live-main",
+  "artifact_type": "approved_source_registry",
+  "produced_by_step": "source_selection",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "research_dossier"
+  ],
+  "updated_at": "2026-07-06T11:02:57+00:00",
+  "body": {
+    "choice_prompt": {
+      "id": "source_select",
+      "stage": "research",
+      "target_artifact": "research_dossier",
+      "mode": "multi",
+      "options": [
+        {
+          "id": "live_1",
+          "label": "Coffee: A comprehensive overview of origin, market, and the quality ...",
+          "description": "sciencedirect.com - Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+          "recommended": false,
+          "recommendation_rationale": "Candidate discovered through bounded search; human approval is required before fetching and storing source text."
+        },
+        {
+          "id": "live_2",
+          "label": "Introduction to Coffee History, Preparation Methods, and the Basic ...",
+          "description": "books.rsc.org - Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+          "recommended": false,
+          "recommendation_rationale": "Candidate discovered through bounded search; human approval is required before fetching and storing source text."
+        },
+        {
+          "id": "live_3",
+          "label": "Coffee: A comprehensive overview of origin, market, and the quality ...",
+          "description": "sciencedirect.com - Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+          "recommended": false,
+          "recommendation_rationale": "Candidate discovered through bounded search; human approval is required before fetching and storing source text."
+        },
+        {
+          "id": "live_4",
+          "label": "An Engineer's Guide to Coffee from Bean to Brew",
+          "description": "engineering.ucdavis.edu - Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+          "recommended": false,
+          "recommendation_rationale": "Candidate discovered through bounded search; human approval is required before fetching and storing source text."
+        },
+        {
+          "id": "live_5",
+          "label": "Visit About Coffee Website - ncausa.org",
+          "description": "ncausa.org - Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+          "recommended": false,
+          "recommendation_rationale": "Candidate discovered through bounded search; human approval is required before fetching and storing source text."
+        },
+        {
+          "id": "live_6",
+          "label": "Coffee - CoffeeResearch.org",
+          "description": "coffeeresearch.org - Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+          "recommended": false,
+          "recommendation_rationale": "Candidate discovered through bounded search; human approval is required before fetching and storing source text."
+        },
+        {
+          "id": "live_7",
+          "label": "Coffee - Wikipedia",
+          "description": "en.wikipedia.org - Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+          "recommended": false,
+          "recommendation_rationale": "Candidate discovered through bounded search; human approval is required before fetching and storing source text."
+        },
+        {
+          "id": "live_8",
+          "label": "(PDF) The Coffee Guide, Fourth Edition - ResearchGate",
+          "description": "researchgate.net - Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+          "recommended": false,
+          "recommendation_rationale": "Candidate discovered through bounded search; human approval is required before fetching and storing source text."
+        }
+      ]
+    },
+    "decision": {
+      "selected_ids": [
+        "live_1",
+        "live_2",
+        "live_3",
+        "live_4",
+        "live_5",
+        "live_6"
+      ],
+      "approved_ids": [
+        "live_5",
+        "live_6"
+      ],
+      "rejected_ids": [
+        "live_1",
+        "live_2",
+        "live_3",
+        "live_4",
+        "live_7",
+        "live_8"
+      ]
+    },
+    "source_registry": [
+      {
+        "id": "live_5",
+        "title": "Visit About Coffee Website - ncausa.org",
+        "publisher": "ncausa.org",
+        "source_type": "web page",
+        "locator": "https://www.ncausa.org/About-Coffee/Visit-About-Coffee-Website",
+        "content_ref": "examples/live-runs/coffee-live-main/course_artifacts/sources/coffee-live-main/live_5.md"
+      },
+      {
+        "id": "live_6",
+        "title": "Coffee - CoffeeResearch.org",
+        "publisher": "coffeeresearch.org",
+        "source_type": "web page",
+        "locator": "https://coffeeresearch.org/",
+        "content_ref": "examples/live-runs/coffee-live-main/course_artifacts/sources/coffee-live-main/live_6.md"
+      }
+    ]
+  }
+}

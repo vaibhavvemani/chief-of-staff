@@ -1,0 +1,45 @@
+{
+  "course_id": "coffee-live-main",
+  "artifact_type": "render_manifest",
+  "produced_by_step": "renderer",
+  "schema_version": "0.1",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "course_model",
+    "blueprint",
+    "content_package",
+    "lesson_plan"
+  ],
+  "updated_at": "2026-07-06T11:13:37+00:00",
+  "body": {
+    "format": "markdown",
+    "paths": {
+      "index": "examples/live-runs/coffee-live-main/rendered_course/README.md",
+      "course_overview": "examples/live-runs/coffee-live-main/rendered_course/course_overview.md",
+      "source_index": "examples/live-runs/coffee-live-main/rendered_course/source_index.md",
+      "lesson_plan": "examples/live-runs/coffee-live-main/rendered_course/lesson_plan.md",
+      "assets": {
+        "m1_s1_cc": "examples/live-runs/coffee-live-main/rendered_course/modules/01_m1-s1_core-concepts-in-coffee-making/01_m1-s1-cc_course-content.md",
+        "m1_s1_lo": "examples/live-runs/coffee-live-main/rendered_course/modules/01_m1-s1_core-concepts-in-coffee-making/02_m1-s1-lo_learning-objectives.md",
+        "m1_s1_summary": "examples/live-runs/coffee-live-main/rendered_course/modules/01_m1-s1_core-concepts-in-coffee-making/03_m1-s1-summary_summary.md",
+        "m1_s1_resources": "examples/live-runs/coffee-live-main/rendered_course/modules/01_m1-s1_core-concepts-in-coffee-making/04_m1-s1-resources_resources.md",
+        "m1_s2_cc": "examples/live-runs/coffee-live-main/rendered_course/modules/02_m1-s2_practical-examples/01_m1-s2-cc_course-content.md",
+        "m1_s2_lo": "examples/live-runs/coffee-live-main/rendered_course/modules/02_m1-s2_practical-examples/02_m1-s2-lo_learning-objectives.md",
+        "m1_s2_summary": "examples/live-runs/coffee-live-main/rendered_course/modules/02_m1-s2_practical-examples/03_m1-s2-summary_summary.md",
+        "m1_s2_activities": "examples/live-runs/coffee-live-main/rendered_course/modules/02_m1-s2_practical-examples/04_m1-s2-activities_activities.md",
+        "m1_s3_cc": "examples/live-runs/coffee-live-main/rendered_course/modules/03_m1-s3_coffee-making-practice/01_m1-s3-cc_course-content.md",
+        "m1_s3_lo": "examples/live-runs/coffee-live-main/rendered_course/modules/03_m1-s3_coffee-making-practice/02_m1-s3-lo_learning-objectives.md",
+        "m1_s3_summary": "examples/live-runs/coffee-live-main/rendered_course/modules/03_m1-s3_coffee-making-practice/03_m1-s3-summary_summary.md",
+        "m1_s3_assess": "examples/live-runs/coffee-live-main/rendered_course/modules/03_m1-s3_coffee-making-practice/04_m1-s3-assess_assessment.md",
+        "m1_s4_cc": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/01_m1-s4-cc_course-content.md",
+        "m1_s4_lo": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/02_m1-s4-lo_learning-objectives.md",
+        "m1_s4_summary": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/03_m1-s4-summary_summary.md",
+        "m1_s4_case": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/04_m1-s4-case_case-study.md",
+        "m1_s4_assess": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/05_m1-s4-assess_assessment.md",
+        "m1_s4_activities": "examples/live-runs/coffee-live-main/rendered_course/modules/04_m1-s4_coffee-making-troubleshooting/06_m1-s4-activities_activities.md"
+      }
+    }
+  }
+}

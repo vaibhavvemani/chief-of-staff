@@ -1,0 +1,1636 @@
+{
+  "course_id": "coffee-live-main",
+  "artifact_type": "research_dossier",
+  "produced_by_step": "research",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "brief",
+    "course_outcomes"
+  ],
+  "updated_at": "2026-07-06T11:02:48+00:00",
+  "body": {
+    "research_scope": "Bounded competitor and factual-source research for Coffee making; competitor outlines inform structure, while only approved factual sources may ground learner content.",
+    "competitor_findings": [
+      {
+        "id": "live_1",
+        "provider": "www.coffeepodium.com",
+        "offering": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com",
+        "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "usable",
+        "outline_sections": [
+          {
+            "id": "live_1_sec1",
+            "order": 1,
+            "raw_label": "Course Overview",
+            "normalized_topic_id": "nt_course_overview",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          },
+          {
+            "id": "live_1_sec2",
+            "order": 2,
+            "raw_label": "Introduction to Coffee",
+            "normalized_topic_id": "nt_introduction_to_coffee",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          },
+          {
+            "id": "live_1_sec3",
+            "order": 3,
+            "raw_label": "Coffee Origins",
+            "normalized_topic_id": "nt_coffee_origins",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          },
+          {
+            "id": "live_1_sec4",
+            "order": 4,
+            "raw_label": "Arabica vs. Robusta",
+            "normalized_topic_id": "nt_arabica_vs_robusta",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          },
+          {
+            "id": "live_1_sec5",
+            "order": 5,
+            "raw_label": "Sustainability in Coffee",
+            "normalized_topic_id": "nt_sustainability_in_coffee",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          },
+          {
+            "id": "live_1_sec6",
+            "order": 6,
+            "raw_label": "Understanding Your Tools",
+            "normalized_topic_id": "nt_understanding_your_tools",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          },
+          {
+            "id": "live_1_sec7",
+            "order": 7,
+            "raw_label": "Espresso Extraction",
+            "normalized_topic_id": "nt_espresso_extraction",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          },
+          {
+            "id": "live_1_sec8",
+            "order": 8,
+            "raw_label": "Sensory Skills and Quality Control",
+            "normalized_topic_id": "nt_sensory_skills_and_quality_control",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          },
+          {
+            "id": "live_1_sec9",
+            "order": 9,
+            "raw_label": "Tasting Techniques",
+            "normalized_topic_id": "nt_tasting_techniques",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          },
+          {
+            "id": "live_1_sec10",
+            "order": 10,
+            "raw_label": "Consistency Checks",
+            "normalized_topic_id": "nt_consistency_checks",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          },
+          {
+            "id": "live_1_sec11",
+            "order": 11,
+            "raw_label": "Milk Steaming techniques",
+            "normalized_topic_id": "nt_milk_steaming_techniques",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          },
+          {
+            "id": "live_1_sec12",
+            "order": 12,
+            "raw_label": "Milk Texturing Basics",
+            "normalized_topic_id": "nt_milk_texturing_basics",
+            "locator": "https://www.coffeepodium.com/courses/barista-fundamentals-training/",
+            "parent_label": "BARISTA FUNDAMENTALS TRAINING - coffeepodium.com"
+          }
+        ],
+        "normalized_topic_ids": [
+          "nt_course_overview",
+          "nt_introduction_to_coffee",
+          "nt_coffee_origins",
+          "nt_arabica_vs_robusta",
+          "nt_sustainability_in_coffee",
+          "nt_understanding_your_tools",
+          "nt_espresso_extraction",
+          "nt_sensory_skills_and_quality_control",
+          "nt_tasting_techniques",
+          "nt_consistency_checks",
+          "nt_milk_steaming_techniques",
+          "nt_milk_texturing_basics"
+        ],
+        "structure_summary": "Moves from Course Overview toward Milk Texturing Basics across 12 visible sections.",
+        "notable_topics": [
+          "Course Overview",
+          "Introduction to Coffee",
+          "Coffee Origins",
+          "Arabica vs. Robusta",
+          "Sustainability in Coffee"
+        ],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "live_2",
+        "provider": "www.scribd.com",
+        "offering": "Barista Training Handbook | PDF | Coffee | Drink",
+        "locator": "https://www.scribd.com/document/725101611/Free-Barista-Handbook-pdf",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "usable",
+        "outline_sections": [
+          {
+            "id": "live_2_sec1",
+            "order": 1,
+            "raw_label": "Coffee cultivation",
+            "normalized_topic_id": "nt_coffee_cultivation",
+            "locator": "https://www.scribd.com/document/725101611/Free-Barista-Handbook-pdf",
+            "parent_label": "Barista Training Handbook | PDF | Coffee | Drink"
+          },
+          {
+            "id": "live_2_sec2",
+            "order": 2,
+            "raw_label": "Coffee varietals",
+            "normalized_topic_id": "nt_coffee_varietals",
+            "locator": "https://www.scribd.com/document/725101611/Free-Barista-Handbook-pdf",
+            "parent_label": "Barista Training Handbook | PDF | Coffee | Drink"
+          },
+          {
+            "id": "live_2_sec3",
+            "order": 3,
+            "raw_label": "Robusta vs Arabica",
+            "normalized_topic_id": "nt_robusta_vs_arabica",
+            "locator": "https://www.scribd.com/document/725101611/Free-Barista-Handbook-pdf",
+            "parent_label": "Barista Training Handbook | PDF | Coffee | Drink"
+          },
+          {
+            "id": "live_2_sec4",
+            "order": 4,
+            "raw_label": "Barista tools",
+            "normalized_topic_id": "nt_barista_tools",
+            "locator": "https://www.scribd.com/document/725101611/Free-Barista-Handbook-pdf",
+            "parent_label": "Barista Training Handbook | PDF | Coffee | Drink"
+          },
+          {
+            "id": "live_2_sec5",
+            "order": 5,
+            "raw_label": "Manual grinders",
+            "normalized_topic_id": "nt_manual_grinders",
+            "locator": "https://www.scribd.com/document/725101611/Free-Barista-Handbook-pdf",
+            "parent_label": "Barista Training Handbook | PDF | Coffee | Drink"
+          },
+          {
+            "id": "live_2_sec6",
+            "order": 6,
+            "raw_label": "Automatic grinders",
+            "normalized_topic_id": "nt_automatic_grinders",
+            "locator": "https://www.scribd.com/document/725101611/Free-Barista-Handbook-pdf",
+            "parent_label": "Barista Training Handbook | PDF | Coffee | Drink"
+          },
+          {
+            "id": "live_2_sec7",
+            "order": 7,
+            "raw_label": "Weighing coffee",
+            "normalized_topic_id": "nt_weighing_coffee",
+            "locator": "https://www.scribd.com/document/725101611/Free-Barista-Handbook-pdf",
+            "parent_label": "Barista Training Handbook | PDF | Coffee | Drink"
+          }
+        ],
+        "normalized_topic_ids": [
+          "nt_coffee_cultivation",
+          "nt_coffee_varietals",
+          "nt_robusta_vs_arabica",
+          "nt_barista_tools",
+          "nt_manual_grinders",
+          "nt_automatic_grinders",
+          "nt_weighing_coffee"
+        ],
+        "structure_summary": "Moves from Coffee cultivation toward Weighing coffee across 7 visible sections.",
+        "notable_topics": [
+          "Coffee cultivation",
+          "Coffee varietals",
+          "Robusta vs Arabica",
+          "Barista tools",
+          "Manual grinders"
+        ],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "live_3",
+        "provider": "www.scribd.com",
+        "offering": "Basic Barista Course Overview",
+        "locator": "https://www.scribd.com/document/654712064/Basic-Barista-Course-Outline",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "partial",
+        "outline_sections": [
+          {
+            "id": "live_3_sec1",
+            "order": 1,
+            "raw_label": "Basic Barista Course Overview",
+            "normalized_topic_id": "nt_basic_barista_course_overview",
+            "locator": "https://www.scribd.com/document/654712064/Basic-Barista-Course-Outline",
+            "parent_label": "Basic Barista Course Overview"
+          },
+          {
+            "id": "live_3_sec2",
+            "order": 2,
+            "raw_label": "Join our team!",
+            "normalized_topic_id": "nt_join_our_team",
+            "locator": "https://www.scribd.com/document/654712064/Basic-Barista-Course-Outline",
+            "parent_label": "Basic Barista Course Overview"
+          }
+        ],
+        "normalized_topic_ids": [
+          "nt_basic_barista_course_overview",
+          "nt_join_our_team"
+        ],
+        "structure_summary": "Moves from Basic Barista Course Overview toward Join our team! across 2 visible sections.",
+        "notable_topics": [
+          "Basic Barista Course Overview",
+          "Join our team!"
+        ],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "live_4",
+        "provider": "www.skill-up.org",
+        "offering": "Coffee Training - Skill Up",
+        "locator": "https://www.skill-up.org/course/coffee-training/",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "usable",
+        "outline_sections": [
+          {
+            "id": "live_4_sec1",
+            "order": 1,
+            "raw_label": "Course Highlights",
+            "normalized_topic_id": "nt_course_highlights",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          },
+          {
+            "id": "live_4_sec2",
+            "order": 2,
+            "raw_label": "Learning outcome",
+            "normalized_topic_id": "nt_learning_outcome",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          },
+          {
+            "id": "live_4_sec3",
+            "order": 3,
+            "raw_label": "Understand the history and origin of coffee",
+            "normalized_topic_id": "nt_understand_the_history_and_origin_of_coffee",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          },
+          {
+            "id": "live_4_sec4",
+            "order": 4,
+            "raw_label": "Explore different coffee brewing techniques and methods",
+            "normalized_topic_id": "nt_explore_different_coffee_brewing_techniques_and_methods",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          },
+          {
+            "id": "live_4_sec5",
+            "order": 5,
+            "raw_label": "Learn how to evaluate and taste coffee professionally",
+            "normalized_topic_id": "nt_learn_how_to_evaluate_and_taste_coffee_professionally",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          },
+          {
+            "id": "live_4_sec6",
+            "order": 6,
+            "raw_label": "Gain knowledge of coffee bean varieties and their flavors",
+            "normalized_topic_id": "nt_gain_knowledge_of_coffee_bean_varieties_and_their_flavors",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          },
+          {
+            "id": "live_4_sec7",
+            "order": 7,
+            "raw_label": "Master the art of creating espresso-based drinks",
+            "normalized_topic_id": "nt_master_the_art_of_creating_espresso_based_drinks",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          },
+          {
+            "id": "live_4_sec8",
+            "order": 8,
+            "raw_label": "Enhance your knowledge of coffee culture and its global significance",
+            "normalized_topic_id": "nt_enhance_your_knowledge_of_coffee_culture_and_its_global_significance",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          },
+          {
+            "id": "live_4_sec9",
+            "order": 9,
+            "raw_label": "Build essential skills for pursuing a career in the coffee industry",
+            "normalized_topic_id": "nt_build_essential_skills_for_pursuing_a_career_in_the_coffee_industry",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          },
+          {
+            "id": "live_4_sec10",
+            "order": 10,
+            "raw_label": "Improve your ability to distinguish and appreciate coffee flavors",
+            "normalized_topic_id": "nt_improve_your_ability_to_distinguish_and_appreciate_coffee_flavors",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          },
+          {
+            "id": "live_4_sec11",
+            "order": 11,
+            "raw_label": "Gain a deeper understanding of coffee preparation and its techniques",
+            "normalized_topic_id": "nt_gain_a_deeper_understanding_of_coffee_preparation_and_its_techniques",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          },
+          {
+            "id": "live_4_sec12",
+            "order": 12,
+            "raw_label": "Open opportunities for working in various coffee-related businesses",
+            "normalized_topic_id": "nt_open_opportunities_for_working_in_various_coffee_related_businesses",
+            "locator": "https://www.skill-up.org/course/coffee-training/",
+            "parent_label": "Coffee Training - Skill Up"
+          }
+        ],
+        "normalized_topic_ids": [
+          "nt_course_highlights",
+          "nt_learning_outcome",
+          "nt_understand_the_history_and_origin_of_coffee",
+          "nt_explore_different_coffee_brewing_techniques_and_methods",
+          "nt_learn_how_to_evaluate_and_taste_coffee_professionally",
+          "nt_gain_knowledge_of_coffee_bean_varieties_and_their_flavors",
+          "nt_master_the_art_of_creating_espresso_based_drinks",
+          "nt_enhance_your_knowledge_of_coffee_culture_and_its_global_significance",
+          "nt_build_essential_skills_for_pursuing_a_career_in_the_coffee_industry",
+          "nt_improve_your_ability_to_distinguish_and_appreciate_coffee_flavors",
+          "nt_gain_a_deeper_understanding_of_coffee_preparation_and_its_techniques",
+          "nt_open_opportunities_for_working_in_various_coffee_related_businesses"
+        ],
+        "structure_summary": "Moves from Course Highlights toward Open opportunities for working in various coffee-related businesses across 12 visible sections.",
+        "notable_topics": [
+          "Course Highlights",
+          "Learning outcome",
+          "Understand the history and origin of coffee",
+          "Explore different coffee brewing techniques and methods",
+          "Learn how to evaluate and taste coffee professionally"
+        ],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "live_5",
+        "provider": "bootcoffee.com",
+        "offering": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus",
+        "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "usable",
+        "outline_sections": [
+          {
+            "id": "live_5_sec1",
+            "order": 1,
+            "raw_label": "Exploring coffee's captivating history and global journey",
+            "normalized_topic_id": "nt_exploring_coffee_s_captivating_history_and_global_journey",
+            "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+            "parent_label": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus"
+          },
+          {
+            "id": "live_5_sec2",
+            "order": 2,
+            "raw_label": "Discovering different coffee species and processing methods that shape flavor",
+            "normalized_topic_id": "nt_discovering_different_coffee_species_and_processing_methods_that_shape_flavor",
+            "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+            "parent_label": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus"
+          },
+          {
+            "id": "live_5_sec3",
+            "order": 3,
+            "raw_label": "Tasting and comparing coffees side by side like a professional",
+            "normalized_topic_id": "nt_tasting_and_comparing_coffees_side_by_side_like_a_professional",
+            "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+            "parent_label": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus"
+          },
+          {
+            "id": "live_5_sec4",
+            "order": 4,
+            "raw_label": "Watching green beans transform during a live roasting demo",
+            "normalized_topic_id": "nt_watching_green_beans_transform_during_a_live_roasting_demo",
+            "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+            "parent_label": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus"
+          },
+          {
+            "id": "live_5_sec5",
+            "order": 5,
+            "raw_label": "Experiencing the same coffee roasted light and dark to taste the difference",
+            "normalized_topic_id": "nt_experiencing_the_same_coffee_roasted_light_and_dark_to_taste_the_difference",
+            "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+            "parent_label": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus"
+          },
+          {
+            "id": "live_5_sec6",
+            "order": 6,
+            "raw_label": "Mastering brewing methods for consistently delicious coffee",
+            "normalized_topic_id": "nt_mastering_brewing_methods_for_consistently_delicious_coffee",
+            "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+            "parent_label": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus"
+          },
+          {
+            "id": "live_5_sec7",
+            "order": 7,
+            "raw_label": "This is where your coffee journey begins",
+            "normalized_topic_id": "nt_this_is_where_your_coffee_journey_begins",
+            "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+            "parent_label": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus"
+          },
+          {
+            "id": "live_5_sec8",
+            "order": 8,
+            "raw_label": "Coffee's Origin",
+            "normalized_topic_id": "nt_coffee_s_origin",
+            "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+            "parent_label": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus"
+          },
+          {
+            "id": "live_5_sec9",
+            "order": 9,
+            "raw_label": "Sensory (tasting) Skills",
+            "normalized_topic_id": "nt_sensory_tasting_skills",
+            "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+            "parent_label": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus"
+          },
+          {
+            "id": "live_5_sec10",
+            "order": 10,
+            "raw_label": "Roasting Coffee and Freshness",
+            "normalized_topic_id": "nt_roasting_coffee_and_freshness",
+            "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+            "parent_label": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus"
+          },
+          {
+            "id": "live_5_sec11",
+            "order": 11,
+            "raw_label": "Cleaning and Maintenance",
+            "normalized_topic_id": "nt_cleaning_and_maintenance",
+            "locator": "https://bootcoffee.com/introduction-to-coffee-sca-coffee-skills/",
+            "parent_label": "Introduction To Coffee - SCA Coffee Skills - Boot Coffee Campus"
+          }
+        ],
+        "normalized_topic_ids": [
+          "nt_exploring_coffee_s_captivating_history_and_global_journey",
+          "nt_discovering_different_coffee_species_and_processing_methods_that_shape_flavor",
+          "nt_tasting_and_comparing_coffees_side_by_side_like_a_professional",
+          "nt_watching_green_beans_transform_during_a_live_roasting_demo",
+          "nt_experiencing_the_same_coffee_roasted_light_and_dark_to_taste_the_difference",
+          "nt_mastering_brewing_methods_for_consistently_delicious_coffee",
+          "nt_this_is_where_your_coffee_journey_begins",
+          "nt_coffee_s_origin",
+          "nt_sensory_tasting_skills",
+          "nt_roasting_coffee_and_freshness",
+          "nt_cleaning_and_maintenance"
+        ],
+        "structure_summary": "Moves from Exploring coffee's captivating history and global journey toward Cleaning and Maintenance across 11 visible sections.",
+        "notable_topics": [
+          "Exploring coffee's captivating history and global journey",
+          "Discovering different coffee species and processing methods that shape flavor",
+          "Tasting and comparing coffees side by side like a professional",
+          "Watching green beans transform during a live roasting demo",
+          "Experiencing the same coffee roasted light and dark to taste the difference"
+        ],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "live_6",
+        "provider": "bootcoffee.com",
+        "offering": "SCA Barista Module - Coffee Skills Program - Boot Coffee Campus",
+        "locator": "https://bootcoffee.com/sca-barista-module-coffee-skills-program/",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "inaccessible",
+        "outline_sections": [],
+        "normalized_topic_ids": [],
+        "structure_summary": "No public outline was available.",
+        "notable_topics": [],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "live_7",
+        "provider": "www.cpcoffeeacademy.com",
+        "offering": "Introduction to Coffee | CP Coffee Academy",
+        "locator": "https://www.cpcoffeeacademy.com/courses",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "inaccessible",
+        "outline_sections": [],
+        "normalized_topic_ids": [],
+        "structure_summary": "No public outline was available.",
+        "notable_topics": [],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      },
+      {
+        "id": "live_8",
+        "provider": "www.cpcoffeeacademy.com",
+        "offering": "CP Coffee Academy - Professional Coffee Education & Training",
+        "locator": "https://www.cpcoffeeacademy.com/",
+        "audience": "Unknown from accessible page.",
+        "level": "unknown",
+        "duration": null,
+        "delivery_format": null,
+        "assessment_approach": null,
+        "outline_status": "usable",
+        "outline_sections": [
+          {
+            "id": "live_8_sec1",
+            "order": 1,
+            "raw_label": "Full Curriculum Market Insights Business Ready",
+            "normalized_topic_id": "nt_full_curriculum_market_insights_business_ready",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          },
+          {
+            "id": "live_8_sec2",
+            "order": 2,
+            "raw_label": "Modern Facilities",
+            "normalized_topic_id": "nt_modern_facilities",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          },
+          {
+            "id": "live_8_sec3",
+            "order": 3,
+            "raw_label": "Pro Equipment Modern Space Premium Setup",
+            "normalized_topic_id": "nt_pro_equipment_modern_space_premium_setup",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          },
+          {
+            "id": "live_8_sec4",
+            "order": 4,
+            "raw_label": "Flexible Learning",
+            "normalized_topic_id": "nt_flexible_learning",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          },
+          {
+            "id": "live_8_sec5",
+            "order": 5,
+            "raw_label": "Continuous Updates",
+            "normalized_topic_id": "nt_continuous_updates",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          },
+          {
+            "id": "live_8_sec6",
+            "order": 6,
+            "raw_label": "Regular Updates Lifetime Access Always Current",
+            "normalized_topic_id": "nt_regular_updates_lifetime_access_always_current",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          },
+          {
+            "id": "live_8_sec7",
+            "order": 7,
+            "raw_label": "Alumni Network",
+            "normalized_topic_id": "nt_alumni_network",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          },
+          {
+            "id": "live_8_sec8",
+            "order": 8,
+            "raw_label": "Global Community",
+            "normalized_topic_id": "nt_global_community",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          },
+          {
+            "id": "live_8_sec9",
+            "order": 9,
+            "raw_label": "Join our successful global network of coffee professionals",
+            "normalized_topic_id": "nt_join_our_successful_global_network_of_coffee_professionals",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          },
+          {
+            "id": "live_8_sec10",
+            "order": 10,
+            "raw_label": "1000+ Alumni Global Reach Strong Network Join Our Alumni Network",
+            "normalized_topic_id": "nt_1000_alumni_global_reach_strong_network_join_our_alumni_network",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          },
+          {
+            "id": "live_8_sec11",
+            "order": 11,
+            "raw_label": "Connect with 10,000+ coffee professionals worldwide",
+            "normalized_topic_id": "nt_connect_with_10_000_coffee_professionals_worldwide",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          },
+          {
+            "id": "live_8_sec12",
+            "order": 12,
+            "raw_label": "Stay Updated with Coffee News",
+            "normalized_topic_id": "nt_stay_updated_with_coffee_news",
+            "locator": "https://www.cpcoffeeacademy.com/",
+            "parent_label": "CP Coffee Academy - Professional Coffee Education & Training"
+          }
+        ],
+        "normalized_topic_ids": [
+          "nt_full_curriculum_market_insights_business_ready",
+          "nt_modern_facilities",
+          "nt_pro_equipment_modern_space_premium_setup",
+          "nt_flexible_learning",
+          "nt_continuous_updates",
+          "nt_regular_updates_lifetime_access_always_current",
+          "nt_alumni_network",
+          "nt_global_community",
+          "nt_join_our_successful_global_network_of_coffee_professionals",
+          "nt_1000_alumni_global_reach_strong_network_join_our_alumni_network",
+          "nt_connect_with_10_000_coffee_professionals_worldwide",
+          "nt_stay_updated_with_coffee_news"
+        ],
+        "structure_summary": "Moves from Full Curriculum Market Insights Business Ready toward Stay Updated with Coffee News across 12 visible sections.",
+        "notable_topics": [
+          "Full Curriculum Market Insights Business Ready",
+          "Modern Facilities",
+          "Pro Equipment Modern Space Premium Setup",
+          "Flexible Learning",
+          "Continuous Updates"
+        ],
+        "differentiation_opportunity": "Use the competitor common core as evidence, then tune scope to the approved brief."
+      }
+    ],
+    "normalized_topics": [
+      {
+        "id": "nt_1000_alumni_global_reach_strong_network_join_our_alumni_network",
+        "label": "1000 Alumni Global Reach Strong Network Join Our Alumni Network",
+        "aliases": [
+          "1000 Alumni Global Reach Strong Network Join Our Alumni Network",
+          "1000+ Alumni Global Reach Strong Network Join Our Alumni Network"
+        ]
+      },
+      {
+        "id": "nt_alumni_network",
+        "label": "Alumni Network",
+        "aliases": [
+          "Alumni Network"
+        ]
+      },
+      {
+        "id": "nt_arabica_vs_robusta",
+        "label": "Arabica Vs Robusta",
+        "aliases": [
+          "Arabica Vs Robusta",
+          "Arabica vs. Robusta"
+        ]
+      },
+      {
+        "id": "nt_automatic_grinders",
+        "label": "Automatic Grinders",
+        "aliases": [
+          "Automatic Grinders",
+          "Automatic grinders"
+        ]
+      },
+      {
+        "id": "nt_barista_tools",
+        "label": "Barista Tools",
+        "aliases": [
+          "Barista Tools",
+          "Barista tools"
+        ]
+      },
+      {
+        "id": "nt_basic_barista_course_overview",
+        "label": "Basic Barista Course Overview",
+        "aliases": [
+          "Basic Barista Course Overview"
+        ]
+      },
+      {
+        "id": "nt_build_essential_skills_for_pursuing_a_career_in_the_coffee_industry",
+        "label": "Build Essential Skills For Pursuing A Career In The Coffee Industry",
+        "aliases": [
+          "Build Essential Skills For Pursuing A Career In The Coffee Industry",
+          "Build essential skills for pursuing a career in the coffee industry"
+        ]
+      },
+      {
+        "id": "nt_cleaning_and_maintenance",
+        "label": "Cleaning And Maintenance",
+        "aliases": [
+          "Cleaning And Maintenance",
+          "Cleaning and Maintenance"
+        ]
+      },
+      {
+        "id": "nt_coffee_cultivation",
+        "label": "Coffee Cultivation",
+        "aliases": [
+          "Coffee Cultivation",
+          "Coffee cultivation"
+        ]
+      },
+      {
+        "id": "nt_coffee_origins",
+        "label": "Coffee Origins",
+        "aliases": [
+          "Coffee Origins"
+        ]
+      },
+      {
+        "id": "nt_coffee_s_origin",
+        "label": "Coffee S Origin",
+        "aliases": [
+          "Coffee S Origin",
+          "Coffee's Origin"
+        ]
+      },
+      {
+        "id": "nt_coffee_varietals",
+        "label": "Coffee Varietals",
+        "aliases": [
+          "Coffee Varietals",
+          "Coffee varietals"
+        ]
+      },
+      {
+        "id": "nt_connect_with_10_000_coffee_professionals_worldwide",
+        "label": "Connect With 10 000 Coffee Professionals Worldwide",
+        "aliases": [
+          "Connect With 10 000 Coffee Professionals Worldwide",
+          "Connect with 10,000+ coffee professionals worldwide"
+        ]
+      },
+      {
+        "id": "nt_consistency_checks",
+        "label": "Consistency Checks",
+        "aliases": [
+          "Consistency Checks"
+        ]
+      },
+      {
+        "id": "nt_continuous_updates",
+        "label": "Continuous Updates",
+        "aliases": [
+          "Continuous Updates"
+        ]
+      },
+      {
+        "id": "nt_course_highlights",
+        "label": "Course Highlights",
+        "aliases": [
+          "Course Highlights"
+        ]
+      },
+      {
+        "id": "nt_course_overview",
+        "label": "Course Overview",
+        "aliases": [
+          "Course Overview"
+        ]
+      },
+      {
+        "id": "nt_discovering_different_coffee_species_and_processing_methods_that_shape_flavor",
+        "label": "Discovering different coffee species and processing methods that shape flavor",
+        "aliases": [
+          "Discovering Different Coffee Species And Processing Methods That Shape Flavor",
+          "Discovering different coffee species and processing methods that shape flavor"
+        ]
+      },
+      {
+        "id": "nt_enhance_your_knowledge_of_coffee_culture_and_its_global_significance",
+        "label": "Enhance your knowledge of coffee culture and its global significance",
+        "aliases": [
+          "Enhance Your Knowledge Of Coffee Culture And Its Global Significance",
+          "Enhance your knowledge of coffee culture and its global significance"
+        ]
+      },
+      {
+        "id": "nt_espresso_extraction",
+        "label": "Espresso Extraction",
+        "aliases": [
+          "Espresso Extraction"
+        ]
+      },
+      {
+        "id": "nt_experiencing_the_same_coffee_roasted_light_and_dark_to_taste_the_difference",
+        "label": "Experiencing The Same Coffee Roasted Light And Dark To Taste The Difference",
+        "aliases": [
+          "Experiencing The Same Coffee Roasted Light And Dark To Taste The Difference",
+          "Experiencing the same coffee roasted light and dark to taste the difference"
+        ]
+      },
+      {
+        "id": "nt_explore_different_coffee_brewing_techniques_and_methods",
+        "label": "Explore different coffee brewing techniques and methods",
+        "aliases": [
+          "Explore Different Coffee Brewing Techniques And Methods",
+          "Explore different coffee brewing techniques and methods"
+        ]
+      },
+      {
+        "id": "nt_exploring_coffee_s_captivating_history_and_global_journey",
+        "label": "Exploring Coffee S Captivating History And Global Journey",
+        "aliases": [
+          "Exploring Coffee S Captivating History And Global Journey",
+          "Exploring coffee's captivating history and global journey"
+        ]
+      },
+      {
+        "id": "nt_flexible_learning",
+        "label": "Flexible Learning",
+        "aliases": [
+          "Flexible Learning"
+        ]
+      },
+      {
+        "id": "nt_full_curriculum_market_insights_business_ready",
+        "label": "Full Curriculum Market Insights Business Ready",
+        "aliases": [
+          "Full Curriculum Market Insights Business Ready"
+        ]
+      },
+      {
+        "id": "nt_gain_a_deeper_understanding_of_coffee_preparation_and_its_techniques",
+        "label": "Gain A Deeper Understanding Of Coffee Preparation And Its Techniques",
+        "aliases": [
+          "Gain A Deeper Understanding Of Coffee Preparation And Its Techniques",
+          "Gain a deeper understanding of coffee preparation and its techniques"
+        ]
+      },
+      {
+        "id": "nt_gain_knowledge_of_coffee_bean_varieties_and_their_flavors",
+        "label": "Gain knowledge of coffee bean varieties and their flavors",
+        "aliases": [
+          "Gain Knowledge Of Coffee Bean Varieties And Their Flavors",
+          "Gain knowledge of coffee bean varieties and their flavors"
+        ]
+      },
+      {
+        "id": "nt_global_community",
+        "label": "Global Community",
+        "aliases": [
+          "Global Community"
+        ]
+      },
+      {
+        "id": "nt_improve_your_ability_to_distinguish_and_appreciate_coffee_flavors",
+        "label": "Improve Your Ability To Distinguish And Appreciate Coffee Flavors",
+        "aliases": [
+          "Improve Your Ability To Distinguish And Appreciate Coffee Flavors",
+          "Improve your ability to distinguish and appreciate coffee flavors"
+        ]
+      },
+      {
+        "id": "nt_introduction_to_coffee",
+        "label": "Introduction To Coffee",
+        "aliases": [
+          "Introduction To Coffee",
+          "Introduction to Coffee"
+        ]
+      },
+      {
+        "id": "nt_join_our_successful_global_network_of_coffee_professionals",
+        "label": "Join our successful global network of coffee professionals",
+        "aliases": [
+          "Join Our Successful Global Network Of Coffee Professionals",
+          "Join our successful global network of coffee professionals"
+        ]
+      },
+      {
+        "id": "nt_join_our_team",
+        "label": "Join Our Team",
+        "aliases": [
+          "Join Our Team",
+          "Join our team!"
+        ]
+      },
+      {
+        "id": "nt_learn_how_to_evaluate_and_taste_coffee_professionally",
+        "label": "Learn how to evaluate and taste coffee professionally",
+        "aliases": [
+          "Learn How To Evaluate And Taste Coffee Professionally",
+          "Learn how to evaluate and taste coffee professionally"
+        ]
+      },
+      {
+        "id": "nt_learning_outcome",
+        "label": "Learning outcome",
+        "aliases": [
+          "Learning Outcome",
+          "Learning outcome"
+        ]
+      },
+      {
+        "id": "nt_manual_grinders",
+        "label": "Manual Grinders",
+        "aliases": [
+          "Manual Grinders",
+          "Manual grinders"
+        ]
+      },
+      {
+        "id": "nt_master_the_art_of_creating_espresso_based_drinks",
+        "label": "Master the art of creating espresso-based drinks",
+        "aliases": [
+          "Master The Art Of Creating Espresso Based Drinks",
+          "Master the art of creating espresso-based drinks"
+        ]
+      },
+      {
+        "id": "nt_mastering_brewing_methods_for_consistently_delicious_coffee",
+        "label": "Mastering Brewing Methods For Consistently Delicious Coffee",
+        "aliases": [
+          "Mastering Brewing Methods For Consistently Delicious Coffee",
+          "Mastering brewing methods for consistently delicious coffee"
+        ]
+      },
+      {
+        "id": "nt_milk_steaming_techniques",
+        "label": "Milk Steaming techniques",
+        "aliases": [
+          "Milk Steaming Techniques",
+          "Milk Steaming techniques"
+        ]
+      },
+      {
+        "id": "nt_milk_texturing_basics",
+        "label": "Milk Texturing Basics",
+        "aliases": [
+          "Milk Texturing Basics"
+        ]
+      },
+      {
+        "id": "nt_modern_facilities",
+        "label": "Modern Facilities",
+        "aliases": [
+          "Modern Facilities"
+        ]
+      },
+      {
+        "id": "nt_open_opportunities_for_working_in_various_coffee_related_businesses",
+        "label": "Open opportunities for working in various coffee-related businesses",
+        "aliases": [
+          "Open Opportunities For Working In Various Coffee Related Businesses",
+          "Open opportunities for working in various coffee-related businesses"
+        ]
+      },
+      {
+        "id": "nt_pro_equipment_modern_space_premium_setup",
+        "label": "Pro Equipment Modern Space Premium Setup",
+        "aliases": [
+          "Pro Equipment Modern Space Premium Setup"
+        ]
+      },
+      {
+        "id": "nt_regular_updates_lifetime_access_always_current",
+        "label": "Regular Updates Lifetime Access Always Current",
+        "aliases": [
+          "Regular Updates Lifetime Access Always Current"
+        ]
+      },
+      {
+        "id": "nt_roasting_coffee_and_freshness",
+        "label": "Roasting Coffee And Freshness",
+        "aliases": [
+          "Roasting Coffee And Freshness",
+          "Roasting Coffee and Freshness"
+        ]
+      },
+      {
+        "id": "nt_robusta_vs_arabica",
+        "label": "Robusta Vs Arabica",
+        "aliases": [
+          "Robusta Vs Arabica",
+          "Robusta vs Arabica"
+        ]
+      },
+      {
+        "id": "nt_sensory_skills_and_quality_control",
+        "label": "Sensory Skills and Quality Control",
+        "aliases": [
+          "Sensory Skills And Quality Control",
+          "Sensory Skills and Quality Control"
+        ]
+      },
+      {
+        "id": "nt_sensory_tasting_skills",
+        "label": "Sensory Tasting Skills",
+        "aliases": [
+          "Sensory (tasting) Skills",
+          "Sensory Tasting Skills"
+        ]
+      },
+      {
+        "id": "nt_stay_updated_with_coffee_news",
+        "label": "Stay Updated with Coffee News",
+        "aliases": [
+          "Stay Updated With Coffee News",
+          "Stay Updated with Coffee News"
+        ]
+      },
+      {
+        "id": "nt_sustainability_in_coffee",
+        "label": "Sustainability In Coffee",
+        "aliases": [
+          "Sustainability In Coffee",
+          "Sustainability in Coffee"
+        ]
+      },
+      {
+        "id": "nt_tasting_and_comparing_coffees_side_by_side_like_a_professional",
+        "label": "Tasting and comparing coffees side by side like a professional",
+        "aliases": [
+          "Tasting And Comparing Coffees Side By Side Like A Professional",
+          "Tasting and comparing coffees side by side like a professional"
+        ]
+      },
+      {
+        "id": "nt_tasting_techniques",
+        "label": "Tasting Techniques",
+        "aliases": [
+          "Tasting Techniques"
+        ]
+      },
+      {
+        "id": "nt_this_is_where_your_coffee_journey_begins",
+        "label": "This Is Where Your Coffee Journey Begins",
+        "aliases": [
+          "This Is Where Your Coffee Journey Begins",
+          "This is where your coffee journey begins"
+        ]
+      },
+      {
+        "id": "nt_understand_the_history_and_origin_of_coffee",
+        "label": "Understand The History And Origin Of Coffee",
+        "aliases": [
+          "Understand The History And Origin Of Coffee",
+          "Understand the history and origin of coffee"
+        ]
+      },
+      {
+        "id": "nt_understanding_your_tools",
+        "label": "Understanding Your Tools",
+        "aliases": [
+          "Understanding Your Tools"
+        ]
+      },
+      {
+        "id": "nt_watching_green_beans_transform_during_a_live_roasting_demo",
+        "label": "Watching Green Beans Transform During A Live Roasting Demo",
+        "aliases": [
+          "Watching Green Beans Transform During A Live Roasting Demo",
+          "Watching green beans transform during a live roasting demo"
+        ]
+      },
+      {
+        "id": "nt_weighing_coffee",
+        "label": "Weighing coffee",
+        "aliases": [
+          "Weighing Coffee",
+          "Weighing coffee"
+        ]
+      }
+    ],
+    "coverage_matrix": [
+      {
+        "normalized_topic_id": "nt_1000_alumni_global_reach_strong_network_join_our_alumni_network",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_alumni_network",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_arabica_vs_robusta",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_automatic_grinders",
+        "competitor_course_ids": [
+          "live_2"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_barista_tools",
+        "competitor_course_ids": [
+          "live_2"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_basic_barista_course_overview",
+        "competitor_course_ids": [
+          "live_3"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_build_essential_skills_for_pursuing_a_career_in_the_coffee_industry",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_cleaning_and_maintenance",
+        "competitor_course_ids": [
+          "live_5"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_coffee_cultivation",
+        "competitor_course_ids": [
+          "live_2"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_coffee_origins",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_coffee_s_origin",
+        "competitor_course_ids": [
+          "live_5"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_coffee_varietals",
+        "competitor_course_ids": [
+          "live_2"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_connect_with_10_000_coffee_professionals_worldwide",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_consistency_checks",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_continuous_updates",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_course_highlights",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_course_overview",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_discovering_different_coffee_species_and_processing_methods_that_shape_flavor",
+        "competitor_course_ids": [
+          "live_5"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_enhance_your_knowledge_of_coffee_culture_and_its_global_significance",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_espresso_extraction",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_experiencing_the_same_coffee_roasted_light_and_dark_to_taste_the_difference",
+        "competitor_course_ids": [
+          "live_5"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_explore_different_coffee_brewing_techniques_and_methods",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_exploring_coffee_s_captivating_history_and_global_journey",
+        "competitor_course_ids": [
+          "live_5"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_flexible_learning",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_full_curriculum_market_insights_business_ready",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_gain_a_deeper_understanding_of_coffee_preparation_and_its_techniques",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_gain_knowledge_of_coffee_bean_varieties_and_their_flavors",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_global_community",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_improve_your_ability_to_distinguish_and_appreciate_coffee_flavors",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_introduction_to_coffee",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_join_our_successful_global_network_of_coffee_professionals",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_join_our_team",
+        "competitor_course_ids": [
+          "live_3"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_learn_how_to_evaluate_and_taste_coffee_professionally",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_learning_outcome",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_manual_grinders",
+        "competitor_course_ids": [
+          "live_2"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_master_the_art_of_creating_espresso_based_drinks",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_mastering_brewing_methods_for_consistently_delicious_coffee",
+        "competitor_course_ids": [
+          "live_5"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_milk_steaming_techniques",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_milk_texturing_basics",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_modern_facilities",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_open_opportunities_for_working_in_various_coffee_related_businesses",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_pro_equipment_modern_space_premium_setup",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_regular_updates_lifetime_access_always_current",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_roasting_coffee_and_freshness",
+        "competitor_course_ids": [
+          "live_5"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_robusta_vs_arabica",
+        "competitor_course_ids": [
+          "live_2"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_sensory_skills_and_quality_control",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_sensory_tasting_skills",
+        "competitor_course_ids": [
+          "live_5"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_stay_updated_with_coffee_news",
+        "competitor_course_ids": [
+          "live_8"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_sustainability_in_coffee",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_tasting_and_comparing_coffees_side_by_side_like_a_professional",
+        "competitor_course_ids": [
+          "live_5"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_tasting_techniques",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_this_is_where_your_coffee_journey_begins",
+        "competitor_course_ids": [
+          "live_5"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_understand_the_history_and_origin_of_coffee",
+        "competitor_course_ids": [
+          "live_4"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_understanding_your_tools",
+        "competitor_course_ids": [
+          "live_1"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_watching_green_beans_transform_during_a_live_roasting_demo",
+        "competitor_course_ids": [
+          "live_5"
+        ]
+      },
+      {
+        "normalized_topic_id": "nt_weighing_coffee",
+        "competitor_course_ids": [
+          "live_2"
+        ]
+      }
+    ],
+    "common_core_topic_ids": [],
+    "sequence_observations": [
+      {
+        "statement": "Usable outlines introduce fundamentals before troubleshooting or specialized applications.",
+        "evidence_competitor_ids": [
+          "live_1",
+          "live_2",
+          "live_3",
+          "live_4",
+          "live_5",
+          "live_8"
+        ]
+      }
+    ],
+    "gap_observations": [
+      {
+        "statement": "Competitor outlines do not by themselves approve factual grounding sources.",
+        "evidence_competitor_ids": [
+          "live_1",
+          "live_2",
+          "live_3",
+          "live_4",
+          "live_5",
+          "live_8"
+        ]
+      }
+    ],
+    "structural_implications": [
+      {
+        "id": "si1",
+        "implication": "Start with the shared common-core topics, then add differentiators only when the brief requires them.",
+        "rationale": "Frequency is useful evidence but must remain subordinate to approved intent and outcomes.",
+        "related_outcome_ids": [
+          "co1",
+          "co2",
+          "co3",
+          "co4"
+        ],
+        "related_topic_ids": []
+      }
+    ],
+    "source_candidates": [
+      {
+        "id": "live_1",
+        "title": "Coffee: A comprehensive overview of origin, market, and the quality ...",
+        "publisher": "sciencedirect.com",
+        "source_type": "web page",
+        "locator": "https://www.sciencedirect.com/science/article/pii/S0924224424000876",
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Candidate discovered through bounded search; human approval is required before fetching and storing source text.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+        "assigned_node_ids": [],
+        "decision_rationale": null
+      },
+      {
+        "id": "live_2",
+        "title": "Introduction to Coffee History, Preparation Methods, and the Basic ...",
+        "publisher": "books.rsc.org",
+        "source_type": "web page",
+        "locator": "https://books.rsc.org/books/edited-volume/2301/chapter/8485602/Introduction-to-Coffee-History-Preparation-Methods",
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Candidate discovered through bounded search; human approval is required before fetching and storing source text.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+        "assigned_node_ids": [],
+        "decision_rationale": null
+      },
+      {
+        "id": "live_3",
+        "title": "Coffee: A comprehensive overview of origin, market, and the quality ...",
+        "publisher": "sciencedirect.com",
+        "source_type": "web page",
+        "locator": "https://www.sciencedirect.com/science/article/abs/pii/S0924224424000876",
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Candidate discovered through bounded search; human approval is required before fetching and storing source text.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+        "assigned_node_ids": [],
+        "decision_rationale": null
+      },
+      {
+        "id": "live_4",
+        "title": "An Engineer's Guide to Coffee from Bean to Brew",
+        "publisher": "engineering.ucdavis.edu",
+        "source_type": "web page",
+        "locator": "https://engineering.ucdavis.edu/news/engineers-guide-coffee-bean-brew",
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Candidate discovered through bounded search; human approval is required before fetching and storing source text.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+        "assigned_node_ids": [],
+        "decision_rationale": null
+      },
+      {
+        "id": "live_5",
+        "title": "Visit About Coffee Website - ncausa.org",
+        "publisher": "ncausa.org",
+        "source_type": "web page",
+        "locator": "https://www.ncausa.org/About-Coffee/Visit-About-Coffee-Website",
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Candidate discovered through bounded search; human approval is required before fetching and storing source text.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+        "assigned_node_ids": [],
+        "decision_rationale": null
+      },
+      {
+        "id": "live_6",
+        "title": "Coffee - CoffeeResearch.org",
+        "publisher": "coffeeresearch.org",
+        "source_type": "web page",
+        "locator": "https://coffeeresearch.org/",
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Candidate discovered through bounded search; human approval is required before fetching and storing source text.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+        "assigned_node_ids": [],
+        "decision_rationale": null
+      },
+      {
+        "id": "live_7",
+        "title": "Coffee - Wikipedia",
+        "publisher": "en.wikipedia.org",
+        "source_type": "web page",
+        "locator": "https://en.wikipedia.org/wiki/Coffee",
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Candidate discovered through bounded search; human approval is required before fetching and storing source text.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+        "assigned_node_ids": [],
+        "decision_rationale": null
+      },
+      {
+        "id": "live_8",
+        "title": "(PDF) The Coffee Guide, Fourth Edition - ResearchGate",
+        "publisher": "researchgate.net",
+        "source_type": "web page",
+        "locator": "https://www.researchgate.net/publication/355928597_The_Coffee_Guide_Fourth_Edition",
+        "content_ref": null,
+        "status": "proposed",
+        "trust_notes": "Candidate discovered through bounded search; human approval is required before fetching and storing source text.",
+        "relevance": "Search snippet suggests relevance to core concepts in Coffee making, practical examples: Live search result for: Coffee making factual guide reference evidence",
+        "assigned_node_ids": [],
+        "decision_rationale": null
+      }
+    ],
+    "source_failures": [
+      {
+        "id": "sf_live_6",
+        "title": "SCA Barista Module - Coffee Skills Program - Boot Coffee Campus",
+        "locator": "https://bootcoffee.com/sca-barista-module-coffee-skills-program/",
+        "reason": "The page did not expose a usable public course outline."
+      },
+      {
+        "id": "sf_live_7",
+        "title": "Introduction to Coffee | CP Coffee Academy",
+        "locator": "https://www.cpcoffeeacademy.com/courses",
+        "reason": "The page did not expose a usable public course outline."
+      }
+    ]
+  }
+}

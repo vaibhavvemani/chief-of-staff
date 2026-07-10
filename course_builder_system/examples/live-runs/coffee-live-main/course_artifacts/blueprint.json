@@ -1,0 +1,442 @@
+{
+  "course_id": "coffee-live-main",
+  "artifact_type": "blueprint",
+  "produced_by_step": "blueprint",
+  "schema_version": "0.2",
+  "status": "approved",
+  "revision": 0,
+  "revision_note": null,
+  "inputs": [
+    "course_model"
+  ],
+  "updated_at": "2026-07-06T11:02:57+00:00",
+  "body": {
+    "course_defaults": {
+      "depth_budget": {
+        "level": "introductory",
+        "target_learning_minutes": 20,
+        "target_word_range": {
+          "minimum": 750,
+          "target": 1100,
+          "maximum": 1550
+        },
+        "required_concept_ids": [],
+        "required_example_count": 2,
+        "case_depth": "brief",
+        "assessment_complexity": "application",
+        "expansion_policy": "targeted_by_coverage_gap"
+      },
+      "default_asset_types": [
+        "learning_objectives",
+        "course_content",
+        "summary",
+        "assessment"
+      ],
+      "source_routing_policy": "Route only sources approved for the subtopic; do not route rejected, proposed, unavailable, or contentless sources."
+    },
+    "subtopic_plans": [
+      {
+        "subtopic_id": "m1_s1",
+        "depth_budget": {
+          "level": "introductory",
+          "target_learning_minutes": 20,
+          "target_word_range": {
+            "minimum": 750,
+            "target": 1100,
+            "maximum": 1550
+          },
+          "required_concept_ids": [
+            "c_m1_s1_1"
+          ],
+          "required_example_count": 1,
+          "case_depth": "none",
+          "assessment_complexity": "application",
+          "expansion_policy": "targeted_by_coverage_gap"
+        },
+        "asset_plan": [
+          {
+            "id": "m1_s1_lo",
+            "asset_type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "selection_status": "selected",
+            "purpose": "State measurable learner targets.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s1_cc",
+            "asset_type": "course_content",
+            "title": "Core Concepts In Coffee Making",
+            "format": "pptx",
+            "selection_status": "selected",
+            "purpose": "Teach the approved coverage at depth.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s1_summary",
+            "asset_type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "selection_status": "selected",
+            "purpose": "Reinforce the lesson without adding new claims.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s1_case",
+            "asset_type": "case_study",
+            "title": "Case Study",
+            "format": "pptx",
+            "selection_status": "proposed",
+            "purpose": "Apply the subtopic to a grounded scenario.",
+            "source_ids": []
+          },
+          {
+            "id": "m1_s1_assess",
+            "asset_type": "assessment",
+            "title": "Assessment",
+            "format": "pptx",
+            "selection_status": "proposed",
+            "purpose": "Check learner understanding and transfer.",
+            "source_ids": []
+          },
+          {
+            "id": "m1_s1_activities",
+            "asset_type": "activities",
+            "title": "Activities",
+            "format": "docx",
+            "selection_status": "proposed",
+            "purpose": "Give learners participatory practice.",
+            "source_ids": []
+          },
+          {
+            "id": "m1_s1_resources",
+            "asset_type": "resources",
+            "title": "Additional Resources",
+            "format": "docx",
+            "selection_status": "selected",
+            "purpose": "Point learners to approved source paths.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          }
+        ],
+        "source_routing_notes": "Selected assets cite only this subtopic's approved source ids: live_5, live_6",
+        "anchor_asset_waiver_confirmed": false
+      },
+      {
+        "subtopic_id": "m1_s2",
+        "depth_budget": {
+          "level": "introductory",
+          "target_learning_minutes": 20,
+          "target_word_range": {
+            "minimum": 750,
+            "target": 1100,
+            "maximum": 1550
+          },
+          "required_concept_ids": [
+            "c_m1_s2_1"
+          ],
+          "required_example_count": 2,
+          "case_depth": "none",
+          "assessment_complexity": "analysis",
+          "expansion_policy": "targeted_by_coverage_gap"
+        },
+        "asset_plan": [
+          {
+            "id": "m1_s2_lo",
+            "asset_type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "selection_status": "selected",
+            "purpose": "State measurable learner targets.",
+            "source_ids": [
+              "live_5"
+            ]
+          },
+          {
+            "id": "m1_s2_cc",
+            "asset_type": "course_content",
+            "title": "Practical Examples",
+            "format": "pptx",
+            "selection_status": "selected",
+            "purpose": "Teach the approved coverage at depth.",
+            "source_ids": [
+              "live_5"
+            ]
+          },
+          {
+            "id": "m1_s2_summary",
+            "asset_type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "selection_status": "selected",
+            "purpose": "Reinforce the lesson without adding new claims.",
+            "source_ids": [
+              "live_5"
+            ]
+          },
+          {
+            "id": "m1_s2_case",
+            "asset_type": "case_study",
+            "title": "Case Study",
+            "format": "pptx",
+            "selection_status": "proposed",
+            "purpose": "Apply the subtopic to a grounded scenario.",
+            "source_ids": []
+          },
+          {
+            "id": "m1_s2_assess",
+            "asset_type": "assessment",
+            "title": "Assessment",
+            "format": "pptx",
+            "selection_status": "proposed",
+            "purpose": "Check learner understanding and transfer.",
+            "source_ids": []
+          },
+          {
+            "id": "m1_s2_activities",
+            "asset_type": "activities",
+            "title": "Activities",
+            "format": "docx",
+            "selection_status": "selected",
+            "purpose": "Give learners participatory practice.",
+            "source_ids": [
+              "live_5"
+            ]
+          },
+          {
+            "id": "m1_s2_resources",
+            "asset_type": "resources",
+            "title": "Additional Resources",
+            "format": "docx",
+            "selection_status": "proposed",
+            "purpose": "Point learners to approved source paths.",
+            "source_ids": []
+          }
+        ],
+        "source_routing_notes": "Selected assets cite only this subtopic's approved source ids: live_5",
+        "anchor_asset_waiver_confirmed": false
+      },
+      {
+        "subtopic_id": "m1_s3",
+        "depth_budget": {
+          "level": "introductory",
+          "target_learning_minutes": 20,
+          "target_word_range": {
+            "minimum": 750,
+            "target": 1100,
+            "maximum": 1550
+          },
+          "required_concept_ids": [
+            "c_m1_s3_1"
+          ],
+          "required_example_count": 1,
+          "case_depth": "brief",
+          "assessment_complexity": "application",
+          "expansion_policy": "targeted_by_coverage_gap"
+        },
+        "asset_plan": [
+          {
+            "id": "m1_s3_lo",
+            "asset_type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "selection_status": "selected",
+            "purpose": "State measurable learner targets.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s3_cc",
+            "asset_type": "course_content",
+            "title": "Coffee Making Practice",
+            "format": "pptx",
+            "selection_status": "selected",
+            "purpose": "Teach the approved coverage at depth.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s3_summary",
+            "asset_type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "selection_status": "selected",
+            "purpose": "Reinforce the lesson without adding new claims.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s3_case",
+            "asset_type": "case_study",
+            "title": "Case Study",
+            "format": "pptx",
+            "selection_status": "proposed",
+            "purpose": "Apply the subtopic to a grounded scenario.",
+            "source_ids": []
+          },
+          {
+            "id": "m1_s3_assess",
+            "asset_type": "assessment",
+            "title": "Assessment",
+            "format": "pptx",
+            "selection_status": "selected",
+            "purpose": "Check learner understanding and transfer.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s3_activities",
+            "asset_type": "activities",
+            "title": "Activities",
+            "format": "docx",
+            "selection_status": "proposed",
+            "purpose": "Give learners participatory practice.",
+            "source_ids": []
+          },
+          {
+            "id": "m1_s3_resources",
+            "asset_type": "resources",
+            "title": "Additional Resources",
+            "format": "docx",
+            "selection_status": "proposed",
+            "purpose": "Point learners to approved source paths.",
+            "source_ids": []
+          }
+        ],
+        "source_routing_notes": "Selected assets cite only this subtopic's approved source ids: live_5, live_6",
+        "anchor_asset_waiver_confirmed": false
+      },
+      {
+        "subtopic_id": "m1_s4",
+        "depth_budget": {
+          "level": "introductory",
+          "target_learning_minutes": 20,
+          "target_word_range": {
+            "minimum": 750,
+            "target": 1100,
+            "maximum": 1550
+          },
+          "required_concept_ids": [
+            "c_m1_s4_1"
+          ],
+          "required_example_count": 2,
+          "case_depth": "detailed",
+          "assessment_complexity": "analysis",
+          "expansion_policy": "targeted_by_coverage_gap"
+        },
+        "asset_plan": [
+          {
+            "id": "m1_s4_lo",
+            "asset_type": "learning_objectives",
+            "title": "Learning Objectives",
+            "format": "docx",
+            "selection_status": "selected",
+            "purpose": "State measurable learner targets.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s4_cc",
+            "asset_type": "course_content",
+            "title": "Coffee Making Troubleshooting",
+            "format": "pptx",
+            "selection_status": "selected",
+            "purpose": "Teach the approved coverage at depth.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s4_summary",
+            "asset_type": "summary",
+            "title": "Summary",
+            "format": "docx",
+            "selection_status": "selected",
+            "purpose": "Reinforce the lesson without adding new claims.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s4_case",
+            "asset_type": "case_study",
+            "title": "Case Study",
+            "format": "pptx",
+            "selection_status": "selected",
+            "purpose": "Apply the subtopic to a grounded scenario.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s4_assess",
+            "asset_type": "assessment",
+            "title": "Assessment",
+            "format": "pptx",
+            "selection_status": "selected",
+            "purpose": "Check learner understanding and transfer.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s4_activities",
+            "asset_type": "activities",
+            "title": "Activities",
+            "format": "docx",
+            "selection_status": "selected",
+            "purpose": "Give learners participatory practice.",
+            "source_ids": [
+              "live_5",
+              "live_6"
+            ]
+          },
+          {
+            "id": "m1_s4_resources",
+            "asset_type": "resources",
+            "title": "Additional Resources",
+            "format": "docx",
+            "selection_status": "proposed",
+            "purpose": "Point learners to approved source paths.",
+            "source_ids": []
+          }
+        ],
+        "source_routing_notes": "Selected assets cite only this subtopic's approved source ids: live_5, live_6",
+        "anchor_asset_waiver_confirmed": false
+      }
+    ],
+    "decision_log": [
+      {
+        "id": "bd1",
+        "scope": "course_defaults",
+        "decision": "accepted_generated_defaults",
+        "rationale": "Initial Blueprint uses course-level defaults and only varies subtopic assets where the Course Model suggests practice or diagnosis."
+      }
+    ]
+  }
+}
