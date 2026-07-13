@@ -1,6 +1,7 @@
 import { demoCourses, demoWorkspaceFor } from "../data/demo";
 import type {
   BlueprintPlan,
+  BriefAnswers,
   BriefData,
   ContentAsset,
   CourseModule,
@@ -621,6 +622,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       attention_count: projection.attention?.blocking_total ?? 0,
       current_stage: projection.current_stage,
     });
+    const startingSubject = projection.title ?? emptyCourse.subject ?? "this subject";
     const base: Workspace = {
       ...demoShape,
       course: emptyCourse,
@@ -628,20 +630,20 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       artifactVersion: "",
       estimatedCost: undefined,
       brief: {
-        courseTitle: projection.title ?? "",
-        subject: projection.title ?? "",
-        audience: "",
-        priorKnowledge: "",
-        purpose: "",
-        level: "",
-        duration: "",
-        modality: "",
-        language: "",
-        inScope: [],
-        outOfScope: [],
-        mustHaveTopics: [],
+        courseTitle: projection.title ?? "Untitled course",
+        subject: startingSubject,
+        audience: "General adult learners who are new to the subject.",
+        priorKnowledge: "No prior knowledge assumed.",
+        purpose: `Build practical working knowledge of ${startingSubject}.`,
+        level: "beginner",
+        duration: "3 hours of self-paced learning",
+        modality: "self_paced",
+        language: "English",
+        inScope: [`core concepts in ${startingSubject}`, "practical examples"],
+        outOfScope: ["advanced specialist topics"],
+        mustHaveTopics: ["practical examples"],
         constraints: [],
-        assessmentExpectations: "",
+        assessmentExpectations: "Short practical checks and scenario questions.",
         assumptions: [],
       },
       outcomes: [],
@@ -665,6 +667,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
         files: [],
       },
       activity: [],
+      briefChecksum: artifacts.get("brief")?.checksum,
     };
     const runSummary = artifacts.get("run_summary")?.body;
     const manifest = artifacts.get("render_manifest")?.body;
@@ -716,6 +719,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       artifactVersion:
         projection.stages?.map((stage) => stage.checksum).filter(Boolean).join(":") || base.artifactVersion,
       brief: normalizeBrief(artifacts.get("brief")?.body, base.brief),
+      briefChecksum: artifacts.get("brief")?.checksum,
       outcomes: normalizeOutcomes(artifacts.get("course_outcomes")?.body, base.outcomes),
       research: {
         sources: normalizeSources(
@@ -776,7 +780,41 @@ export async function createCourse(request: CreateCourseRequest): Promise<{ cour
       known_source_locators: request.sourceUrls ?? [],
     }),
   });
-  return { courseId: data.course_id ?? data.courseId ?? "" };
+  const courseId = data.course_id ?? data.courseId ?? "";
+  await saveBriefAnswers(courseId, request.briefAnswers);
+  return { courseId };
+}
+
+function briefAnswersPayload(answers: BriefAnswers): Record<string, unknown> {
+  return {
+    course_title: answers.courseTitle,
+    audience: answers.audience,
+    prior_knowledge: answers.priorKnowledge,
+    purpose: answers.purpose,
+    level: answers.level,
+    duration: answers.duration,
+    modality: answers.modality,
+    language: answers.language,
+    in_scope: answers.inScope,
+    out_of_scope: answers.outOfScope,
+    must_have_topics: answers.mustHaveTopics,
+    constraints: answers.constraints,
+    assessment_expectations: answers.assessmentExpectations,
+  };
+}
+
+export async function saveBriefAnswers(
+  courseId: string,
+  answers: BriefAnswers,
+  expectedChecksum?: string,
+): Promise<{ checksum?: string }> {
+  return apiFetch<{ checksum?: string }>(`/api/courses/${encodeURIComponent(courseId)}/brief/answers`, {
+    method: "PUT",
+    body: JSON.stringify({
+      answers: Object.fromEntries(Object.entries(briefAnswersPayload(answers)).filter(([, value]) => value !== undefined)),
+      expected_checksum: expectedChecksum,
+    }),
+  });
 }
 
 export async function runStage(courseId: string, stage: StageSlug, command: StageCommand): Promise<JobResponse> {

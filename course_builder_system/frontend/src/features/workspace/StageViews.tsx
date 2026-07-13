@@ -33,21 +33,29 @@ function TagList({ values, tone = "neutral" }: { values: string[]; tone?: "neutr
   return <div className="tag-list">{values.map((value) => <span key={value} className={`tag tag-${tone}`}>{value}</span>)}</div>;
 }
 
-function BriefView({ workspace }: { workspace: Workspace }) {
+export type BriefEditSection = "settings" | "learner" | "scope" | "coverage" | "assumptions";
+
+function BriefSectionAction({ section, label, onEdit }: { section: BriefEditSection; label: string; onEdit?: (section: BriefEditSection) => void }) {
+  if (!onEdit) return null;
+  return <button className="section-edit-button" onClick={() => onEdit(section)} aria-label={`${label} in Course Brief`}><span>Adjust</span><span aria-hidden="true">→</span></button>;
+}
+
+function BriefView({ workspace, onEdit }: { workspace: Workspace; onEdit?: (section: BriefEditSection) => void }) {
   const brief = workspace.brief;
+  const summary = workspace.stages.find((stage) => stage.slug === "brief");
+  const hasArtifact = Boolean(workspace.briefChecksum);
   return (
     <div className="stage-view">
       {stageIntro(
         "Course Brief",
         "01 · Direction",
         "The agent turned the sparse request into a practical working agreement. Review its assumptions before downstream work changes.",
-        <div className="artifact-stamp"><span>Approved artifact</span><strong>Brief · r1</strong></div>,
+        <div className={`artifact-stamp ${hasArtifact ? "" : "suggested"}`}><span>{hasArtifact ? "Working artifact" : "Suggested starting point"}</span><strong>{summary?.status === "approved" ? "Approved" : hasArtifact ? "Ready for review" : "Not saved yet"}</strong></div>,
       )}
       <div className="brief-hero-card">
-        <div>
-          <span className="card-kicker">Course intent</span>
-          <h2>{brief.courseTitle}</h2>
-          <p>{brief.purpose}</p>
+        <div className="brief-hero-heading">
+          <div><span className="card-kicker">Course intent</span><h2>{brief.courseTitle}</h2><p>{brief.purpose}</p></div>
+          <BriefSectionAction section="settings" label="Adjust course settings" onEdit={onEdit} />
         </div>
         <dl className="brief-quickfacts">
           <DefinitionItem label="Level" value={brief.level} />
@@ -58,7 +66,7 @@ function BriefView({ workspace }: { workspace: Workspace }) {
       </div>
       <div className="stage-card-grid two-column">
         <section className="stage-card">
-          <div className="card-heading"><div><span className="card-index">A</span><h3>Learner and intent</h3></div><button className="text-button" disabled title="Inline Brief editing is follow-on work; use Request changes for this release">Edit section</button></div>
+          <div className="card-heading"><div><span className="card-index">A</span><h3>Learner and intent</h3></div><BriefSectionAction section="learner" label="Adjust learner and intent" onEdit={onEdit} /></div>
           <dl className="stacked-definitions">
             <DefinitionItem label="Audience" value={brief.audience} />
             <DefinitionItem label="Prior knowledge" value={brief.priorKnowledge} />
@@ -66,21 +74,21 @@ function BriefView({ workspace }: { workspace: Workspace }) {
           </dl>
         </section>
         <section className="stage-card">
-          <div className="card-heading"><div><span className="card-index">B</span><h3>Scope boundary</h3></div><button className="text-button" disabled title="Inline Brief editing is follow-on work; use Request changes for this release">Edit section</button></div>
+          <div className="card-heading"><div><span className="card-index">B</span><h3>Scope boundary</h3></div><BriefSectionAction section="scope" label="Adjust scope boundary" onEdit={onEdit} /></div>
           <div className="scope-columns">
             <div><span className="micro-label">In scope</span><TagList values={brief.inScope} /></div>
             <div><span className="micro-label">Out of scope</span><TagList values={brief.outOfScope} tone="out" /></div>
           </div>
         </section>
         <section className="stage-card">
-          <div className="card-heading"><div><span className="card-index">C</span><h3>Must-have coverage</h3></div></div>
+          <div className="card-heading"><div><span className="card-index">C</span><h3>Must-have coverage</h3></div><BriefSectionAction section="coverage" label="Adjust must-have coverage" onEdit={onEdit} /></div>
           <TagList values={brief.mustHaveTopics} />
           <div className="card-divider" />
           <span className="micro-label">Constraints</span>
           <ul className="clean-list">{brief.constraints.map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
         <section className="stage-card assumption-card">
-          <div className="card-heading"><div><span className="card-index">D</span><h3>Visible assumptions</h3></div><span className="count-bubble">{brief.assumptions.length}</span></div>
+          <div className="card-heading"><div><span className="card-index">D</span><h3>Visible assumptions</h3></div><BriefSectionAction section="assumptions" label="Review visible assumptions" onEdit={onEdit} /></div>
           <p className="card-note">Defaults are proposals, not hidden facts. Reopen the Brief to correct any of them.</p>
           <div className="assumption-list">
             {brief.assumptions.map((assumption) => (
@@ -436,9 +444,9 @@ function PackageView({ workspace }: { workspace: Workspace }) {
   );
 }
 
-export function StageView({ stage, workspace, onContentAction, onSourceDecision }: { stage: StageSlug; workspace: Workspace; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void }) {
+export function StageView({ stage, workspace, onContentAction, onSourceDecision, onEditBrief }: { stage: StageSlug; workspace: Workspace; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onEditBrief?: (section: BriefEditSection) => void }) {
   switch (stage) {
-    case "brief": return <BriefView workspace={workspace} />;
+    case "brief": return <BriefView workspace={workspace} onEdit={onEditBrief} />;
     case "outcomes": return <OutcomesView workspace={workspace} />;
     case "research": return <ResearchView workspace={workspace} onSourceDecision={onSourceDecision} />;
     case "course-model": return <CourseModelView workspace={workspace} />;

@@ -242,6 +242,23 @@ export interface Workspace {
     files: OutputFile[];
   };
   activity: ActivityEvent[];
+  briefChecksum?: string;
+}
+
+export interface BriefAnswers {
+  courseTitle?: string;
+  audience: string;
+  priorKnowledge: string;
+  purpose?: string;
+  level: string;
+  duration: string;
+  modality: string;
+  language: string;
+  inScope?: string[];
+  outOfScope?: string[];
+  mustHaveTopics?: string[];
+  constraints?: string[];
+  assessmentExpectations?: string;
 }
 
 export interface CreateCourseRequest {
@@ -249,6 +266,7 @@ export interface CreateCourseRequest {
   description?: string;
   constraints?: string;
   sourceUrls?: string[];
+  briefAnswers: BriefAnswers;
 }
 
 export interface StageCommand {
