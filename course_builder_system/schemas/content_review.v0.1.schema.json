@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://course-builder.local/schemas/content_review.v0.1.schema.json",
+  "title": "Course Builder Content Review v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "course_id",
+    "artifact_type",
+    "produced_by_step",
+    "schema_version",
+    "status",
+    "revision",
+    "revision_note",
+    "inputs",
+    "updated_at",
+    "body"
+  ],
+  "properties": {
+    "course_id": { "type": "string", "minLength": 1 },
+    "artifact_type": { "const": "content_review" },
+    "produced_by_step": { "const": "content_review" },
+    "schema_version": { "const": "0.1" },
+    "status": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "revision_note": { "type": ["string", "null"] },
+    "inputs": {
+      "type": "array",
+      "contains": { "const": "content_package" },
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assets", "summary"],
+      "properties": {
+        "assets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/review" }
+        },
+        "summary": { "$ref": "#/$defs/summary" }
+      }
+    }
+  },
+  "$defs": {
+    "blockers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unsupported", "ungrounded", "unattributed"],
+      "properties": {
+        "unsupported": { "type": "integer", "minimum": 0 },
+        "ungrounded": { "type": "integer", "minimum": 0 },
+        "unattributed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset_id",
+        "subtopic_id",
+        "asset_type",
+        "title",
+        "asset_fingerprint",
+        "decision",
+        "feedback",
+        "reviewed_at",
+        "verification_blockers"
+      ],
+      "properties": {
+        "asset_id": { "type": "string", "minLength": 1 },
+        "subtopic_id": { "type": "string", "minLength": 1 },
+        "asset_type": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "asset_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "decision": { "enum": ["pending", "approved", "changes_requested"] },
+        "feedback": { "type": ["string", "null"] },
+        "reviewed_at": { "type": ["string", "null"] },
+        "verification_blockers": { "$ref": "#/$defs/blockers" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "pending",
+        "approved",
+        "changes_requested",
+        "verification_blockers",
+        "ready_for_package"
+      ],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "pending": { "type": "integer", "minimum": 0 },
+        "approved": { "type": "integer", "minimum": 0 },
+        "changes_requested": { "type": "integer", "minimum": 0 },
+        "verification_blockers": { "$ref": "#/$defs/blockers" },
+        "ready_for_package": { "type": "boolean" }
+      }
+    }
+  }
+}

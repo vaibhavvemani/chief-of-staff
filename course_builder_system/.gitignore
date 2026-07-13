@@ -9,6 +9,9 @@ CLAUDE.local.md
 logs/
 outputs/
 rendered_courses/
+runtime/
+frontend/dist/
+frontend/.vite/
 
 # Course run checkpoints are generated at runtime. Keep only curated fixtures.
 courses/*/
@@ -24,4 +27,3 @@ __pycache__/
 
 # OS/editor clutter
 .DS_Store
-
