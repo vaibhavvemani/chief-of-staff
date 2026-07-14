@@ -1,6 +1,6 @@
 # Course Builder Frontend — Product and Implementation Plan
 
-> Implementation status — 2026-07-13: the first vertical release described by
+> Implementation status — 2026-07-14: the first vertical release described by
 > this plan is implemented in `frontend/` and `api/`. It includes the eight-stage
 > artifact workspace, read-only historical snapshots, course creation, stage
 > execution and checkpoints, explicit source decisions, claim-level content
@@ -8,8 +8,13 @@
 > Markdown package gate. Rich inline editing for every structured artifact,
 > automated source-gap repair, multi-user operation, and non-Markdown exports
 > remain follow-on work.
+>
+> For the authoritative description of what was actually implemented, current
+> behavior, extension rules, and known limitations, read
+> `Course_Builder_Frontend_Implementation_Handoff.md`. This file is retained as
+> the original product and implementation plan.
 
-> **Status:** Proposed for review
+> **Status:** Implemented baseline; retained as planning rationale
 > **Date:** 2026-07-13
 > **Scope:** Single-director browser interface for the completed Course Builder prototype
 > **Primary constraint:** Preserve the existing artifact, approval, grounding, verification, and resume contracts

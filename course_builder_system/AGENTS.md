@@ -6,7 +6,9 @@ agent instruction file.
 
 ## Project Status
 
-The Course Builder four-week prototype is complete as of 2026-07-06.
+The Course Builder four-week prototype is complete as of 2026-07-06. The first
+local Course Builder Studio frontend and FastAPI adapter are implemented as of
+2026-07-14.
 
 The system turns a sparse subject request into a rendered course folder through:
 
@@ -20,6 +22,8 @@ Primary context docs:
 
 - `documents/context_docs/Course_Builder_Master_Context.md` - current north star and status.
 - `documents/context_docs/Course_Builder_Four_Week_Prototype_Completion_Handoff.md` - delivered prototype, validation evidence, known gaps, and recommended next work.
+- `documents/context_docs/Course_Builder_Frontend_Implementation_Handoff.md` - implemented browser product, API adapter, stage behavior, state flow, extension rules, and known limitations.
+- `documents/context_docs/Course_Builder_Frontend_Product_and_Implementation_Plan.md` - original frontend product and architecture plan; use the implementation handoff for current behavior.
 - `documents/context_docs/Course_Builder_Four_Week_Prototype_Plan.md` - intended prototype scope and definition of done.
 - `documents/context_docs/Course_Builder_Four_Week_Sprint_Plan.md` - completed sprint plan and acceptance framing.
 - `documents/Prototype_Operator_Guide.md` - how to run and review the prototype.
@@ -45,6 +49,8 @@ Useful commands:
 - `python3 -m pytest -q` - run the full test suite.
 - `ruff check .` - lint the repo.
 - `ruff format .` - format Python files when appropriate.
+- `cd frontend && npm run build` - type-check and build Course Builder Studio.
+- `cd frontend && npm test` - run frontend unit tests.
 
 Local deterministic tests and acceptance do not require external services.
 Live generation and verification use Anthropic via `anthropic`; set

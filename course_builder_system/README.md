@@ -16,6 +16,9 @@ stage behavior, prompts, LLM calls, API, frontend, validation, and current
 limitations, read
 [`documents/Course_Builder_Complete_Technical_Guide.md`](documents/Course_Builder_Complete_Technical_Guide.md).
 
+For the canonical Course Builder Studio product and implementation handoff, read
+[`documents/context_docs/Course_Builder_Frontend_Implementation_Handoff.md`](documents/context_docs/Course_Builder_Frontend_Implementation_Handoff.md).
+
 ## Run
 
 Deterministic local acceptance:
@@ -61,7 +64,8 @@ npm run dev
 Open `http://localhost:5173`. Vite proxies `/api` to the local FastAPI server.
 The dashboard exposes runtime courses plus the committed acceptance and live-run
 snapshots; committed snapshots are deliberately read-only. New stage runs default
-to deterministic mode. Live mode uses `ANTHROPIC_API_KEY` only on the Python
+to Live agent mode, with deterministic mode available for repeatable local tests.
+Live mode uses `ANTHROPIC_API_KEY` only on the Python
 server—the browser never receives provider credentials.
 
 For a single-process local build, run `npm run build` in `frontend/` first and

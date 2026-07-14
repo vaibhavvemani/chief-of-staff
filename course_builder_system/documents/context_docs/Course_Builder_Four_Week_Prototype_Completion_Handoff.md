@@ -5,6 +5,15 @@
 > **Branch state at validation:** `main` after live-flow efficiency and verifier attention-gate fixes
 > **Purpose:** Record what the prototype now does, what was verified, what does not work well enough yet, and what should be improved next.
 
+> **Post-completion update — 2026-07-14:** Course Builder Studio is now implemented
+> as a local React/Vite frontend with a FastAPI adapter, eight-stage artifact
+> workspace, browser checkpoints, persisted jobs/SSE progress, source decisions,
+> content review, and Markdown Package inspection. This materially addresses the
+> operator-review and terminal-UX gaps recorded below. Read
+> `Course_Builder_Frontend_Implementation_Handoff.md` for current browser behavior.
+> The recommended source-repair and verifier-driven targeted-revision package remains
+> the highest-value next work.
+
 ## 1. Executive Summary
 
 The four-week Course Builder prototype is complete as a working vertical path.

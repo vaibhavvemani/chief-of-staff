@@ -4,17 +4,20 @@
 
 ---
 
-## Current status - 2026-07-06
+## Current status - 2026-07-14
 
 The four-week Course Builder prototype is complete as a working vertical product prototype. It has passed deterministic local acceptance, a second-topic domain-neutral smoke test, and one full live end-to-end run using live research, live LLM-backed content generation, live verification, lesson-plan generation, and Markdown rendering.
 
 Read `Course_Builder_Four_Week_Prototype_Completion_Handoff.md` before starting new work. It is the current prototype closeout record and supersedes the pre-build sprint assumptions for status, known gaps, and recommended next work.
+
+Course Builder Studio, the artifact-oriented browser interface, is also implemented as a local product prototype. It adds a React/Vite frontend and FastAPI adapter for course creation, eight-stage review, live or deterministic stage execution, explicit source decisions, claim-level content review, Lesson Plan inspection, and Markdown Package review. Read `Course_Builder_Frontend_Implementation_Handoff.md` before changing the frontend, API adapter, workspace projection, or browser workflow.
 
 The most important current conclusion:
 
 - the pipeline works end to end;
 - source enforcement, asset selection, resume, rendering, and integrity checks work;
 - live generation can complete at acceptable cost after source-excerpt bounding;
+- the browser now provides the primary structured operator workspace over the same artifact contracts;
 - first-pass live content is not automatically learner-ready;
 - verifier blockers must drive source repair and targeted revision before a live course is considered final.
 
@@ -24,6 +27,7 @@ The most important current conclusion:
 
 - Read this whole document first. It is self-contained — you should not need any other file to understand the project.
 - Then read `Course_Builder_Four_Week_Prototype_Completion_Handoff.md` for the current implementation state, validation evidence, and next work package.
+- For frontend or API-adapter work, then read `Course_Builder_Frontend_Implementation_Handoff.md`. The older frontend product plan records intent; the handoff records the implementation that actually exists.
 - **Intent wins on vision; detail wins on implementation.** Sections 1–11 define *what* we are building and the decisions already locked. Sections 12–19 define *how* we are building it.
 - **Do not re-litigate locked decisions** (Section 10) unless we explicitly reopen one. If a request seems to contradict a locked decision or a core principle, flag it rather than quietly drifting.
 - **Push back when warranted.** We prefer direct, rigorous collaboration over agreeable drift. Do not add scope, components, or "nice to haves" without genuine justification. If we are over-engineering, say so.
@@ -269,7 +273,7 @@ Defaults chosen to minimise moving parts while learning. Change any of them late
 | **Language** | Python — most agentic examples and SDKs assume it. (JavaScript works too; pick one and commit.) |
 | **Model access** | Call the model SDK directly. No agent framework yet. |
 | **State & storage** | Plain files on disk: one folder per course, artifacts as JSON. No database until you feel real pain. |
-| **Approval** | A console prompt at first — print the artifact, wait for approve / request-changes. A nicer interface is Phase 6. |
+| **Approval** | Course Builder Studio is the current structured browser checkpoint interface. The terminal prompt remains useful for CLI acceptance and debugging. |
 | **Grounding** | Store approved source texts separately; map them to subtopics and inject only relevant excerpts. Move to retrieval / RAG only when this deterministic mapping demonstrably stops scaling. |
 
 ---
@@ -286,7 +290,7 @@ Defaults chosen to minimise moving parts while learning. Change any of them late
 | **3** | Blueprint | **Complete in prototype:** runnable per-subtopic plan with depth, time, assets, examples/cases, assessments, and source routing |
 | **4** | Integrate & scale content | **Complete in prototype:** whole-course selected content generation from approved artifacts |
 | **5** | Lesson plan + output folder | **Complete in prototype for Markdown:** teacher lesson plan and organized Markdown course folder; native DOCX/PPTX/SCORM wiring remains later |
-| **6** | Hardening | **Partially complete:** resume, negative gates, source-context cost control, run-summary attention gate; production UX/observability remains later |
+| **6** | Hardening | **Partially complete:** resume, negative gates, source-context cost control, run-summary attention gate, and local browser workspace; production deployment, deeper editing, and richer observability remain later |
 
 ### Phase details
 
@@ -302,7 +306,7 @@ Defaults chosen to minimise moving parts while learning. Change any of them late
 
 **Phase 5 — Lesson Plan + output packaging. COMPLETE IN PROTOTYPE FOR MARKDOWN.** The lesson-plan agent maps approved content into a basic schedule, and the renderer exports an organized Markdown course folder. Native DOCX/PPTX and wiring generated output into the existing SCORM converter remain later work.
 
-**Phase 6 — Hardening. PARTIAL.** The prototype now has resume behavior, local acceptance, negative tests, source-context cost control, and a run-summary attention gate. It still needs better operator UX, source repair, verifier-driven revision, richer observability, and production packaging before a non-builder can run it confidently.
+**Phase 6 — Hardening. PARTIAL.** The prototype now has resume behavior, local acceptance, negative tests, source-context cost control, a run-summary attention gate, and Course Builder Studio as a local operator workspace. The browser supports the full eight-stage review flow, but the system still needs a closed source-repair/reverification loop, deeper structured editing, richer diagnostics, production deployment, and production packaging before a non-builder can run it confidently.
 
 ---
 
@@ -353,10 +357,10 @@ The Phase 0 handoff has been archived at `documents/context_docs/archive/Course_
 ## 20. Team & current state
 
 - **Team:** two engineers, both new to agentic AI.
-- **Current state:** The four-week prototype is complete. The reusable contracts, prompts, context builder, verification, integrity path, local acceptance course, live-run evidence, and FRM benchmark are in place. FRM-specific fixtures remain benchmark data, not reusable prompt or contract assumptions.
+- **Current state:** The four-week pipeline prototype and the first local Course Builder Studio frontend are complete. The reusable contracts, prompts, context builder, verification, integrity path, FastAPI adapter, React workspace, local acceptance course, live-run evidence, and FRM benchmark are in place. FRM-specific fixtures remain benchmark data, not reusable prompt or contract assumptions.
 - **Building method:** the project is being built largely with AI assistance — this document exists to give any AI collaborator full context.
 - **Key asset:** existing, manually-built courses (risk & governance subjects). These are the reference for designing the artifacts AND the quality bar the agent's output is measured against.
-- **Immediate next action:** execute the next work package from `Course_Builder_Four_Week_Prototype_Completion_Handoff.md`: source repair plus verifier-driven targeted revision, so live courses can move from `requires_attention` to learner-ready without broad regeneration.
+- **Immediate next action:** execute the next work package from `Course_Builder_Four_Week_Prototype_Completion_Handoff.md`: complete source repair plus verifier-driven targeted revision behind the operator choices already exposed in Course Builder Studio, so live courses can move from `requires_attention` to learner-ready without broad regeneration.
 
 ---
 
