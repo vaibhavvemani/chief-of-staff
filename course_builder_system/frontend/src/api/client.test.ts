@@ -5,6 +5,7 @@ import {
   requestStageChanges,
   reviewContentAsset,
   runStage,
+  saveBriefAnswers,
   saveSourceDecision,
 } from "./client";
 
@@ -15,8 +16,9 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function requestBody(fetchMock: ReturnType<typeof vi.fn>): Record<string, unknown> {
-  const init = fetchMock.mock.calls.at(-1)?.[1] as RequestInit;
+function requestBody(fetchMock: ReturnType<typeof vi.fn>, index = -1): Record<string, unknown> {
+  const call = index === -1 ? fetchMock.mock.calls.at(-1) : fetchMock.mock.calls[index];
+  const init = call?.[1] as RequestInit;
   return JSON.parse(String(init.body)) as Record<string, unknown>;
 }
 
@@ -26,9 +28,9 @@ afterEach(() => {
 
 describe("typed API commands", () => {
   it("maps the course creation form to the backend request contract", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse({ course_id: "herb-course", workspace: { course_id: "herb-course" } }, 201),
-    );
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ course_id: "herb-course", workspace: { course_id: "herb-course" } }, 201))
+      .mockResolvedValueOnce(jsonResponse({ artifact: { artifact_type: "brief" }, checksum: "brief-checksum" }));
     vi.stubGlobal("fetch", fetchMock);
 
     const created = await createCourse({
@@ -36,15 +38,97 @@ describe("typed API commands", () => {
       description: "For apartment renters",
       constraints: "No outdoor beds\nKeep it compact",
       sourceUrls: ["https://example.test/herbs"],
+      briefAnswers: {
+        audience: "Apartment renters new to gardening",
+        priorKnowledge: "No prior knowledge assumed.",
+        purpose: "Grow a useful windowsill herb garden.",
+        level: "beginner",
+        duration: "3 hours of self-paced learning",
+        modality: "self_paced",
+        language: "English",
+        constraints: ["No outdoor beds", "Keep it compact"],
+      },
     });
 
-    expect(created).toEqual({ courseId: "herb-course" });
-    expect(requestBody(fetchMock)).toEqual({
+    expect(created).toEqual({ courseId: "herb-course", briefInitialized: true });
+    expect(requestBody(fetchMock, 0)).toEqual({
       subject: "Indoor herb gardening",
       description: "For apartment renters",
       constraints: ["No outdoor beds", "Keep it compact"],
       known_source_locators: ["https://example.test/herbs"],
     });
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/courses/herb-course/brief/answers");
+    expect(requestBody(fetchMock)).toEqual({
+      answers: {
+        audience: "Apartment renters new to gardening",
+        prior_knowledge: "No prior knowledge assumed.",
+        purpose: "Grow a useful windowsill herb garden.",
+        level: "beginner",
+        duration: "3 hours of self-paced learning",
+        modality: "self_paced",
+        language: "English",
+        constraints: ["No outdoor beds", "Keep it compact"],
+      },
+    });
+  });
+
+  it("saves typed Brief edits with artifact concurrency control", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ checksum: "brief-next" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await saveBriefAnswers("herb-course", {
+      courseTitle: "Indoor herbs",
+      audience: "Apartment renters",
+      priorKnowledge: "None",
+      purpose: "Grow herbs indoors",
+      level: "beginner",
+      duration: "2 hours",
+      modality: "self_paced",
+      language: "English",
+      inScope: ["Lighting"],
+      outOfScope: ["Outdoor beds"],
+      mustHaveTopics: ["Watering"],
+      constraints: ["Small spaces"],
+      assessmentExpectations: "A short practical check",
+    }, "brief-before");
+
+    expect(requestBody(fetchMock)).toEqual({
+      answers: {
+        course_title: "Indoor herbs",
+        audience: "Apartment renters",
+        prior_knowledge: "None",
+        purpose: "Grow herbs indoors",
+        level: "beginner",
+        duration: "2 hours",
+        modality: "self_paced",
+        language: "English",
+        in_scope: ["Lighting"],
+        out_of_scope: ["Outdoor beds"],
+        must_have_topics: ["Watering"],
+        constraints: ["Small spaces"],
+        assessment_expectations: "A short practical check",
+      },
+      expected_checksum: "brief-before",
+    });
+  });
+
+  it("preserves a created course when Brief initialization loses the connection", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ course_id: "resilient-course" }, 201))
+      .mockRejectedValueOnce(new TypeError("connection lost"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(createCourse({
+      subject: "Resilient course",
+      briefAnswers: {
+        audience: "New learners",
+        priorKnowledge: "None",
+        level: "beginner",
+        duration: "3 hours",
+        modality: "self_paced",
+        language: "English",
+      },
+    })).resolves.toEqual({ courseId: "resilient-course", briefInitialized: false });
   });
 
   it("uses checksums and normalizes nested job responses for stage commands", async () => {

@@ -158,6 +158,11 @@ interface BackendWorkspace {
   next_action?: string;
   last_activity_at?: string;
   current_stage?: string;
+  active_job?: {
+    job_id?: string;
+    status?: string;
+    stage?: string;
+  } | null;
   attention?: {
     verification_totals?: Record<string, number>;
     blocking_total?: number;
@@ -203,14 +208,14 @@ const allStageSlugs: StageSlug[] = [
   "package",
 ];
 
-function artifactMap(stages: BackendStage[]): Map<string, { body: unknown; checksum?: string }> {
-  const map = new Map<string, { body: unknown; checksum?: string }>();
+function artifactMap(stages: BackendStage[]): Map<string, { body: unknown; checksum?: string; status?: string }> {
+  const map = new Map<string, { body: unknown; checksum?: string; status?: string }>();
   stages.forEach((stage) => {
     stage.artifacts?.forEach((artifact) => {
       if (!artifact.artifact_type) return;
       const envelope = isRecord(artifact.envelope) ? artifact.envelope : null;
       const body = artifact.body ?? envelope?.body;
-      map.set(artifact.artifact_type, { body, checksum: artifact.checksum });
+      map.set(artifact.artifact_type, { body, checksum: artifact.checksum, status: asString(envelope?.status) || undefined });
     });
   });
   return map;
@@ -265,7 +270,7 @@ function normalizeOutcomes(value: unknown, fallback: Outcome[]): Outcome[] {
   return outcomes.length ? outcomes : fallback;
 }
 
-function normalizeSources(value: unknown, registry: unknown, fallback: SourceCandidate[]): SourceCandidate[] {
+function normalizeSources(value: unknown, registry: unknown, registryStatus: string | undefined, fallback: SourceCandidate[]): SourceCandidate[] {
   if (!isRecord(value)) return fallback;
   const approvedIds = new Set<string>();
   const rejectedIds = new Set<string>();
@@ -287,7 +292,7 @@ function normalizeSources(value: unknown, registry: unknown, fallback: SourceCan
             sourceType: asString(item.source_type),
             locator: asString(item.locator),
             status: approvedIds.has(asString(item.id))
-              ? "approved"
+              ? registryStatus === "approved" ? "approved" : "selected"
               : rejectedIds.has(asString(item.id))
                 ? "rejected"
                 : asString(item.status),
@@ -647,7 +652,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
         assumptions: [],
       },
       outcomes: [],
-      research: { sources: [], competitors: [], observations: [] },
+      research: { sources: [], competitors: [], observations: [], registrySaved: false, registryApproved: false },
       modules: [],
       blueprint: {
         defaults: { depth: "", minutes: 0, wordTarget: 0, examples: 0, caseDepth: "", assessmentComplexity: "" },
@@ -716,6 +721,14 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       ...base,
       course: normalizedCourse,
       stages: normalizedStages,
+      activeJob:
+        projection.active_job?.job_id && allStageSlugs.includes(projection.active_job.stage as StageSlug)
+          ? {
+              jobId: projection.active_job.job_id,
+              status: projection.active_job.status === "running" ? "running" : "queued",
+              stage: projection.active_job.stage as StageSlug,
+            }
+          : undefined,
       artifactVersion:
         projection.stages?.map((stage) => stage.checksum).filter(Boolean).join(":") || base.artifactVersion,
       brief: normalizeBrief(artifacts.get("brief")?.body, base.brief),
@@ -725,6 +738,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
         sources: normalizeSources(
           artifacts.get("research_dossier")?.body,
           artifacts.get("approved_source_registry")?.body,
+          artifacts.get("approved_source_registry")?.status,
           base.research.sources,
         ),
         competitors: normalizeCompetitors(artifacts.get("research_dossier")?.body, base.research.competitors),
@@ -734,6 +748,8 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
               ...asStringArray((artifacts.get("research_dossier")?.body as Record<string, unknown>).gap_observations),
             ]
           : base.research.observations,
+        registrySaved: artifacts.has("approved_source_registry"),
+        registryApproved: artifacts.get("approved_source_registry")?.status === "approved",
       },
       modules: normalizeModules(artifacts.get("course_model")?.body, base.modules),
       blueprint: normalizeBlueprint(artifacts.get("blueprint")?.body, base.blueprint),
@@ -768,7 +784,7 @@ function workspaceSourceCount(value: unknown): number {
   return isRecord(value) ? asArray(value.source_registry).length : 0;
 }
 
-export async function createCourse(request: CreateCourseRequest): Promise<{ courseId: string }> {
+export async function createCourse(request: CreateCourseRequest): Promise<{ courseId: string; briefInitialized: boolean }> {
   const data = await apiFetch<{ course_id?: string; courseId?: string }>("/api/courses", {
     method: "POST",
     body: JSON.stringify({
@@ -781,8 +797,15 @@ export async function createCourse(request: CreateCourseRequest): Promise<{ cour
     }),
   });
   const courseId = data.course_id ?? data.courseId ?? "";
-  await saveBriefAnswers(courseId, request.briefAnswers);
-  return { courseId };
+  try {
+    await saveBriefAnswers(courseId, request.briefAnswers);
+    return { courseId, briefInitialized: true };
+  } catch (error) {
+    // The subject request already exists. Preserve that successful creation so a
+    // transient connection loss does not lead the user into a duplicate-course retry.
+    if (error instanceof ApiError && error.status === 0) return { courseId, briefInitialized: false };
+    throw error;
+  }
 }
 
 function briefAnswersPayload(answers: BriefAnswers): Record<string, unknown> {

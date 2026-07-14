@@ -29,7 +29,10 @@ STAGES: tuple[StageDefinition, ...] = (
     StageDefinition(
         "research",
         "Research & Sources",
-        ("research", "source_selection"),
+        # Source selection is a typed human decision in the workspace. The CLI
+        # pipelines may still use their deterministic fallback for unattended
+        # acceptance runs, but an interactive stage run must stop at candidates.
+        ("research",),
         ("research_dossier", "approved_source_registry"),
         ("brief", "course_outcomes"),
     ),

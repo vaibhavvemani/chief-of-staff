@@ -52,6 +52,16 @@ class DecisionService:
     def approve_stage(self, course_id: str, stage_slug: str) -> list[dict[str, Any]]:
         self._writable(course_id)
         definition = self.catalog.stage(stage_slug)
+        missing = [
+            artifact_type
+            for artifact_type in definition.artifacts
+            if self.repository.load(course_id, artifact_type) is None
+        ]
+        if missing:
+            raise ArtifactNotFound(
+                f"stage {stage_slug!r} is missing required decision output(s): "
+                f"{', '.join(missing)}"
+            )
         artifacts = []
         for artifact_type in definition.artifacts:
             artifact = self.repository.load(course_id, artifact_type)

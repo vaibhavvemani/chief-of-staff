@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
@@ -19,6 +19,23 @@ import type { BriefAnswers, BriefData, Claim, ContentAsset, StageSlug, UiStatus,
 import { StageView, stageData, type BriefEditSection } from "./StageViews";
 
 const stageSlugs: StageSlug[] = ["brief", "outcomes", "research", "course-model", "blueprint", "content", "lesson-plan", "package"];
+
+function nextStageAfter(stage: StageSlug): StageSlug | null {
+  const index = stageSlugs.indexOf(stage);
+  return index >= 0 && index < stageSlugs.length - 1 ? stageSlugs[index + 1] : null;
+}
+
+function stageName(stage: StageSlug): string {
+  return stage === "course-model"
+    ? "Course Model"
+    : stage === "lesson-plan"
+      ? "Lesson Plan"
+      : stage === "content"
+        ? "Student Content"
+        : stage === "package"
+          ? "Package"
+          : stage.charAt(0).toUpperCase() + stage.slice(1).replaceAll("-", " ");
+}
 
 const stageNumbers: Record<StageSlug, string> = {
   brief: "01",
@@ -82,7 +99,7 @@ const stageContext: Record<StageSlug, { why: string; evidence: string; consumes:
   },
 };
 
-function WorkflowRail({ workspace, activeStage, runMode, onOpenActivity }: { workspace: Workspace; activeStage: StageSlug; runMode: "deterministic" | "live"; onOpenActivity: () => void }) {
+function WorkflowRail({ workspace, activeStage, activeJobStage, runMode, onOpenActivity }: { workspace: Workspace; activeStage: StageSlug; activeJobStage?: StageSlug | null; runMode: "deterministic" | "live"; onOpenActivity: () => void }) {
   return (
     <aside className="workflow-rail">
       <div className="rail-heading"><span>Course workflow</span><small>{workspace.stages.filter((stage) => stage.status === "approved").length} / 8 approved</small></div>
@@ -90,13 +107,16 @@ function WorkflowRail({ workspace, activeStage, runMode, onOpenActivity }: { wor
         {workspace.stages.map((stage) => {
           const isActive = activeStage === stage.slug;
           const isLocked = stage.status === "locked";
+          const navigationPaused = Boolean(activeJobStage && stage.slug !== activeJobStage);
           return (
             <Link
               key={stage.slug}
               to={`/courses/${workspace.course.courseId}/${stage.slug}?mode=${runMode}`}
-              className={`${isActive ? "active" : ""} rail-status-${stage.status}`}
+              className={`${isActive ? "active" : ""} ${navigationPaused ? "navigation-paused" : ""} rail-status-${stage.status}`}
               aria-current={isActive ? "page" : undefined}
-              title={isLocked ? "Inspect this locked stage and its requirements" : undefined}
+              aria-disabled={navigationPaused || undefined}
+              onClick={(event) => { if (navigationPaused) event.preventDefault(); }}
+              title={navigationPaused ? "Finish the active stage run before moving elsewhere" : isLocked ? "Inspect this locked stage and its requirements" : undefined}
             >
               <span className="rail-number">{stageNumbers[stage.slug]}</span>
               <span className="rail-stage-copy"><strong>{stage.label}</strong><small>{stage.status.replaceAll("_", " ")}</small></span>
@@ -154,6 +174,9 @@ function DecisionBar({
   onApprove,
   onRequestChanges,
   onRun,
+  nextStage,
+  onContinue,
+  approvalBlocked,
 }: {
   stage: StageSlug;
   status: UiStatus;
@@ -162,6 +185,9 @@ function DecisionBar({
   onApprove: () => void;
   onRequestChanges: () => void;
   onRun: () => void;
+  nextStage: StageSlug | null;
+  onContinue: () => void;
+  approvalBlocked?: boolean;
 }) {
   const isApproved = status === "approved";
   const isLocked = status === "locked";
@@ -169,12 +195,51 @@ function DecisionBar({
   const canRequestChanges = ["awaiting_review", "requires_attention", "failed", "stale"].includes(status);
   return (
     <div className="decision-bar">
-      <div className="decision-context"><span className={`decision-dot decision-${status}`} /><div><small>{isApproved ? "Checkpoint recorded" : attention ? "Human decision needed" : isLocked ? "Upstream checkpoint required" : "Stage action"}</small><strong>{isApproved ? "Approved and current" : attention ? "Resolve blockers before approval" : isLocked ? "This stage is not ready to run" : "Review before continuing"}</strong></div></div>
+      <div className="decision-context"><span className={`decision-dot decision-${status}`} /><div><small>{isApproved ? "Checkpoint recorded" : approvalBlocked ? "Source decision required" : attention ? "Human decision needed" : isLocked ? "Upstream checkpoint required" : status === "running" ? "Agent working" : "Stage action"}</small><strong>{isApproved ? nextStage ? `${stageName(nextStage)} is next` : "Course workflow complete" : approvalBlocked ? "Select and save grounding sources first" : attention ? "Resolve blockers before approval" : isLocked ? "This stage is not ready to run" : status === "ready" ? `Ready to build ${stageName(stage)}` : status === "running" ? `Building ${stageName(stage)}` : "Review before continuing"}</strong></div></div>
       <div className="decision-actions">
         {canRequestChanges ? <button className="button button-secondary" disabled={disabled || busy || isLocked} onClick={onRequestChanges}>{stage === "brief" ? "Other change" : "Request changes"}</button> : null}
-        {attention && stage === "content" ? <button className="button button-primary" onClick={() => document.querySelector(".attention-banner")?.scrollIntoView({ behavior: "smooth" })}>Review attention queue <span aria-hidden="true">→</span></button> : status === "ready" ? <button className="button button-primary" disabled={disabled || busy || isLocked} onClick={onRun}>{busy ? "Starting…" : "Run stage"} <span aria-hidden="true">→</span></button> : <button className="button button-primary" disabled={disabled || busy || isLocked || isApproved} onClick={onApprove}>{busy ? "Saving…" : `Approve ${stage === "course-model" ? "Course Model" : stage.replaceAll("-", " ")}`} <span aria-hidden="true">→</span></button>}
+        {attention && stage === "content" ? <button className="button button-primary" onClick={() => document.querySelector(".attention-banner")?.scrollIntoView({ behavior: "smooth" })}>Review attention queue <span aria-hidden="true">→</span></button> : isApproved ? <button className="button button-primary" disabled={!nextStage} onClick={onContinue}>{nextStage ? `Continue to ${stageName(nextStage)}` : "Course complete"} {nextStage ? <span aria-hidden="true">→</span> : null}</button> : status === "ready" ? <button className="button button-primary" disabled={disabled || busy || isLocked} onClick={onRun}>{busy ? "Starting agent…" : `Run ${stageName(stage)}`} <span aria-hidden="true">→</span></button> : status === "running" ? <button className="button button-primary" disabled>Agent working…</button> : <button className="button button-primary" disabled={disabled || busy || isLocked || approvalBlocked} onClick={onApprove}>{busy ? "Approving…" : approvalBlocked ? "Save source selection first" : `Approve ${stageName(stage)}`} {!approvalBlocked ? <span aria-hidden="true">→</span> : null}</button>}
       </div>
     </div>
+  );
+}
+
+const runMessages: Record<StageSlug, string[]> = {
+  brief: ["Reading the subject request", "Structuring the course constraints", "Making assumptions visible"],
+  outcomes: ["Reading the approved Brief", "Drafting measurable learner outcomes", "Checking assessment evidence and coverage"],
+  research: ["Planning the evidence search", "Evaluating candidate sources", "Separating curriculum signals from grounding evidence"],
+  "course-model": ["Organizing modules and subtopics", "Assigning stable structural IDs", "Routing approved sources to the model"],
+  blueprint: ["Selecting the right learner assets", "Balancing depth and duration", "Checking coverage against the Course Model"],
+  content: ["Preparing bounded generation context", "Writing one learner asset at a time", "Verifying claims against approved evidence"],
+  "lesson-plan": ["Sequencing the approved content", "Reconciling timing and delivery mode", "Checking complete subtopic coverage"],
+  package: ["Rendering the course folder", "Reconciling artifact references", "Running the final release checks"],
+};
+
+function AgentRunScreen({ stage, mode, progress }: { stage: StageSlug; mode: "deterministic" | "live"; progress: { message: string; completed?: number; expected?: number } | null }) {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const messages = runMessages[stage];
+  useEffect(() => {
+    setMessageIndex(0);
+    const interval = window.setInterval(() => setMessageIndex((current) => (current + 1) % messages.length), 2800);
+    return () => window.clearInterval(interval);
+  }, [messages]);
+  const percent = progress?.completed != null && progress.expected
+    ? Math.min(100, Math.round((progress.completed / progress.expected) * 100))
+    : undefined;
+  return (
+    <section className="agent-run-screen" aria-live="polite" aria-busy="true">
+      <div className="agent-run-orbit" aria-hidden="true"><span /><i /><b /></div>
+      <span className="eyebrow">{mode === "live" ? "Live agent run" : "Deterministic run"}</span>
+      <h1>The agent is building {stageName(stage)}</h1>
+      <p className="agent-run-lead">You can stay here—the artifact will appear as soon as it is ready for your review.</p>
+      <div className="agent-run-status">
+        <span className="agent-run-pulse" aria-hidden="true" />
+        <div key={messageIndex}><strong>{messages[messageIndex]}</strong><small>{progress?.message ?? "Work is in progress"}</small></div>
+        {progress?.completed != null && progress.expected ? <b>{progress.completed}/{progress.expected}</b> : null}
+      </div>
+      <div className={`agent-run-track ${percent == null ? "indeterminate" : ""}`} aria-hidden="true"><span style={percent == null ? undefined : { width: `${percent}%` }} /></div>
+      <p className="agent-run-note">Live runs may take a few minutes. Approval will only be available after the output is fully saved.</p>
+    </section>
   );
 }
 
@@ -300,12 +365,28 @@ export function WorkspacePage() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [briefEditSection, setBriefEditSection] = useState<BriefEditSection | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
-  const [toast, setToast] = useState<{ message: string; tone: "good" | "attention" | "neutral" } | null>(null);
+  const [toast, setToast] = useState<{ message: string; tone: "good" | "attention" | "neutral" } | null>(() => new URLSearchParams(location.search).get("setup") === "incomplete" ? {
+    tone: "attention",
+    message: "The course was created, but its starting Brief could not be saved. Review the suggested defaults and use Adjust to save them.",
+  } : null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [activeJobStage, setActiveJobStage] = useState<StageSlug | null>(null);
+  const completedJobIds = useRef(new Set<string>());
   const [runProgress, setRunProgress] = useState<{ message: string; completed?: number; expected?: number } | null>(null);
-  const query = useQuery({ queryKey: ["workspace", courseId], queryFn: () => getWorkspace(courseId) });
+  const query = useQuery({
+    queryKey: ["workspace", courseId],
+    queryFn: () => getWorkspace(courseId),
+    refetchInterval: activeJobId ? 1500 : false,
+  });
   const workspace = query.data?.workspace;
   const currentSummary = workspace?.stages.find((item) => item.slug === stage);
+
+  useEffect(() => {
+    if (!workspace?.activeJob || activeJobId === workspace.activeJob.jobId || completedJobIds.current.has(workspace.activeJob.jobId)) return;
+    setActiveJobId(workspace.activeJob.jobId);
+    setActiveJobStage(workspace.activeJob.stage);
+    setRunProgress({ message: workspace.activeJob.status === "queued" ? "Run queued" : "Agent run in progress" });
+  }, [activeJobId, workspace?.activeJob]);
 
   const briefMutation = useMutation({
     mutationFn: async (edited: BriefData) => {
@@ -330,6 +411,11 @@ export function WorkspacePage() {
     onSuccess: (result) => {
       setBriefEditSection(null);
       setToast({ tone: "good", message: result && "demo" in result ? "Preview changes recorded for this section." : "Brief section saved. Review the updated draft before approval." });
+      const params = new URLSearchParams(location.search);
+      if (params.has("setup")) {
+        params.delete("setup");
+        navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+      }
       void queryClient.invalidateQueries({ queryKey: ["workspace", courseId] });
     },
     onError: (error) => {
@@ -339,8 +425,8 @@ export function WorkspacePage() {
   });
 
   useEffect(() => {
-    if (!routeStage && workspace) navigate(`/courses/${courseId}/${workspace.course.currentStage}`, { replace: true });
-  }, [courseId, navigate, routeStage, workspace]);
+    if (!routeStage && workspace) navigate(`/courses/${courseId}/${workspace.course.currentStage}?mode=${runMode}`, { replace: true });
+  }, [courseId, navigate, routeStage, runMode, workspace]);
 
   useEffect(() => {
     if (!activeJobId) return;
@@ -354,7 +440,9 @@ export function WorkspacePage() {
         void queryClient.invalidateQueries({ queryKey: ["workspace", courseId] });
       }
       if (event.event_type === "job.completed" || event.event_type === "job.failed") {
+        completedJobIds.current.add(event.job_id);
         setActiveJobId(null);
+        setActiveJobStage(null);
         setRunProgress(null);
         setToast({
           tone: event.event_type === "job.completed" ? "good" : "attention",
@@ -376,15 +464,31 @@ export function WorkspacePage() {
       if (action.type === "approve") return approveStage(courseId, stage, { expectedChecksum: currentSummary?.checksum });
       return requestStageChanges(courseId, stage, { expectedChecksum: currentSummary?.checksum, note: action.feedback, mode: runMode });
     },
-    onSuccess: (result) => {
+    onSuccess: async (result, action) => {
       setFeedbackOpen(false);
       if (result && "job" in result) {
         setActiveJobId(result.job.job_id);
+        setActiveJobStage(stage);
         setRunProgress({ message: "Run queued" });
+      }
+      if (result && "demo" in result) {
+        setToast({ tone: "good", message: "Preview action recorded. Connect the API to persist this decision." });
+        return;
+      }
+      if (action.type === "approve") {
+        const nextStage = nextStageAfter(stage);
+        await refresh();
+        if (nextStage) {
+          setToast({ tone: "good", message: `${stageName(stage)} approved. ${stageName(nextStage)} is ready to run.` });
+          navigate(`/courses/${courseId}/${nextStage}?mode=${runMode}`);
+        } else {
+          setToast({ tone: "good", message: "Package approved. The course workflow is complete." });
+        }
+        return;
       }
       setToast({
         tone: "good",
-        message: result && "demo" in result ? "Preview action recorded. Connect the API to persist this decision." : "Action accepted. The workspace will refresh as artifacts change.",
+        message: action.type === "changes" ? "Revision started. The updated artifact will appear here when it is ready." : `${stageName(stage)} started. The artifact will appear here when it is ready.`,
       });
       void refresh();
     },
@@ -478,9 +582,11 @@ export function WorkspacePage() {
         </div>
       </header>
       <div className={`workspace-grid ${inspectorOpen ? "inspector-open" : ""}`}>
-        <WorkflowRail workspace={workspace} activeStage={stage} runMode={runMode} onOpenActivity={() => setActivityOpen(true)} />
+        <WorkflowRail workspace={workspace} activeStage={stage} activeJobStage={activeJobStage} runMode={runMode} onOpenActivity={() => setActivityOpen(true)} />
         <main className="stage-canvas" id="main-content">
-          {currentSummary?.status === "locked" && !demoMode ? (
+          {(activeJobId && activeJobStage === stage) || (mutation.isPending && mutation.variables?.type === "run") ? (
+            <AgentRunScreen stage={stage} mode={runMode} progress={runProgress} />
+          ) : currentSummary?.status === "locked" && !demoMode ? (
             <div className="locked-stage-state"><span className="locked-glyph" aria-hidden="true">·</span><span className="eyebrow">{currentSummary.label}</span><h1>This stage is waiting on an upstream decision.</h1><p>{context.consumes.join(", ")} must be approved and current before the agent can run this stage.</p><button className="button button-secondary" onClick={() => navigate(`/courses/${courseId}/${workspace.course.currentStage}?mode=${runMode}`)}>Go to current stage</button></div>
           ) : <StageView stage={stage} workspace={workspace} onContentAction={(action, asset, claim) => void contentAction(action, asset, claim)} onSourceDecision={readOnly ? undefined : (selectedIds) => void sourceDecision(selectedIds)} onEditBrief={readOnly ? undefined : setBriefEditSection} />}
         </main>
@@ -493,6 +599,12 @@ export function WorkspacePage() {
           onApprove={() => mutation.mutate({ type: "approve" })}
           onRequestChanges={() => setFeedbackOpen(true)}
           onRun={() => mutation.mutate({ type: "run" })}
+          nextStage={nextStageAfter(stage)}
+          onContinue={() => {
+            const nextStage = nextStageAfter(stage);
+            if (nextStage) navigate(`/courses/${courseId}/${nextStage}?mode=${runMode}`);
+          }}
+          approvalBlocked={stage === "research" && !workspace.research.registrySaved}
         />
       </div>
       {activityOpen ? <ActivityDrawer workspace={workspace} onClose={() => setActivityOpen(false)} /> : null}

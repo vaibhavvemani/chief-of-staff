@@ -63,7 +63,35 @@ def test_full_deterministic_studio_workflow_reaches_a_rendered_package(
         )
         assert created.status_code == 201
 
-        for stage in ("brief", "outcomes", "research", "course-model", "blueprint"):
+        for stage in ("brief", "outcomes"):
+            _run_and_wait(client, "studio-smoke", stage)
+            _approve(client, "studio-smoke", stage)
+
+        _run_and_wait(client, "studio-smoke", "research")
+        research_stage = client.get(
+            "/api/courses/studio-smoke/stages/research"
+        ).json()
+        dossier = next(
+            artifact
+            for artifact in research_stage["artifacts"]
+            if artifact["artifact_type"] == "research_dossier"
+        )
+        selected_ids = [
+            candidate["id"]
+            for candidate in dossier["body"]["source_candidates"]
+            if candidate["status"] in {"proposed", "approved"}
+        ][:2]
+        decision = client.put(
+            "/api/courses/studio-smoke/research/sources/decision",
+            json={
+                "selected_ids": selected_ids,
+                "expected_checksum": research_stage["checksum"],
+            },
+        )
+        assert decision.status_code == 200, decision.text
+        _approve(client, "studio-smoke", "research")
+
+        for stage in ("course-model", "blueprint"):
             _run_and_wait(client, "studio-smoke", stage)
             _approve(client, "studio-smoke", stage)
 
@@ -91,4 +119,3 @@ def test_full_deterministic_studio_workflow_reaches_a_rendered_package(
         assert workspace["current_stage"] == "package"
         assert workspace["attention"]["blocking_total"] == 0
         assert (tmp_path / "rendered" / "studio-smoke" / "README.md").is_file()
-

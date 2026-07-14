@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { SourceStatus, VerificationBadge } from "../../components/StatusBadge";
 import type {
@@ -33,6 +33,18 @@ function TagList({ values, tone = "neutral" }: { values: string[]; tone?: "neutr
   return <div className="tag-list">{values.map((value) => <span key={value} className={`tag tag-${tone}`}>{value}</span>)}</div>;
 }
 
+function displayCode(value: string): string {
+  const normalized = value.replaceAll("_", " ");
+  return normalized ? normalized[0].toUpperCase() + normalized.slice(1) : "Not set";
+}
+
+function displayAssumptionValue(value: string): string {
+  if (value.startsWith("[") && value.endsWith("]")) {
+    return value.slice(1, -1).replaceAll("'", "").replaceAll('"', "");
+  }
+  return value;
+}
+
 export type BriefEditSection = "settings" | "learner" | "scope" | "coverage" | "assumptions";
 
 function BriefSectionAction({ section, label, onEdit }: { section: BriefEditSection; label: string; onEdit?: (section: BriefEditSection) => void }) {
@@ -49,7 +61,9 @@ function BriefView({ workspace, onEdit }: { workspace: Workspace; onEdit?: (sect
       {stageIntro(
         "Course Brief",
         "01 · Direction",
-        "The agent turned the sparse request into a practical working agreement. Review its assumptions before downstream work changes.",
+        hasArtifact
+          ? "The starting request is now a practical working agreement. Review the details before downstream work begins."
+          : "Start with these sensible defaults, then adjust only the details that matter for this course.",
         <div className={`artifact-stamp ${hasArtifact ? "" : "suggested"}`}><span>{hasArtifact ? "Working artifact" : "Suggested starting point"}</span><strong>{summary?.status === "approved" ? "Approved" : hasArtifact ? "Ready for review" : "Not saved yet"}</strong></div>,
       )}
       <div className="brief-hero-card">
@@ -58,9 +72,9 @@ function BriefView({ workspace, onEdit }: { workspace: Workspace; onEdit?: (sect
           <BriefSectionAction section="settings" label="Adjust course settings" onEdit={onEdit} />
         </div>
         <dl className="brief-quickfacts">
-          <DefinitionItem label="Level" value={brief.level} />
+          <DefinitionItem label="Level" value={displayCode(brief.level)} />
           <DefinitionItem label="Duration" value={brief.duration} />
-          <DefinitionItem label="Delivery" value={brief.modality} />
+          <DefinitionItem label="Delivery" value={displayCode(brief.modality)} />
           <DefinitionItem label="Language" value={brief.language} />
         </dl>
       </div>
@@ -89,14 +103,14 @@ function BriefView({ workspace, onEdit }: { workspace: Workspace; onEdit?: (sect
         </section>
         <section className="stage-card assumption-card">
           <div className="card-heading"><div><span className="card-index">D</span><h3>Visible assumptions</h3></div><BriefSectionAction section="assumptions" label="Review visible assumptions" onEdit={onEdit} /></div>
-          <p className="card-note">Defaults are proposals, not hidden facts. Reopen the Brief to correct any of them.</p>
+          <p className="card-note">Defaults are proposals, not hidden facts. Use Adjust to correct any of them.</p>
           <div className="assumption-list">
-            {brief.assumptions.map((assumption) => (
+            {brief.assumptions.length ? brief.assumptions.map((assumption) => (
               <div key={assumption.field} className="assumption-row">
-                <div><strong>{assumption.field.replaceAll("_", " ")}</strong><span>{assumption.value}</span></div>
-                <p>{assumption.rationale}</p>
+                <div><strong>{assumption.field.replaceAll("_", " ")}</strong><span>{displayAssumptionValue(assumption.value)}</span></div>
+                <small>Agent default</small>
               </div>
-            ))}
+            )) : <div className="no-assumptions"><span aria-hidden="true">✓</span><p>All current Brief values have been explicitly confirmed.</p></div>}
           </div>
         </section>
       </div>
@@ -151,11 +165,16 @@ function ResearchView({
 }) {
   const [tab, setTab] = useState<"sources" | "landscape">("sources");
   const [sourceFilter, setSourceFilter] = useState("");
-  const [selectedIds, setSelectedIds] = useState<string[]>(
-    workspace.research.sources.filter((source) => source.status === "approved").map((source) => source.id),
+  const persistedSelectedIds = useMemo(
+    () => workspace.research.sources.filter((source) => ["approved", "selected"].includes(source.status)).map((source) => source.id),
+    [workspace.research.sources],
   );
+  const [selectedIds, setSelectedIds] = useState<string[]>(persistedSelectedIds);
+  useEffect(() => setSelectedIds(persistedSelectedIds), [persistedSelectedIds]);
   const approved = workspace.research.sources.filter((source) => source.status === "approved").length;
-  const rejected = workspace.research.sources.filter((source) => source.status === "rejected").length;
+  const candidateCount = workspace.research.sources.filter((source) => source.status === "proposed").length;
+  const hasSelectionChanges = selectedIds.length !== persistedSelectedIds.length
+    || selectedIds.some((id) => !persistedSelectedIds.includes(id));
   const toggle = (sourceId: string, selected: boolean) => {
     setSelectedIds((current) => selected
       ? [...new Set([...current, sourceId])]
@@ -165,12 +184,12 @@ function ResearchView({
     `${source.title} ${source.publisher} ${source.relevance}`.toLowerCase().includes(sourceFilter.toLowerCase()),
   );
   return (
-    <div className="stage-view">
+    <div className="stage-view research-stage">
       {stageIntro(
         "Research & Sources",
         "03 · Evidence gate",
         "Competitor pages shape the curriculum. Only separately approved grounding sources may support learner-facing claims.",
-        <div className="research-counts"><span><strong>{approved}</strong> approved</span><span><strong>{rejected}</strong> rejected</span></div>,
+        <div className="research-counts"><span><strong>{selectedIds.length}</strong><small>{approved ? "approved" : "selected"}</small></span><span><strong>{candidateCount}</strong><small>candidates</small></span></div>,
       )}
       <div className="tab-row" role="tablist" aria-label="Research views">
         <button role="tab" aria-selected={tab === "sources"} className={tab === "sources" ? "active" : ""} onClick={() => setTab("sources")}>Grounding sources <span>{workspace.research.sources.length}</span></button>
@@ -178,12 +197,18 @@ function ResearchView({
       </div>
       {tab === "sources" ? (
         <div className="research-layout">
-          <div className="source-list">
-            <div className="list-tools"><div className="search-field"><span aria-hidden="true">⌕</span><input aria-label="Filter sources" value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} placeholder="Filter by title, publisher, or topic" /></div><button className="button button-secondary" disabled title="Known-source additions are captured when creating a course">+ Add known source</button></div>
-            {visibleSources.map((source) => (
-              <article className={`source-card source-card-${source.status}`} key={source.id}>
+          <div className="source-list-panel">
+            <div className="list-tools"><div className="search-field"><span aria-hidden="true">⌕</span><input aria-label="Filter sources" value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} placeholder="Filter candidates" /></div><button className="button button-secondary" disabled title="Known-source additions are captured when creating a course">+ Add source</button></div>
+            <div className="source-list">
+            {visibleSources.map((source) => {
+              const isSelected = selectedIds.includes(source.id);
+              const effectiveStatus = isSelected
+                ? source.status === "approved" ? "approved" : "selected"
+                : ["approved", "selected"].includes(source.status) ? "proposed" : source.status;
+              return (
+              <article className={`source-card source-card-${effectiveStatus}`} key={source.id}>
                 <div className="source-card-header">
-                  <div><SourceStatus status={source.status} /><span className="source-type">{source.sourceType}</span></div>
+                  <div><SourceStatus status={effectiveStatus} /><span className="source-type">{source.sourceType}</span></div>
                   <code>{source.id}</code>
                 </div>
                 <h3>{source.title}</h3>
@@ -193,19 +218,22 @@ function ResearchView({
                   <div><span>Trust note</span><p>{source.trustNotes}</p></div>
                 </div>
                 <div className="source-footer">
-                  <div>{source.assignedNodeIds.length ? <><span className="micro-label">Assigned to</span><TagList values={source.assignedNodeIds} tone="source" /></> : <span className="muted">Not routed into generation</span>}</div>
-                  <div className="source-actions"><a target="_blank" rel="noreferrer" href={source.locator}>Preview</a>{selectedIds.includes(source.id) ? <button onClick={() => toggle(source.id, false)}>Reject</button> : <button className="approve-inline" onClick={() => toggle(source.id, true)}>Approve</button>}</div>
+                  <div>{source.assignedNodeIds.length ? <><span className="micro-label">Assigned to</span><TagList values={source.assignedNodeIds} tone="source" /></> : <span className="muted">{isSelected ? "Available for Course Model routing" : "Outside generation context"}</span>}</div>
+                  <div className="source-actions"><a target="_blank" rel="noreferrer" href={source.locator}>Preview</a>{isSelected ? <button className="remove-source" onClick={() => toggle(source.id, false)}>Remove</button> : <button className="select-source" onClick={() => toggle(source.id, true)}>Select</button>}</div>
                 </div>
               </article>
-            ))}
+            );})}
+            </div>
           </div>
           <aside className="decision-tray">
-            <span className="eyebrow">Decision summary</span>
-            <h3>Source registry</h3>
-            <div className="tray-stat"><span>Selected for grounding</span><strong>{selectedIds.length}</strong></div>
-            <div className="tray-stat"><span>Currently rejected</span><strong>{rejected}</strong></div>
-            <div className="tray-check"><span aria-hidden="true">✓</span><p>Rejected, proposed, and contentless sources are excluded from generation context.</p></div>
-            <button className="button button-primary full-width" disabled={!onSourceDecision || !selectedIds.length} onClick={() => onSourceDecision?.(selectedIds)}>Save source registry</button>
+            <span className="eyebrow">Human checkpoint</span>
+            <h3>Choose grounding sources</h3>
+            <p className="tray-intro">Only the sources you select and save can support learner-facing claims.</p>
+            <div className="tray-stats"><div className="tray-stat"><strong>{selectedIds.length}</strong><span>Selected</span></div><div className="tray-stat"><strong>{Math.max(0, workspace.research.sources.length - selectedIds.length)}</strong><span>Excluded</span></div></div>
+            <ol className="source-decision-flow"><li className="done"><span>1</span><div><strong>Candidates found</strong><small>The agent completed bounded research</small></div></li><li className={workspace.research.registrySaved ? "done" : "current"}><span>2</span><div><strong>Select and save</strong><small>Your explicit source decision</small></div></li><li className={workspace.research.registryApproved ? "done" : ""}><span>3</span><div><strong>Approve Research</strong><small>Unlocks the Course Model</small></div></li></ol>
+            <div className="tray-check"><span aria-hidden="true">✓</span><p>Unselected and unavailable sources stay outside generation context.</p></div>
+            <button className="button button-primary full-width" disabled={!onSourceDecision || !selectedIds.length || (workspace.research.registrySaved && !hasSelectionChanges)} onClick={() => onSourceDecision?.(selectedIds)}>{workspace.research.registrySaved && !hasSelectionChanges ? workspace.research.registryApproved ? "Selection approved" : "Selection saved" : `Save ${selectedIds.length} selected source${selectedIds.length === 1 ? "" : "s"}`}</button>
+            {!workspace.research.registrySaved ? <small className="tray-help">Save a selection before approving this stage.</small> : <small className="tray-help ready">{workspace.research.registryApproved ? "Research checkpoint approved." : "Ready for stage approval."}</small>}
           </aside>
         </div>
       ) : (

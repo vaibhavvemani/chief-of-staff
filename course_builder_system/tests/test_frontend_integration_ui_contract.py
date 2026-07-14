@@ -9,6 +9,9 @@ WORKSPACE_SOURCE = (
 STAGE_VIEWS_SOURCE = (
     ROOT / "frontend" / "src" / "features" / "workspace" / "StageViews.tsx"
 )
+NEW_COURSE_SOURCE = (
+    ROOT / "frontend" / "src" / "features" / "courses" / "NewCoursePage.tsx"
+)
 STAGE_SLUGS = (
     "brief",
     "outcomes",
@@ -41,7 +44,9 @@ def test_ui_uses_scoped_artifact_decisions_instead_of_a_generic_chat_surface() -
         for path in (WORKSPACE_SOURCE, STAGE_VIEWS_SOURCE)
     ).lower()
 
-    assert "revision instruction" in source
+    assert "guided revision" in source
+    assert "briefeditdialog" in source
+    assert "section-edit-button" in source
     assert "request scoped revision" in source
     assert "likely downstream impact" in source
     assert "content/reviews" not in source  # transport stays in the API client
@@ -54,3 +59,41 @@ def test_ui_uses_scoped_artifact_decisions_instead_of_a_generic_chat_surface() -
         "conversation history",
     ):
         assert forbidden not in source
+
+
+def test_new_courses_start_live_with_visible_editable_defaults() -> None:
+    source = NEW_COURSE_SOURCE.read_text(encoding="utf-8")
+
+    assert 'useState<"deterministic" | "live">("live")' in source
+    assert "3 hours of self-paced learning" in source
+    assert 'level: "beginner"' in source
+    assert 'modality: "self_paced"' in source
+    assert 'language: "English"' in source
+    assert "briefAnswers" in source
+    assert "?mode=${mode}" in source
+
+
+def test_stage_approval_advances_into_a_focused_agent_run_flow() -> None:
+    source = WORKSPACE_SOURCE.read_text(encoding="utf-8")
+
+    assert "nextStageAfter" in source
+    assert "Continue to ${stageName(nextStage)}" in source
+    assert "navigate(`/courses/${courseId}/${nextStage}?mode=${runMode}`)" in source
+    assert "AgentRunScreen" in source
+    assert "The agent is building {stageName(stage)}" in source
+    assert "workspace.activeJob" in source
+    assert "refetchInterval: activeJobId ? 1500 : false" in source
+
+
+def test_research_requires_an_explicit_saved_source_selection() -> None:
+    workspace = WORKSPACE_SOURCE.read_text(encoding="utf-8")
+    stage_views = STAGE_VIEWS_SOURCE.read_text(encoding="utf-8")
+
+    assert (
+        'approvalBlocked={stage === "research" && !workspace.research.registrySaved}'
+        in workspace
+    )
+    assert "Save source selection first" in workspace
+    assert "Human checkpoint" in stage_views
+    assert "Choose grounding sources" in stage_views
+    assert "Save a selection before approving this stage" in stage_views

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from api.services.artifact_repository import ArtifactRepository, ReadOnlyCourse
+from api.services.artifact_repository import ArtifactNotFound, ArtifactRepository, ReadOnlyCourse
 from api.services.decision_service import DecisionService
 from api.services.pipeline_catalog import PipelineCatalog
 from api.services.stage_runner import StageRunner
@@ -94,6 +94,34 @@ def test_stage_approve_and_reopen_commands_preserve_body_and_revision(tmp_path: 
     assert reopened[0]["body"] == original_body
     assert reopened[0]["revision"] == original_revision
     assert reopened[0]["revision_note"] == "Reopened by the course director."
+
+
+def test_research_requires_an_explicit_source_registry_before_approval(tmp_path: Path) -> None:
+    repository, decisions = _services(tmp_path)
+    decisions.create_course(
+        subject="Coffee making",
+        description=None,
+        constraints=[],
+        known_source_locators=[],
+        course_id="research-checkpoint",
+    )
+    dossier = make_artifact(
+        "research-checkpoint",
+        "research_dossier",
+        "research",
+        body={"source_candidates": []},
+        inputs=["brief", "course_outcomes"],
+    )
+    repository.save(dossier)
+
+    with pytest.raises(ArtifactNotFound, match="approved_source_registry"):
+        decisions.approve_stage("research-checkpoint", "research")
+
+
+def test_interactive_research_stage_stops_before_source_selection() -> None:
+    research_stage = PipelineCatalog().stage("research")
+
+    assert research_stage.step_names == ("research",)
 
 
 def test_stage_commands_reject_unknown_stages_and_read_only_snapshots(tmp_path: Path) -> None:

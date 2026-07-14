@@ -197,6 +197,11 @@ export interface ActivityEvent {
 export interface Workspace {
   course: CourseSummary;
   stages: StageSummary[];
+  activeJob?: {
+    jobId: string;
+    status: "queued" | "running";
+    stage: StageSlug;
+  };
   artifactVersion: string;
   estimatedCost?: number;
   brief: BriefData;
@@ -205,6 +210,8 @@ export interface Workspace {
     sources: SourceCandidate[];
     competitors: CompetitorFinding[];
     observations: string[];
+    registrySaved?: boolean;
+    registryApproved?: boolean;
   };
   modules: CourseModule[];
   blueprint: {

@@ -22,13 +22,14 @@ export function StatusBadge({ status, count }: { status: UiStatus; count?: numbe
 }
 
 export function SourceStatus({ status }: { status: string }) {
-  const normalized = ["approved", "rejected", "proposed", "unavailable"].includes(status)
+  const normalized = ["approved", "selected", "rejected", "proposed", "unavailable"].includes(status)
     ? status
     : "proposed";
+  const label = normalized === "proposed" ? "Candidate" : normalized.charAt(0).toUpperCase() + normalized.slice(1);
   return (
     <span className={`source-status source-${normalized}`}>
-      <span aria-hidden="true">{normalized === "approved" ? "✓" : normalized === "rejected" ? "×" : "·"}</span>
-      {normalized.charAt(0).toUpperCase() + normalized.slice(1)}
+      <span aria-hidden="true">{normalized === "approved" ? "✓" : normalized === "selected" ? "+" : normalized === "rejected" ? "×" : "·"}</span>
+      {label}
     </span>
   );
 }
@@ -39,4 +40,3 @@ export function VerificationBadge({ support }: { support: string }) {
     : "partial";
   return <span className={`verification-badge verify-${normalized}`}>{normalized.replace("_", " ")}</span>;
 }
-

@@ -37,7 +37,7 @@ export function NewCoursePage() {
   const courseId = useMemo(() => slugify(subject) || "your-course", [subject]);
   const mutation = useMutation({
     mutationFn: createCourse,
-    onSuccess: ({ courseId: createdId }) => navigate(`/courses/${createdId || courseId}/brief?mode=${mode}`),
+    onSuccess: ({ courseId: createdId, briefInitialized }) => navigate(`/courses/${createdId || courseId}/brief?mode=${mode}${briefInitialized ? "" : "&setup=incomplete"}`),
   });
 
   async function submit(event: FormEvent) {
@@ -154,7 +154,7 @@ export function NewCoursePage() {
           ) : null}
           <div className="create-submit-row">
             <div><span>Course ID preview</span><code>{courseId}</code></div>
-            <button className="button button-primary button-large" disabled={!subject.trim() || mutation.isPending}>
+            <button className="button button-primary button-large" disabled={!subject.trim() || !audience.trim() || !duration.trim() || !language.trim() || mutation.isPending}>
               {mutation.isPending ? "Creating workspace…" : "Create Brief"} <span aria-hidden="true">→</span>
             </button>
           </div>
