@@ -259,12 +259,28 @@ function ResearchView({
 function ModelDetail({ subtopic }: { subtopic: Subtopic }) {
   return (
     <div className="model-detail">
-      <div className="model-detail-head"><div><code>{subtopic.id}</code><h2>{subtopic.title}</h2><p>{subtopic.purpose}</p></div><button className="button button-secondary" disabled title="Use Request changes for this release">Edit subtopic</button></div>
-      <div className="model-metadata"><div><span>Position</span><strong>{String(subtopic.order).padStart(2, "0")}</strong></div><div><span>Prerequisite</span><strong>{subtopic.prerequisiteSubtopicIds.join(", ") || "None"}</strong></div><div><span>Approved sources</span><strong>{subtopic.approvedSourceIds.length}</strong></div></div>
-      <section className="detail-section"><div className="detail-heading"><h3>Scope contract</h3><span>Controls generation</span></div><div className="scope-columns"><div><span className="micro-label">In scope</span><TagList values={subtopic.inScope} /></div><div><span className="micro-label">Out of scope</span><TagList values={subtopic.outOfScope} tone="out" /></div></div></section>
-      <section className="detail-section"><div className="detail-heading"><h3>Concepts</h3><span>{subtopic.concepts.length}</span></div>{subtopic.concepts.map((concept) => <article className="concept-row" key={concept.id}><div><code>{concept.id}</code><strong>{concept.name}</strong><p>{concept.summary}</p></div><TagList values={concept.sourceIds} tone="source" /></article>)}</section>
-      <section className="detail-section"><div className="detail-heading"><h3>Coverage requirements</h3><span>{subtopic.coverageRequirements.length}</span></div>{subtopic.coverageRequirements.map((requirement) => <article className="requirement-row" key={requirement.id}><span className="requirement-check" aria-hidden="true">✓</span><div><code>{requirement.id}</code><p>{requirement.statement}</p><TagList values={requirement.sourceIds} tone="source" /></div></article>)}</section>
-      <div className="integrity-note"><span aria-hidden="true">✓</span><div><strong>References are valid</strong><p>Concept, coverage, prerequisite, outcome, and source IDs resolve against current artifacts.</p></div></div>
+      <header className="model-detail-head">
+        <div className="model-detail-title"><code>{subtopic.id}</code><h2>{subtopic.title}</h2><p>{subtopic.purpose}</p></div>
+        <button className="button button-secondary" disabled title="Use Request changes for this release">Edit subtopic</button>
+      </header>
+      <dl className="model-metadata">
+        <div><dt>Sequence</dt><dd>{String(subtopic.order).padStart(2, "0")}</dd></div>
+        <div><dt>Prerequisite</dt><dd>{subtopic.prerequisiteSubtopicIds.join(", ") || "None"}</dd></div>
+        <div><dt>Approved sources</dt><dd>{subtopic.approvedSourceIds.length}</dd></div>
+      </dl>
+      <section className="detail-section scope-contract-section">
+        <div className="detail-section-heading"><div><span className="eyebrow">Generation boundary</span><h3>Scope contract</h3></div><span className="section-state">Controls generation</span></div>
+        <div className="model-scope-grid"><div className="scope-block scope-in"><span className="micro-label">In scope</span><TagList values={subtopic.inScope} /></div><div className="scope-block scope-out"><span className="micro-label">Out of scope</span><TagList values={subtopic.outOfScope} tone="out" /></div></div>
+      </section>
+      <section className="detail-section">
+        <div className="detail-section-heading"><div><span className="eyebrow">Knowledge structure</span><h3>Concepts</h3></div><span className="section-count">{subtopic.concepts.length}</span></div>
+        <div className="model-record-list">{subtopic.concepts.map((concept) => <article className="concept-row" key={concept.id}><div className="record-copy"><code>{concept.id}</code><strong>{concept.name}</strong><p>{concept.summary}</p></div><div className="record-sources"><span>Grounded by</span><TagList values={concept.sourceIds} tone="source" /></div></article>)}</div>
+      </section>
+      <section className="detail-section">
+        <div className="detail-section-heading"><div><span className="eyebrow">Coverage contract</span><h3>Requirements</h3></div><span className="section-count">{subtopic.coverageRequirements.length}</span></div>
+        <div className="model-record-list">{subtopic.coverageRequirements.map((requirement) => <article className="requirement-row" key={requirement.id}><span className="requirement-check" aria-hidden="true">✓</span><div className="record-copy"><code>{requirement.id}</code><p>{requirement.statement}</p><div className="record-sources"><span>Supported by</span><TagList values={requirement.sourceIds} tone="source" /></div></div></article>)}</div>
+      </section>
+      <div className="model-integrity-note"><span aria-hidden="true">✓</span><div><strong>References are valid</strong><p>Concept, coverage, prerequisite, outcome, and source IDs resolve against current artifacts.</p></div></div>
     </div>
   );
 }
@@ -273,19 +289,21 @@ function CourseModelView({ workspace }: { workspace: Workspace }) {
   const allSubtopics = workspace.modules.flatMap((module) => module.subtopics);
   const [selectedId, setSelectedId] = useState(allSubtopics[0]?.id ?? "");
   const selected = allSubtopics.find((subtopic) => subtopic.id === selectedId) ?? allSubtopics[0];
+  const moduleLabel = `${workspace.modules.length} module${workspace.modules.length === 1 ? "" : "s"}`;
+  const subtopicLabel = `${allSubtopics.length} subtopic${allSubtopics.length === 1 ? "" : "s"}`;
   return (
     <div className="stage-view model-view">
-      {stageIntro("Course Model", "04 · Structural source of truth", "Modules, subtopics, coverage, and stable IDs form the compact contract every downstream artifact references.", <button className="button button-secondary" disabled title="Run integrity.py from the operator workflow">Validate references</button>)}
+      {stageIntro("Course Model", "04 · Structural source of truth", "Modules, subtopics, coverage, and stable IDs form the compact contract every downstream artifact references.", <div className="model-validation-summary"><span aria-hidden="true">✓</span><div><strong>References valid</strong><small>Structural checks passed</small></div></div>)}
       <div className="model-workspace">
         <aside className="model-tree">
-          <div className="tree-heading"><div><span className="micro-label">Course hierarchy</span><strong>{workspace.modules.length} module · {allSubtopics.length} subtopics</strong></div><button disabled aria-label="Add module" title="Use Request changes for this release">+</button></div>
+          <div className="tree-heading"><div><span className="micro-label">Course hierarchy</span><strong>{moduleLabel} · {subtopicLabel}</strong></div><button disabled aria-label="Add module" title="Use Request changes for this release">+</button></div>
           {workspace.modules.map((module: CourseModule) => (
             <div className="tree-module" key={module.id}>
-              <div className="module-row"><span className="tree-toggle" aria-hidden="true">⌄</span><span><code>{module.id}</code><strong>{module.title}</strong></span><button disabled aria-label={`More options for ${module.title}`} title="Use Request changes for this release">···</button></div>
+              <div className="module-row"><span className="tree-toggle" aria-hidden="true">⌄</span><div className="module-copy"><code>{module.id}</code><strong>{module.title}</strong><small>{module.subtopics.length} subtopic{module.subtopics.length === 1 ? "" : "s"}</small></div><button disabled aria-label={`More options for ${module.title}`} title="Use Request changes for this release">···</button></div>
               <div className="subtopic-tree">
                 {module.subtopics.map((subtopic) => (
                   <button key={subtopic.id} className={selected?.id === subtopic.id ? "active" : ""} onClick={() => setSelectedId(subtopic.id)}>
-                    <span className="tree-sequence">{String(subtopic.order).padStart(2, "0")}</span><span><strong>{subtopic.title}</strong><small>{subtopic.approvedSourceIds.length} sources · {subtopic.coverageRequirements.length} requirement</small></span><span aria-hidden="true">›</span>
+                    <span className="tree-sequence">{String(subtopic.order).padStart(2, "0")}</span><span className="tree-item-copy"><strong>{subtopic.title}</strong><small>{subtopic.approvedSourceIds.length} sources · {subtopic.coverageRequirements.length} requirement{subtopic.coverageRequirements.length === 1 ? "" : "s"}</small></span><span className="tree-arrow" aria-hidden="true">›</span>
                   </button>
                 ))}
                 <button className="add-subtopic" disabled title="Use Request changes for this release"><span>+</span> Add subtopic</button>
@@ -304,36 +322,58 @@ const assetColumns = [
   ["case_study", "Case"], ["assessment", "Assessment"], ["activities", "Activity"], ["resources", "Resources"],
 ] as const;
 
+function blueprintOverrides(plan: Workspace["blueprint"]["plans"][number], defaults: Workspace["blueprint"]["defaults"]): string[] {
+  const overrides: string[] = [];
+  const differs = (value: string | number, baseline: string | number) => String(value).toLowerCase() !== String(baseline).toLowerCase();
+  if (differs(plan.depth, defaults.depth)) overrides.push(`Depth: ${displayCode(plan.depth)}`);
+  if (differs(plan.minutes, defaults.minutes)) overrides.push(`${plan.minutes} min`);
+  if (differs(plan.wordTarget, defaults.wordTarget)) overrides.push(`${plan.wordTarget.toLocaleString()} words`);
+  if (differs(plan.examples, defaults.examples)) overrides.push(`${plan.examples} example${plan.examples === 1 ? "" : "s"}`);
+  if (differs(plan.caseDepth, defaults.caseDepth)) overrides.push(`Case: ${displayCode(plan.caseDepth)}`);
+  if (differs(plan.assessmentComplexity, defaults.assessmentComplexity)) overrides.push(`Assessment: ${displayCode(plan.assessmentComplexity)}`);
+  return overrides;
+}
+
 function BlueprintView({ workspace }: { workspace: Workspace }) {
   const [exceptionsOnly, setExceptionsOnly] = useState(false);
   const plans = exceptionsOnly ? workspace.blueprint.plans.filter((plan) => plan.exception) : workspace.blueprint.plans;
   const names = new Map(workspace.modules.flatMap((module) => module.subtopics.map((subtopic) => [subtopic.id, subtopic.title])));
   const selectedAssets = workspace.blueprint.plans.flatMap((plan) => plan.assets).filter((asset) => asset.selectionStatus === "selected").length;
+  const exceptionCount = workspace.blueprint.plans.filter((plan) => plan.exception).length;
   return (
     <div className="stage-view blueprint-view">
-      {stageIntro("Blueprint", "05 · Generation control", "The matrix fixes exactly which learner assets the agent may generate for each subtopic. Exceptions stay visible.", <div className="blueprint-total"><strong>{selectedAssets}</strong><span>selected assets</span></div>)}
+      {stageIntro("Blueprint", "05 · Generation control", "Review the exact learner assets the agent will generate for each subtopic, along with its depth and effort budget.", <div className="blueprint-total"><span className="blueprint-total-icon" aria-hidden="true">✓</span><div><strong>{selectedAssets}</strong><span>assets included across {workspace.blueprint.plans.length} subtopics</span></div></div>)}
       <section className="defaults-panel">
-        <div className="defaults-heading"><div><span className="eyebrow">Course defaults</span><h3>Applied unless a row says otherwise</h3></div><button className="button button-secondary" disabled title="Use Request changes for this release">Edit defaults</button></div>
+        <div className="defaults-heading"><div><span className="eyebrow">Course-wide baseline</span><h3>Starting budget for every subtopic</h3><p>Rows marked with an override show exactly what changes from this baseline.</p></div><span className="defaults-review-note"><span aria-hidden="true">◇</span> Review before approval</span></div>
         <dl><DefinitionItem label="Depth" value={workspace.blueprint.defaults.depth} /><DefinitionItem label="Learning time" value={`${workspace.blueprint.defaults.minutes} min`} /><DefinitionItem label="Word target" value={workspace.blueprint.defaults.wordTarget.toLocaleString()} /><DefinitionItem label="Examples" value={workspace.blueprint.defaults.examples} /><DefinitionItem label="Case depth" value={workspace.blueprint.defaults.caseDepth} /><DefinitionItem label="Assessment" value={workspace.blueprint.defaults.assessmentComplexity} /></dl>
       </section>
-      <div className="blueprint-toolbar"><div><button className={!exceptionsOnly ? "active" : ""} onClick={() => setExceptionsOnly(false)}>All subtopics</button><button className={exceptionsOnly ? "active" : ""} onClick={() => setExceptionsOnly(true)}>Exceptions only <span>{workspace.blueprint.plans.filter((plan) => plan.exception).length}</span></button></div><p><span className="matrix-dot selected" /> Selected <span className="matrix-dot proposed" /> Proposed</p></div>
-      <div className="blueprint-table-wrap">
-        <table className="blueprint-table">
-          <thead><tr><th>Subtopic</th>{assetColumns.map(([, label]) => <th key={label}>{label}</th>)}<th>Depth budget</th></tr></thead>
-          <tbody>{plans.map((plan) => (
-            <tr key={plan.subtopicId}>
-              <th><code>{plan.subtopicId}</code><strong>{names.get(plan.subtopicId)}</strong>{plan.exception ? <span className="exception-badge">Exception</span> : null}</th>
-              {assetColumns.map(([type]) => {
-                const asset = plan.assets.find((candidate) => candidate.assetType === type);
-                const status = asset?.selectionStatus ?? "proposed";
-                return <td key={type}><button disabled title="Blueprint matrix editing is follow-on work" className={`asset-cell cell-${status}`} aria-label={`${names.get(plan.subtopicId)} ${type}: ${status}`}><span>{status === "selected" ? "✓" : "+"}</span><small>{status}</small>{type === "course_content" ? <em>anchor</em> : null}</button></td>;
-              })}
-              <td><strong>{plan.minutes} min · {plan.wordTarget.toLocaleString()} words</strong><small>{plan.examples} examples · {plan.assessmentComplexity}</small></td>
-            </tr>
-          ))}</tbody>
-        </table>
+      <div className="blueprint-toolbar">
+        <div className="blueprint-filter" role="tablist" aria-label="Filter blueprint rows"><button role="tab" aria-selected={!exceptionsOnly} className={!exceptionsOnly ? "active" : ""} onClick={() => setExceptionsOnly(false)}>All subtopics <span>{workspace.blueprint.plans.length}</span></button><button role="tab" aria-selected={exceptionsOnly} className={exceptionsOnly ? "active" : ""} onClick={() => setExceptionsOnly(true)}>Overrides <span>{exceptionCount}</span></button></div>
+        <div className="blueprint-legend" aria-label="Asset plan legend"><span><i className="legend-selected" aria-hidden="true">✓</i> Included</span><span><i className="legend-proposed" aria-hidden="true">–</i> Not selected</span><span><i className="legend-anchor" aria-hidden="true">◆</i> Required anchor</span></div>
       </div>
-      <div className="matrix-guardrail"><span aria-hidden="true">◆</span><p><strong>Anchor guardrail active.</strong> Every subtopic retains its Course Content asset. Source routing is limited to approved sources assigned in the Course Model.</p></div>
+      <section className="blueprint-matrix" aria-label="Subtopic asset plans">
+        {plans.length ? plans.map((plan) => {
+          const overrides = blueprintOverrides(plan, workspace.blueprint.defaults);
+          return (
+            <article className="blueprint-plan-row" key={plan.subtopicId}>
+              <header className="blueprint-plan-heading">
+                <div className="blueprint-plan-title"><div><code>{plan.subtopicId}</code>{plan.exception ? <span className="exception-badge">{overrides.length || 1} override{overrides.length === 1 ? "" : "s"}</span> : <span className="baseline-badge">Uses baseline</span>}</div><h3>{names.get(plan.subtopicId) ?? "Untitled subtopic"}</h3>{overrides.length ? <p>{overrides.join(" · ")}</p> : <p>Course-wide depth and budget apply.</p>}</div>
+                <dl className="plan-budget"><div><dt>Time</dt><dd>{plan.minutes} min</dd></div><div><dt>Words</dt><dd>{plan.wordTarget.toLocaleString()}</dd></div><div><dt>Examples</dt><dd>{plan.examples}</dd></div><div><dt>Assessment</dt><dd>{displayCode(plan.assessmentComplexity)}</dd></div></dl>
+              </header>
+              <div className="plan-assets">
+                <span className="micro-label">Learner asset plan</span>
+                <div className="asset-plan-grid">{assetColumns.map(([type, label]) => {
+                  const asset = plan.assets.find((candidate) => candidate.assetType === type);
+                  const selected = asset?.selectionStatus === "selected";
+                  const anchor = type === "course_content";
+                  return <div key={type} className={`asset-choice ${selected ? "asset-choice-selected" : "asset-choice-proposed"} ${anchor ? "asset-choice-anchor" : ""}`} aria-label={`${names.get(plan.subtopicId)} ${label}: ${selected ? "included" : "not selected"}`}><span className="asset-choice-mark" aria-hidden="true">{anchor ? "◆" : selected ? "✓" : "–"}</span><div><strong>{label}</strong><small>{anchor ? "Required anchor" : selected ? "Included" : "Not selected"}</small></div></div>;
+                })}</div>
+              </div>
+            </article>
+          );
+        }) : <div className="blueprint-empty"><span aria-hidden="true">◇</span><h3>No overridden rows</h3><p>Every subtopic currently uses the course-wide baseline.</p></div>}
+      </section>
+      <div className="matrix-guardrail"><span className="guardrail-symbol" aria-hidden="true">◆</span><div><strong>Course Content remains the anchor.</strong><p>Every subtopic keeps one required Course Content asset. Generation can only use approved sources routed through the Course Model.</p></div></div>
     </div>
   );
 }

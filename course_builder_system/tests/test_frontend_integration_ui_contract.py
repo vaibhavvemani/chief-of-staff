@@ -97,3 +97,28 @@ def test_research_requires_an_explicit_saved_source_selection() -> None:
     assert "Human checkpoint" in stage_views
     assert "Choose grounding sources" in stage_views
     assert "Save a selection before approving this stage" in stage_views
+
+
+def test_course_model_uses_a_structured_hierarchy_and_detail_contract() -> None:
+    stage_views = STAGE_VIEWS_SOURCE.read_text(encoding="utf-8")
+
+    assert 'className="model-workspace"' in stage_views
+    assert 'className="module-copy"' in stage_views
+    assert 'className="tree-item-copy"' in stage_views
+    assert '<dl className="model-metadata">' in stage_views
+    assert 'className="model-scope-grid"' in stage_views
+    assert 'className="model-record-list"' in stage_views
+    assert 'className="model-integrity-note"' in stage_views
+
+
+def test_blueprint_uses_readable_asset_plans_and_explicit_override_context() -> None:
+    stage_views = STAGE_VIEWS_SOURCE.read_text(encoding="utf-8")
+
+    assert 'function blueprintOverrides(' in stage_views
+    assert 'className="blueprint-filter"' in stage_views
+    assert 'className="blueprint-matrix"' in stage_views
+    assert 'className="blueprint-plan-row"' in stage_views
+    assert 'className="plan-budget"' in stage_views
+    assert 'className="asset-plan-grid"' in stage_views
+    assert "Required anchor" in stage_views
+    assert "Not selected" in stage_views
