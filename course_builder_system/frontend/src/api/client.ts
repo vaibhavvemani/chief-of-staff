@@ -758,8 +758,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       package: {
         ...base.package,
         operatorStatus: asString(summaryRecord.operator_status, projection.operator_status ?? base.package.operatorStatus),
-        integrityPassed:
-          normalizedStages.find((item) => item.slug === "package")?.status === "approved" && blockingTotal === 0,
+        integrityPassed: artifacts.has("render_manifest"),
         approvedSourceCount: workspaceSourceCount(
           artifacts.get("approved_source_registry")?.body,
         ),

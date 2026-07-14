@@ -11,6 +11,11 @@ The current prototype flow is:
 
 `subject_request -> brief -> course_outcomes -> research_dossier -> source approval -> course_model -> blueprint -> student_content -> verification -> lesson_plan -> rendered course folder -> run_summary`
 
+For a complete code-level explanation of the architecture, artifact contracts,
+stage behavior, prompts, LLM calls, API, frontend, validation, and current
+limitations, read
+[`documents/Course_Builder_Complete_Technical_Guide.md`](documents/Course_Builder_Complete_Technical_Guide.md).
+
 ## Run
 
 Deterministic local acceptance:

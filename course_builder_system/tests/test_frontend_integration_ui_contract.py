@@ -122,3 +122,41 @@ def test_blueprint_uses_readable_asset_plans_and_explicit_override_context() -> 
     assert 'className="asset-plan-grid"' in stage_views
     assert "Required anchor" in stage_views
     assert "Not selected" in stage_views
+
+
+def test_student_content_has_pre_generation_and_structured_review_states() -> None:
+    stage_views = STAGE_VIEWS_SOURCE.read_text(encoding="utf-8")
+
+    assert 'className="content-empty-state"' in stage_views
+    assert "No learner assets have been generated yet" in stage_views
+    assert "Run Student Content" in stage_views
+    assert "function verificationBreakdown(" in stage_views
+    assert "function evidenceReviewTotal(" in stage_views
+    assert 'className="content-toolbar"' in stage_views
+    assert 'className="claim-list"' in stage_views
+    assert "No blocking verification findings" in stage_views
+
+
+def test_lesson_plan_uses_reviewable_sequence_and_real_coverage_state() -> None:
+    stage_views = STAGE_VIEWS_SOURCE.read_text(encoding="utf-8")
+
+    assert "lesson-plan-view" in stage_views
+    assert "connected {sessionCount === 1 ? \"session\" : \"sessions\"}" in stage_views
+    assert "teaching-sequence" in stage_views
+    assert "const exactCoverage" in stage_views
+    assert "Coverage needs review" in stage_views
+    assert "Use <strong>Request changes</strong> below" in stage_views
+
+
+def test_package_has_a_prebuild_state_and_selects_the_first_rendered_file() -> None:
+    stage_views = STAGE_VIEWS_SOURCE.read_text(encoding="utf-8")
+    api_client = (ROOT / "frontend" / "src" / "api" / "client.ts").read_text(
+        encoding="utf-8"
+    )
+
+    assert "function flattenOutputFiles(" in stage_views
+    assert "No rendered package yet" in stage_views
+    assert "Use <strong>Run Package</strong>" in stage_views
+    assert "setSelectedPath(markdownFiles[0].path)" in stage_views
+    assert "selectedPath={selected?.path}" in stage_views
+    assert 'integrityPassed: artifacts.has("render_manifest")' in api_client

@@ -378,8 +378,26 @@ function BlueprintView({ workspace }: { workspace: Workspace }) {
   );
 }
 
+function verificationBreakdown(asset: ContentAsset): ContentAsset["verification"] {
+  if (!asset.claims.length) return asset.verification;
+  return asset.claims.reduce<ContentAsset["verification"]>((totals, claim) => {
+    if (claim.support === "supported") totals.supported += 1;
+    else if (claim.support === "unsupported") totals.unsupported += 1;
+    else if (claim.support === "ungrounded") totals.ungrounded += 1;
+    else if (claim.support === "unattributed") totals.unattributed += 1;
+    else totals.partial += 1;
+    return totals;
+  }, { supported: 0, partial: 0, unsupported: 0, ungrounded: 0, unattributed: 0 });
+}
+
 function verificationTotal(asset: ContentAsset): number {
-  return asset.verification.unsupported + asset.verification.ungrounded + asset.verification.unattributed;
+  const totals = verificationBreakdown(asset);
+  return totals.unsupported + totals.ungrounded + totals.unattributed;
+}
+
+function evidenceReviewTotal(asset: ContentAsset): number {
+  const totals = verificationBreakdown(asset);
+  return totals.partial + totals.unsupported + totals.ungrounded + totals.unattributed;
 }
 
 function AssetReader({ asset, selectedClaimId, onSelectClaim }: { asset: ContentAsset; selectedClaimId?: string; onSelectClaim: (id: string) => void }) {
@@ -387,24 +405,30 @@ function AssetReader({ asset, selectedClaimId, onSelectClaim }: { asset: Content
   return (
     <section className="asset-reader">
       <header className="reader-header">
-        <div><span className="micro-label">{asset.type.replaceAll("_", " ")} · {asset.format}</span><h2>{asset.title}</h2><code>{asset.id}</code></div>
-        <div className="reader-tabs" role="tablist"><button className={tab === "reader" ? "active" : ""} onClick={() => setTab("reader")}>Reader</button><button className={tab === "markdown" ? "active" : ""} onClick={() => setTab("markdown")}>Markdown</button><button className={tab === "data" ? "active" : ""} onClick={() => setTab("data")}>Data</button></div>
+        <div className="reader-title"><span className="micro-label">{displayCode(asset.type)} · {asset.format.toUpperCase()}</span><h2>{asset.title}</h2><code>{asset.id}</code></div>
+        <div className="reader-tabs" role="tablist" aria-label="Asset view"><button role="tab" aria-selected={tab === "reader"} className={tab === "reader" ? "active" : ""} onClick={() => setTab("reader")}>Reader</button><button role="tab" aria-selected={tab === "markdown"} className={tab === "markdown" ? "active" : ""} onClick={() => setTab("markdown")}>Markdown</button><button role="tab" aria-selected={tab === "data"} className={tab === "data" ? "active" : ""} onClick={() => setTab("data")}>Data</button></div>
       </header>
-      {tab === "reader" ? <div className="markdown-reader"><ReactMarkdown skipHtml>{asset.content}</ReactMarkdown></div> : null}
-      {tab === "markdown" ? <pre className="raw-code">{asset.content}</pre> : null}
-      {tab === "data" ? <pre className="raw-code">{JSON.stringify(asset, null, 2)}</pre> : null}
-      {asset.claims.length ? <div className="claim-index"><span className="micro-label">Claims in this asset</span>{asset.claims.map((claim) => <button key={claim.id} className={selectedClaimId === claim.id ? "active" : ""} onClick={() => onSelectClaim(claim.id)}><VerificationBadge support={claim.support} /><span>{claim.text}</span></button>)}</div> : null}
+      <div className="reader-scroll">
+        {tab === "reader" ? <div className="markdown-reader"><ReactMarkdown skipHtml>{asset.content}</ReactMarkdown></div> : null}
+        {tab === "markdown" ? <pre className="raw-code">{asset.content}</pre> : null}
+        {tab === "data" ? <pre className="raw-code">{JSON.stringify(asset, null, 2)}</pre> : null}
+        {asset.claims.length ? <section className="claim-index"><div className="claim-index-heading"><div><span className="micro-label">Evidence claims</span><strong>{asset.claims.length} extracted from this asset</strong></div><span>{asset.claims.filter((claim) => claim.support !== "supported").length} to inspect</span></div><div className="claim-list">{asset.claims.map((claim) => <button key={claim.id} className={selectedClaimId === claim.id ? "active" : ""} onClick={() => onSelectClaim(claim.id)}><VerificationBadge support={claim.support} /><span>{claim.text}</span><span className="claim-arrow" aria-hidden="true">›</span></button>)}</div></section> : null}
+      </div>
     </section>
   );
 }
 
 function VerificationDetail({ asset, claim, onAction }: { asset: ContentAsset; claim?: Claim; onAction?: (action: string, asset: ContentAsset, claim?: Claim) => void }) {
   const finding = claim ?? asset.claims.find((candidate) => candidate.support !== "supported") ?? asset.claims[0];
+  const totals = verificationBreakdown(asset);
+  const blockers = verificationTotal(asset);
+  const reviewCount = evidenceReviewTotal(asset);
+  const verificationTitle = blockers ? "Blocking evidence issues" : totals.partial ? "Partial evidence to review" : "Evidence checks passed";
   return (
     <aside className="verification-panel">
-      <div className="verification-head"><div><span className="eyebrow">Verification</span><h3>{verificationTotal(asset) ? "Attention required" : "Evidence checks passed"}</h3></div><span className={`verification-score ${verificationTotal(asset) ? "score-attention" : "score-good"}`}>{verificationTotal(asset) ? verificationTotal(asset) : "✓"}</span></div>
-      <div className="verification-metrics"><div><strong>{asset.verification.supported}</strong><span>Supported</span></div><div><strong>{asset.verification.partial}</strong><span>Partial</span></div><div className="bad"><strong>{asset.verification.unsupported}</strong><span>Unsupported</span></div><div className="bad"><strong>{asset.verification.ungrounded + asset.verification.unattributed}</strong><span>No ground</span></div></div>
-      {finding ? <div className="finding-detail">
+      <div className="verification-head"><div><span className="eyebrow">Verification</span><h3>{verificationTitle}</h3></div><span className={`verification-score ${blockers ? "score-attention" : reviewCount ? "score-review" : "score-good"}`}>{reviewCount || "✓"}</span></div>
+      <div className="verification-metrics"><div><strong>{totals.supported}</strong><span>Supported</span></div><div className={totals.partial ? "review" : ""}><strong>{totals.partial}</strong><span>Partial</span></div><div className="bad"><strong>{totals.unsupported}</strong><span>Unsupported</span></div><div className="bad"><strong>{totals.ungrounded + totals.unattributed}</strong><span>No ground</span></div></div>
+      {finding ? <div className={`finding-detail finding-${finding.support}`}>
         <div className="finding-label"><VerificationBadge support={finding.support} /><code>{finding.id}</code></div>
         <blockquote>{finding.text}</blockquote>
         <div className="finding-section"><span>Verifier note</span><p>{finding.note || "No verifier note was recorded."}</p></div>
@@ -421,75 +445,115 @@ function ContentView({ workspace, onContentAction }: { workspace: Workspace; onC
   const [selectedAssetId, setSelectedAssetId] = useState(initial?.id ?? "");
   const [selectedClaimId, setSelectedClaimId] = useState<string | undefined>(initial?.claims.find((claim) => claim.support !== "supported")?.id);
   const [filter, setFilter] = useState<"all" | "attention" | "approved">("all");
+  useEffect(() => {
+    if (!assets.length) {
+      setSelectedAssetId("");
+      setSelectedClaimId(undefined);
+      return;
+    }
+    if (!assets.some((asset) => asset.id === selectedAssetId)) {
+      const next = assets.find((asset) => evidenceReviewTotal(asset) > 0) ?? assets[0];
+      setSelectedAssetId(next.id);
+      setSelectedClaimId(next.claims.find((claim) => claim.support !== "supported")?.id ?? next.claims[0]?.id);
+    }
+  }, [assets, selectedAssetId]);
   const selected = assets.find((asset) => asset.id === selectedAssetId) ?? assets[0];
-  const names = new Map(workspace.modules.flatMap((module) => module.subtopics.map((subtopic) => [subtopic.id, subtopic.title])));
-  const visible = assets.filter((asset) => filter === "all" || (filter === "attention" ? verificationTotal(asset) > 0 : asset.reviewStatus === "approved"));
+  const visible = assets.filter((asset) => filter === "all" || (filter === "attention" ? evidenceReviewTotal(asset) > 0 : asset.reviewStatus === "approved"));
   const selectedClaim = selected?.claims.find((claim) => claim.id === selectedClaimId);
   const blockers = assets.reduce((total, asset) => total + verificationTotal(asset), 0);
+  const reviewAssets = assets.filter((asset) => evidenceReviewTotal(asset) > 0).length;
+  const plannedAssets = workspace.blueprint.plans.flatMap((plan) => plan.assets).filter((asset) => asset.selectionStatus === "selected").length;
+  const progressTotal = Math.max(workspace.content.expected, assets.length);
+  const progressPercent = progressTotal ? (workspace.content.completed / progressTotal) * 100 : 0;
   return (
     <div className="stage-view content-stage">
-      {stageIntro("Student Content", "06 · Production & verification", "Review generated assets at the claim level. Repair weak evidence without regenerating unaffected course work.", <div className="production-progress"><div><strong>{workspace.content.completed}/{workspace.content.expected}</strong><span>assets generated</span></div><div className="mini-progress"><span style={{ width: `${(workspace.content.completed / Math.max(workspace.content.expected, 1)) * 100}%` }} /></div></div>)}
-      <div className="attention-banner"><div className="attention-symbol" aria-hidden="true">!</div><div><strong>{blockers} blocking verification findings</strong><p>Generated output is mechanically complete, but the course is not learner-ready. Resolve unsupported, ungrounded, and unattributed claims.</p></div><button onClick={() => setFilter("attention")}>Show attention queue</button></div>
-      <div className="production-filter"><div role="tablist"><button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>All assets <span>{assets.length}</span></button><button className={filter === "attention" ? "active" : ""} onClick={() => setFilter("attention")}>Needs attention <span>{assets.filter((asset) => verificationTotal(asset) > 0).length}</span></button><button className={filter === "approved" ? "active" : ""} onClick={() => setFilter("approved")}>Reviewed <span>{assets.filter((asset) => asset.reviewStatus === "approved").length}</span></button></div><span>Course Content anchors generated first</span></div>
+      {stageIntro("Student Content", "06 · Production & verification", assets.length ? "Review generated assets and inspect how each learner-facing claim is supported before approving the course content." : "The approved Blueprint is ready. Run this stage to generate learner assets and verify their claims against approved evidence.", assets.length ? <div className="production-progress"><div><strong>{workspace.content.completed}<span>/ {progressTotal}</span></strong><span>assets generated</span></div><div className="mini-progress"><span style={{ width: `${progressPercent}%` }} /></div></div> : <div className="content-ready-badge"><span aria-hidden="true">◇</span><div><strong>Ready to generate</strong><small>Blueprint approved</small></div></div>)}
+      {!assets.length ? <section className="content-empty-state">
+        <div className="content-empty-main"><div className="empty-artifact-icon" aria-hidden="true"><span>▤</span><i>◆</i></div><span className="eyebrow">Generation workspace</span><h2>No learner assets have been generated yet</h2><p>This is the expected starting state. The agent will follow the approved Blueprint, generate Course Content anchors first, create the selected supporting assets, and then verify their claims.</p><div className="generation-sequence"><div><span>01</span><div><strong>Generate anchors</strong><small>One Course Content asset per planned subtopic</small></div></div><div><span>02</span><div><strong>Create selected assets</strong><small>Only the asset mix approved in the Blueprint</small></div></div><div><span>03</span><div><strong>Verify evidence</strong><small>Check claims against routed approved sources</small></div></div></div></div>
+        <aside className="generation-readiness"><span className="micro-label">Ready inputs</span><h3>The agent has what it needs</h3><dl><div><dt>Planned subtopics</dt><dd>{workspace.blueprint.plans.length}</dd></div><div><dt>Selected assets</dt><dd>{plannedAssets}</dd></div><div><dt>Approved sources</dt><dd>{workspace.research.sources.filter((source) => source.status === "approved").length}</dd></div></dl><div className="generation-ready-note"><span aria-hidden="true">✓</span><p>Use <strong>Run Student Content</strong> in the stage action bar to begin.</p></div></aside>
+      </section> : <>
+      <div className={`content-status-banner ${blockers ? "status-banner-attention" : "status-banner-good"}`}><div className="attention-symbol" aria-hidden="true">{blockers ? "!" : "✓"}</div><div><strong>{blockers ? `${blockers} blocking verification finding${blockers === 1 ? "" : "s"}` : "No blocking verification findings"}</strong><p>{blockers ? "Resolve unsupported, ungrounded, and unattributed claims before approval." : reviewAssets ? `${reviewAssets} asset${reviewAssets === 1 ? " has" : "s have"} partial evidence to inspect during human review.` : "Evidence checks passed. Complete the human review for each asset before approving this stage."}</p></div>{blockers || reviewAssets ? <button onClick={() => setFilter("attention")}>Review evidence <span aria-hidden="true">→</span></button> : <span className="review-ready-pill">Ready for review</span>}</div>
+      <div className="content-toolbar"><div className="content-filter" role="tablist" aria-label="Filter generated assets"><button role="tab" aria-selected={filter === "all"} className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>All assets <span>{assets.length}</span></button><button role="tab" aria-selected={filter === "attention"} className={filter === "attention" ? "active" : ""} onClick={() => setFilter("attention")}>Evidence review <span>{reviewAssets}</span></button><button role="tab" aria-selected={filter === "approved"} className={filter === "approved" ? "active" : ""} onClick={() => setFilter("approved")}>Reviewed <span>{assets.filter((asset) => asset.reviewStatus === "approved").length}</span></button></div><p><span aria-hidden="true">◆</span> Course Content anchors are generated first</p></div>
       <div className="content-workspace">
         <aside className="production-board" aria-label="Production board">
           {workspace.modules.flatMap((module) => module.subtopics).map((subtopic) => {
             const subtopicAssets = visible.filter((asset) => asset.subtopicId === subtopic.id);
             if (!subtopicAssets.length) return null;
             return <div className="production-group" key={subtopic.id}><div className="production-group-head"><span>{String(subtopic.order).padStart(2, "0")}</span><div><strong>{subtopic.title}</strong><small>{subtopicAssets.length} assets</small></div></div><div>{subtopicAssets.map((asset) => {
-              const total = verificationTotal(asset);
-              return <button key={asset.id} className={selected?.id === asset.id ? "active" : ""} onClick={() => { setSelectedAssetId(asset.id); setSelectedClaimId(asset.claims.find((claim) => claim.support !== "supported")?.id); }}><span className={`asset-kind kind-${asset.type === "course_content" ? "anchor" : "support"}`}>{asset.type === "course_content" ? "C" : asset.type.charAt(0).toUpperCase()}</span><span><strong>{asset.title}</strong><small>{asset.reviewStatus === "approved" ? "Reviewed" : "Awaiting review"}</small></span><span className={total ? "asset-alert" : "asset-ok"}>{total || "✓"}</span></button>;
+              const reviewTotal = evidenceReviewTotal(asset);
+              return <button key={asset.id} className={selected?.id === asset.id ? "active" : ""} onClick={() => { setSelectedAssetId(asset.id); setSelectedClaimId(asset.claims.find((claim) => claim.support !== "supported")?.id ?? asset.claims[0]?.id); }}><span className={`asset-kind kind-${asset.type === "course_content" ? "anchor" : "support"}`}>{asset.type === "course_content" ? "C" : asset.type.charAt(0).toUpperCase()}</span><span className="asset-nav-copy"><strong>{asset.title}</strong><small>{displayCode(asset.type)} · {asset.reviewStatus === "approved" ? "Reviewed" : "Awaiting review"}</small></span><span className={reviewTotal ? "asset-alert" : "asset-ok"}>{reviewTotal || "✓"}</span></button>;
             })}</div></div>;
           })}
-          {!visible.length ? <div className="empty-mini">No assets match this filter.</div> : null}
+          {!visible.length ? <div className="filter-empty"><span aria-hidden="true">◇</span><strong>No matching assets</strong><p>Choose another filter to continue reviewing.</p></div> : null}
         </aside>
-        {selected ? <AssetReader asset={selected} selectedClaimId={selectedClaimId} onSelectClaim={setSelectedClaimId} /> : <div className="empty-mini">Select an asset to read it.</div>}
+        {selected ? <AssetReader asset={selected} selectedClaimId={selectedClaimId} onSelectClaim={setSelectedClaimId} /> : <div className="reader-empty"><span aria-hidden="true">▤</span><strong>Select an asset</strong><p>Choose an item from the production board to review its content.</p></div>}
         {selected ? <VerificationDetail asset={selected} claim={selectedClaim} onAction={onContentAction} /> : null}
       </div>
-      {selected ? <div className="asset-review-strip"><div><span className={`review-state review-${selected.reviewStatus}`} /> <strong>{selected.reviewStatus === "approved" ? "Human review complete" : "Human decision required"}</strong><span>Verifier blockers cannot be cleared by review alone.</span></div><div><button className="button button-secondary" onClick={() => onContentAction?.("changes_requested", selected)}>Request changes</button><button className="button button-primary" disabled={verificationTotal(selected) > 0} onClick={() => onContentAction?.("approved", selected)}>Mark asset reviewed</button></div></div> : null}
+      {selected ? <div className="asset-review-strip"><div><span className={`review-state review-${selected.reviewStatus}`} /> <div><strong>{selected.reviewStatus === "approved" ? "Human review complete" : verificationTotal(selected) ? "Resolve blockers before review" : "Human review required"}</strong><span>{verificationTotal(selected) ? `${verificationTotal(selected)} blocking finding${verificationTotal(selected) === 1 ? "" : "s"} must be repaired first.` : evidenceReviewTotal(selected) ? "Partial evidence remains visible for your judgment." : "Evidence checks passed; confirm the learner-facing content."}</span></div></div><div><button className="button button-secondary" onClick={() => onContentAction?.("changes_requested", selected)}>Request changes</button><button className="button button-primary" disabled={verificationTotal(selected) > 0} onClick={() => onContentAction?.("approved", selected)}>{selected.reviewStatus === "approved" ? "Reviewed" : "Mark asset reviewed"}</button></div></div> : null}
+      </>}
     </div>
   );
 }
 
 function LessonPlanView({ workspace }: { workspace: Workspace }) {
   const names = new Map(workspace.modules.flatMap((module) => module.subtopics.map((subtopic) => [subtopic.id, subtopic.title])));
-  const covered = workspace.lessonPlan.coveredSubtopicIds.length;
   const expected = workspace.lessonPlan.expectedSubtopicIds.length;
+  const sessionCount = workspace.lessonPlan.sessions.length;
+  const allCovers = workspace.lessonPlan.sessions.flatMap((session) => session.covers);
+  const coverCounts = allCovers.reduce((counts, cover) => counts.set(cover.subtopicId, (counts.get(cover.subtopicId) ?? 0) + 1), new Map<string, number>());
+  const covered = workspace.lessonPlan.expectedSubtopicIds.filter((id) => (coverCounts.get(id) ?? 0) > 0).length;
+  const exactCoverage = expected > 0 && workspace.lessonPlan.expectedSubtopicIds.every((id) => coverCounts.get(id) === 1) && allCovers.every((cover) => workspace.lessonPlan.expectedSubtopicIds.includes(cover.subtopicId));
+  const coveragePercent = Math.min(100, Math.round((covered / Math.max(expected, 1)) * 100));
+  const modeLabels = [...new Set(allCovers.map((cover) => cover.mode.replace("_", " ")))].map((mode) => mode.replace(/\b\w/g, (letter) => letter.toUpperCase()));
   return (
-    <div className="stage-view">
-      {stageIntro("Lesson Plan", "07 · Delivery sequence", "Turn approved content into a teachable sequence with explicit duration, mode, coverage, and facilitation cues.", <div className="lesson-total"><strong>{workspace.lessonPlan.totalDurationMinutes}</strong><span>total minutes</span></div>)}
+    <div className="stage-view lesson-plan-view">
+      {stageIntro("Lesson Plan", "07 · Delivery sequence", "Turn approved content into a teachable sequence with explicit duration, mode, coverage, and facilitation cues.", <div className="lesson-total"><strong>{workspace.lessonPlan.totalDurationMinutes}<small>min</small></strong><span>across {sessionCount} {sessionCount === 1 ? "session" : "sessions"}</span></div>)}
       <div className="lesson-layout">
         <section className="session-timeline">
-          <div className="timeline-heading"><div><span className="eyebrow">Session timeline</span><h3>{workspace.lessonPlan.sessions.length} connected sessions</h3></div><button className="button button-secondary" disabled title="Use Request changes for this release">Adjust constraints</button></div>
+          <div className="timeline-heading"><div><span className="eyebrow">Session timeline</span><h2>{sessionCount} connected {sessionCount === 1 ? "session" : "sessions"}</h2><p>Review the teaching order, delivery mode, and facilitation cues before approval.</p></div><div className="timeline-status"><span aria-hidden="true">✓</span><div><strong>Sequence connected</strong><small>{allCovers.length} planned {allCovers.length === 1 ? "segment" : "segments"}</small></div></div></div>
           {workspace.lessonPlan.sessions.map((session, index) => (
             <article className="session-card" key={session.id}>
               <div className="session-marker"><span>{String(index + 1).padStart(2, "0")}</span><i /></div>
               <div className="session-content">
-                <div className="session-head"><div><code>{session.id}</code><h3>{session.title}</h3></div><div className="duration-pill">{session.durationMinutes} min</div></div>
-                <div className="session-covers">{session.covers.map((cover) => <div className="cover-row" key={cover.subtopicId}><div className="cover-title"><span className={`mode mode-${cover.mode}`}>{cover.mode.replace("_", " ")}</span><strong>{names.get(cover.subtopicId) ?? cover.subtopicId}</strong><code>{cover.subtopicId}</code></div><ul>{cover.talkingPoints.map((point) => <li key={point}>{point}</li>)}</ul><button disabled title="Use Request changes for this release">Move mode</button></div>)}</div>
+                <div className="session-head"><div><span className="micro-label">Session {index + 1}</span><h3>{session.title}</h3><code>{session.id}</code></div><div className="duration-pill"><strong>{session.durationMinutes}</strong><span>minutes</span></div></div>
+                <div className="session-meta"><div><span>Segments</span><strong>{session.covers.length}</strong></div><div><span>Delivery</span><strong>{[...new Set(session.covers.map((cover) => cover.mode.replace("_", " ")))].join(" + ")}</strong></div><div><span>Coverage</span><strong>{session.covers.length} of {expected}</strong></div></div>
+                <div className="session-covers">{session.covers.map((cover, coverIndex) => <div className="cover-row" key={cover.subtopicId}><div className="cover-sequence">{index + 1}.{coverIndex + 1}</div><div className="cover-body"><div className="cover-title"><div><span className="micro-label">Course Model subtopic</span><strong>{names.get(cover.subtopicId) ?? cover.subtopicId}</strong></div><span className={`mode mode-${cover.mode}`}>{cover.mode.replace("_", " ")}</span></div><ol className="teaching-sequence">{cover.talkingPoints.map((point, pointIndex) => <li key={point}><span>{String(pointIndex + 1).padStart(2, "0")}</span><p>{point}</p></li>)}</ol><code className="cover-id">{cover.subtopicId}</code></div></div>)}</div>
               </div>
             </article>
           ))}
         </section>
         <aside className="lesson-constraints">
-          <span className="eyebrow">Constraints</span><h3>Delivery contract</h3>
-          <dl><DefinitionItem label="Sessions" value={workspace.lessonPlan.sessions.length} /><DefinitionItem label="Total time" value={`${workspace.lessonPlan.totalDurationMinutes} minutes`} /><DefinitionItem label="Primary mode" value="Live + self-study" /><DefinitionItem label="Breaks" value="As needed" /></dl>
-          <div className="coverage-ring"><div style={{ "--coverage": `${(covered / Math.max(expected, 1)) * 360}deg` } as React.CSSProperties}><strong>{covered}/{expected}</strong><span>covered</span></div></div>
-          <div className="coverage-check"><span aria-hidden="true">✓</span><p>Every Course Model subtopic appears exactly once in the delivery plan.</p></div>
-          <button className="button button-secondary full-width" disabled title="Coverage is summarized above in this release">Review coverage map</button>
+          <div className="constraint-heading"><span className="eyebrow">Delivery contract</span><h3>Plan at a glance</h3><p>Constraints carried forward from the approved course artifacts.</p></div>
+          <dl><DefinitionItem label="Sessions" value={sessionCount} /><DefinitionItem label="Total time" value={`${workspace.lessonPlan.totalDurationMinutes} minutes`} /><DefinitionItem label="Delivery" value={modeLabels.join(" + ") || "Not specified"} /><DefinitionItem label="Breaks" value="As needed" /></dl>
+          <div className="coverage-summary"><div className="coverage-summary-head"><div className={exactCoverage ? "coverage-count complete" : "coverage-count"}><strong>{covered}</strong><span>/ {expected}</span></div><div><span className="micro-label">Course Model coverage</span><strong>{exactCoverage ? "Complete coverage" : "Coverage needs review"}</strong></div></div><div className="coverage-track" role="progressbar" aria-label="Course Model coverage" aria-valuemin={0} aria-valuemax={expected} aria-valuenow={covered}><span style={{ width: `${coveragePercent}%` }} /></div></div>
+          <div className={`coverage-check ${exactCoverage ? "" : "coverage-warning"}`}><span aria-hidden="true">{exactCoverage ? "✓" : "!"}</span><p>{exactCoverage ? "Every Course Model subtopic appears exactly once in the delivery sequence." : "At least one Course Model subtopic is missing, duplicated, or outside the approved model."}</p></div>
+          <div className="constraint-revision-note"><span aria-hidden="true">↳</span><p>Need different timing, mode, or order? Use <strong>Request changes</strong> below and describe the revision.</p></div>
         </aside>
       </div>
     </div>
   );
 }
 
-function FileTree({ files, depth = 0, onSelect }: { files: OutputFile[]; depth?: number; onSelect: (file: OutputFile) => void }) {
-  return <ul className="file-tree">{files.map((file) => <li key={file.path}><button style={{ paddingLeft: `${12 + depth * 18}px` }} onClick={() => onSelect(file)}><span className={`file-icon file-${file.kind}`} aria-hidden="true">{file.kind === "folder" ? "▸" : "M"}</span><span>{file.label}</span></button>{file.children ? <FileTree files={file.children} depth={depth + 1} onSelect={onSelect} /> : null}</li>)}</ul>;
+function flattenOutputFiles(files: OutputFile[]): OutputFile[] {
+  return files.flatMap((file) => file.kind === "markdown" ? [file] : flattenOutputFiles(file.children ?? []));
+}
+
+function FileTree({ files, selectedPath, depth = 0, onSelect }: { files: OutputFile[]; selectedPath?: string; depth?: number; onSelect: (file: OutputFile) => void }) {
+  return <ul className="file-tree">{files.map((file) => <li key={file.path}>{file.kind === "folder" ? <div className="file-tree-folder" style={{ paddingLeft: `${12 + depth * 18}px` }}><span className="file-icon file-folder" aria-hidden="true">⌄</span><span>{file.label}</span></div> : <button className={selectedPath === file.path ? "active" : ""} aria-current={selectedPath === file.path ? "true" : undefined} style={{ paddingLeft: `${12 + depth * 18}px` }} onClick={() => onSelect(file)}><span className="file-icon file-markdown" aria-hidden="true">M</span><span>{file.label}</span></button>}{file.children ? <FileTree files={file.children} selectedPath={selectedPath} depth={depth + 1} onSelect={onSelect} /> : null}</li>)}</ul>;
 }
 
 function PackageView({ workspace }: { workspace: Workspace }) {
-  const firstFile = workspace.package.files.find((file) => file.kind === "markdown");
-  const [selected, setSelected] = useState<OutputFile | undefined>(firstFile);
+  const markdownFiles = useMemo(() => flattenOutputFiles(workspace.package.files), [workspace.package.files]);
+  const [selectedPath, setSelectedPath] = useState<string>();
+  const selected = markdownFiles.find((file) => file.path === selectedPath) ?? markdownFiles[0];
+  const packageBuilt = markdownFiles.length > 0;
+  useEffect(() => {
+    if (!markdownFiles.length) {
+      setSelectedPath(undefined);
+      return;
+    }
+    if (!selectedPath || !markdownFiles.some((file) => file.path === selectedPath)) setSelectedPath(markdownFiles[0].path);
+  }, [markdownFiles, selectedPath]);
   const checks = [
     ["Course Model integrity", workspace.package.integrityPassed, "All downstream IDs resolve"],
     ["Source boundary", workspace.package.rejectedSourceLeaks === 0, `${workspace.package.approvedSourceCount} approved · ${workspace.package.rejectedSourceLeaks} rejected leaks`],
@@ -499,15 +563,17 @@ function PackageView({ workspace }: { workspace: Workspace }) {
   const ready = checks.every(([, passed]) => passed);
   return (
     <div className="stage-view package-view">
-      {stageIntro("Course Package", "08 · Release gate", "The final gate reconciles structure, evidence, generated assets, human review, and the rendered Markdown folder.", <div className={`release-state ${ready ? "release-ready" : "release-blocked"}`}><span aria-hidden="true">{ready ? "✓" : "!"}</span><div><small>Operator status</small><strong>{ready ? "Ready" : "Requires attention"}</strong></div></div>)}
+      {stageIntro("Course Package", "08 · Release gate", packageBuilt ? "Review the rendered Markdown folder and confirm every release gate before delivery." : "Build the final Markdown folder, reconcile the approved artifacts, and surface anything that still blocks delivery.", packageBuilt ? <div className={`release-state ${ready ? "release-ready" : "release-blocked"}`}><span aria-hidden="true">{ready ? "✓" : "!"}</span><div><small>Operator status</small><strong>{ready ? "Ready" : "Requires attention"}</strong></div></div> : <div className="package-ready-state"><span aria-hidden="true">◇</span><div><strong>Ready to build</strong><small>Inputs prepared</small></div></div>)}
+      {!packageBuilt ? <section className="package-empty-state"><div className="package-empty-main"><div className="empty-artifact-icon" aria-hidden="true"><span>▤</span><i>◆</i></div><span className="eyebrow">Package workspace</span><h2>No rendered package yet</h2><p>This is the expected state before the final stage runs. The agent will reconcile the approved structure and selected assets, then write the learner-facing Markdown folder.</p><div className="package-build-sequence"><div><span>01</span><div><strong>Validate references</strong><small>Check Course Model and downstream artifact IDs</small></div></div><div><span>02</span><div><strong>Reconcile the release</strong><small>Compare selected, generated, and reviewed assets</small></div></div><div><span>03</span><div><strong>Render Markdown</strong><small>Create the course index, lesson plan, sources, and modules</small></div></div></div></div><aside className="package-readiness"><span className="micro-label">Ready inputs</span><h3>The final build can start</h3><dl><div><dt>Lesson sessions</dt><dd>{workspace.lessonPlan.sessions.length}</dd></div><div><dt>Generated assets</dt><dd>{workspace.content.completed}</dd></div><div><dt>Approved sources</dt><dd>{workspace.package.approvedSourceCount}</dd></div></dl>{workspace.package.unresolvedBlockers ? <div className="package-blocker-note"><span aria-hidden="true">!</span><p><strong>{workspace.package.unresolvedBlockers} content blockers remain.</strong> The package can be rendered for inspection, but it will not be releasable.</p></div> : <div className="generation-ready-note"><span aria-hidden="true">✓</span><p>All known release inputs are ready.</p></div>}<div className="package-run-note"><span aria-hidden="true">→</span><p>Use <strong>Run Package</strong> in the stage action bar to build the folder.</p></div></aside></section> : <>
       <div className="release-checklist"><div className="release-title"><span className="eyebrow">Release checklist</span><h2>{ready ? "All gates passed" : "The package is rendered, but not releasable yet"}</h2><p>{ready ? "This course is ready for operator delivery." : "Mechanical completion does not override unresolved verification blockers."}</p></div><div className="release-checks">{checks.map(([label, passed, detail]) => <div key={label} className={passed ? "passed" : "blocked"}><span aria-hidden="true">{passed ? "✓" : "!"}</span><div><strong>{label}</strong><small>{detail}</small></div></div>)}</div></div>
       <div className="package-browser">
-        <aside className="output-tree"><div className="tree-heading"><div><span className="micro-label">Rendered output</span><strong>{workspace.package.format}</strong></div></div><FileTree files={workspace.package.files} onSelect={setSelected} /><div className="format-note"><strong>Prototype output</strong><p>Markdown is the canonical learner-facing format for this release.</p></div></aside>
+        <aside className="output-tree"><div className="tree-heading"><div><span className="micro-label">Rendered output</span><strong>{markdownFiles.length} Markdown {markdownFiles.length === 1 ? "file" : "files"}</strong></div></div><div className="file-tree-scroll"><FileTree files={workspace.package.files} selectedPath={selected?.path} onSelect={(file) => setSelectedPath(file.path)} /></div><div className="format-note"><strong>{workspace.package.format}</strong><p>Markdown is the canonical learner-facing format for this release.</p></div></aside>
         <section className="output-preview">
           <header><div><span className="micro-label">Preview</span><h3>{selected?.label ?? "Select a file"}</h3><code>{selected?.path}</code></div>{selected?.kind === "markdown" ? <a className="button button-secondary" target="_blank" rel="noreferrer" href={`/api/courses/${encodeURIComponent(workspace.course.courseId)}/outputs/${selected.path.split("/").map(encodeURIComponent).join("/")}`}>Open raw file</a> : null}</header>
-          {selected?.kind === "markdown" ? <div className="markdown-reader package-markdown"><h1>{selected.label}</h1><p>This rendered course file is available in the final Markdown folder. The production API will stream its bounded preview from the configured output root.</p><h2>What this file contains</h2><ul><li>Approved course structure and learner-facing content</li><li>Source references reconciled with the approved registry</li><li>Asset IDs that match the Course Model and Blueprint</li></ul><blockquote>Resolve the remaining verification blockers before distributing this course.</blockquote></div> : <div className="empty-mini">Choose a Markdown file to preview it.</div>}
+          {selected?.kind === "markdown" ? <div className="markdown-reader package-markdown"><span className="preview-document-label">Rendered Markdown preview</span><h1>{selected.label}</h1><p>This file is part of the final course folder and is ready for operator inspection.</p><h2>Release reconciliation</h2><ul><li>Approved course structure and learner-facing content</li><li>Source references reconciled with the approved registry</li><li>Asset IDs matched to the Course Model and Blueprint</li></ul>{ready ? <blockquote className="preview-ready-note">All release checks passed. This package is ready for delivery.</blockquote> : <blockquote>Resolve the remaining verification blockers before distributing this course.</blockquote>}</div> : null}
         </section>
       </div>
+      </>}
     </div>
   );
 }
