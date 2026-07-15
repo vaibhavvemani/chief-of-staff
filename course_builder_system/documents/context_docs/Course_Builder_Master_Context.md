@@ -4,13 +4,15 @@
 
 ---
 
-## Current status - 2026-07-14
+## Current status - 2026-07-15
 
 The four-week Course Builder prototype is complete as a working vertical product prototype. It has passed deterministic local acceptance, a second-topic domain-neutral smoke test, and one full live end-to-end run using live research, live LLM-backed content generation, live verification, lesson-plan generation, and Markdown rendering.
 
 Read `Course_Builder_Four_Week_Prototype_Completion_Handoff.md` before starting new work. It is the current prototype closeout record and supersedes the pre-build sprint assumptions for status, known gaps, and recommended next work.
 
 Course Builder Studio, the artifact-oriented browser interface, is also implemented as a local product prototype. It adds a React/Vite frontend and FastAPI adapter for course creation, eight-stage review, live or deterministic stage execution, explicit source decisions, claim-level content review, Lesson Plan inspection, and Markdown Package review. Read `Course_Builder_Frontend_Implementation_Handoff.md` before changing the frontend, API adapter, workspace projection, or browser workflow.
+
+The next development cycle is now planned as a milestone-gated program whose release target is one internal, nontechnical course director completing a sample course without terminal or JSON intervention. Read `Course_Builder_Next_Development_Cycle_Plan.md` for the product roadmap, then use its technical-contract, implementation-backlog, and acceptance/pilot companion documents before starting cycle work.
 
 The most important current conclusion:
 
@@ -20,6 +22,7 @@ The most important current conclusion:
 - the browser now provides the primary structured operator workspace over the same artifact contracts;
 - first-pass live content is not automatically learner-ready;
 - verifier blockers must drive source repair and targeted revision before a live course is considered final.
+- the next cycle must first make lifecycle, reopening, impact, revision, and intake behavior truthful before layering on complete live-agent parity.
 
 ---
 
@@ -28,6 +31,7 @@ The most important current conclusion:
 - Read this whole document first. It is self-contained — you should not need any other file to understand the project.
 - Then read `Course_Builder_Four_Week_Prototype_Completion_Handoff.md` for the current implementation state, validation evidence, and next work package.
 - For frontend or API-adapter work, then read `Course_Builder_Frontend_Implementation_Handoff.md`. The older frontend product plan records intent; the handoff records the implementation that actually exists.
+- For next-cycle work, read `Course_Builder_Next_Development_Cycle_Plan.md`, then its `Technical_Contract`, `Implementation_Backlog`, and `Acceptance_and_Pilot` companion documents. The roadmap defines target intent; the handoffs define current implementation reality.
 - **Intent wins on vision; detail wins on implementation.** Sections 1–11 define *what* we are building and the decisions already locked. Sections 12–19 define *how* we are building it.
 - **Do not re-litigate locked decisions** (Section 10) unless we explicitly reopen one. If a request seems to contradict a locked decision or a core principle, flag it rather than quietly drifting.
 - **Push back when warranted.** We prefer direct, rigorous collaboration over agreeable drift. Do not add scope, components, or "nice to haves" without genuine justification. If we are over-engineering, say so.
@@ -360,7 +364,7 @@ The Phase 0 handoff has been archived at `documents/context_docs/archive/Course_
 - **Current state:** The four-week pipeline prototype and the first local Course Builder Studio frontend are complete. The reusable contracts, prompts, context builder, verification, integrity path, FastAPI adapter, React workspace, local acceptance course, live-run evidence, and FRM benchmark are in place. FRM-specific fixtures remain benchmark data, not reusable prompt or contract assumptions.
 - **Building method:** the project is being built largely with AI assistance — this document exists to give any AI collaborator full context.
 - **Key asset:** existing, manually-built courses (risk & governance subjects). These are the reference for designing the artifacts AND the quality bar the agent's output is measured against.
-- **Immediate next action:** execute the next work package from `Course_Builder_Four_Week_Prototype_Completion_Handoff.md`: complete source repair plus verifier-driven targeted revision behind the operator choices already exposed in Course Builder Studio, so live courses can move from `requires_attention` to learner-ready without broad regeneration.
+- **Immediate next action:** begin the ready queue in `Course_Builder_Next_Cycle_Implementation_Backlog.md`: approve the planning package, establish the isolated deterministic acceptance course/browser harness, then implement stage-state, invalidation, impact-preview, approval-guard, and capability contracts before guided intake and source/content repair.
 
 ---
 

@@ -5,6 +5,12 @@
 > **Scope:** React frontend, FastAPI adapter, browser workflow, and current UX contracts
 > **Read with:** `Course_Builder_Master_Context.md` and `Course_Builder_Four_Week_Prototype_Completion_Handoff.md`
 
+> **Next-cycle planning update — 2026-07-15:** The operator-ready follow-on cycle is
+> defined in `Course_Builder_Next_Development_Cycle_Plan.md` and its technical-contract,
+> implementation-backlog, and acceptance/pilot companion documents. This handoff remains
+> authoritative for current behavior; the next-cycle package defines the target behavior
+> and implementation order.
+
 ## 1. Purpose of this document
 
 This is the canonical implementation context for Course Builder Studio, the browser

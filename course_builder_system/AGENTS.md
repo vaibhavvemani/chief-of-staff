@@ -8,7 +8,8 @@ agent instruction file.
 
 The Course Builder four-week prototype is complete as of 2026-07-06. The first
 local Course Builder Studio frontend and FastAPI adapter are implemented as of
-2026-07-14.
+2026-07-14. The next milestone-gated development cycle is planned as of
+2026-07-15.
 
 The system turns a sparse subject request into a rendered course folder through:
 
@@ -23,14 +24,21 @@ Primary context docs:
 - `documents/context_docs/Course_Builder_Master_Context.md` - current north star and status.
 - `documents/context_docs/Course_Builder_Four_Week_Prototype_Completion_Handoff.md` - delivered prototype, validation evidence, known gaps, and recommended next work.
 - `documents/context_docs/Course_Builder_Frontend_Implementation_Handoff.md` - implemented browser product, API adapter, stage behavior, state flow, extension rules, and known limitations.
+- `documents/context_docs/Course_Builder_Next_Development_Cycle_Plan.md` - active next-cycle product outcome, milestones, risks, definition of done, and deferrals.
+- `documents/context_docs/Course_Builder_Next_Cycle_Technical_Contract_Plan.md` - target lifecycle, invalidation, typed command, repair, execution, and observability contracts.
+- `documents/context_docs/Course_Builder_Next_Cycle_Implementation_Backlog.md` - task-sized work packages, dependencies, priorities, ownership split, and exit gates.
+- `documents/context_docs/Course_Builder_Next_Cycle_Acceptance_and_Pilot_Plan.md` - deterministic, recovery, negative, live-agent, and internal operator acceptance protocol.
 - `documents/context_docs/Course_Builder_Frontend_Product_and_Implementation_Plan.md` - original frontend product and architecture plan; use the implementation handoff for current behavior.
 - `documents/context_docs/Course_Builder_Four_Week_Prototype_Plan.md` - intended prototype scope and definition of done.
 - `documents/context_docs/Course_Builder_Four_Week_Sprint_Plan.md` - completed sprint plan and acceptance framing.
 - `documents/Prototype_Operator_Guide.md` - how to run and review the prototype.
 
-The next high-value work package is source repair plus verifier-driven targeted
-revision, so live runs can move from `requires_attention` to learner-ready
-without broad regeneration.
+The active next-cycle program makes the browser dependable for a nontechnical
+internal course director and then proves the same workflow with live agent-backed
+stages. Start with the acceptance foundation and lifecycle/command contracts in
+the next-cycle backlog. Source repair plus verifier-driven targeted revision
+remains the central trust milestone, but should be implemented after reopening,
+impact, invalidation, approval, and revision behavior is made truthful.
 
 ## Commands
 
