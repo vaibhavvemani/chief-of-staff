@@ -8,6 +8,7 @@ CLAUDE.local.md
 .llm_cache/
 logs/
 outputs/
+output/playwright/
 rendered_courses/
 runtime/
 frontend/dist/

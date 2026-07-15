@@ -7,11 +7,15 @@ import type {
   CourseModule,
   CourseSummary,
   CreateCourseRequest,
+  ImpactPreview,
   JobResponse,
   LessonSession,
   Outcome,
   OutputFile,
   SourceCandidate,
+  ScopedRevisionCommand,
+  StageAction,
+  StageActionId,
   StageCommand,
   StageSlug,
   StageSummary,
@@ -86,10 +90,11 @@ const stageStateMap: Record<string, UiStatus> = {
   not_started: "ready",
 };
 
-function normalizeStatus(value: unknown, fallback: UiStatus = "ready"): UiStatus {
+export function normalizeStatus(value: unknown, fallback: UiStatus = "ready"): UiStatus {
   const raw = asString(value).toLowerCase();
   const valid: UiStatus[] = [
     "locked",
+    "needs_input",
     "ready",
     "running",
     "awaiting_review",
@@ -99,6 +104,11 @@ function normalizeStatus(value: unknown, fallback: UiStatus = "ready"): UiStatus
     "failed",
   ];
   return valid.includes(raw as UiStatus) ? (raw as UiStatus) : stageStateMap[raw] ?? fallback;
+}
+
+function normalizeFailure(value: unknown): string | undefined {
+  if (isRecord(value)) return asString(value.message) || undefined;
+  return asString(value) || undefined;
 }
 
 interface BackendCourse {
@@ -176,6 +186,12 @@ interface BackendWorkspace {
     attention_count?: number;
     checksum?: string;
     can_mutate?: boolean;
+    dependencies?: unknown[];
+    downstream_stages?: unknown[];
+    prerequisites_ready?: boolean;
+    approval_failures?: unknown[];
+    last_failure?: unknown;
+    actions?: unknown[];
   }>;
   artifact_types?: string[];
 }
@@ -194,6 +210,12 @@ interface BackendStage {
   attention_count?: number;
   checksum?: string;
   can_mutate?: boolean;
+  dependencies?: unknown[];
+  downstream_stages?: unknown[];
+  prerequisites_ready?: boolean;
+  approval_failures?: unknown[];
+  last_failure?: unknown;
+  actions?: unknown[];
   artifacts?: StageArtifact[];
 }
 
@@ -207,6 +229,44 @@ const allStageSlugs: StageSlug[] = [
   "lesson-plan",
   "package",
 ];
+
+const stageActionIds: StageActionId[] = [
+  "run",
+  "retry",
+  "edit",
+  "source_decision",
+  "review_asset",
+  "revise",
+  "approve",
+  "reopen",
+  "go_to_blocker",
+  "continue",
+];
+
+function normalizeStageActions(value: unknown): StageAction[] {
+  return asArray(value).flatMap((item) => {
+    if (!isRecord(item)) return [];
+    const id = asString(item.id) as StageActionId;
+    if (!stageActionIds.includes(id)) return [];
+    const targetStage = asString(item.target_stage) as StageSlug;
+    return [{
+      id,
+      label: asString(item.label, id.replaceAll("_", " ")),
+      enabled: item.enabled !== false,
+      reason: asString(item.reason) || undefined,
+      requiresImpactConfirmation: item.requires_impact_confirmation === true,
+      targetStage: allStageSlugs.includes(targetStage) ? targetStage : undefined,
+      revisionTargets: asArray(item.revision_targets).flatMap((target) =>
+        isRecord(target)
+          ? [{
+              targetType: asString(target.target_type),
+              categories: asStringArray(target.categories),
+            }]
+          : [],
+      ),
+    }];
+  });
+}
 
 function artifactMap(stages: BackendStage[]): Map<string, { body: unknown; checksum?: string; status?: string }> {
   const map = new Map<string, { body: unknown; checksum?: string; status?: string }>();
@@ -597,6 +657,23 @@ function normalizeStages(raw: BackendWorkspace, fallback: StageSummary[]): Stage
         status: normalizeStatus(stage.state),
         count: stage.attention_count || undefined,
         checksum: stage.checksum,
+        dependencies: asStringArray(stage.dependencies),
+        downstreamStages: asStringArray(stage.downstream_stages).filter(
+          (candidate): candidate is StageSlug => allStageSlugs.includes(candidate as StageSlug),
+        ),
+        prerequisitesReady: stage.prerequisites_ready !== false,
+        approvalFailures: asArray(stage.approval_failures).flatMap((failure) =>
+          isRecord(failure)
+            ? [{
+                code: asString(failure.code, "approval_blocked"),
+                message: asString(failure.message, "This stage cannot be approved yet."),
+                artifactType: asString(failure.artifact_type) || undefined,
+                targetIds: asStringArray(failure.record_ids),
+              }]
+            : [],
+        ),
+        lastFailure: normalizeFailure(stage.last_failure),
+        actions: normalizeStageActions(stage.actions),
         summary: stage.attention_count
           ? `${stage.attention_count} item${stage.attention_count === 1 ? "" : "s"} need attention.`
           : "Current with its recorded inputs.",
@@ -714,7 +791,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
     normalizedCourse.progress = Math.round((normalizedCourse.approvedStages / 8) * 100);
     normalizedCourse.currentStage =
       normalizedStages.find((item) =>
-        ["requires_attention", "failed", "awaiting_review", "ready", "stale"].includes(item.status),
+        ["needs_input", "requires_attention", "failed", "awaiting_review", "ready", "stale"].includes(item.status),
       )?.slug ?? "package";
 
     const workspace: Workspace = {
@@ -773,7 +850,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
     return { workspace, demoMode: false, readOnly: Boolean(projection.read_only) };
   } catch (error) {
     if (error instanceof ApiError && error.status === 0) {
-      return { workspace: demoWorkspaceFor(courseId), demoMode: true, readOnly: false };
+      return { workspace: demoWorkspaceFor(courseId), demoMode: true, readOnly: true };
     }
     throw error;
   }
@@ -851,16 +928,86 @@ export async function runStage(courseId: string, stage: StageSlug, command: Stag
 }
 
 export async function approveStage(courseId: string, stage: StageSlug, command: StageCommand): Promise<void> {
+  if (!command.expectedChecksum) {
+    throw new Error("Stage approval requires the current checksum.");
+  }
   await apiFetch(`/api/courses/${encodeURIComponent(courseId)}/stages/${stage}/approve`, {
     method: "POST",
     body: JSON.stringify({ expected_checksum: command.expectedChecksum }),
   });
 }
 
-export async function requestStageChanges(courseId: string, stage: StageSlug, command: StageCommand): Promise<JobResponse> {
-  const response = await apiFetch<Partial<JobResponse> & { job: JobResponse["job"] }>(`/api/courses/${encodeURIComponent(courseId)}/stages/${stage}/request-changes`, {
+export async function previewStageImpact(
+  courseId: string,
+  stage: StageSlug,
+  expectedChecksum: string,
+  operationSummary?: string,
+): Promise<ImpactPreview> {
+  const response = await apiFetch<Record<string, unknown>>(
+    `/api/courses/${encodeURIComponent(courseId)}/stages/${stage}/impact`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        action: "reopen",
+        expected_checksum: expectedChecksum,
+        operation_summary: operationSummary,
+      }),
+    },
+  );
+  return {
+    action: "reopen",
+    stage,
+    operationSummary: asString(response.operation_summary) || undefined,
+    directArtifacts: asStringArray(response.direct_artifacts),
+    staleArtifacts: asStringArray(response.stale_artifacts),
+    targetedAssets: asStringArray(response.targeted_assets),
+    preservedAssets: asStringArray(response.preserved_assets),
+    requiresRerunStages: asStringArray(response.requires_rerun_stages).filter(
+      (candidate): candidate is StageSlug => allStageSlugs.includes(candidate as StageSlug),
+    ),
+    warnings: asStringArray(response.warnings),
+    impactLevel: ["targeted", "downstream", "full"].includes(asString(response.impact_level))
+      ? asString(response.impact_level) as ImpactPreview["impactLevel"]
+      : "downstream",
+    impactChecksum: asString(response.impact_checksum),
+  };
+}
+
+export async function reopenStage(
+  courseId: string,
+  stage: StageSlug,
+  command: {
+    expectedChecksum: string;
+    impactChecksum: string;
+    reason?: string;
+  },
+): Promise<void> {
+  await apiFetch(`/api/courses/${encodeURIComponent(courseId)}/stages/${stage}/reopen`, {
     method: "POST",
-    body: JSON.stringify({ expected_checksum: command.expectedChecksum, feedback: command.note ?? "Please revise this stage.", mode: command.mode ?? "deterministic" }),
+    body: JSON.stringify({
+      expected_checksum: command.expectedChecksum,
+      reason: command.reason,
+      impact_acknowledged: true,
+      expected_impact_checksum: command.impactChecksum,
+    }),
+  });
+}
+
+export async function reviseStage(
+  courseId: string,
+  stage: StageSlug,
+  command: ScopedRevisionCommand,
+): Promise<JobResponse> {
+  const response = await apiFetch<Partial<JobResponse> & { job: JobResponse["job"] }>(`/api/courses/${encodeURIComponent(courseId)}/stages/${stage}/revisions`, {
+    method: "POST",
+    body: JSON.stringify({
+      target_type: command.targetType,
+      target_ids: command.targetIds,
+      category: command.category,
+      instruction: command.instruction,
+      mode: command.mode,
+      expected_checksum: command.expectedChecksum,
+    }),
   });
   return {
     ...response,

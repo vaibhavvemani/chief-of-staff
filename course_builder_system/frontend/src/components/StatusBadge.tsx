@@ -2,6 +2,7 @@ import type { UiStatus } from "../types";
 
 const statusLabels: Record<UiStatus, string> = {
   locked: "Locked",
+  needs_input: "Needs input",
   ready: "Ready",
   running: "Running",
   awaiting_review: "Awaiting review",

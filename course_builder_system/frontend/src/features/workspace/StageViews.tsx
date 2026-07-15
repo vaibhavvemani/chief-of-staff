@@ -129,7 +129,7 @@ function OutcomesView({ workspace }: { workspace: Workspace }) {
       )}
       <div className="outcome-toolbar">
         <div className="quality-note"><span aria-hidden="true">✓</span><div><strong>Outcome quality check passed</strong><small>No vague verbs or obvious duplicates found.</small></div></div>
-        <button className="button button-secondary" disabled title="Use Request changes for this release">+ Add outcome</button>
+        <button className="button button-secondary" disabled title="Structured outcome editing is not implemented in this release">+ Add outcome</button>
       </div>
       <ol className="outcome-list">
         {workspace.outcomes.map((outcome, index) => (
@@ -146,7 +146,7 @@ function OutcomesView({ workspace }: { workspace: Workspace }) {
             </div>
             <div className="row-actions">
               <button disabled aria-label={`Move ${outcome.id}`} title="Structured outcome editing is follow-on work">↕</button>
-              <button disabled aria-label={`Edit ${outcome.id}`} title="Use Request changes for this release">Edit</button>
+              <button disabled aria-label={`Edit ${outcome.id}`} title="Structured outcome editing is not implemented in this release">Edit</button>
               <button disabled aria-label={`More options for ${outcome.id}`} title="Structured outcome editing is follow-on work">···</button>
             </div>
           </li>
@@ -219,7 +219,7 @@ function ResearchView({
                 </div>
                 <div className="source-footer">
                   <div>{source.assignedNodeIds.length ? <><span className="micro-label">Assigned to</span><TagList values={source.assignedNodeIds} tone="source" /></> : <span className="muted">{isSelected ? "Available for Course Model routing" : "Outside generation context"}</span>}</div>
-                  <div className="source-actions"><a target="_blank" rel="noreferrer" href={source.locator}>Preview</a>{isSelected ? <button className="remove-source" onClick={() => toggle(source.id, false)}>Remove</button> : <button className="select-source" onClick={() => toggle(source.id, true)}>Select</button>}</div>
+                  <div className="source-actions"><a target="_blank" rel="noreferrer" href={source.locator}>Preview</a>{isSelected ? <button className="remove-source" disabled={!onSourceDecision} title={!onSourceDecision ? "Source decisions are not available in the current stage state" : undefined} onClick={() => toggle(source.id, false)}>Remove</button> : <button className="select-source" disabled={!onSourceDecision} title={!onSourceDecision ? "Source decisions are not available in the current stage state" : undefined} onClick={() => toggle(source.id, true)}>Select</button>}</div>
                 </div>
               </article>
             );})}
@@ -261,7 +261,7 @@ function ModelDetail({ subtopic }: { subtopic: Subtopic }) {
     <div className="model-detail">
       <header className="model-detail-head">
         <div className="model-detail-title"><code>{subtopic.id}</code><h2>{subtopic.title}</h2><p>{subtopic.purpose}</p></div>
-        <button className="button button-secondary" disabled title="Use Request changes for this release">Edit subtopic</button>
+        <button className="button button-secondary" disabled title="Structured Course Model editing is not implemented in this release">Edit subtopic</button>
       </header>
       <dl className="model-metadata">
         <div><dt>Sequence</dt><dd>{String(subtopic.order).padStart(2, "0")}</dd></div>
@@ -296,17 +296,17 @@ function CourseModelView({ workspace }: { workspace: Workspace }) {
       {stageIntro("Course Model", "04 · Structural source of truth", "Modules, subtopics, coverage, and stable IDs form the compact contract every downstream artifact references.", <div className="model-validation-summary"><span aria-hidden="true">✓</span><div><strong>References valid</strong><small>Structural checks passed</small></div></div>)}
       <div className="model-workspace">
         <aside className="model-tree">
-          <div className="tree-heading"><div><span className="micro-label">Course hierarchy</span><strong>{moduleLabel} · {subtopicLabel}</strong></div><button disabled aria-label="Add module" title="Use Request changes for this release">+</button></div>
+          <div className="tree-heading"><div><span className="micro-label">Course hierarchy</span><strong>{moduleLabel} · {subtopicLabel}</strong></div><button disabled aria-label="Add module" title="Structured Course Model editing is not implemented in this release">+</button></div>
           {workspace.modules.map((module: CourseModule) => (
             <div className="tree-module" key={module.id}>
-              <div className="module-row"><span className="tree-toggle" aria-hidden="true">⌄</span><div className="module-copy"><code>{module.id}</code><strong>{module.title}</strong><small>{module.subtopics.length} subtopic{module.subtopics.length === 1 ? "" : "s"}</small></div><button disabled aria-label={`More options for ${module.title}`} title="Use Request changes for this release">···</button></div>
+              <div className="module-row"><span className="tree-toggle" aria-hidden="true">⌄</span><div className="module-copy"><code>{module.id}</code><strong>{module.title}</strong><small>{module.subtopics.length} subtopic{module.subtopics.length === 1 ? "" : "s"}</small></div><button disabled aria-label={`More options for ${module.title}`} title="Structured Course Model editing is not implemented in this release">···</button></div>
               <div className="subtopic-tree">
                 {module.subtopics.map((subtopic) => (
                   <button key={subtopic.id} className={selected?.id === subtopic.id ? "active" : ""} onClick={() => setSelectedId(subtopic.id)}>
                     <span className="tree-sequence">{String(subtopic.order).padStart(2, "0")}</span><span className="tree-item-copy"><strong>{subtopic.title}</strong><small>{subtopic.approvedSourceIds.length} sources · {subtopic.coverageRequirements.length} requirement{subtopic.coverageRequirements.length === 1 ? "" : "s"}</small></span><span className="tree-arrow" aria-hidden="true">›</span>
                   </button>
                 ))}
-                <button className="add-subtopic" disabled title="Use Request changes for this release"><span>+</span> Add subtopic</button>
+                <button className="add-subtopic" disabled title="Structured Course Model editing is not implemented in this release"><span>+</span> Add subtopic</button>
               </div>
             </div>
           ))}
@@ -418,7 +418,7 @@ function AssetReader({ asset, selectedClaimId, onSelectClaim }: { asset: Content
   );
 }
 
-function VerificationDetail({ asset, claim, onAction }: { asset: ContentAsset; claim?: Claim; onAction?: (action: string, asset: ContentAsset, claim?: Claim) => void }) {
+function VerificationDetail({ asset, claim, canRevise, onAction }: { asset: ContentAsset; claim?: Claim; canRevise: boolean; onAction?: (action: string, asset: ContentAsset, claim?: Claim) => void }) {
   const finding = claim ?? asset.claims.find((candidate) => candidate.support !== "supported") ?? asset.claims[0];
   const totals = verificationBreakdown(asset);
   const blockers = verificationTotal(asset);
@@ -433,13 +433,13 @@ function VerificationDetail({ asset, claim, onAction }: { asset: ContentAsset; c
         <blockquote>{finding.text}</blockquote>
         <div className="finding-section"><span>Verifier note</span><p>{finding.note || "No verifier note was recorded."}</p></div>
         <div className="finding-section"><span>Assigned source</span><p>{finding.sourceId ? <><code>{finding.sourceId}</code>{finding.excerpt ? ` — “${finding.excerpt}”` : " — no supporting passage found"}</> : "No approved source attribution"}</p></div>
-        {finding.support !== "supported" ? <div className="repair-actions"><span className="micro-label">Choose the likely repair</span><button onClick={() => onAction?.("revise", asset, finding)}><span aria-hidden="true">↻</span><div><strong>Revise with approved evidence</strong><small>Keep sources; regenerate this asset only</small></div></button><button onClick={() => onAction?.("research", asset, finding)}><span aria-hidden="true">⌕</span><div><strong>Find better evidence</strong><small>Reopen research for this exact claim gap</small></div></button></div> : null}
+        {finding.support !== "supported" && canRevise ? <div className="repair-actions"><span className="micro-label">Available repair</span><button onClick={() => onAction?.("revise", asset, finding)}><span aria-hidden="true">↻</span><div><strong>Revise with approved evidence</strong><small>Regenerate and reverify this asset only</small></div></button></div> : finding.support !== "supported" ? <p className="unsupported-action-note">No automated repair is registered for this stage state. Reopen the appropriate approved checkpoint before changing it.</p> : null}
       </div> : <div className="empty-mini">Select a claim to inspect its evidence.</div>}
     </aside>
   );
 }
 
-function ContentView({ workspace, onContentAction }: { workspace: Workspace; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void }) {
+function ContentView({ workspace, canReview, canRevise, onContentAction }: { workspace: Workspace; canReview: boolean; canRevise: boolean; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void }) {
   const assets = workspace.content.assets;
   const initial = assets.find((asset) => verificationTotal(asset) > 0) ?? assets[0];
   const [selectedAssetId, setSelectedAssetId] = useState(initial?.id ?? "");
@@ -487,9 +487,9 @@ function ContentView({ workspace, onContentAction }: { workspace: Workspace; onC
           {!visible.length ? <div className="filter-empty"><span aria-hidden="true">◇</span><strong>No matching assets</strong><p>Choose another filter to continue reviewing.</p></div> : null}
         </aside>
         {selected ? <AssetReader asset={selected} selectedClaimId={selectedClaimId} onSelectClaim={setSelectedClaimId} /> : <div className="reader-empty"><span aria-hidden="true">▤</span><strong>Select an asset</strong><p>Choose an item from the production board to review its content.</p></div>}
-        {selected ? <VerificationDetail asset={selected} claim={selectedClaim} onAction={onContentAction} /> : null}
+        {selected ? <VerificationDetail asset={selected} claim={selectedClaim} canRevise={canRevise} onAction={onContentAction} /> : null}
       </div>
-      {selected ? <div className="asset-review-strip"><div><span className={`review-state review-${selected.reviewStatus}`} /> <div><strong>{selected.reviewStatus === "approved" ? "Human review complete" : verificationTotal(selected) ? "Resolve blockers before review" : "Human review required"}</strong><span>{verificationTotal(selected) ? `${verificationTotal(selected)} blocking finding${verificationTotal(selected) === 1 ? "" : "s"} must be repaired first.` : evidenceReviewTotal(selected) ? "Partial evidence remains visible for your judgment." : "Evidence checks passed; confirm the learner-facing content."}</span></div></div><div><button className="button button-secondary" onClick={() => onContentAction?.("changes_requested", selected)}>Request changes</button><button className="button button-primary" disabled={verificationTotal(selected) > 0} onClick={() => onContentAction?.("approved", selected)}>{selected.reviewStatus === "approved" ? "Reviewed" : "Mark asset reviewed"}</button></div></div> : null}
+      {selected ? <div className="asset-review-strip"><div><span className={`review-state review-${selected.reviewStatus}`} /> <div><strong>{selected.reviewStatus === "approved" ? "Human review complete" : verificationTotal(selected) ? "Resolve blockers before review" : "Human review required"}</strong><span>{verificationTotal(selected) ? `${verificationTotal(selected)} blocking finding${verificationTotal(selected) === 1 ? "" : "s"} must be repaired first.` : evidenceReviewTotal(selected) ? "Partial evidence remains visible for your judgment." : "Evidence checks passed; confirm the learner-facing content."}</span></div></div>{canReview || canRevise ? <div>{canRevise ? <button className="button button-secondary" onClick={() => onContentAction?.("revise", selected)}>Request scoped revision</button> : null}{canReview ? <button className="button button-primary" disabled={verificationTotal(selected) > 0 || selected.reviewStatus === "approved"} onClick={() => onContentAction?.("approved", selected)}>{selected.reviewStatus === "approved" ? "Reviewed" : "Mark asset reviewed"}</button> : null}</div> : <small className="muted">Review decisions are unavailable; scoped revisions are also unavailable in the current stage state.</small>}</div> : null}
       </>}
     </div>
   );
@@ -527,7 +527,7 @@ function LessonPlanView({ workspace }: { workspace: Workspace }) {
           <dl><DefinitionItem label="Sessions" value={sessionCount} /><DefinitionItem label="Total time" value={`${workspace.lessonPlan.totalDurationMinutes} minutes`} /><DefinitionItem label="Delivery" value={modeLabels.join(" + ") || "Not specified"} /><DefinitionItem label="Breaks" value="As needed" /></dl>
           <div className="coverage-summary"><div className="coverage-summary-head"><div className={exactCoverage ? "coverage-count complete" : "coverage-count"}><strong>{covered}</strong><span>/ {expected}</span></div><div><span className="micro-label">Course Model coverage</span><strong>{exactCoverage ? "Complete coverage" : "Coverage needs review"}</strong></div></div><div className="coverage-track" role="progressbar" aria-label="Course Model coverage" aria-valuemin={0} aria-valuemax={expected} aria-valuenow={covered}><span style={{ width: `${coveragePercent}%` }} /></div></div>
           <div className={`coverage-check ${exactCoverage ? "" : "coverage-warning"}`}><span aria-hidden="true">{exactCoverage ? "✓" : "!"}</span><p>{exactCoverage ? "Every Course Model subtopic appears exactly once in the delivery sequence." : "At least one Course Model subtopic is missing, duplicated, or outside the approved model."}</p></div>
-          <div className="constraint-revision-note"><span aria-hidden="true">↳</span><p>Need different timing, mode, or order? Use <strong>Request changes</strong> below and describe the revision.</p></div>
+          <div className="constraint-revision-note"><span aria-hidden="true">↳</span><p>Structured timing, mode, and sequence changes are not implemented in this release.</p></div>
         </aside>
       </div>
     </div>
@@ -570,7 +570,7 @@ function PackageView({ workspace }: { workspace: Workspace }) {
         <aside className="output-tree"><div className="tree-heading"><div><span className="micro-label">Rendered output</span><strong>{markdownFiles.length} Markdown {markdownFiles.length === 1 ? "file" : "files"}</strong></div></div><div className="file-tree-scroll"><FileTree files={workspace.package.files} selectedPath={selected?.path} onSelect={(file) => setSelectedPath(file.path)} /></div><div className="format-note"><strong>{workspace.package.format}</strong><p>Markdown is the canonical learner-facing format for this release.</p></div></aside>
         <section className="output-preview">
           <header><div><span className="micro-label">Preview</span><h3>{selected?.label ?? "Select a file"}</h3><code>{selected?.path}</code></div>{selected?.kind === "markdown" ? <a className="button button-secondary" target="_blank" rel="noreferrer" href={`/api/courses/${encodeURIComponent(workspace.course.courseId)}/outputs/${selected.path.split("/").map(encodeURIComponent).join("/")}`}>Open raw file</a> : null}</header>
-          {selected?.kind === "markdown" ? <div className="markdown-reader package-markdown"><span className="preview-document-label">Rendered Markdown preview</span><h1>{selected.label}</h1><p>This file is part of the final course folder and is ready for operator inspection.</p><h2>Release reconciliation</h2><ul><li>Approved course structure and learner-facing content</li><li>Source references reconciled with the approved registry</li><li>Asset IDs matched to the Course Model and Blueprint</li></ul>{ready ? <blockquote className="preview-ready-note">All release checks passed. This package is ready for delivery.</blockquote> : <blockquote>Resolve the remaining verification blockers before distributing this course.</blockquote>}</div> : null}
+          {selected?.kind === "markdown" ? <div className="markdown-reader package-markdown"><span className="preview-document-label">Canonical rendered file</span><h1>{selected.label}</h1><p>An inline renderer is not implemented in this release. Use <strong>Open raw file</strong> to inspect the canonical Markdown served by the backend.</p><blockquote className={ready ? "preview-ready-note" : undefined}>{ready ? "All release checks passed for the current package." : "The rendered file remains inspectable, but release blockers must be resolved before approval."}</blockquote></div> : null}
         </section>
       </div>
       </>}
@@ -578,14 +578,14 @@ function PackageView({ workspace }: { workspace: Workspace }) {
   );
 }
 
-export function StageView({ stage, workspace, onContentAction, onSourceDecision, onEditBrief }: { stage: StageSlug; workspace: Workspace; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onEditBrief?: (section: BriefEditSection) => void }) {
+export function StageView({ stage, workspace, contentCapabilities, onContentAction, onSourceDecision, onEditBrief }: { stage: StageSlug; workspace: Workspace; contentCapabilities?: { review: boolean; revise: boolean }; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onEditBrief?: (section: BriefEditSection) => void }) {
   switch (stage) {
     case "brief": return <BriefView workspace={workspace} onEdit={onEditBrief} />;
     case "outcomes": return <OutcomesView workspace={workspace} />;
     case "research": return <ResearchView workspace={workspace} onSourceDecision={onSourceDecision} />;
     case "course-model": return <CourseModelView workspace={workspace} />;
     case "blueprint": return <BlueprintView workspace={workspace} />;
-    case "content": return <ContentView workspace={workspace} onContentAction={onContentAction} />;
+    case "content": return <ContentView workspace={workspace} canReview={contentCapabilities?.review ?? false} canRevise={contentCapabilities?.revise ?? false} onContentAction={onContentAction} />;
     case "lesson-plan": return <LessonPlanView workspace={workspace} />;
     case "package": return <PackageView workspace={workspace} />;
   }

@@ -44,12 +44,16 @@ def test_ui_uses_scoped_artifact_decisions_instead_of_a_generic_chat_surface() -
         for path in (WORKSPACE_SOURCE, STAGE_VIEWS_SOURCE)
     ).lower()
 
-    assert "guided revision" in source
+    assert "scoped content revision" in source
     assert "briefeditdialog" in source
     assert "section-edit-button" in source
-    assert "request scoped revision" in source
-    assert "likely downstream impact" in source
+    assert "start scoped revision" in source
+    assert "impactconfirmationdialog" in source
+    assert "expectedchecksum" in source
+    assert "targettype" in source
+    assert "targetids" in source
     assert "content/reviews" not in source  # transport stays in the API client
+    assert "requeststagechanges" not in source
     for forbidden in (
         "ask the agent anything",
         "chat interface",
@@ -76,9 +80,10 @@ def test_new_courses_start_live_with_visible_editable_defaults() -> None:
 def test_stage_approval_advances_into_a_focused_agent_run_flow() -> None:
     source = WORKSPACE_SOURCE.read_text(encoding="utf-8")
 
-    assert "nextStageAfter" in source
-    assert "Continue to ${stageName(nextStage)}" in source
-    assert "navigate(`/courses/${courseId}/${nextStage}?mode=${runMode}`)" in source
+    assert "nextStageAfter" not in source
+    assert 'action.id === "continue" || action.id === "go_to_blocker"' in source
+    assert "action.targetStage" in source
+    assert "navigate(`/courses/${courseId}/${action.targetStage}?mode=${runMode}`)" in source
     assert "AgentRunScreen" in source
     assert "The agent is building {stageName(stage)}" in source
     assert "workspace.activeJob" in source
@@ -89,11 +94,9 @@ def test_research_requires_an_explicit_saved_source_selection() -> None:
     workspace = WORKSPACE_SOURCE.read_text(encoding="utf-8")
     stage_views = STAGE_VIEWS_SOURCE.read_text(encoding="utf-8")
 
-    assert (
-        'approvalBlocked={stage === "research" && !workspace.research.registrySaved}'
-        in workspace
-    )
-    assert "Save source selection first" in workspace
+    assert 'actionEnabled("source_decision")' in workspace
+    assert 'candidate.id === "source_decision" && candidate.enabled' in workspace
+    assert "approvalBlocked" not in workspace
     assert "Human checkpoint" in stage_views
     assert "Choose grounding sources" in stage_views
     assert "Save a selection before approving this stage" in stage_views
@@ -145,7 +148,8 @@ def test_lesson_plan_uses_reviewable_sequence_and_real_coverage_state() -> None:
     assert "teaching-sequence" in stage_views
     assert "const exactCoverage" in stage_views
     assert "Coverage needs review" in stage_views
-    assert "Use <strong>Request changes</strong> below" in stage_views
+    assert "Structured timing, mode, and sequence changes are not implemented" in stage_views
+    assert "Use <strong>Request changes</strong> below" not in stage_views
 
 
 def test_package_has_a_prebuild_state_and_selects_the_first_rendered_file() -> None:
@@ -159,4 +163,36 @@ def test_package_has_a_prebuild_state_and_selects_the_first_rendered_file() -> N
     assert "Use <strong>Run Package</strong>" in stage_views
     assert "setSelectedPath(markdownFiles[0].path)" in stage_views
     assert "selectedPath={selected?.path}" in stage_views
+    assert "An inline renderer is not implemented" in stage_views
     assert 'integrityPassed: artifacts.has("render_manifest")' in api_client
+
+
+def test_workspace_actions_and_reopen_are_backend_projected() -> None:
+    workspace = WORKSPACE_SOURCE.read_text(encoding="utf-8")
+    api_client = (ROOT / "frontend" / "src" / "api" / "client.ts").read_text(
+        encoding="utf-8"
+    )
+
+    assert "actions={currentSummary?.actions ?? []}" in workspace
+    assert "visibleActions.map((action)" in workspace
+    assert "previewStageImpact" in workspace
+    assert "impactChecksum: impactPreview.impactChecksum" in workspace
+    assert "impact_acknowledged: true" in api_client
+    assert "expected_impact_checksum" in api_client
+    assert "/stages/${stage}/revisions" in api_client
+    assert "/request-changes" not in api_client
+
+
+def test_affected_workflow_has_no_enabled_placeholder_mutations() -> None:
+    workspace = WORKSPACE_SOURCE.read_text(encoding="utf-8")
+    stage_views = STAGE_VIEWS_SOURCE.read_text(encoding="utf-8")
+
+    assert "Find better evidence" not in stage_views
+    assert "requestStageChanges" not in workspace
+    assert "Model-call diagnostics unavailable" in workspace
+    assert (
+        'disabled title="Model-call diagnostics are not exposed in this release"'
+        in workspace
+    )
+    assert "An inline renderer is not implemented" in stage_views
+    assert "Use <strong>Request changes</strong>" not in stage_views

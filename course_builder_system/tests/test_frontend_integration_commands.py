@@ -4,7 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from api.services.artifact_repository import ArtifactNotFound, ArtifactRepository, ReadOnlyCourse
+from api.services.approval_guard import ApprovalGuardFailed
+from api.services.artifact_repository import ArtifactRepository, ReadOnlyCourse
 from api.services.decision_service import DecisionService
 from api.services.pipeline_catalog import PipelineCatalog
 from api.services.stage_runner import StageRunner
@@ -79,7 +80,16 @@ def test_stage_approve_and_reopen_commands_preserve_body_and_revision(tmp_path: 
         "stage-course",
         "brief",
         "intake",
-        body={"audience": "Home brewers"},
+        body={
+            "subject": "Coffee making",
+            "audience": "Home brewers",
+            "purpose": "Brew balanced coffee",
+            "prior_knowledge": "None",
+            "level": "beginner",
+            "duration": "3 hours",
+            "modality": "self_paced",
+            "language": "English",
+        },
         inputs=["subject_request"],
     )
     repository.save(brief)
@@ -87,7 +97,16 @@ def test_stage_approve_and_reopen_commands_preserve_body_and_revision(tmp_path: 
     original_revision = brief["revision"]
 
     approved = decisions.approve_stage("stage-course", "brief")
-    reopened = decisions.reopen_stage("stage-course", "brief")
+    preview = decisions.impact.preview(
+        "stage-course", "brief", action="reopen"
+    )
+    result = decisions.reopen_stage(
+        "stage-course",
+        "brief",
+        impact_acknowledged=True,
+        expected_impact_checksum=preview["impact_checksum"],
+    )
+    reopened = result["artifacts"]
 
     assert approved[0]["status"] == "approved"
     assert reopened[0]["status"] == "draft"
@@ -114,8 +133,12 @@ def test_research_requires_an_explicit_source_registry_before_approval(tmp_path:
     )
     repository.save(dossier)
 
-    with pytest.raises(ArtifactNotFound, match="approved_source_registry"):
+    with pytest.raises(ApprovalGuardFailed) as exc_info:
         decisions.approve_stage("research-checkpoint", "research")
+    assert any(
+        failure.artifact_type == "approved_source_registry"
+        for failure in exc_info.value.failures
+    )
 
 
 def test_interactive_research_stage_stops_before_source_selection() -> None:

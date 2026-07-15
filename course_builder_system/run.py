@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from functools import partial
 from pathlib import Path
 
 import acceptance
@@ -188,6 +189,7 @@ def build_sprint4_acceptance_pipeline(
     *,
     live_research: bool = False,
     output_root: Path = Path("rendered_courses"),
+    controls: acceptance.DeterministicAcceptanceControls | None = None,
 ) -> list[Step]:
     """Acceptance pipeline with deterministic local content and verification."""
     return [
@@ -198,8 +200,14 @@ def build_sprint4_acceptance_pipeline(
             produces=["content_package", "content_progress"],
             run=steps.make_student_content_step(
                 asset_generator=acceptance.deterministic_generate_asset,
-                package_verifier=acceptance.deterministic_verify_content_package,
-                asset_verifier=acceptance.deterministic_verify_asset,
+                package_verifier=partial(
+                    acceptance.deterministic_verify_content_package,
+                    controls=controls,
+                ),
+                asset_verifier=partial(
+                    acceptance.deterministic_verify_asset,
+                    controls=controls,
+                ),
             ),
         ),
         Step(

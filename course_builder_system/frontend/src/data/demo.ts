@@ -31,6 +31,11 @@ export const demoStages: StageSummary[] = stageLabels.map(([slug, label], index)
         ? "Approved and current with upstream inputs."
         : "Complete content review to unlock this stage.",
   updatedAt: "2026-07-06T11:12:00Z",
+  dependencies: [],
+  downstreamStages: [],
+  prerequisitesReady: index <= 5,
+  approvalFailures: [],
+  actions: [],
 }));
 
 export const demoCourses: CourseSummary[] = [

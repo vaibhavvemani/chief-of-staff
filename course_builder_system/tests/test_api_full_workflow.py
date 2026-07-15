@@ -5,6 +5,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+import acceptance
 from api.main import create_app
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -96,7 +97,6 @@ def test_full_deterministic_studio_workflow_reaches_a_rendered_package(
             _approve(client, "studio-smoke", stage)
 
         _run_and_wait(client, "studio-smoke", "content")
-        _approve(client, "studio-smoke", "content")
 
         review = client.get("/api/courses/studio-smoke/content/reviews").json()
         for record in review["artifact"]["body"]["assets"]:
@@ -110,6 +110,8 @@ def test_full_deterministic_studio_workflow_reaches_a_rendered_package(
             assert response.status_code == 200, response.text
             review = response.json()
 
+        _approve(client, "studio-smoke", "content")
+
         for stage in ("lesson-plan", "package"):
             _run_and_wait(client, "studio-smoke", stage)
             _approve(client, "studio-smoke", stage)
@@ -118,4 +120,7 @@ def test_full_deterministic_studio_workflow_reaches_a_rendered_package(
         assert workspace["operator_status"] == "complete"
         assert workspace["current_stage"] == "package"
         assert workspace["attention"]["blocking_total"] == 0
+        assert set(workspace["artifact_types"]) == (
+            acceptance.NEXT_CYCLE_EXPECTED_WORKSPACE_ARTIFACTS
+        )
         assert (tmp_path / "rendered" / "studio-smoke" / "README.md").is_file()

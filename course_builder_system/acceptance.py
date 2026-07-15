@@ -9,9 +9,63 @@ on external network or model credentials during acceptance tests.
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Any
 
 from agents import student_content
+
+NEXT_CYCLE_ACCEPTANCE_COURSE_ID = "studio-cycle-acceptance"
+NEXT_CYCLE_ACCEPTANCE_SUBJECT = "Coffee making"
+NEXT_CYCLE_KNOWN_BLOCKER_ASSET_ID = "m1_s1_cc"
+NEXT_CYCLE_EXPECTED_STAGE_OUTPUTS = {
+    "research": frozenset({"research_dossier", "approved_source_registry"}),
+    "course-model": frozenset({"course_model"}),
+    "blueprint": frozenset({"blueprint"}),
+    "content": frozenset(
+        {"content_package", "content_progress", "content_review"}
+    ),
+    "package": frozenset({"render_manifest", "run_summary"}),
+}
+NEXT_CYCLE_EXPECTED_PIPELINE_ARTIFACTS = frozenset(
+    {
+        "subject_request",
+        "brief",
+        "course_outcomes",
+        "research_dossier",
+        "approved_source_registry",
+        "course_model",
+        "blueprint",
+        "content_package",
+        "content_progress",
+        "lesson_plan",
+        "render_manifest",
+        "run_summary",
+    }
+)
+NEXT_CYCLE_EXPECTED_WORKSPACE_ARTIFACTS = (
+    NEXT_CYCLE_EXPECTED_PIPELINE_ARTIFACTS | {"content_review"}
+)
+NEXT_CYCLE_EXPECTED_RENDER_KEYS = frozenset(
+    {"index", "course_overview", "source_index", "lesson_plan", "assets"}
+)
+
+
+@dataclass(frozen=True)
+class DeterministicAcceptanceControls:
+    """Named, network-free verifier controls for lifecycle acceptance.
+
+    These controls deliberately stop at fixture behavior.  The later source/content
+    repair work packages own the production repair commands.
+    """
+
+    blocker_asset_ids: frozenset[str] = frozenset()
+    repaired_asset_ids: frozenset[str] = frozenset()
+
+    def blocks(self, asset_id: str) -> bool:
+        return (
+            asset_id in self.blocker_asset_ids
+            and asset_id not in self.repaired_asset_ids
+        )
 
 
 def deterministic_generate_asset(
@@ -91,6 +145,8 @@ def deterministic_generate_asset(
 def deterministic_verify_content_package(
     content_package: dict[str, Any],
     course_model: dict[str, Any],
+    *,
+    controls: DeterministicAcceptanceControls | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Annotate every generated claim as supported for local acceptance."""
@@ -98,13 +154,20 @@ def deterministic_verify_content_package(
     body = verified.get("body", verified)
     for subtopic in body.get("subtopics", []):
         for index, asset in enumerate(subtopic.get("assets", [])):
-            subtopic["assets"][index] = deterministic_verify_asset(asset, course_model, **kwargs)
+            subtopic["assets"][index] = deterministic_verify_asset(
+                asset,
+                course_model,
+                controls=controls,
+                **kwargs,
+            )
     return verified
 
 
 def deterministic_verify_asset(
     asset: dict[str, Any],
     course_model: dict[str, Any],
+    *,
+    controls: DeterministicAcceptanceControls | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Annotate one asset as deterministically verified."""
@@ -130,6 +193,17 @@ def deterministic_verify_asset(
         "unattributed_found": [],
         "checked_at": "2026-07-06T00:00:00+00:00",
     }
+    if controls is not None and controls.blocks(str(verified.get("id") or "")):
+        claims = verified.get("claims", [])
+        if not claims:
+            raise ValueError("acceptance blocker target must contain a claim")
+        claims[0]["support"] = "unsupported"
+        claims[0]["supporting_excerpt"] = None
+        claims[0]["note"] = "Named deterministic acceptance blocker."
+        verified["verification"]["supported"] = sum(
+            claim.get("support") == "supported" for claim in claims
+        )
+        verified["verification"]["unsupported"] = 1
     return verified
 
 

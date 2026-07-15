@@ -2,7 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   approveStage,
   createCourse,
-  requestStageChanges,
+  getWorkspace,
+  normalizeStatus,
+  previewStageImpact,
+  reopenStage,
+  reviseStage,
   reviewContentAsset,
   runStage,
   saveBriefAnswers,
@@ -27,6 +31,70 @@ afterEach(() => {
 });
 
 describe("typed API commands", () => {
+  it("normalizes every lifecycle state exhaustively", () => {
+    const states = [
+      "locked",
+      "needs_input",
+      "ready",
+      "running",
+      "awaiting_review",
+      "requires_attention",
+      "approved",
+      "stale",
+      "failed",
+    ] as const;
+
+    expect(states.map((state) => normalizeStatus(state))).toEqual(states);
+    expect(normalizeStatus("unknown-state")).toBe("ready");
+  });
+
+  it("normalizes needs_input and backend-projected actions without inventing controls", async () => {
+    const fetchMock = vi.fn((path: string) => {
+      if (path.endsWith("/workspace")) {
+        return Promise.resolve(jsonResponse({
+          course_id: "herb-course",
+          title: "Indoor herbs",
+          current_stage: "brief",
+          operator_status: "needs_input",
+          stages: [
+            {
+              slug: "brief",
+              label: "Brief",
+              state: "needs_input",
+              checksum: "brief-checksum",
+              dependencies: ["subject_request"],
+              downstream_stages: ["outcomes", "research"],
+              prerequisites_ready: true,
+              actions: [{ id: "edit", label: "Provide required input", enabled: true, requires_impact_confirmation: false }],
+            },
+            {
+              slug: "outcomes",
+              label: "Outcomes",
+              state: "locked",
+              prerequisites_ready: false,
+              actions: [{ id: "go_to_blocker", label: "Go to Brief", enabled: true, target_stage: "brief", requires_impact_confirmation: false }],
+            },
+          ],
+        }));
+      }
+      return Promise.resolve(jsonResponse({ slug: path.split("/").at(-1), artifacts: [] }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await getWorkspace("herb-course");
+    expect(result.workspace.stages[0]).toMatchObject({
+      slug: "brief",
+      status: "needs_input",
+      dependencies: ["subject_request"],
+      downstreamStages: ["outcomes", "research"],
+      actions: [{ id: "edit", label: "Provide required input", enabled: true }],
+    });
+    expect(result.workspace.stages[1]?.actions).toEqual([expect.objectContaining({
+      id: "go_to_blocker",
+      targetStage: "brief",
+    })]);
+  });
+
   it("maps the course creation form to the backend request contract", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse({ course_id: "herb-course", workspace: { course_id: "herb-course" } }, 201))
@@ -131,7 +199,7 @@ describe("typed API commands", () => {
     })).resolves.toEqual({ courseId: "resilient-course", briefInitialized: false });
   });
 
-  it("uses checksums and normalizes nested job responses for stage commands", async () => {
+  it("uses checksums and typed targets for runnable stage commands", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -158,9 +226,13 @@ describe("typed API commands", () => {
     expect(requestBody(fetchMock)).toEqual({ expected_checksum: "checksum-2" });
 
     await expect(
-      requestStageChanges("herb-course", "brief", {
+      reviseStage("herb-course", "content", {
         expectedChecksum: "checksum-3",
-        note: "Narrow the scope",
+        targetType: "asset",
+        targetIds: ["m1_s1_cc"],
+        category: "clarity",
+        instruction: "Clarify the opening example.",
+        mode: "deterministic",
       }),
     ).resolves.toEqual({
       job: { job_id: "job-change", status: "queued" },
@@ -168,8 +240,55 @@ describe("typed API commands", () => {
     });
     expect(requestBody(fetchMock)).toEqual({
       expected_checksum: "checksum-3",
-      feedback: "Narrow the scope",
+      target_type: "asset",
+      target_ids: ["m1_s1_cc"],
+      category: "clarity",
+      instruction: "Clarify the opening example.",
       mode: "deterministic",
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toBe("/api/courses/herb-course/stages/content/revisions");
+  });
+
+  it("normalizes a typed impact preview and sends its checksum when reopening", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({
+        action: "reopen",
+        stage: "course-model",
+        operation_summary: "Reopen Course Model",
+        direct_artifacts: ["course_model"],
+        stale_artifacts: ["blueprint", "content_package"],
+        targeted_assets: ["m1_s1_cc"],
+        preserved_assets: ["m1_s2_cc"],
+        requires_rerun_stages: ["blueprint", "content"],
+        warnings: ["Stale artifact bodies remain inspectable."],
+        impact_level: "downstream",
+        impact_checksum: "impact-checksum",
+      }))
+      .mockResolvedValueOnce(jsonResponse({ stage: { state: "awaiting_review" } }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(previewStageImpact("herb-course", "course-model", "stage-checksum", "Adjust structure")).resolves.toMatchObject({
+      stage: "course-model",
+      staleArtifacts: ["blueprint", "content_package"],
+      requiresRerunStages: ["blueprint", "content"],
+      impactChecksum: "impact-checksum",
+    });
+    expect(requestBody(fetchMock)).toEqual({
+      action: "reopen",
+      expected_checksum: "stage-checksum",
+      operation_summary: "Adjust structure",
+    });
+
+    await reopenStage("herb-course", "course-model", {
+      expectedChecksum: "stage-checksum",
+      impactChecksum: "impact-checksum",
+      reason: "Fix the sequence",
+    });
+    expect(requestBody(fetchMock)).toEqual({
+      expected_checksum: "stage-checksum",
+      reason: "Fix the sequence",
+      impact_acknowledged: true,
+      expected_impact_checksum: "impact-checksum",
     });
   });
 

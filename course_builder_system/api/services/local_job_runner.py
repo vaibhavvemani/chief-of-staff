@@ -5,6 +5,7 @@ from __future__ import annotations
 import fcntl
 import json
 import os
+import re
 import threading
 import uuid
 from collections.abc import Callable, Iterator
@@ -147,6 +148,33 @@ class LocalJobRunner:
             return None
         return max(active, key=lambda item: item.get("created_at") or "")
 
+    def latest_for_stage(self, course_id: str, stage: str) -> dict[str, Any] | None:
+        ArtifactRepository.validate_course_id(course_id)
+        jobs_dir = self.runtime_root / course_id / "jobs"
+        if not jobs_dir.is_dir():
+            return None
+        matches: list[dict[str, Any]] = []
+        for path in jobs_dir.glob("*.json"):
+            try:
+                job = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if job.get("stage") == stage:
+                matches.append(job)
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.get("created_at") or "")
+
+    @contextmanager
+    def mutate_now(self, course_id: str) -> Iterator[None]:
+        """Serialize a synchronous mutation against queued and running jobs."""
+        ArtifactRepository.validate_course_id(course_id)
+        with self._submit_lock:
+            if self.active_for_course(course_id) is not None:
+                raise CourseBusy(f"a mutating job is already active for course {course_id}")
+            with self.locks.acquire(course_id, blocking=False):
+                yield
+
     def shutdown(self, *, wait: bool = True) -> None:
         self._executor.shutdown(wait=wait, cancel_futures=False)
 
@@ -175,9 +203,17 @@ class LocalJobRunner:
         except Exception as exc:  # persisted failures are part of the job contract
             job["status"] = "failed"
             job["completed_at"] = _now()
-            job["error"] = {"type": type(exc).__name__, "message": str(exc)}
+            job["error"] = {
+                "type": type(exc).__name__,
+                "message": _safe_error_message(exc),
+            }
             self._write_job(job)
-            self._emit(job, "job.failed", stage=job["stage"], message=str(exc))
+            self._emit(
+                job,
+                "job.failed",
+                stage=job["stage"],
+                message=job["error"]["message"],
+            )
 
     def _emit(self, job: dict[str, Any], event_type: str, **payload: Any) -> dict[str, Any]:
         event = {
@@ -230,3 +266,17 @@ class LocalJobRunner:
                 stage=job.get("stage"),
                 message=job["error"]["message"],
             )
+
+
+def _safe_error_message(exc: Exception) -> str:
+    """Persist a bounded operator-safe error without credential-like tokens."""
+    message = str(exc).strip() or type(exc).__name__
+    message = re.sub(
+        r"(?i)\b([a-z0-9_-]*(?:api[_-]?key|authorization|token|secret|password))"
+        r"\s*[:=]\s*[^\s,;]+",
+        lambda match: f"{match.group(1)}=[redacted]",
+        message,
+    )
+    message = re.sub(r"(?i)\bbearer\s+[^\s,;]+", "Bearer [redacted]", message)
+    message = re.sub(r"\b(?:sk|key)-[A-Za-z0-9_-]{12,}\b", "[redacted]", message)
+    return message[:2000]

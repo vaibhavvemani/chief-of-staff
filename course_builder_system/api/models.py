@@ -6,9 +6,22 @@ Canonical artifact validation remains in the existing domain layer.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field
+
+type StageState = Literal[
+    "locked",
+    "needs_input",
+    "ready",
+    "running",
+    "awaiting_review",
+    "requires_attention",
+    "approved",
+    "stale",
+    "failed",
+]
+STAGE_STATES = frozenset(get_args(StageState.__value__))
 
 
 class StrictCommand(BaseModel):
@@ -32,16 +45,47 @@ class RunStageCommand(VersionedCommand):
 
 
 class ApproveStageCommand(VersionedCommand):
-    pass
+    expected_checksum: str = Field(min_length=6, max_length=128)
 
 
 class ReopenStageCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
     reason: str | None = Field(default=None, max_length=2000)
+    impact_acknowledged: bool = False
+    expected_impact_checksum: str | None = Field(
+        default=None, min_length=6, max_length=128
+    )
 
 
-class RequestChangesCommand(VersionedCommand):
-    feedback: str = Field(min_length=1, max_length=12000)
+class ScopedRevisionCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
+    target_type: str = Field(min_length=1, max_length=64)
+    target_ids: list[str] = Field(min_length=1, max_length=50)
+    category: str = Field(min_length=1, max_length=64)
+    instruction: str = Field(min_length=1, max_length=12000)
     mode: Literal["deterministic", "live"] = "deterministic"
+
+
+class ImpactPreviewCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
+    action: Literal["reopen", "edit", "revise", "repair"]
+    target_type: str | None = Field(default=None, max_length=64)
+    target_ids: list[str] = Field(default_factory=list, max_length=50)
+    operation_summary: str | None = Field(default=None, max_length=2000)
+
+
+class ImpactPreviewResponse(BaseModel):
+    action: str
+    stage: str
+    operation_summary: str | None = None
+    direct_artifacts: list[str]
+    stale_artifacts: list[str]
+    targeted_assets: list[str]
+    preserved_assets: list[str]
+    requires_rerun_stages: list[str]
+    warnings: list[str]
+    impact_level: Literal["targeted", "downstream", "full"]
+    impact_checksum: str
 
 
 class BriefAnswersCommand(VersionedCommand):

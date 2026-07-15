@@ -10,6 +10,7 @@ export type StageSlug =
 
 export type UiStatus =
   | "locked"
+  | "needs_input"
   | "ready"
   | "running"
   | "awaiting_review"
@@ -17,6 +18,38 @@ export type UiStatus =
   | "requires_attention"
   | "stale"
   | "failed";
+
+export type StageActionId =
+  | "run"
+  | "retry"
+  | "edit"
+  | "source_decision"
+  | "review_asset"
+  | "revise"
+  | "approve"
+  | "reopen"
+  | "go_to_blocker"
+  | "continue";
+
+export interface StageAction {
+  id: StageActionId;
+  label: string;
+  enabled: boolean;
+  reason?: string;
+  requiresImpactConfirmation: boolean;
+  targetStage?: StageSlug;
+  revisionTargets?: Array<{
+    targetType: string;
+    categories: string[];
+  }>;
+}
+
+export interface ApprovalFailure {
+  code: string;
+  message: string;
+  artifactType?: string;
+  targetIds?: string[];
+}
 
 export interface StageSummary {
   slug: StageSlug;
@@ -26,6 +59,12 @@ export interface StageSummary {
   summary?: string;
   updatedAt?: string;
   checksum?: string;
+  dependencies: string[];
+  downstreamStages: StageSlug[];
+  prerequisitesReady: boolean;
+  approvalFailures: ApprovalFailure[];
+  lastFailure?: string;
+  actions: StageAction[];
 }
 
 export interface CourseSummary {
@@ -280,6 +319,29 @@ export interface StageCommand {
   expectedChecksum?: string;
   note?: string;
   mode?: "deterministic" | "live";
+}
+
+export interface ImpactPreview {
+  action: "reopen" | "edit" | "revise" | "repair";
+  stage: StageSlug;
+  operationSummary?: string;
+  directArtifacts: string[];
+  staleArtifacts: string[];
+  targetedAssets: string[];
+  preservedAssets: string[];
+  requiresRerunStages: StageSlug[];
+  warnings: string[];
+  impactLevel: "targeted" | "downstream" | "full";
+  impactChecksum: string;
+}
+
+export interface ScopedRevisionCommand {
+  targetType: string;
+  targetIds: string[];
+  category: string;
+  instruction: string;
+  expectedChecksum: string;
+  mode: "deterministic" | "live";
 }
 
 export interface JobResponse {

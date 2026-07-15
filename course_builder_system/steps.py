@@ -279,7 +279,9 @@ def _student_content_step(
         gen_inputs["subtopic_id"] = inputs["subtopic_id"]
 
     if feedback:
-        existing = load_artifact(course_id, "content_package")
+        existing = inputs.get("existing_content_package") or load_artifact(
+            course_id, "content_package"
+        )
         if existing is None:
             raise ValueError("cannot revise Student Content before a baseline package exists")
         subtopic_id = inputs.get("subtopic_id") or revision.infer_revision_subtopic_id(
@@ -314,7 +316,9 @@ def _student_content_step(
             "complete": True,
         }
     else:
-        existing = load_artifact(course_id, "content_package")
+        existing = inputs.get("existing_content_package") or load_artifact(
+            course_id, "content_package"
+        )
         target_subtopic_ids = [inputs["subtopic_id"]] if "subtopic_id" in inputs else None
         package_body, progress_body = whole_course.generate_content_package_body(
             gen_inputs,

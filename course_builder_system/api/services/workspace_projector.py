@@ -5,7 +5,12 @@ from __future__ import annotations
 from typing import Any
 
 import run_summary
+from api.services.approval_guard import (
+    ApprovalGuardService,
+    hard_verifier_blocker_count,
+)
 from api.services.artifact_repository import ArtifactNotFound, ArtifactRepository
+from api.services.capability_service import StageCapabilityService
 from api.services.pipeline_catalog import PipelineCatalog, StageDefinition
 
 BLOCKING_VERIFICATION_FIELDS = ("unsupported", "ungrounded", "unattributed")
@@ -18,10 +23,16 @@ class WorkspaceProjector:
         catalog: PipelineCatalog,
         *,
         job_runner: Any | None = None,
+        approval_guards: ApprovalGuardService | None = None,
+        capabilities: StageCapabilityService | None = None,
     ) -> None:
         self.repository = repository
         self.catalog = catalog
         self.job_runner = job_runner
+        self.approval_guards = approval_guards or ApprovalGuardService(
+            repository, catalog
+        )
+        self.capabilities = capabilities or StageCapabilityService(catalog)
 
     def list_courses(self) -> list[dict[str, Any]]:
         courses = []
@@ -56,7 +67,14 @@ class WorkspaceProjector:
         attention = self._attention(artifacts)
         active = self._active_job(course_id)
         stages = [
-            self._project_stage(stage, artifacts, attention, active)
+            self._project_stage(
+                course_id,
+                stage,
+                artifacts,
+                attention,
+                active,
+                read_only=location.read_only,
+            )
             for stage in self.catalog.stages
         ]
         next_stage = next(
@@ -64,7 +82,14 @@ class WorkspaceProjector:
                 stage
                 for stage in stages
                 if stage["state"]
-                in {"requires_attention", "failed", "awaiting_review", "ready", "stale"}
+                in {
+                    "requires_attention",
+                    "failed",
+                    "needs_input",
+                    "awaiting_review",
+                    "ready",
+                    "stale",
+                }
             ),
             None,
         )
@@ -153,16 +178,29 @@ class WorkspaceProjector:
 
     def _project_stage(
         self,
+        course_id: str,
         stage: StageDefinition,
         artifacts: dict[str, dict[str, Any]],
         attention: dict[str, Any],
         active_job: dict[str, Any] | None,
+        *,
+        read_only: bool,
     ) -> dict[str, Any]:
         outputs = [artifacts.get(name) for name in stage.artifacts]
         present = [artifact for artifact in outputs if artifact is not None]
+        prerequisite_artifacts = self.catalog.prerequisites_for_stage(stage.slug)
         prerequisites_ready = all(
             artifacts.get(name, {}).get("status") == "approved"
-            for name in stage.prerequisite_artifacts
+            for name in prerequisite_artifacts
+        )
+        blocking_stage = next(
+            (
+                self.catalog.stage_for_artifact(name)
+                for name in prerequisite_artifacts
+                if artifacts.get(name, {}).get("status") != "approved"
+                and self.catalog.stage_for_artifact(name) is not None
+            ),
+            None,
         )
         if stage.slug == "package":
             review_summary = (
@@ -172,25 +210,54 @@ class WorkspaceProjector:
                 prerequisites_ready = prerequisites_ready and bool(
                     review_summary.get("ready_for_package")
                 )
+                if not review_summary.get("ready_for_package"):
+                    blocking_stage = "content"
+        latest_job = self._latest_stage_job(course_id, stage.slug)
         if active_job and active_job.get("stage") == stage.slug:
             state = "running"
+        elif latest_job and latest_job.get("status") == "failed":
+            state = "failed"
         elif any(artifact.get("status") == "failed" for artifact in present):
             state = "failed"
         elif not present:
-            state = "ready" if prerequisites_ready else "locked"
-        elif self._stage_is_stale(stage, artifacts, present):
+            if self._needs_input(stage, artifacts):
+                state = "needs_input"
+            else:
+                state = "ready" if prerequisites_ready else "locked"
+        elif any(artifact.get("status") == "stale" for artifact in present):
             state = "stale"
+        elif stage.slug in {"content", "package"} and attention["blocking_total"]:
+            state = "requires_attention"
+        elif not prerequisites_ready:
+            state = "stale"
+        elif stage.slug in {"content", "package"} and self._review_state(artifacts):
+            state = self._review_state(artifacts) or "approved"
+        elif self._needs_input(stage, artifacts):
+            state = "needs_input"
         elif any(artifact.get("status") != "approved" for artifact in present):
             state = "awaiting_review"
         elif len(present) < len(stage.artifacts):
             # Research has a deliberate source-decision checkpoint between its outputs.
             state = "awaiting_review"
-        elif stage.slug in {"content", "package"} and attention["blocking_total"]:
-            state = "requires_attention"
-        elif stage.slug in {"content", "package"} and self._review_state(artifacts):
-            state = self._review_state(artifacts) or "approved"
         else:
             state = "approved"
+        approval_failures = (
+            [
+                failure.to_dict()
+                for failure in self.approval_guards.failures(course_id, stage.slug)
+            ]
+            if state in {"awaiting_review", "requires_attention"}
+            else []
+        )
+        actions = self.capabilities.actions(
+            stage.slug,
+            state,
+            read_only=read_only,
+            approval_failures=approval_failures,
+            prerequisites_ready=prerequisites_ready,
+            blocking_stage=blocking_stage,
+        )
+        downstream_artifacts = self.catalog.downstream_artifacts(set(stage.artifacts))
         return {
             "slug": stage.slug,
             "label": stage.label,
@@ -205,29 +272,25 @@ class WorkspaceProjector:
                 attention["blocking_total"] if stage.slug in {"content", "package"} else 0
             ),
             "checksum": self.repository.checksum(present) if present else None,
-            "can_mutate": state not in {"locked", "running"},
-        }
-
-    def _stage_is_stale(
-        self,
-        stage: StageDefinition,
-        artifacts: dict[str, dict[str, Any]],
-        present: list[dict[str, Any]],
-    ) -> bool:
-        newest_input = max(
-            (
-                str(artifacts[name].get("updated_at") or "")
-                for name in stage.prerequisite_artifacts
-                if name in artifacts
+            "dependencies": list(prerequisite_artifacts),
+            "prerequisites_ready": prerequisites_ready,
+            "downstream_stages": list(
+                self.catalog.stages_for_artifacts(downstream_artifacts)
             ),
-            default="",
-        )
-        return any(
-            artifact.get("status") == "approved"
-            and newest_input
-            and str(artifact.get("updated_at") or "") < newest_input
-            for artifact in present
-        )
+            "approval_failures": approval_failures,
+            "last_failure": (
+                latest_job.get("error")
+                if latest_job and latest_job.get("status") == "failed"
+                else None
+            ),
+            "actions": actions,
+            "can_mutate": any(
+                action.get("enabled", True)
+                and action.get("id")
+                not in {"continue", "go_to_blocker", "wait"}
+                for action in actions
+            ),
+        }
 
     @staticmethod
     def _review_state(artifacts: dict[str, dict[str, Any]]) -> str | None:
@@ -251,12 +314,12 @@ class WorkspaceProjector:
         package = artifacts.get("content_package") or {}
         totals = run_summary._verification_totals(package)
         assets = []
+        claim_level_blocking_total = 0
         for subtopic in package.get("body", {}).get("subtopics", []):
             for asset in subtopic.get("assets", []):
                 verification = self._asset_verification(asset)
-                blocker_count = sum(
-                    verification[field] for field in BLOCKING_VERIFICATION_FIELDS
-                )
+                blocker_count = hard_verifier_blocker_count(asset)
+                claim_level_blocking_total += blocker_count
                 if blocker_count:
                     assets.append(
                         {
@@ -272,10 +335,9 @@ class WorkspaceProjector:
             for unit in progress.get("units", [])
             if unit.get("status") in {"failed", "pending", "evidence_gap"}
         ]
-        blocking_total = sum(totals[field] for field in BLOCKING_VERIFICATION_FIELDS)
         return {
             "verification_totals": totals,
-            "blocking_total": blocking_total + len(failed_units),
+            "blocking_total": claim_level_blocking_total + len(failed_units),
             "flagged_assets": assets,
             "failed_units": failed_units,
         }
@@ -305,6 +367,22 @@ class WorkspaceProjector:
             return None
         return self.job_runner.active_for_course(course_id)
 
+    def _latest_stage_job(self, course_id: str, stage_slug: str) -> dict[str, Any] | None:
+        if self.job_runner is None or not hasattr(self.job_runner, "latest_for_stage"):
+            return None
+        return self.job_runner.latest_for_stage(course_id, stage_slug)
+
+    @staticmethod
+    def _needs_input(
+        stage: StageDefinition, artifacts: dict[str, dict[str, Any]]
+    ) -> bool:
+        if stage.slug != "brief":
+            return False
+        intake_state = artifacts.get("brief", {}).get("body", {}).get("intake_state")
+        return isinstance(intake_state, dict) and bool(
+            intake_state.get("unresolved_required_fields")
+        )
+
     @staticmethod
     def _operator_status(stages: list[dict[str, Any]], attention: dict[str, Any]) -> str:
         if attention["blocking_total"]:
@@ -314,6 +392,8 @@ class WorkspaceProjector:
             return "requires_attention"
         if "running" in states:
             return "running"
+        if "needs_input" in states:
+            return "needs_input"
         if "awaiting_review" in states or "stale" in states:
             return "pending_review"
         if all(stage["state"] == "approved" for stage in stages):
@@ -329,6 +409,7 @@ class WorkspaceProjector:
                 f"Resolve {stage['attention_count']} blocker(s) in {stage['label']}"
             ),
             "failed": f"Retry {stage['label']}",
+            "needs_input": f"Complete input for {stage['label']}",
             "awaiting_review": f"Review {stage['label']}",
             "ready": f"Run {stage['label']}",
             "stale": f"Refresh {stage['label']}",

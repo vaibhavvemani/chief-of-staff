@@ -102,9 +102,21 @@ def test_http_create_and_stage_commands_are_confined_and_versioned(
     assert stale_reopen.status_code == 409
 
     approved_stage = client.get("/api/courses/herb-course/stages/brief").json()
+    impact = client.post(
+        "/api/courses/herb-course/stages/brief/impact",
+        json={
+            "action": "reopen",
+            "expected_checksum": approved_stage["checksum"],
+        },
+    )
+    assert impact.status_code == 200
     reopened = client.post(
         "/api/courses/herb-course/stages/brief/reopen",
-        json={"expected_checksum": approved_stage["checksum"]},
+        json={
+            "expected_checksum": approved_stage["checksum"],
+            "impact_acknowledged": True,
+            "expected_impact_checksum": impact.json()["impact_checksum"],
+        },
     )
     assert reopened.status_code == 200
     assert reopened.json()["stage"]["state"] == "awaiting_review"
@@ -161,7 +173,7 @@ def test_content_review_api_holds_package_until_every_asset_is_reviewed(
         for stage in client.get(f"/api/courses/{course_id}/workspace").json()["stages"]
     }
     assert stage_states["content"] == "awaiting_review"
-    assert stage_states["package"] == "awaiting_review"
+    assert stage_states["package"] == "stale"
 
     checksum = synced.json()["checksum"]
     for record in review["body"]["assets"]:
@@ -178,4 +190,7 @@ def test_content_review_api_holds_package_until_every_asset_is_reviewed(
     assert final_review["body"]["summary"]["pending"] == 0
     assert final_review["body"]["summary"]["ready_for_package"] is True
     final_workspace = client.get(f"/api/courses/{course_id}/workspace").json()
-    assert final_workspace["operator_status"] == "complete"
+    assert final_workspace["operator_status"] == "pending_review"
+    assert next(
+        stage for stage in final_workspace["stages"] if stage["slug"] == "package"
+    )["state"] == "stale"

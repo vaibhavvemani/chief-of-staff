@@ -22,21 +22,35 @@ from api.models import (
     BriefAnswersCommand,
     ContentReviewCommand,
     CreateCourseRequest,
+    ImpactPreviewCommand,
+    ImpactPreviewResponse,
     OutcomeDecisionCommand,
     ReopenStageCommand,
-    RequestChangesCommand,
     RunStageCommand,
+    ScopedRevisionCommand,
     SourceDecisionCommand,
 )
+from api.services.approval_guard import ApprovalGuardFailed, ApprovalGuardService
 from api.services.artifact_repository import (
     ArtifactNotFound,
     ArtifactRepository,
     ReadOnlyCourse,
     VersionConflict,
 )
-from api.services.decision_service import DecisionService
+from api.services.capability_service import (
+    StageCapabilityService,
+    UnsupportedStageAction,
+)
+from api.services.decision_service import DecisionService, StageNotReopened
+from api.services.lifecycle import (
+    ImpactConfirmationRequired,
+    ImpactPreviewService,
+    InvalidationService,
+    StaleImpactPreview,
+)
 from api.services.local_job_runner import CourseBusy, JobNotFound, LocalJobRunner
 from api.services.pipeline_catalog import PipelineCatalog
+from api.services.revision_service import AmbiguousRevision, RevisionService
 from api.services.stage_runner import StageRunner
 from api.services.workspace_projector import WorkspaceProjector
 
@@ -60,9 +74,31 @@ def create_app(
     )
     catalog = PipelineCatalog(rendered_root=repository.rendered_root)
     jobs = LocalJobRunner(runtime_root or repo_root / "runtime")
-    projector = WorkspaceProjector(repository, catalog, job_runner=jobs)
-    decisions = DecisionService(repository, catalog)
-    stages = StageRunner(repository, catalog)
+    guards = ApprovalGuardService(repository, catalog)
+    capabilities = StageCapabilityService(catalog)
+    impact = ImpactPreviewService(repository, catalog)
+    invalidation = InvalidationService(repository, catalog)
+    revisions = RevisionService(repository, capabilities)
+    projector = WorkspaceProjector(
+        repository,
+        catalog,
+        job_runner=jobs,
+        approval_guards=guards,
+        capabilities=capabilities,
+    )
+    decisions = DecisionService(
+        repository,
+        catalog,
+        approval_guards=guards,
+        invalidation=invalidation,
+        impact=impact,
+    )
+    stages = StageRunner(
+        repository,
+        catalog,
+        revisions=revisions,
+        invalidation=invalidation,
+    )
     frontend_dist = repo_root / "frontend" / "dist"
 
     @asynccontextmanager
@@ -89,6 +125,10 @@ def create_app(
     app.state.projector = projector
     app.state.decisions = decisions
     app.state.stages = stages
+    app.state.approval_guards = guards
+    app.state.capabilities = capabilities
+    app.state.impact = impact
+    app.state.revisions = revisions
 
     @app.exception_handler(ArtifactNotFound)
     async def _not_found(_request: Request, exc: ArtifactNotFound):
@@ -117,6 +157,44 @@ def create_app(
     @app.exception_handler(FileExistsError)
     async def _exists(_request: Request, exc: FileExistsError):
         return _error_response(409, str(exc))
+
+    @app.exception_handler(ApprovalGuardFailed)
+    async def _approval_rejected(_request: Request, exc: ApprovalGuardFailed):
+        return _error_response(
+            409,
+            str(exc),
+            extra={
+                "code": "approval_guard_failed",
+                "stage": exc.stage,
+                "failures": [failure.to_dict() for failure in exc.failures],
+            },
+        )
+
+    @app.exception_handler(ImpactConfirmationRequired)
+    async def _impact_confirmation(
+        _request: Request, exc: ImpactConfirmationRequired
+    ):
+        return _error_response(
+            409, str(exc), extra={"code": "impact_confirmation_required"}
+        )
+
+    @app.exception_handler(StaleImpactPreview)
+    async def _stale_impact(_request: Request, exc: StaleImpactPreview):
+        return _error_response(
+            409, str(exc), extra={"code": "stale_impact_preview"}
+        )
+
+    @app.exception_handler(StageNotReopened)
+    async def _stage_not_reopened(_request: Request, exc: StageNotReopened):
+        return _error_response(409, str(exc), extra={"code": "reopen_required"})
+
+    @app.exception_handler(UnsupportedStageAction)
+    async def _unsupported_action(_request: Request, exc: UnsupportedStageAction):
+        return _error_response(409, str(exc), extra={"code": "unsupported_action"})
+
+    @app.exception_handler(AmbiguousRevision)
+    async def _ambiguous_revision(_request: Request, exc: AmbiguousRevision):
+        return _error_response(400, str(exc), extra={"code": "ambiguous_revision"})
 
     @app.exception_handler(ValueError)
     async def _bad_request(_request: Request, exc: ValueError):
@@ -173,18 +251,29 @@ def create_app(
     def run_stage(
         course_id: str, stage_slug: str, command: RunStageCommand
     ) -> dict[str, Any]:
-        _check_stage_version(projector, course_id, stage_slug, command.expected_checksum)
         catalog.stage(stage_slug)
         if repository.locate(course_id).read_only:
             raise ReadOnlyCourse(f"committed example course is read-only: {course_id}")
-        _ensure_stage_state(
-            projector, course_id, stage_slug, allowed={"ready", "stale", "failed"}
+        _check_stage_version(projector, course_id, stage_slug, command.expected_checksum)
+        state = projector.stage(course_id, stage_slug)["state"]
+        action_id = "retry" if state == "failed" else "run"
+        capabilities.assert_action_available(
+            stage_slug,
+            state,
+            action_id,
+            read_only=False,
+            prerequisites_ready=projector.stage(course_id, stage_slug).get(
+                "prerequisites_ready", False
+            ),
         )
         job = jobs.submit(
             course_id=course_id,
             stage=stage_slug,
-            task=lambda emit: stages.run(
-                course_id, stage_slug, mode=command.mode, emit=emit
+            task=lambda emit: (
+                _check_stage_version(
+                    projector, course_id, stage_slug, command.expected_checksum
+                )
+                or stages.run(course_id, stage_slug, mode=command.mode, emit=emit)
             ),
         )
         return _job_accepted(job)
@@ -193,8 +282,16 @@ def create_app(
     def approve_stage(
         course_id: str, stage_slug: str, command: ApproveStageCommand
     ) -> dict[str, Any]:
-        _check_stage_version(projector, course_id, stage_slug, command.expected_checksum)
-        with jobs.locks.acquire(course_id, blocking=False):
+        with jobs.mutate_now(course_id):
+            _check_stage_version(
+                projector, course_id, stage_slug, command.expected_checksum
+            )
+            _ensure_stage_state(
+                projector,
+                course_id,
+                stage_slug,
+                allowed={"awaiting_review", "requires_attention"},
+            )
             artifacts = decisions.approve_stage(course_id, stage_slug)
         return {
             "stage": projector.stage(course_id, stage_slug),
@@ -205,48 +302,118 @@ def create_app(
     def reopen_stage(
         course_id: str, stage_slug: str, command: ReopenStageCommand
     ) -> dict[str, Any]:
-        _check_stage_version(projector, course_id, stage_slug, command.expected_checksum)
-        with jobs.locks.acquire(course_id, blocking=False):
-            artifacts = decisions.reopen_stage(course_id, stage_slug)
+        if repository.locate(course_id).read_only:
+            raise ReadOnlyCourse(f"committed example course is read-only: {course_id}")
+        with jobs.mutate_now(course_id):
+            _check_stage_version(
+                projector, course_id, stage_slug, command.expected_checksum
+            )
+            state = projector.stage(course_id, stage_slug)["state"]
+            capabilities.assert_action_available(
+                stage_slug,
+                state,
+                "reopen",
+                read_only=repository.locate(course_id).read_only,
+                prerequisites_ready=projector.stage(course_id, stage_slug).get(
+                    "prerequisites_ready", False
+                ),
+            )
+            result = decisions.reopen_stage(
+                course_id,
+                stage_slug,
+                reason=command.reason,
+                impact_acknowledged=command.impact_acknowledged,
+                expected_impact_checksum=command.expected_impact_checksum,
+            )
         return {
             "stage": projector.stage(course_id, stage_slug),
-            "reopened_artifact_types": [item["artifact_type"] for item in artifacts],
+            "reopened_artifact_types": [
+                item["artifact_type"] for item in result["artifacts"]
+            ],
+            "stale_artifact_types": [
+                item["artifact_type"] for item in result["invalidated"]
+            ],
+            "impact": result["impact"],
         }
 
     @app.post(
-        "/api/courses/{course_id}/stages/{stage_slug}/request-changes",
+        "/api/courses/{course_id}/stages/{stage_slug}/impact",
+        response_model=ImpactPreviewResponse,
+    )
+    def preview_impact(
+        course_id: str, stage_slug: str, command: ImpactPreviewCommand
+    ) -> dict[str, Any]:
+        _check_stage_version(projector, course_id, stage_slug, command.expected_checksum)
+        if repository.locate(course_id).read_only:
+            raise ReadOnlyCourse(f"committed example course is read-only: {course_id}")
+        return impact.preview(
+            course_id,
+            stage_slug,
+            action=command.action,
+            target_type=command.target_type,
+            target_ids=command.target_ids,
+            operation_summary=command.operation_summary,
+        )
+
+    @app.post(
+        "/api/courses/{course_id}/stages/{stage_slug}/revisions",
         status_code=202,
     )
-    def request_changes(
-        course_id: str, stage_slug: str, command: RequestChangesCommand
+    def revise_stage(
+        course_id: str, stage_slug: str, command: ScopedRevisionCommand
     ) -> dict[str, Any]:
         _check_stage_version(projector, course_id, stage_slug, command.expected_checksum)
         catalog.stage(stage_slug)
         if repository.locate(course_id).read_only:
             raise ReadOnlyCourse(f"committed example course is read-only: {course_id}")
+        state = projector.stage(course_id, stage_slug)["state"]
+        capabilities.assert_action_available(
+            stage_slug,
+            state,
+            "revise",
+            read_only=False,
+            prerequisites_ready=projector.stage(course_id, stage_slug).get(
+                "prerequisites_ready", False
+            ),
+        )
         _ensure_stage_state(
             projector,
             course_id,
             stage_slug,
-            allowed={"awaiting_review", "requires_attention", "failed", "stale"},
+            allowed={"awaiting_review", "requires_attention"},
         )
+        revision_payload = {
+            "target_type": command.target_type,
+            "target_ids": command.target_ids,
+            "category": command.category,
+            "instruction": command.instruction,
+        }
+        # Reject unsupported, unknown, or cross-subtopic targets before a job exists.
+        revisions.prepare(course_id, stage_slug, **revision_payload)
         job = jobs.submit(
             course_id=course_id,
             stage=stage_slug,
-            task=lambda emit: stages.run(
-                course_id,
-                stage_slug,
-                feedback=command.feedback,
-                mode=command.mode,
-                emit=emit,
+            task=lambda emit: (
+                _check_stage_version(
+                    projector, course_id, stage_slug, command.expected_checksum
+                )
+                or stages.run(
+                    course_id,
+                    stage_slug,
+                    revision=revision_payload,
+                    mode=command.mode,
+                    emit=emit,
+                )
             ),
         )
         return _job_accepted(job)
 
     @app.put("/api/courses/{course_id}/brief/answers")
     def brief_answers(course_id: str, command: BriefAnswersCommand) -> dict[str, Any]:
-        _check_artifact_version(repository, course_id, "brief", command.expected_checksum)
-        with jobs.locks.acquire(course_id, blocking=False):
+        with jobs.mutate_now(course_id):
+            _check_artifact_version(
+                repository, course_id, "brief", command.expected_checksum
+            )
             value = decisions.save_brief_answers(course_id, command.answers)
         return {"artifact": value, "checksum": repository.checksum(value)}
 
@@ -254,10 +421,10 @@ def create_app(
     def outcome_decision(
         course_id: str, command: OutcomeDecisionCommand
     ) -> dict[str, Any]:
-        _check_artifact_version(
-            repository, course_id, "course_outcomes", command.expected_checksum
-        )
-        with jobs.locks.acquire(course_id, blocking=False):
+        with jobs.mutate_now(course_id):
+            _check_artifact_version(
+                repository, course_id, "course_outcomes", command.expected_checksum
+            )
             value = decisions.save_outcome_decision(
                 course_id,
                 selected_ids=command.selected_ids,
@@ -271,10 +438,10 @@ def create_app(
     def source_decision(
         course_id: str, command: SourceDecisionCommand
     ) -> dict[str, Any]:
-        _check_stage_version(
-            projector, course_id, "research", command.expected_checksum
-        )
-        with jobs.locks.acquire(course_id, blocking=False):
+        with jobs.mutate_now(course_id):
+            _check_stage_version(
+                projector, course_id, "research", command.expected_checksum
+            )
             value = decisions.save_source_decision(
                 course_id, selected_ids=command.selected_ids
             )
@@ -288,8 +455,10 @@ def create_app(
     def blueprint_decision(
         course_id: str, command: BlueprintDecisionCommand
     ) -> dict[str, Any]:
-        _check_artifact_version(repository, course_id, "blueprint", command.expected_checksum)
-        with jobs.locks.acquire(course_id, blocking=False):
+        with jobs.mutate_now(course_id):
+            _check_artifact_version(
+                repository, course_id, "blueprint", command.expected_checksum
+            )
             value = decisions.save_blueprint_decision(
                 course_id,
                 selected_asset_types=command.selected_asset_types,
@@ -314,7 +483,7 @@ def create_app(
 
     @app.post("/api/courses/{course_id}/content/reviews/sync")
     def sync_content_reviews(course_id: str) -> dict[str, Any]:
-        with jobs.locks.acquire(course_id, blocking=False):
+        with jobs.mutate_now(course_id):
             value = decisions.sync_content_review(course_id)
         return {"artifact": value, "checksum": repository.checksum(value)}
 
@@ -322,10 +491,10 @@ def create_app(
     def content_review(
         course_id: str, asset_id: str, command: ContentReviewCommand
     ) -> dict[str, Any]:
-        _check_artifact_version(
-            repository, course_id, "content_review", command.expected_checksum
-        )
-        with jobs.locks.acquire(course_id, blocking=False):
+        with jobs.mutate_now(course_id):
+            _check_artifact_version(
+                repository, course_id, "content_review", command.expected_checksum
+            )
             value = decisions.save_content_review(
                 course_id,
                 asset_id,
@@ -462,4 +631,16 @@ def _error_response(status_code: int, message: str, *, extra: dict[str, Any] | N
     )
 
 
-app = create_app()
+app = create_app(
+    courses_root=Path(os.environ["COURSE_BUILDER_COURSES_ROOT"])
+    if os.getenv("COURSE_BUILDER_COURSES_ROOT")
+    else None,
+    rendered_root=Path(os.environ["COURSE_BUILDER_RENDERED_ROOT"])
+    if os.getenv("COURSE_BUILDER_RENDERED_ROOT")
+    else None,
+    runtime_root=Path(os.environ["COURSE_BUILDER_RUNTIME_ROOT"])
+    if os.getenv("COURSE_BUILDER_RUNTIME_ROOT")
+    else None,
+    include_examples=os.getenv("COURSE_BUILDER_INCLUDE_EXAMPLES", "true").lower()
+    not in {"0", "false", "no"},
+)

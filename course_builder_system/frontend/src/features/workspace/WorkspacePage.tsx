@@ -5,7 +5,9 @@ import {
   ApiError,
   approveStage,
   getWorkspace,
-  requestStageChanges,
+  previewStageImpact,
+  reopenStage,
+  reviseStage,
   reviewContentAsset,
   runStage,
   saveBriefAnswers,
@@ -15,15 +17,10 @@ import {
 import { AppBrand } from "../../components/AppBrand";
 import { ErrorState, LoadingState } from "../../components/States";
 import { StatusBadge } from "../../components/StatusBadge";
-import type { BriefAnswers, BriefData, Claim, ContentAsset, StageSlug, UiStatus, Workspace } from "../../types";
+import type { BriefAnswers, BriefData, Claim, ContentAsset, ImpactPreview, StageAction, StageActionId, StageSlug, UiStatus, Workspace } from "../../types";
 import { StageView, stageData, type BriefEditSection } from "./StageViews";
 
 const stageSlugs: StageSlug[] = ["brief", "outcomes", "research", "course-model", "blueprint", "content", "lesson-plan", "package"];
-
-function nextStageAfter(stage: StageSlug): StageSlug | null {
-  const index = stageSlugs.indexOf(stage);
-  return index >= 0 && index < stageSlugs.length - 1 ? stageSlugs[index + 1] : null;
-}
 
 function stageName(stage: StageSlug): string {
   return stage === "course-model"
@@ -48,54 +45,38 @@ const stageNumbers: Record<StageSlug, string> = {
   package: "08",
 };
 
-const stageContext: Record<StageSlug, { why: string; evidence: string; consumes: string[]; affects: string[] }> = {
+const stageContext: Record<StageSlug, { why: string; evidence: string }> = {
   brief: {
     why: "The Brief translates a sparse subject request into explicit audience, scope, constraints, and assumptions before expensive work begins.",
     evidence: "Intake answers and visible safe defaults. Assumptions remain editable until the Brief is approved.",
-    consumes: ["Subject request"],
-    affects: ["Outcomes", "Research", "Every downstream artifact"],
   },
   outcomes: {
     why: "Measurable outcomes make downstream coverage and assessment decisions testable instead of relying on a general topic description.",
     evidence: "Approved Brief: audience, purpose, scope, level, and assessment expectations.",
-    consumes: ["Approved Brief"],
-    affects: ["Research scope", "Course Model coverage", "Assessments"],
   },
   research: {
     why: "The agent separates curriculum evidence from factual grounding so weak or rejected pages cannot silently enter learner content.",
     evidence: "Bounded competitor outlines, candidate metadata, trust notes, and explicit human source decisions.",
-    consumes: ["Approved Brief", "Approved Outcomes"],
-    affects: ["Course Model source routes", "Generated claims", "Verification"],
   },
   "course-model": {
     why: "This compact hierarchy is the structural source of truth. Stable IDs let every downstream asset remain referentially auditable.",
     evidence: "Outcomes, competitor synthesis, approved sources, scope rules, and structural rationale.",
-    consumes: ["Brief", "Outcomes", "Approved source registry"],
-    affects: ["Blueprint rows", "Content coverage", "Lesson Plan", "Rendered paths"],
   },
   blueprint: {
     why: "The Blueprint makes asset generation an explicit product decision for each subtopic, with defaults and visible exceptions.",
     evidence: "Course Model coverage and source assignments, course-wide depth defaults, and explicit asset decisions.",
-    consumes: ["Approved Course Model"],
-    affects: ["Exact generated assets", "Depth budget", "Verification scope"],
   },
   content: {
     why: "Content is generated per asset and checked claim by claim. The operator resolves only material evidence and quality issues.",
     evidence: "Approved source excerpts routed by subtopic, generation claims, verifier verdicts, and durable human reviews.",
-    consumes: ["Course Model", "Blueprint", "Approved source excerpts"],
-    affects: ["Lesson Plan readiness", "Package release status"],
   },
   "lesson-plan": {
     why: "The Lesson Plan sequences approved content into feasible sessions while reconciling time, delivery mode, and complete subtopic coverage.",
     evidence: "Course Model sequence, selected assets, delivery constraints, and coverage reconciliation.",
-    consumes: ["Approved content", "Brief delivery constraints"],
-    affects: ["Rendered lesson plan", "Package coverage gate"],
   },
   package: {
     why: "A rendered folder is not automatically learner-ready. The release gate reconciles integrity, evidence, review, and output paths.",
     evidence: "Integrity checks, run summary, verifier blockers, review decisions, and render manifest.",
-    consumes: ["All approved upstream artifacts"],
-    affects: ["Course delivery"],
   },
 };
 
@@ -120,7 +101,7 @@ function WorkflowRail({ workspace, activeStage, activeJobStage, runMode, onOpenA
             >
               <span className="rail-number">{stageNumbers[stage.slug]}</span>
               <span className="rail-stage-copy"><strong>{stage.label}</strong><small>{stage.status.replaceAll("_", " ")}</small></span>
-              <span className="rail-stage-state" aria-hidden="true">{stage.status === "approved" ? "✓" : stage.status === "requires_attention" ? stage.count || "!" : stage.status === "locked" ? "·" : "→"}</span>
+              <span className="rail-stage-state" aria-hidden="true">{stage.status === "approved" ? "✓" : ["needs_input", "requires_attention", "failed"].includes(stage.status) ? stage.count || "!" : stage.status === "locked" ? "·" : "→"}</span>
             </Link>
           );
         })}
@@ -145,7 +126,7 @@ function ContextInspector({ workspace, stage, onClose }: { workspace: Workspace;
       <div className="inspector-body">
         {tab === "why" ? <><span className="inspector-section-label">Why this stage exists</span><p className="inspector-lead">{context.why}</p><div className="inspector-callout"><span aria-hidden="true">◆</span><div><strong>Agent recommendation</strong><p>{stageSummary?.summary ?? "Review the structured artifact before taking the next decision."}</p></div></div><span className="inspector-section-label">Decision rule</span><p>Approval records a human checkpoint. It does not merely acknowledge that generation finished.</p></> : null}
         {tab === "evidence" ? <><span className="inspector-section-label">Evidence used here</span><p className="inspector-lead">{context.evidence}</p><div className="evidence-summary"><div><strong>{workspace.research.sources.filter((source) => source.status === "approved").length}</strong><span>Approved sources</span></div><div><strong>{workspace.content.assets.reduce((total, asset) => total + asset.verification.supported, 0)}</strong><span>Supported claims</span></div></div><div className="boundary-note"><span aria-hidden="true">✓</span><p>Only approved, assigned source excerpts enter generation context.</p></div></> : null}
-        {tab === "dependencies" ? <div className="dependency-map"><span className="inspector-section-label">Consumes</span>{context.consumes.map((item) => <div key={item} className="dependency-item before"><span aria-hidden="true">←</span>{item}</div>)}<div className="current-dependency">{stageSummary?.label}</div><span className="inspector-section-label">Affects</span>{context.affects.map((item) => <div key={item} className="dependency-item after"><span aria-hidden="true">→</span>{item}</div>)}</div> : null}
+        {tab === "dependencies" ? <div className="dependency-map"><span className="inspector-section-label">Required artifacts</span>{stageSummary?.dependencies.length ? stageSummary.dependencies.map((item) => <div key={item} className="dependency-item before"><span aria-hidden="true">←</span>{item.replaceAll("_", " ")}</div>) : <p className="muted">No artifact prerequisites.</p>}<div className="current-dependency">{stageSummary?.label}</div><span className="inspector-section-label">Downstream stages</span>{stageSummary?.downstreamStages.length ? stageSummary.downstreamStages.map((item) => <div key={item} className="dependency-item after"><span aria-hidden="true">→</span>{stageName(item)}</div>) : <p className="muted">No downstream stage dependency.</p>}</div> : null}
         {tab === "history" ? <div className="inspector-history"><span className="inspector-section-label">Recent events</span>{workspace.activity.map((event) => <article key={event.id}><span className={`history-dot history-${event.tone ?? "neutral"}`} /><div><strong>{event.title}</strong><p>{event.detail}</p><time>{new Date(event.at).toLocaleString()}</time></div></article>)}</div> : null}
         {tab === "raw" ? <><div className="raw-heading"><span className="inspector-section-label">Canonical data</span><button onClick={() => void navigator.clipboard?.writeText(JSON.stringify(stageData(stage, workspace), null, 2))}>Copy</button></div><pre className="inspector-raw">{JSON.stringify(stageData(stage, workspace), null, 2)}</pre></> : null}
       </div>
@@ -154,13 +135,15 @@ function ContextInspector({ workspace, stage, onClose }: { workspace: Workspace;
 }
 
 function ActivityDrawer({ workspace, onClose }: { workspace: Workspace; onClose: () => void }) {
+  const failedStage = workspace.stages.find((stage) => stage.status === "failed");
+  const activeStage = workspace.activeJob?.stage;
   return (
     <div className="drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
       <aside className="activity-drawer" role="dialog" aria-modal="true" aria-labelledby="activity-title">
         <header><div><span className="eyebrow">Audit & diagnostics</span><h2 id="activity-title">Activity</h2></div><button onClick={onClose} aria-label="Close activity drawer">×</button></header>
-        <div className="run-summary-card"><div><span className="run-glyph" aria-hidden="true">✓</span><span><strong>Latest pipeline run completed</strong><small>Content still needs operator attention</small></span></div><code>{workspace.course.courseId}</code></div>
+        <div className="run-summary-card"><div><span className="run-glyph" aria-hidden="true">{failedStage ? "!" : activeStage ? "…" : "✓"}</span><span><strong>{failedStage ? `${stageName(failedStage.slug)} run failed` : activeStage ? `${stageName(activeStage)} run in progress` : "Workspace state is current"}</strong><small>{failedStage?.lastFailure ?? workspace.course.nextAction}</small></span></div><code>{workspace.course.courseId}</code></div>
         <div className="activity-list">{workspace.activity.map((event) => <article key={event.id}><time>{new Date(event.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time><span className={`activity-dot activity-${event.tone ?? "neutral"}`} /><div><strong>{event.title}</strong><p>{event.detail}</p></div></article>)}</div>
-        <footer><button className="button button-secondary full-width">Open model-call diagnostics</button><p>Prompts, source bodies, and private reasoning are never shown in activity events.</p></footer>
+        <footer><button className="button button-secondary full-width" disabled title="Model-call diagnostics are not exposed in this release">Model-call diagnostics unavailable</button><p>Prompts, source bodies, and private reasoning are never shown in activity events.</p></footer>
       </aside>
     </div>
   );
@@ -169,36 +152,41 @@ function ActivityDrawer({ workspace, onClose }: { workspace: Workspace; onClose:
 function DecisionBar({
   stage,
   status,
-  disabled,
+  actions,
   busy,
-  onApprove,
-  onRequestChanges,
-  onRun,
-  nextStage,
-  onContinue,
-  approvalBlocked,
+  onAction,
 }: {
   stage: StageSlug;
   status: UiStatus;
-  disabled?: boolean;
+  actions: StageAction[];
   busy?: boolean;
-  onApprove: () => void;
-  onRequestChanges: () => void;
-  onRun: () => void;
-  nextStage: StageSlug | null;
-  onContinue: () => void;
-  approvalBlocked?: boolean;
+  onAction: (action: StageAction) => void;
 }) {
-  const isApproved = status === "approved";
-  const isLocked = status === "locked";
-  const attention = status === "requires_attention";
-  const canRequestChanges = ["awaiting_review", "requires_attention", "failed", "stale"].includes(status);
+  const primaryIds: StageActionId[] = ["run", "retry", "edit", "source_decision", "review_asset", "revise", "approve", "go_to_blocker", "continue"];
+  const inlineActionIds: StageActionId[] = ["source_decision", "review_asset", "revise"];
+  const visibleActions = actions.filter((action) => !inlineActionIds.includes(action.id));
+  const statusCopy: Record<UiStatus, [string, string]> = {
+    locked: ["Upstream checkpoint required", "This stage is not ready yet"],
+    needs_input: ["Required input missing", `Complete ${stageName(stage)} before continuing`],
+    ready: ["Stage action", `${stageName(stage)} is ready to run`],
+    running: ["Agent working", `Building ${stageName(stage)}`],
+    awaiting_review: ["Human checkpoint", `Review ${stageName(stage)} before continuing`],
+    approved: ["Checkpoint recorded", `${stageName(stage)} is approved and current`],
+    requires_attention: ["Human decision needed", "Resolve the listed blockers before approval"],
+    stale: ["Upstream change detected", `Rerun ${stageName(stage)} after its prerequisites are current`],
+    failed: ["Last run failed safely", `Retry ${stageName(stage)} when ready`],
+  };
+  const [kicker, detail] = statusCopy[status];
   return (
     <div className="decision-bar">
-      <div className="decision-context"><span className={`decision-dot decision-${status}`} /><div><small>{isApproved ? "Checkpoint recorded" : approvalBlocked ? "Source decision required" : attention ? "Human decision needed" : isLocked ? "Upstream checkpoint required" : status === "running" ? "Agent working" : "Stage action"}</small><strong>{isApproved ? nextStage ? `${stageName(nextStage)} is next` : "Course workflow complete" : approvalBlocked ? "Select and save grounding sources first" : attention ? "Resolve blockers before approval" : isLocked ? "This stage is not ready to run" : status === "ready" ? `Ready to build ${stageName(stage)}` : status === "running" ? `Building ${stageName(stage)}` : "Review before continuing"}</strong></div></div>
+      <div className="decision-context"><span className={`decision-dot decision-${status}`} /><div><small>{kicker}</small><strong>{detail}</strong></div></div>
       <div className="decision-actions">
-        {canRequestChanges ? <button className="button button-secondary" disabled={disabled || busy || isLocked} onClick={onRequestChanges}>{stage === "brief" ? "Other change" : "Request changes"}</button> : null}
-        {attention && stage === "content" ? <button className="button button-primary" onClick={() => document.querySelector(".attention-banner")?.scrollIntoView({ behavior: "smooth" })}>Review attention queue <span aria-hidden="true">→</span></button> : isApproved ? <button className="button button-primary" disabled={!nextStage} onClick={onContinue}>{nextStage ? `Continue to ${stageName(nextStage)}` : "Course complete"} {nextStage ? <span aria-hidden="true">→</span> : null}</button> : status === "ready" ? <button className="button button-primary" disabled={disabled || busy || isLocked} onClick={onRun}>{busy ? "Starting agent…" : `Run ${stageName(stage)}`} <span aria-hidden="true">→</span></button> : status === "running" ? <button className="button button-primary" disabled>Agent working…</button> : <button className="button button-primary" disabled={disabled || busy || isLocked || approvalBlocked} onClick={onApprove}>{busy ? "Approving…" : approvalBlocked ? "Save source selection first" : `Approve ${stageName(stage)}`} {!approvalBlocked ? <span aria-hidden="true">→</span> : null}</button>}
+        {visibleActions.map((action) => {
+          const primary = primaryIds.includes(action.id) && action.id !== "revise";
+          return <button key={action.id} className={`button ${primary ? "button-primary" : "button-secondary"}`} disabled={busy || !action.enabled} title={action.reason} onClick={() => onAction(action)}>{busy && ["run", "retry", "approve"].includes(action.id) ? "Working…" : action.label}{action.enabled && primary ? <span aria-hidden="true">→</span> : null}</button>;
+        })}
+        {visibleActions.find((action) => !action.enabled && action.reason)?.reason ? <span className="decision-action-reason">{visibleActions.find((action) => !action.enabled && action.reason)?.reason}</span> : null}
+        {!visibleActions.length ? <span className="decision-no-actions">{status === "running" ? "Agent working…" : actions.length ? "Use the controls in this stage to continue." : "No stage changes are available."}</span> : null}
       </div>
     </div>
   );
@@ -243,19 +231,9 @@ function AgentRunScreen({ stage, mode, progress }: { stage: StageSlug; mode: "de
   );
 }
 
-const revisionSuggestions: Record<StageSlug, string[]> = {
-  brief: ["Correct the learner or level", "Narrow or expand the scope", "Add a missing constraint"],
-  outcomes: ["Make an outcome measurable", "Add missing learner evidence", "Remove an outcome that is out of scope"],
-  research: ["Find a stronger primary source", "Remove an unsuitable source", "Cover a missing evidence area"],
-  "course-model": ["Reorganize a module", "Add a missing subtopic", "Correct source routing"],
-  blueprint: ["Change the asset mix", "Adjust depth or duration", "Add an assessment asset"],
-  content: ["Correct an unsupported claim", "Improve clarity for the learner", "Add a practical example"],
-  "lesson-plan": ["Rebalance session timing", "Change the delivery mode", "Improve the teaching sequence"],
-  package: ["Resolve a release blocker", "Correct a rendered file", "Repair asset reconciliation"],
-};
-
-function FeedbackDialog({ title, impact, suggestions, onCancel, onSubmit }: { title: string; impact: string[]; suggestions: string[]; onCancel: () => void; onSubmit: (feedback: string) => void }) {
-  const [feedback, setFeedback] = useState("");
+function ScopedRevisionDialog({ asset, claim, categories, busy, onCancel, onSubmit }: { asset: ContentAsset; claim?: Claim; categories: string[]; busy: boolean; onCancel: () => void; onSubmit: (category: string, instruction: string) => void }) {
+  const [category, setCategory] = useState(categories.includes("evidence") && claim ? "evidence" : categories[0] ?? "clarity");
+  const [instruction, setInstruction] = useState(claim ? `Correct verifier finding ${claim.id}: ${claim.note || claim.text}` : "");
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onCancel(); };
     window.addEventListener("keydown", onKeyDown);
@@ -263,12 +241,36 @@ function FeedbackDialog({ title, impact, suggestions, onCancel, onSubmit }: { ti
   }, [onCancel]);
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onCancel(); }}>
-      <div className="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
-        <header><span className="eyebrow">Guided revision</span><h2 id="feedback-title">{title}</h2><p>Choose a common issue to get started, then add the specific detail the agent needs.</p></header>
-        <div className="revision-suggestions" aria-label="Suggested revision types">{suggestions.map((suggestion) => <button key={suggestion} className={feedback.startsWith(suggestion) ? "selected" : ""} onClick={() => setFeedback(`${suggestion}: `)}>{suggestion}</button>)}</div>
-        <label><span>What should be different?</span><textarea autoFocus rows={5} value={feedback} onChange={(event) => setFeedback(event.target.value)} placeholder="For example: target first-time managers instead of experienced team leads." /></label>
-        <div className="impact-preview"><span className="micro-label">Likely downstream impact</span>{impact.map((item) => <div key={item}><span aria-hidden="true">→</span>{item}</div>)}</div>
-        <footer><button className="button button-quiet" onClick={onCancel}>Cancel</button><button className="button button-primary" disabled={!feedback.trim()} onClick={() => onSubmit(feedback.trim())}>Request scoped revision</button></footer>
+      <div className="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="revision-title">
+        <header><span className="eyebrow">Scoped content revision</span><h2 id="revision-title">Revise {asset.title}</h2><p>Only <code>{asset.id}</code> will be regenerated. Other content assets remain unchanged.</p></header>
+        <label><span>Revision category</span><select value={category} onChange={(event) => setCategory(event.target.value)}>{categories.map((item) => <option key={item} value={item}>{item.charAt(0).toUpperCase() + item.slice(1)}</option>)}</select></label>
+        <label><span>Revision instruction</span><textarea autoFocus rows={5} value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder="Describe the exact learner-facing change required for this asset." /></label>
+        <div className="impact-preview"><span className="micro-label">Execution boundary</span><div><span aria-hidden="true">→</span>Target type: asset</div><div><span aria-hidden="true">→</span>Target ID: {asset.id}</div><div><span aria-hidden="true">→</span>Execution mode preserves unaffected assets</div></div>
+        <footer><button className="button button-quiet" onClick={onCancel}>Cancel</button><button className="button button-primary" disabled={!instruction.trim() || busy} onClick={() => onSubmit(category, instruction.trim())}>{busy ? "Starting revision…" : "Start scoped revision"}</button></footer>
+      </div>
+    </div>
+  );
+}
+
+function ImpactConfirmationDialog({ stage, preview, busy, onCancel, onConfirm }: { stage: StageSlug; preview: ImpactPreview; busy: boolean; onCancel: () => void; onConfirm: (reason?: string) => void }) {
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [reason, setReason] = useState("");
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onCancel(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onCancel]);
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onCancel(); }}>
+      <div className="feedback-dialog impact-dialog" role="dialog" aria-modal="true" aria-labelledby="impact-title">
+        <header><span className="eyebrow">Confirmed lifecycle change</span><h2 id="impact-title">Reopen {stageName(stage)}?</h2><p>The server computed this impact from the current pipeline dependency graph. It will validate the preview again under the course mutation lock.</p></header>
+        <div className="impact-summary-grid"><div><strong>{preview.directArtifacts.length}</strong><span>reopened artifacts</span></div><div><strong>{preview.staleArtifacts.length}</strong><span>downstream artifacts made stale</span></div><div><strong>{preview.requiresRerunStages.length}</strong><span>stages requiring rerun</span></div></div>
+        <dl className="impact-boundaries"><div><dt>Reopened artifacts</dt><dd>{preview.directArtifacts.map((item) => item.replaceAll("_", " ")).join(", ") || "None"}</dd></div><div><dt>Marked stale</dt><dd>{preview.staleArtifacts.map((item) => item.replaceAll("_", " ")).join(", ") || "None"}</dd></div><div><dt>Targeted assets</dt><dd>{preview.targetedAssets.length ? `${preview.targetedAssets.length} asset${preview.targetedAssets.length === 1 ? "" : "s"}` : "None"}</dd></div><div><dt>Preserved assets</dt><dd>{preview.preservedAssets.length ? `${preview.preservedAssets.length} asset${preview.preservedAssets.length === 1 ? "" : "s"}` : "None"}</dd></div></dl>
+        <div className="impact-preview"><span className="micro-label">Downstream stages</span>{preview.requiresRerunStages.length ? preview.requiresRerunStages.map((item) => <div key={item}><span aria-hidden="true">→</span>{stageName(item)}</div>) : <div>No downstream reruns are expected.</div>}</div>
+        {preview.warnings.length ? <div className="impact-warnings">{preview.warnings.map((warning) => <p key={warning}><span aria-hidden="true">!</span>{warning}</p>)}</div> : null}
+        <label><span>Reason <small>Optional audit note</small></span><textarea rows={3} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Why does this approved checkpoint need to change?" /></label>
+        <label className="impact-ack"><input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} /><span>I understand these downstream artifacts will remain visible but cannot satisfy approved prerequisites until rerun.</span></label>
+        <footer><button className="button button-quiet" onClick={onCancel}>Cancel</button><button className="button button-primary" disabled={!acknowledged || busy} onClick={() => onConfirm(reason.trim() || undefined)}>{busy ? "Revalidating impact…" : "Confirm and reopen"}</button></footer>
       </div>
     </div>
   );
@@ -362,7 +364,8 @@ export function WorkspacePage() {
   const stage = stageSlugs.includes(routeStage as StageSlug) ? (routeStage as StageSlug) : "brief";
   const [runMode, setRunMode] = useState<"deterministic" | "live">(() => new URLSearchParams(location.search).get("mode") === "deterministic" ? "deterministic" : "live");
   const [activityOpen, setActivityOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [impactPreview, setImpactPreview] = useState<ImpactPreview | null>(null);
+  const [revisionTarget, setRevisionTarget] = useState<{ asset: ContentAsset; claim?: Claim; expectedChecksum?: string } | null>(null);
   const [briefEditSection, setBriefEditSection] = useState<BriefEditSection | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; tone: "good" | "attention" | "neutral" } | null>(() => new URLSearchParams(location.search).get("setup") === "incomplete" ? {
@@ -457,38 +460,25 @@ export function WorkspacePage() {
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["workspace", courseId] });
   const mutation = useMutation({
-    mutationFn: async (action: { type: "run" | "approve" | "changes"; feedback?: string }) => {
+    mutationFn: async (action: { type: "run" | "approve" }) => {
       if (!workspace) return;
-      if (query.data?.demoMode) return { demo: true };
       if (action.type === "run") return runStage(courseId, stage, { expectedChecksum: currentSummary?.checksum, mode: runMode });
-      if (action.type === "approve") return approveStage(courseId, stage, { expectedChecksum: currentSummary?.checksum });
-      return requestStageChanges(courseId, stage, { expectedChecksum: currentSummary?.checksum, note: action.feedback, mode: runMode });
+      return approveStage(courseId, stage, { expectedChecksum: currentSummary?.checksum });
     },
     onSuccess: async (result, action) => {
-      setFeedbackOpen(false);
       if (result && "job" in result) {
         setActiveJobId(result.job.job_id);
         setActiveJobStage(stage);
         setRunProgress({ message: "Run queued" });
       }
-      if (result && "demo" in result) {
-        setToast({ tone: "good", message: "Preview action recorded. Connect the API to persist this decision." });
-        return;
-      }
       if (action.type === "approve") {
-        const nextStage = nextStageAfter(stage);
         await refresh();
-        if (nextStage) {
-          setToast({ tone: "good", message: `${stageName(stage)} approved. ${stageName(nextStage)} is ready to run.` });
-          navigate(`/courses/${courseId}/${nextStage}?mode=${runMode}`);
-        } else {
-          setToast({ tone: "good", message: "Package approved. The course workflow is complete." });
-        }
+        setToast({ tone: "good", message: `${stageName(stage)} approved. The backend has projected the next available action.` });
         return;
       }
       setToast({
         tone: "good",
-        message: action.type === "changes" ? "Revision started. The updated artifact will appear here when it is ready." : `${stageName(stage)} started. The artifact will appear here when it is ready.`,
+        message: `${stageName(stage)} started. The artifact will appear here when it is ready.`,
       });
       void refresh();
     },
@@ -498,41 +488,77 @@ export function WorkspacePage() {
     },
   });
 
+  const impactMutation = useMutation({
+    mutationFn: () => {
+      if (!currentSummary?.checksum) throw new Error("Reopen requires the current stage checksum.");
+      return previewStageImpact(courseId, stage, currentSummary.checksum, `Reopen ${stageName(stage)}`);
+    },
+    onSuccess: setImpactPreview,
+    onError: (error) => setToast({ tone: "attention", message: error instanceof Error ? error.message : "The impact preview could not be computed." }),
+  });
+
+  const reopenMutation = useMutation({
+    mutationFn: (reason?: string) => {
+      if (!impactPreview) throw new Error("A current impact preview is required.");
+      if (!currentSummary?.checksum) throw new Error("Reopen requires the current stage checksum.");
+      return reopenStage(courseId, stage, {
+        expectedChecksum: currentSummary.checksum,
+        impactChecksum: impactPreview.impactChecksum,
+        reason,
+      });
+    },
+    onSuccess: () => {
+      setImpactPreview(null);
+      setToast({ tone: "good", message: `${stageName(stage)} reopened. Downstream artifacts are preserved and marked stale.` });
+      void refresh();
+    },
+    onError: (error) => {
+      setImpactPreview(null);
+      setToast({ tone: "attention", message: error instanceof ApiError && error.status === 409 ? "The course changed after this impact preview. Review a fresh preview before reopening." : error instanceof Error ? error.message : "The stage could not be reopened." });
+      void refresh();
+    },
+  });
+
+  const revisionMutation = useMutation({
+    mutationFn: ({ category, instruction }: { category: string; instruction: string }) => {
+      if (!revisionTarget) throw new Error("Choose a content asset to revise.");
+      if (!revisionTarget.expectedChecksum) throw new Error("Revision requires the current Content checksum.");
+      return reviseStage(courseId, "content", {
+        targetType: "asset",
+        targetIds: [revisionTarget.asset.id],
+        category,
+        instruction,
+        expectedChecksum: revisionTarget.expectedChecksum,
+        mode: runMode,
+      });
+    },
+    onSuccess: (result) => {
+      setRevisionTarget(null);
+      setActiveJobId(result.job.job_id);
+      setActiveJobStage("content");
+      setRunProgress({ message: "Scoped revision queued" });
+      setToast({ tone: "good", message: "Scoped revision started. Unaffected content assets will be preserved." });
+      void refresh();
+    },
+    onError: (error) => setToast({ tone: "attention", message: error instanceof Error ? error.message : "The scoped revision could not start." }),
+  });
+
   async function contentAction(action: string, asset: ContentAsset, claim?: Claim) {
     if (!workspace) return;
-    if (query.data?.demoMode) {
-      setToast({ tone: "neutral", message: `“${action.replaceAll("_", " ")}” is wired for ${asset.id}. Connect the API to run it.` });
-      return;
-    }
     try {
       if (action === "approved" || action === "changes_requested") {
+        if (!currentSummary?.actions.some((candidate) => candidate.id === "review_asset" && candidate.enabled)) throw new Error("Content review is not available in the current stage state.");
         await reviewContentAsset(courseId, asset.id, action, workspace.content.reviewChecksum, claim?.note);
       } else if (action === "revise") {
-        await requestStageChanges(courseId, "content", {
-          expectedChecksum: currentSummary?.checksum,
-          mode: runMode,
-          note: JSON.stringify({
-            assets: [asset.id],
-            subtopic_id: asset.subtopicId,
-            verifier: true,
-            feedback: `Revise only this asset${claim ? ` for verifier finding ${claim.id}` : ""}. Use the existing approved evidence and reverify the affected asset.`,
-          }),
-        });
-      } else if (action === "research") {
-        const researchStage = workspace.stages.find((item) => item.slug === "research");
-        await requestStageChanges(courseId, "research", {
-          expectedChecksum: researchStage?.checksum,
-          mode: runMode,
-          note: `Find better grounding evidence for asset ${asset.id}${claim ? `, claim ${claim.id}: ${claim.text}` : ""}. Keep the research pass bounded to this gap.`,
-        });
+        if (!currentSummary?.actions.some((candidate) => candidate.id === "revise" && candidate.enabled)) throw new Error("Scoped revision is not available in the current stage state.");
+        setRevisionTarget({ asset, claim, expectedChecksum: currentSummary.checksum });
+        return;
+      } else {
+        throw new Error("This content action is not implemented.");
       }
       setToast({
         tone: "good",
-        message: action === "revise"
-          ? `Targeted revision accepted for ${asset.title}; unaffected assets will be preserved.`
-          : action === "research"
-            ? "A bounded research-stage refresh was accepted for this evidence gap. Review the resulting source registry before continuing."
-            : `Review decision saved for ${asset.title}.`,
+        message: `Review decision saved for ${asset.title}.`,
       });
       void refresh();
     } catch (error) {
@@ -542,11 +568,8 @@ export function WorkspacePage() {
 
   async function sourceDecision(selectedIds: string[]) {
     if (!workspace) return;
-    if (query.data?.demoMode) {
-      setToast({ tone: "neutral", message: "Source decisions are interactive in preview mode; start the API to persist them." });
-      return;
-    }
     try {
+      if (!currentSummary?.actions.some((candidate) => candidate.id === "source_decision" && candidate.enabled)) throw new Error("Source decisions are not available in the current stage state.");
       await saveSourceDecision(courseId, selectedIds, currentSummary?.checksum);
       setToast({ tone: "good", message: `${selectedIds.length} grounding source${selectedIds.length === 1 ? "" : "s"} saved for review.` });
       void refresh();
@@ -561,6 +584,38 @@ export function WorkspacePage() {
   const context = stageContext[stage];
   const demoMode = query.data?.demoMode ?? false;
   const readOnly = query.data?.readOnly ?? false;
+  const actionEnabled = (id: StageActionId) => Boolean(currentSummary?.actions.some((action) => action.id === id && action.enabled));
+  const handleStageAction = (action: StageAction) => {
+    if (!action.enabled) return;
+    if (action.id === "run" || action.id === "retry") {
+      mutation.mutate({ type: "run" });
+      return;
+    }
+    if (action.id === "approve") {
+      mutation.mutate({ type: "approve" });
+      return;
+    }
+    if (action.id === "reopen") {
+      impactMutation.mutate();
+      return;
+    }
+    if ((action.id === "continue" || action.id === "go_to_blocker") && action.targetStage) {
+      navigate(`/courses/${courseId}/${action.targetStage}?mode=${runMode}`);
+      return;
+    }
+    if (action.id === "edit") {
+      setBriefEditSection("learner");
+      return;
+    }
+    const selector = action.id === "source_decision"
+      ? ".decision-tray"
+      : action.id === "review_asset"
+        ? ".content-status-banner"
+        : action.id === "revise"
+          ? ".verification-panel"
+          : undefined;
+    if (selector) document.querySelector(selector)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
   const changeRunMode = (nextMode: "deterministic" | "live") => {
     setRunMode(nextMode);
     const params = new URLSearchParams(location.search);
@@ -587,28 +642,21 @@ export function WorkspacePage() {
           {(activeJobId && activeJobStage === stage) || (mutation.isPending && mutation.variables?.type === "run") ? (
             <AgentRunScreen stage={stage} mode={runMode} progress={runProgress} />
           ) : currentSummary?.status === "locked" && !demoMode ? (
-            <div className="locked-stage-state"><span className="locked-glyph" aria-hidden="true">·</span><span className="eyebrow">{currentSummary.label}</span><h1>This stage is waiting on an upstream decision.</h1><p>{context.consumes.join(", ")} must be approved and current before the agent can run this stage.</p><button className="button button-secondary" onClick={() => navigate(`/courses/${courseId}/${workspace.course.currentStage}?mode=${runMode}`)}>Go to current stage</button></div>
-          ) : <StageView stage={stage} workspace={workspace} onContentAction={(action, asset, claim) => void contentAction(action, asset, claim)} onSourceDecision={readOnly ? undefined : (selectedIds) => void sourceDecision(selectedIds)} onEditBrief={readOnly ? undefined : setBriefEditSection} />}
+            <div className="locked-stage-state"><span className="locked-glyph" aria-hidden="true">·</span><span className="eyebrow">{currentSummary.label}</span><h1>This stage is waiting on an upstream decision.</h1><p>{currentSummary.dependencies.length ? `${currentSummary.dependencies.map((item) => item.replaceAll("_", " ")).join(", ")} must be approved and current before this stage can run.` : "A backend prerequisite must be completed before this stage can run."}</p></div>
+          ) : <StageView stage={stage} workspace={workspace} contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise") }} onContentAction={actionEnabled("review_asset") || actionEnabled("revise") ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined} onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined} onEditBrief={actionEnabled("edit") ? setBriefEditSection : undefined} />}
         </main>
         {inspectorOpen ? <ContextInspector workspace={workspace} stage={stage} onClose={() => setInspectorOpen(false)} /> : null}
         <DecisionBar
           stage={stage}
           status={currentSummary?.status ?? "ready"}
-          disabled={readOnly}
-          busy={mutation.isPending || Boolean(activeJobId)}
-          onApprove={() => mutation.mutate({ type: "approve" })}
-          onRequestChanges={() => setFeedbackOpen(true)}
-          onRun={() => mutation.mutate({ type: "run" })}
-          nextStage={nextStageAfter(stage)}
-          onContinue={() => {
-            const nextStage = nextStageAfter(stage);
-            if (nextStage) navigate(`/courses/${courseId}/${nextStage}?mode=${runMode}`);
-          }}
-          approvalBlocked={stage === "research" && !workspace.research.registrySaved}
+          actions={currentSummary?.actions ?? []}
+          busy={mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionMutation.isPending || Boolean(activeJobId)}
+          onAction={handleStageAction}
         />
       </div>
       {activityOpen ? <ActivityDrawer workspace={workspace} onClose={() => setActivityOpen(false)} /> : null}
-      {feedbackOpen ? <FeedbackDialog title={`Revise ${currentSummary?.label}`} impact={context.affects} suggestions={revisionSuggestions[stage]} onCancel={() => setFeedbackOpen(false)} onSubmit={(feedback) => mutation.mutate({ type: "changes", feedback })} /> : null}
+      {revisionTarget ? <ScopedRevisionDialog asset={revisionTarget.asset} claim={revisionTarget.claim} categories={currentSummary?.actions.find((action) => action.id === "revise")?.revisionTargets?.find((target) => target.targetType === "asset")?.categories ?? []} busy={revisionMutation.isPending} onCancel={() => setRevisionTarget(null)} onSubmit={(category, instruction) => revisionMutation.mutate({ category, instruction })} /> : null}
+      {impactPreview ? <ImpactConfirmationDialog stage={stage} preview={impactPreview} busy={reopenMutation.isPending} onCancel={() => setImpactPreview(null)} onConfirm={(reason) => reopenMutation.mutate(reason)} /> : null}
       {briefEditSection ? <BriefEditDialog section={briefEditSection} brief={workspace.brief} busy={briefMutation.isPending} onCancel={() => setBriefEditSection(null)} onSubmit={(brief) => briefMutation.mutate(brief)} /> : null}
       {toast ? <Toast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} /> : null}
     </div>
