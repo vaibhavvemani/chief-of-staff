@@ -41,9 +41,7 @@ def test_http_workspace_uses_current_attention_gate_and_targeted_asset_read(
     assert body["attention"]["verification_totals"]["unattributed"] == 3
     assert body["attention"]["blocking_total"] == 9
 
-    asset = client.get(
-        "/api/courses/coffee-live-main/content/assets/m1_s4_assess"
-    )
+    asset = client.get("/api/courses/coffee-live-main/content/assets/m1_s4_assess")
     assert asset.status_code == 200
     assert asset.json()["id"] == "m1_s4_assess"
     assert asset.json()["asset"]["id"] == "m1_s4_assess"
@@ -123,12 +121,8 @@ def test_http_create_and_stage_commands_are_confined_and_versioned(
 
 
 def test_http_rejects_course_and_output_path_traversal(client: TestClient) -> None:
-    unsafe_course = client.get(
-        "/api/courses/%2E%2E%2Fcoffee-live-main/workspace"
-    )
-    unsafe_output = client.get(
-        "/api/courses/coffee-live-main/outputs/%2E%2E%2FREADME.md"
-    )
+    unsafe_course = client.get("/api/courses/%2E%2E%2Fcoffee-live-main/workspace")
+    unsafe_output = client.get("/api/courses/coffee-live-main/outputs/%2E%2E%2FREADME.md")
 
     assert unsafe_course.status_code in {400, 404}
     assert unsafe_output.status_code == 400
@@ -150,17 +144,29 @@ def test_content_review_api_holds_package_until_every_asset_is_reviewed(
 ) -> None:
     course_id = "review-course"
     repository = client.app.state.repository
-    fixture_root = (
-        REPO_ROOT
-        / "examples"
-        / "acceptance"
-        / "coffee-acceptance"
-        / "course_artifacts"
-    )
+    fixture_root = REPO_ROOT / "examples" / "acceptance" / "coffee-acceptance" / "course_artifacts"
     for path in fixture_root.glob("*.json"):
         artifact = json.loads(path.read_text(encoding="utf-8"))
         artifact["course_id"] = course_id
         repository.save(artifact)
+
+    content_stage = client.get(f"/api/courses/{course_id}/stages/content").json()
+    impact = client.post(
+        f"/api/courses/{course_id}/stages/content/impact",
+        json={
+            "action": "reopen",
+            "expected_checksum": content_stage["checksum"],
+        },
+    ).json()
+    reopened = client.post(
+        f"/api/courses/{course_id}/stages/content/reopen",
+        json={
+            "expected_checksum": content_stage["checksum"],
+            "impact_acknowledged": True,
+            "expected_impact_checksum": impact["impact_checksum"],
+        },
+    )
+    assert reopened.status_code == 200, reopened.text
 
     synced = client.post(f"/api/courses/{course_id}/content/reviews/sync")
 
@@ -184,13 +190,12 @@ def test_content_review_api_holds_package_until_every_asset_is_reviewed(
         assert decided.status_code == 200
         checksum = decided.json()["checksum"]
 
-    final_review = client.get(f"/api/courses/{course_id}/content/reviews").json()[
-        "artifact"
-    ]
+    final_review = client.get(f"/api/courses/{course_id}/content/reviews").json()["artifact"]
     assert final_review["body"]["summary"]["pending"] == 0
     assert final_review["body"]["summary"]["ready_for_package"] is True
     final_workspace = client.get(f"/api/courses/{course_id}/workspace").json()
     assert final_workspace["operator_status"] == "pending_review"
-    assert next(
-        stage for stage in final_workspace["stages"] if stage["slug"] == "package"
-    )["state"] == "stale"
+    assert (
+        next(stage for stage in final_workspace["stages"] if stage["slug"] == "package")["state"]
+        == "stale"
+    )

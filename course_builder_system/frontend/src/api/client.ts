@@ -941,21 +941,28 @@ export async function previewStageImpact(
   courseId: string,
   stage: StageSlug,
   expectedChecksum: string,
-  operationSummary?: string,
+  command: {
+    action: "reopen" | "revise";
+    operationSummary?: string;
+    targetType?: string;
+    targetIds?: string[];
+  },
 ): Promise<ImpactPreview> {
   const response = await apiFetch<Record<string, unknown>>(
     `/api/courses/${encodeURIComponent(courseId)}/stages/${stage}/impact`,
     {
       method: "POST",
       body: JSON.stringify({
-        action: "reopen",
+        action: command.action,
         expected_checksum: expectedChecksum,
-        operation_summary: operationSummary,
+        operation_summary: command.operationSummary,
+        target_type: command.targetType,
+        target_ids: command.targetIds ?? [],
       }),
     },
   );
   return {
-    action: "reopen",
+    action: command.action,
     stage,
     operationSummary: asString(response.operation_summary) || undefined,
     directArtifacts: asStringArray(response.direct_artifacts),
@@ -1007,6 +1014,8 @@ export async function reviseStage(
       instruction: command.instruction,
       mode: command.mode,
       expected_checksum: command.expectedChecksum,
+      impact_acknowledged: true,
+      expected_impact_checksum: command.impactChecksum,
     }),
   });
   return {
@@ -1019,7 +1028,7 @@ export async function reviewContentAsset(
   courseId: string,
   assetId: string,
   status: "approved" | "changes_requested",
-  expectedChecksum: string | undefined,
+  expectedChecksum: string,
   note?: string,
 ): Promise<void> {
   await apiFetch(`/api/courses/${encodeURIComponent(courseId)}/content/reviews/${encodeURIComponent(assetId)}`, {
@@ -1031,7 +1040,7 @@ export async function reviewContentAsset(
 export async function saveSourceDecision(
   courseId: string,
   selectedIds: string[],
-  expectedChecksum?: string,
+  expectedChecksum: string,
 ): Promise<void> {
   await apiFetch(`/api/courses/${encodeURIComponent(courseId)}/research/sources/decision`, {
     method: "PUT",

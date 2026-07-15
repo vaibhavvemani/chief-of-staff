@@ -22,13 +22,7 @@ def _client_with_complete_course(tmp_path: Path) -> Iterator[TestClient]:
         include_examples=False,
     )
     repository = app.state.repository
-    fixture_root = (
-        REPO_ROOT
-        / "examples"
-        / "acceptance"
-        / "coffee-acceptance"
-        / "course_artifacts"
-    )
+    fixture_root = REPO_ROOT / "examples" / "acceptance" / "coffee-acceptance" / "course_artifacts"
     for path in fixture_root.glob("*.json"):
         artifact = json.loads(path.read_text(encoding="utf-8"))
         artifact["course_id"] = "impact-course"
@@ -64,25 +58,28 @@ def test_reopen_requires_fresh_typed_impact_and_preserves_stale_bodies(
             "lesson-plan",
             "package",
         ]
-        assert impact["targeted_assets"]
-        assert impact["preserved_assets"]
+        package = repository.require("impact-course", "content_package")
+        all_asset_ids = {
+            asset["id"] for subtopic in package["body"]["subtopics"] for asset in subtopic["assets"]
+        }
+        # A target hint cannot make a general reopen look bounded. The actual
+        # mutation stales the whole downstream graph, so every saved Content asset
+        # is affected and none is promised as preserved.
+        assert set(impact["targeted_assets"]) == all_asset_ids
+        assert impact["preserved_assets"] == []
+        assert impact["impact_level"] == "downstream"
 
         without_confirmation = client.post(
             "/api/courses/impact-course/stages/course-model/reopen",
             json={"expected_checksum": stage["checksum"]},
         )
         assert without_confirmation.status_code == 409
-        assert (
-            without_confirmation.json()["error"]["code"]
-            == "impact_confirmation_required"
-        )
+        assert without_confirmation.json()["error"]["code"] == "impact_confirmation_required"
 
         blueprint = repository.require("impact-course", "blueprint")
         blueprint_checksum = repository.checksum(blueprint)
         blueprint["revision_note"] = "Concurrent downstream decision"
-        repository.save(
-            blueprint, expected_checksum=blueprint_checksum
-        )
+        repository.save(blueprint, expected_checksum=blueprint_checksum)
         stale_preview = client.post(
             "/api/courses/impact-course/stages/course-model/reopen",
             json={
@@ -122,14 +119,34 @@ def test_reopen_requires_fresh_typed_impact_and_preserves_stale_bodies(
             assert artifact["status"] == "stale"
             assert repository.checksum(artifact["body"]) == body_checksums[artifact_type]
 
-        blueprint_stage = client.get(
-            "/api/courses/impact-course/stages/blueprint"
-        ).json()
+        blueprint_stage = client.get("/api/courses/impact-course/stages/blueprint").json()
         assert blueprint_stage["state"] == "stale"
         rerun = next(action for action in blueprint_stage["actions"] if action["id"] == "run")
         assert rerun["enabled"] is False
         blocked_run = client.post(
             "/api/courses/impact-course/stages/blueprint/run",
-            json={"mode": "deterministic", "expected_checksum": blueprint_stage["checksum"]},
+            json={
+                "mode": "deterministic",
+                "expected_checksum": blueprint_stage["checksum"],
+            },
         )
         assert blocked_run.status_code == 409
+
+
+def test_content_reopen_reports_direct_content_as_affected(tmp_path: Path) -> None:
+    with _client_with_complete_course(tmp_path) as client:
+        stage = client.get("/api/courses/impact-course/stages/content").json()
+        preview = client.post(
+            "/api/courses/impact-course/stages/content/impact",
+            json={"action": "reopen", "expected_checksum": stage["checksum"]},
+        )
+
+        assert preview.status_code == 200, preview.text
+        impact = preview.json()
+        assert impact["targeted_assets"]
+        assert impact["preserved_assets"] == []
+        assert set(impact["stale_artifacts"]) >= {
+            "lesson_plan",
+            "render_manifest",
+            "run_summary",
+        }

@@ -9,7 +9,8 @@ agent instruction file.
 The Course Builder four-week prototype is complete as of 2026-07-06. The first
 local Course Builder Studio frontend and FastAPI adapter are implemented as of
 2026-07-14. The next milestone-gated development cycle is planned as of
-2026-07-15.
+2026-07-15, and its NC-10 lifecycle and command foundation has passed its
+deterministic exit gate.
 
 The system turns a sparse subject request into a rendered course folder through:
 
@@ -35,10 +36,10 @@ Primary context docs:
 
 The active next-cycle program makes the browser dependable for a nontechnical
 internal course director and then proves the same workflow with live agent-backed
-stages. Start with the acceptance foundation and lifecycle/command contracts in
-the next-cycle backlog. Source repair plus verifier-driven targeted revision
-remains the central trust milestone, but should be implemented after reopening,
-impact, invalidation, approval, and revision behavior is made truthful.
+stages. NC-002, NC-004, NC-005, and NC-101 through NC-109 are implemented and
+verified. Start the next package at NC-20 guided Brief intake; do not skip ahead
+to source repair or live-agent parity. Source repair plus verifier-driven targeted
+revision remains the central trust milestone after the intervening stage contracts.
 
 ## Commands
 

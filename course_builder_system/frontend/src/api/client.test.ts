@@ -233,6 +233,7 @@ describe("typed API commands", () => {
         category: "clarity",
         instruction: "Clarify the opening example.",
         mode: "deterministic",
+        impactChecksum: "impact-checksum",
       }),
     ).resolves.toEqual({
       job: { job_id: "job-change", status: "queued" },
@@ -245,6 +246,8 @@ describe("typed API commands", () => {
       category: "clarity",
       instruction: "Clarify the opening example.",
       mode: "deterministic",
+      impact_acknowledged: true,
+      expected_impact_checksum: "impact-checksum",
     });
     expect(fetchMock.mock.calls.at(-1)?.[0]).toBe("/api/courses/herb-course/stages/content/revisions");
   });
@@ -267,7 +270,10 @@ describe("typed API commands", () => {
       .mockResolvedValueOnce(jsonResponse({ stage: { state: "awaiting_review" } }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(previewStageImpact("herb-course", "course-model", "stage-checksum", "Adjust structure")).resolves.toMatchObject({
+    await expect(previewStageImpact("herb-course", "course-model", "stage-checksum", {
+      action: "reopen",
+      operationSummary: "Adjust structure",
+    })).resolves.toMatchObject({
       stage: "course-model",
       staleArtifacts: ["blueprint", "content_package"],
       requiresRerunStages: ["blueprint", "content"],
@@ -277,6 +283,7 @@ describe("typed API commands", () => {
       action: "reopen",
       expected_checksum: "stage-checksum",
       operation_summary: "Adjust structure",
+      target_ids: [],
     });
 
     await reopenStage("herb-course", "course-model", {

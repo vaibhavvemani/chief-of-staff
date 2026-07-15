@@ -14,7 +14,11 @@ from api.services.artifact_repository import ArtifactRepository, ReadOnlyCourse
 from api.services.capability_service import StageCapabilityService
 from api.services.lifecycle import InvalidationService
 from api.services.pipeline_catalog import PipelineCatalog
-from api.services.revision_service import NoOpRevision, PreparedRevision, RevisionService
+from api.services.revision_service import (
+    NoOpRevision,
+    PreparedRevision,
+    RevisionService,
+)
 
 
 class StageRunner:
@@ -28,9 +32,7 @@ class StageRunner:
     ) -> None:
         self.repository = repository
         self.catalog = catalog
-        self.revisions = revisions or RevisionService(
-            repository, StageCapabilityService(catalog)
-        )
+        self.revisions = revisions or RevisionService(repository, StageCapabilityService(catalog))
         self.invalidation = invalidation or InvalidationService(repository, catalog)
 
     def run(
@@ -55,9 +57,7 @@ class StageRunner:
                 "Configure it in the environment or use deterministic mode."
             )
         steps = self.catalog.steps_for_stage(stage_slug, mode=mode)
-        prepared_revision = self._prepare_revision(
-            course_id, stage_slug, revision
-        )
+        prepared_revision = self._prepare_revision(course_id, stage_slug, revision)
         emit(
             "stage.started",
             stage=stage_slug,
@@ -76,13 +76,8 @@ class StageRunner:
                     raise RuntimeError(
                         f"step {step.name!r} needs {artifact_type!r}, but it is not on disk"
                     )
-                if (
-                    artifact.get("status") != "approved"
-                    and artifact_type not in staged
-                ):
-                    raise RuntimeError(
-                        f"step {step.name!r} needs approved {artifact_type!r}"
-                    )
+                if artifact.get("status") != "approved" and artifact_type not in staged:
+                    raise RuntimeError(f"step {step.name!r} needs approved {artifact_type!r}")
                 inputs[artifact_type] = artifact
             if step.name == "student_content":
                 existing_package = self.repository.load(course_id, "content_package")
@@ -91,9 +86,7 @@ class StageRunner:
             # Human prose belongs to the generative/revision step. Source selection
             # has its own typed decision command; passing prose as comma-separated
             # source IDs would corrupt that checkpoint.
-            step_feedback = (
-                prepared_revision.feedback if prepared_revision is not None else None
-            )
+            step_feedback = prepared_revision.feedback if prepared_revision is not None else None
             if step.name == "source_selection":
                 step_feedback = None
             produced = step.run(inputs, step_feedback)
@@ -104,9 +97,7 @@ class StageRunner:
                 )
             for artifact_type, artifact in produced.items():
                 self._validate_output(course_id, artifact_type, artifact)
-                previous.setdefault(
-                    artifact_type, self.repository.load(course_id, artifact_type)
-                )
+                previous.setdefault(artifact_type, self.repository.load(course_id, artifact_type))
                 staged[artifact_type] = deepcopy(artifact)
             progress = produced.get("content_progress", {}).get("body", {})
             for unit in progress.get("units", []):
@@ -135,9 +126,7 @@ class StageRunner:
             staged["content_review"] = review
         revision_outcome = None
         if prepared_revision is not None:
-            revision_outcome = self._validate_revision_outcome(
-                prepared_revision, previous, staged
-            )
+            revision_outcome = self._validate_revision_outcome(prepared_revision, previous, staged)
         self._commit(course_id, staged, previous, prepared_revision)
         changed_types = {
             artifact_type
@@ -146,12 +135,21 @@ class StageRunner:
             or self.repository.checksum(previous[artifact_type].get("body"))
             != self.repository.checksum(artifact.get("body"))
         }
+        invalidated: list[dict[str, Any]] = []
         if changed_types:
-            self.invalidation.invalidate(
+            bounded_artifacts = (
+                {"render_manifest", "run_summary"}
+                if prepared_revision is not None
+                and prepared_revision.stage == "content"
+                and prepared_revision.target_type == "asset"
+                else None
+            )
+            invalidated = self.invalidation.invalidate(
                 course_id,
                 changed_types,
                 reason=f"Stale because {stage.label} changed.",
                 transaction_outputs=set(staged),
+                bounded_artifacts=bounded_artifacts,
             )
         emit(
             "stage.output_ready",
@@ -166,6 +164,7 @@ class StageRunner:
         result: dict[str, Any] = {
             "stage": stage_slug,
             "produced_artifact_types": list(staged),
+            "stale_artifact_types": [artifact["artifact_type"] for artifact in invalidated],
         }
         if revision_outcome is not None:
             result["revision"] = revision_outcome
@@ -189,9 +188,7 @@ class StageRunner:
         )
 
     @staticmethod
-    def _validate_output(
-        course_id: str, artifact_type: str, artifact: dict[str, Any]
-    ) -> None:
+    def _validate_output(course_id: str, artifact_type: str, artifact: dict[str, Any]) -> None:
         if artifact.get("course_id") != course_id:
             raise ValueError(f"{artifact_type} output has the wrong course_id")
         if artifact.get("artifact_type") != artifact_type:
@@ -232,8 +229,7 @@ class StageRunner:
         outside_scope = sorted(set(changed_ids) - set(revision.target_ids))
         if outside_scope:
             raise ValueError(
-                "revision changed assets outside its declared scope: "
-                + ", ".join(outside_scope)
+                "revision changed assets outside its declared scope: " + ", ".join(outside_scope)
             )
         return {
             "outcome": "changed",
@@ -285,14 +281,10 @@ class StageRunner:
             artifact["revision"] = (
                 int(existing.get("revision", 0)) + 1 if existing is not None else 0
             )
-            artifact["revision_note"] = (
-                revision.instruction if revision is not None else None
-            )
+            artifact["revision_note"] = revision.instruction if revision is not None else None
             # The review ledger is canonical support state; its records, rather than
             # its envelope, carry pending/approved human decisions.
-            artifact["status"] = (
-                "approved" if artifact_type == "content_review" else "draft"
-            )
+            artifact["status"] = "approved" if artifact_type == "content_review" else "draft"
             self.repository.save(
                 artifact,
                 expected_checksum=(

@@ -33,7 +33,37 @@ class ImpactPreviewService:
         operation_summary: str | None = None,
     ) -> dict[str, Any]:
         stage = self.catalog.stage(stage_slug)
-        downstream = self.catalog.downstream_artifacts(set(stage.artifacts))
+        all_assets = self._content_assets(course_id)
+        bounded_revision = action == "revise" and stage_slug == "content"
+        if bounded_revision:
+            if target_type != "asset" or not target_ids:
+                raise ValueError("a scoped Content revision impact requires named asset targets")
+            normalized_targets = [
+                item.strip() for item in target_ids if isinstance(item, str) and item.strip()
+            ]
+            if len(normalized_targets) != len(target_ids) or len(set(normalized_targets)) != len(
+                normalized_targets
+            ):
+                raise ValueError("impact target IDs must be non-empty and unique")
+            unknown = sorted(set(normalized_targets) - set(all_assets))
+            if unknown:
+                raise ValueError("unknown impact target asset(s): " + ", ".join(unknown))
+            downstream = ("render_manifest", "run_summary")
+            targeted_assets = sorted(normalized_targets)
+            preserved_assets = sorted(set(all_assets) - set(targeted_assets))
+        else:
+            if action != "reopen":
+                raise ValueError(
+                    f"impact preview is not registered for {action!r} on {stage_slug!r}"
+                )
+            # Reopen is a general lifecycle operation. Target hints must never make
+            # its impact look bounded when the mutation will stale the full graph.
+            downstream = self.catalog.downstream_artifacts(set(stage.artifacts))
+            content_is_affected = (
+                "content_package" in stage.artifacts or "content_package" in downstream
+            )
+            targeted_assets = sorted(all_assets) if content_is_affected else []
+            preserved_assets = [] if content_is_affected else sorted(all_assets)
         existing_downstream = [
             artifact_type
             for artifact_type in downstream
@@ -44,23 +74,24 @@ class ImpactPreviewService:
             for artifact_type in stage.artifacts
             if self.repository.load(course_id, artifact_type) is not None
         ]
-        all_assets = self._content_assets(course_id)
-        targeted_assets = self._targeted_assets(
-            all_assets,
-            target_type=target_type,
-            target_ids=target_ids,
-            content_is_affected="content_package" in downstream,
-        )
-        preserved_assets = sorted(set(all_assets) - set(targeted_assets))
+        if bounded_revision and self.repository.load(course_id, "content_review") is not None:
+            direct.append("content_review")
         rerun_stages = self.catalog.stages_for_artifacts(downstream)
         warnings: list[str] = []
+        if bounded_revision:
+            warnings.append("The changed learner asset will require human review again.")
         if "content_package" in existing_downstream:
             warnings.append("Approved learner content will require generation and review again.")
         if "render_manifest" in existing_downstream or "run_summary" in existing_downstream:
             warnings.append("The current Package will no longer be releasable until rerun.")
         if not existing_downstream:
             warnings.append("No saved downstream artifact will be changed yet.")
-        impact_level = self._impact_level(stage_slug, targeted_assets, preserved_assets)
+        impact_level = self._impact_level(
+            stage_slug,
+            targeted_assets,
+            preserved_assets,
+            bounded=bounded_revision,
+        )
         fingerprint_payload = {
             "action": action,
             "stage": stage_slug,
@@ -102,29 +133,14 @@ class ImpactPreviewService:
         }
 
     @staticmethod
-    def _targeted_assets(
-        assets: dict[str, str],
-        *,
-        target_type: str | None,
-        target_ids: list[str] | tuple[str, ...],
-        content_is_affected: bool,
-    ) -> list[str]:
-        targets = set(target_ids)
-        if target_type == "asset":
-            return sorted(set(assets) & targets)
-        if target_type == "subtopic":
-            return sorted(
-                asset_id
-                for asset_id, subtopic_id in assets.items()
-                if subtopic_id in targets
-            )
-        return sorted(assets) if content_is_affected else []
-
-    @staticmethod
     def _impact_level(
-        stage_slug: str, targeted_assets: list[str], preserved_assets: list[str]
+        stage_slug: str,
+        targeted_assets: list[str],
+        preserved_assets: list[str],
+        *,
+        bounded: bool,
     ) -> str:
-        if targeted_assets and preserved_assets:
+        if bounded:
             return "targeted"
         if stage_slug in {"brief", "outcomes", "research"}:
             return "full"
@@ -143,8 +159,19 @@ class InvalidationService:
         *,
         reason: str,
         transaction_outputs: set[str] | None = None,
+        bounded_artifacts: set[str] | None = None,
     ) -> list[dict[str, Any]]:
-        affected = set(self.catalog.downstream_artifacts(set(changed_artifacts)))
+        graph_affected = set(self.catalog.downstream_artifacts(set(changed_artifacts)))
+        if bounded_artifacts is None:
+            affected = graph_affected
+        else:
+            outside_graph = bounded_artifacts - graph_affected
+            if outside_graph:
+                raise ValueError(
+                    "bounded invalidation contains artifacts outside the dependency graph: "
+                    + ", ".join(sorted(outside_graph))
+                )
+            affected = set(bounded_artifacts)
         # Outputs produced and validated in the same atomic stage transaction are
         # current by construction; they are not a domain-level bounded override.
         affected -= transaction_outputs or set()

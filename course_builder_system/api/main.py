@@ -171,18 +171,12 @@ def create_app(
         )
 
     @app.exception_handler(ImpactConfirmationRequired)
-    async def _impact_confirmation(
-        _request: Request, exc: ImpactConfirmationRequired
-    ):
-        return _error_response(
-            409, str(exc), extra={"code": "impact_confirmation_required"}
-        )
+    async def _impact_confirmation(_request: Request, exc: ImpactConfirmationRequired):
+        return _error_response(409, str(exc), extra={"code": "impact_confirmation_required"})
 
     @app.exception_handler(StaleImpactPreview)
     async def _stale_impact(_request: Request, exc: StaleImpactPreview):
-        return _error_response(
-            409, str(exc), extra={"code": "stale_impact_preview"}
-        )
+        return _error_response(409, str(exc), extra={"code": "stale_impact_preview"})
 
     @app.exception_handler(StageNotReopened)
     async def _stage_not_reopened(_request: Request, exc: StageNotReopened):
@@ -248,9 +242,7 @@ def create_app(
         }
 
     @app.post("/api/courses/{course_id}/stages/{stage_slug}/run", status_code=202)
-    def run_stage(
-        course_id: str, stage_slug: str, command: RunStageCommand
-    ) -> dict[str, Any]:
+    def run_stage(course_id: str, stage_slug: str, command: RunStageCommand) -> dict[str, Any]:
         catalog.stage(stage_slug)
         if repository.locate(course_id).read_only:
             raise ReadOnlyCourse(f"committed example course is read-only: {course_id}")
@@ -270,9 +262,7 @@ def create_app(
             course_id=course_id,
             stage=stage_slug,
             task=lambda emit: (
-                _check_stage_version(
-                    projector, course_id, stage_slug, command.expected_checksum
-                )
+                _check_stage_version(projector, course_id, stage_slug, command.expected_checksum)
                 or stages.run(course_id, stage_slug, mode=command.mode, emit=emit)
             ),
         )
@@ -283,9 +273,7 @@ def create_app(
         course_id: str, stage_slug: str, command: ApproveStageCommand
     ) -> dict[str, Any]:
         with jobs.mutate_now(course_id):
-            _check_stage_version(
-                projector, course_id, stage_slug, command.expected_checksum
-            )
+            _check_stage_version(projector, course_id, stage_slug, command.expected_checksum)
             _ensure_stage_state(
                 projector,
                 course_id,
@@ -305,9 +293,7 @@ def create_app(
         if repository.locate(course_id).read_only:
             raise ReadOnlyCourse(f"committed example course is read-only: {course_id}")
         with jobs.mutate_now(course_id):
-            _check_stage_version(
-                projector, course_id, stage_slug, command.expected_checksum
-            )
+            _check_stage_version(projector, course_id, stage_slug, command.expected_checksum)
             state = projector.stage(course_id, stage_slug)["state"]
             capabilities.assert_action_available(
                 stage_slug,
@@ -327,12 +313,8 @@ def create_app(
             )
         return {
             "stage": projector.stage(course_id, stage_slug),
-            "reopened_artifact_types": [
-                item["artifact_type"] for item in result["artifacts"]
-            ],
-            "stale_artifact_types": [
-                item["artifact_type"] for item in result["invalidated"]
-            ],
+            "reopened_artifact_types": [item["artifact_type"] for item in result["artifacts"]],
+            "stale_artifact_types": [item["artifact_type"] for item in result["invalidated"]],
             "impact": result["impact"],
         }
 
@@ -390,37 +372,65 @@ def create_app(
         }
         # Reject unsupported, unknown, or cross-subtopic targets before a job exists.
         revisions.prepare(course_id, stage_slug, **revision_payload)
+        current_impact = impact.preview(
+            course_id,
+            stage_slug,
+            action="revise",
+            target_type=command.target_type,
+            target_ids=command.target_ids,
+            operation_summary=command.instruction,
+        )
+        _assert_impact_acknowledged(
+            current_impact,
+            impact_acknowledged=command.impact_acknowledged,
+            expected_impact_checksum=command.expected_impact_checksum,
+        )
+
+        def execute_revision(emit):
+            _check_stage_version(projector, course_id, stage_slug, command.expected_checksum)
+            # LocalJobRunner holds the course mutation lock while this task runs.
+            # Recompute the exact impact here so the advisory browser preview cannot
+            # authorize a mutation against changed downstream state.
+            locked_impact = impact.preview(
+                course_id,
+                stage_slug,
+                action="revise",
+                target_type=command.target_type,
+                target_ids=command.target_ids,
+                operation_summary=command.instruction,
+            )
+            _assert_impact_acknowledged(
+                locked_impact,
+                impact_acknowledged=command.impact_acknowledged,
+                expected_impact_checksum=command.expected_impact_checksum,
+            )
+            return stages.run(
+                course_id,
+                stage_slug,
+                revision=revision_payload,
+                mode=command.mode,
+                emit=emit,
+            )
+
         job = jobs.submit(
             course_id=course_id,
             stage=stage_slug,
-            task=lambda emit: (
-                _check_stage_version(
-                    projector, course_id, stage_slug, command.expected_checksum
-                )
-                or stages.run(
-                    course_id,
-                    stage_slug,
-                    revision=revision_payload,
-                    mode=command.mode,
-                    emit=emit,
-                )
-            ),
+            task=execute_revision,
         )
         return _job_accepted(job)
 
     @app.put("/api/courses/{course_id}/brief/answers")
     def brief_answers(course_id: str, command: BriefAnswersCommand) -> dict[str, Any]:
         with jobs.mutate_now(course_id):
-            _check_artifact_version(
-                repository, course_id, "brief", command.expected_checksum
-            )
+            existing_brief = repository.load(course_id, "brief")
+            if existing_brief is not None and command.expected_checksum is None:
+                raise VersionConflict(repository.checksum(existing_brief))
+            _check_artifact_version(repository, course_id, "brief", command.expected_checksum)
             value = decisions.save_brief_answers(course_id, command.answers)
         return {"artifact": value, "checksum": repository.checksum(value)}
 
     @app.put("/api/courses/{course_id}/outcomes/decision")
-    def outcome_decision(
-        course_id: str, command: OutcomeDecisionCommand
-    ) -> dict[str, Any]:
+    def outcome_decision(course_id: str, command: OutcomeDecisionCommand) -> dict[str, Any]:
         with jobs.mutate_now(course_id):
             _check_artifact_version(
                 repository, course_id, "course_outcomes", command.expected_checksum
@@ -435,16 +445,10 @@ def create_app(
         return {"artifact": value, "checksum": repository.checksum(value)}
 
     @app.put("/api/courses/{course_id}/research/sources/decision")
-    def source_decision(
-        course_id: str, command: SourceDecisionCommand
-    ) -> dict[str, Any]:
+    def source_decision(course_id: str, command: SourceDecisionCommand) -> dict[str, Any]:
         with jobs.mutate_now(course_id):
-            _check_stage_version(
-                projector, course_id, "research", command.expected_checksum
-            )
-            value = decisions.save_source_decision(
-                course_id, selected_ids=command.selected_ids
-            )
+            _check_stage_version(projector, course_id, "research", command.expected_checksum)
+            value = decisions.save_source_decision(course_id, selected_ids=command.selected_ids)
         return {
             "artifact": value,
             "checksum": repository.checksum(value),
@@ -452,13 +456,9 @@ def create_app(
         }
 
     @app.put("/api/courses/{course_id}/blueprint/decision")
-    def blueprint_decision(
-        course_id: str, command: BlueprintDecisionCommand
-    ) -> dict[str, Any]:
+    def blueprint_decision(course_id: str, command: BlueprintDecisionCommand) -> dict[str, Any]:
         with jobs.mutate_now(course_id):
-            _check_artifact_version(
-                repository, course_id, "blueprint", command.expected_checksum
-            )
+            _check_artifact_version(repository, course_id, "blueprint", command.expected_checksum)
             value = decisions.save_blueprint_decision(
                 course_id,
                 selected_asset_types=command.selected_asset_types,
@@ -484,6 +484,15 @@ def create_app(
     @app.post("/api/courses/{course_id}/content/reviews/sync")
     def sync_content_reviews(course_id: str) -> dict[str, Any]:
         with jobs.mutate_now(course_id):
+            content_stage = projector.stage(course_id, "content")
+            capabilities.assert_action_available(
+                "content",
+                content_stage["state"],
+                "review_asset",
+                read_only=repository.locate(course_id).read_only,
+                approval_failures=content_stage.get("approval_failures"),
+                prerequisites_ready=content_stage.get("prerequisites_ready", False),
+            )
             value = decisions.sync_content_review(course_id)
         return {"artifact": value, "checksum": repository.checksum(value)}
 
@@ -492,6 +501,15 @@ def create_app(
         course_id: str, asset_id: str, command: ContentReviewCommand
     ) -> dict[str, Any]:
         with jobs.mutate_now(course_id):
+            content_stage = projector.stage(course_id, "content")
+            capabilities.assert_action_available(
+                "content",
+                content_stage["state"],
+                "review_asset",
+                read_only=repository.locate(course_id).read_only,
+                approval_failures=content_stage.get("approval_failures"),
+                prerequisites_ready=content_stage.get("prerequisites_ready", False),
+            )
             _check_artifact_version(
                 repository, course_id, "content_review", command.expected_checksum
             )
@@ -597,9 +615,23 @@ def _job_accepted(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _event_stream(
-    jobs: LocalJobRunner, job_id: str, *, after: str | None
-) -> Iterator[str]:
+def _assert_impact_acknowledged(
+    preview: dict[str, Any],
+    *,
+    impact_acknowledged: bool,
+    expected_impact_checksum: str | None,
+) -> None:
+    if not impact_acknowledged or expected_impact_checksum is None:
+        raise ImpactConfirmationRequired(
+            "Confirm the current downstream impact before starting this revision."
+        )
+    if preview["impact_checksum"] != expected_impact_checksum:
+        raise StaleImpactPreview(
+            "Downstream state changed after the impact preview; review it again."
+        )
+
+
+def _event_stream(jobs: LocalJobRunner, job_id: str, *, after: str | None) -> Iterator[str]:
     cursor = after
     idle_ticks = 0
     while True:

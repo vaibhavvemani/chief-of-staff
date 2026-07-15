@@ -22,13 +22,7 @@ def guarded_client(tmp_path: Path) -> Iterator[TestClient]:
         runtime_root=tmp_path / "runtime",
         include_examples=False,
     )
-    fixture_root = (
-        REPO_ROOT
-        / "examples"
-        / "acceptance"
-        / "coffee-acceptance"
-        / "course_artifacts"
-    )
+    fixture_root = REPO_ROOT / "examples" / "acceptance" / "coffee-acceptance" / "course_artifacts"
     for path in fixture_root.glob("*.json"):
         artifact = json.loads(path.read_text(encoding="utf-8"))
         artifact["course_id"] = "guard-course"
@@ -52,6 +46,12 @@ def test_content_approval_cannot_bypass_required_human_reviews(
     repository.save(progress, expected_checksum=progress_checksum)
     synced = client.post("/api/courses/guard-course/content/reviews/sync")
     assert synced.status_code == 200
+    record_id = synced.json()["artifact"]["body"]["assets"][0]["asset_id"]
+    missing_checksum = client.put(
+        f"/api/courses/guard-course/content/reviews/{record_id}",
+        json={"decision": "approved"},
+    )
+    assert missing_checksum.status_code == 422
     stage = client.get("/api/courses/guard-course/stages/content").json()
 
     response = client.post(
@@ -62,9 +62,7 @@ def test_content_approval_cannot_bypass_required_human_reviews(
     assert response.status_code == 409
     error = response.json()["error"]
     assert error["code"] == "approval_guard_failed"
-    assert {failure["code"] for failure in error["failures"]} == {
-        "content_review_incomplete"
-    }
+    assert {failure["code"] for failure in error["failures"]} == {"content_review_incomplete"}
 
 
 def test_content_and_package_approval_reject_hard_verifier_blockers(
@@ -151,6 +149,47 @@ def test_package_approval_rechecks_lesson_plan_integrity(
     )
 
 
+def test_synchronizing_changed_content_review_stales_package_without_body_loss(
+    guarded_client: TestClient,
+) -> None:
+    client = guarded_client
+    repository = client.app.state.repository
+    before = {
+        artifact_type: repository.require("guard-course", artifact_type)
+        for artifact_type in ("render_manifest", "run_summary")
+    }
+    body_checksums = {
+        artifact_type: repository.checksum(artifact["body"])
+        for artifact_type, artifact in before.items()
+    }
+    for artifact_type in ("content_package", "content_progress"):
+        artifact = repository.require("guard-course", artifact_type)
+        checksum = repository.checksum(artifact)
+        artifact["status"] = "draft"
+        repository.save(artifact, expected_checksum=checksum)
+
+    response = client.post("/api/courses/guard-course/content/reviews/sync")
+
+    assert response.status_code == 200, response.text
+    for artifact_type in ("render_manifest", "run_summary"):
+        artifact = repository.require("guard-course", artifact_type)
+        assert artifact["status"] == "stale"
+        assert repository.checksum(artifact["body"]) == body_checksums[artifact_type]
+
+
+def test_approved_content_review_cannot_change_without_reopen(
+    guarded_client: TestClient,
+) -> None:
+    client = guarded_client
+    stage = client.get("/api/courses/guard-course/stages/content").json()
+    assert stage["state"] == "approved"
+
+    response = client.post("/api/courses/guard-course/content/reviews/sync")
+
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "unsupported_action"
+
+
 def test_each_stage_guard_rejects_its_invalid_domain_state(
     guarded_client: TestClient,
 ) -> None:
@@ -179,9 +218,9 @@ def test_each_stage_guard_rejects_its_invalid_domain_state(
         (
             "course-model",
             "course_model",
-            lambda body: body["modules"][0]["subtopics"][0]["concepts"][0][
-                "source_ids"
-            ].append("missing-source"),
+            lambda body: body["modules"][0]["subtopics"][0]["concepts"][0]["source_ids"].append(
+                "missing-source"
+            ),
             "referential_integrity_failed",
         ),
         (
@@ -206,9 +245,7 @@ def test_each_stage_guard_rejects_its_invalid_domain_state(
         mutate(changed["body"])
         repository.save(changed, expected_checksum=repository.checksum(original))
 
-        codes = {
-            failure.code for failure in guards.failures("guard-course", stage)
-        }
+        codes = {failure.code for failure in guards.failures("guard-course", stage)}
 
         assert expected_code in codes, (stage, codes)
         current = repository.require("guard-course", artifact_type)

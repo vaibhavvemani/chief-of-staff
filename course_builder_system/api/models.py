@@ -52,9 +52,7 @@ class ReopenStageCommand(VersionedCommand):
     expected_checksum: str = Field(min_length=6, max_length=128)
     reason: str | None = Field(default=None, max_length=2000)
     impact_acknowledged: bool = False
-    expected_impact_checksum: str | None = Field(
-        default=None, min_length=6, max_length=128
-    )
+    expected_impact_checksum: str | None = Field(default=None, min_length=6, max_length=128)
 
 
 class ScopedRevisionCommand(VersionedCommand):
@@ -64,6 +62,8 @@ class ScopedRevisionCommand(VersionedCommand):
     category: str = Field(min_length=1, max_length=64)
     instruction: str = Field(min_length=1, max_length=12000)
     mode: Literal["deterministic", "live"] = "deterministic"
+    impact_acknowledged: bool = False
+    expected_impact_checksum: str | None = Field(default=None, min_length=6, max_length=128)
 
 
 class ImpactPreviewCommand(VersionedCommand):
@@ -93,6 +93,7 @@ class BriefAnswersCommand(VersionedCommand):
 
 
 class OutcomeDecisionCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
     selected_ids: list[str]
     edits: dict[str, dict[str, Any]] = Field(default_factory=dict)
     additions: list[dict[str, Any]] = Field(default_factory=list)
@@ -100,10 +101,12 @@ class OutcomeDecisionCommand(VersionedCommand):
 
 
 class SourceDecisionCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
     selected_ids: list[str] = Field(min_length=1, max_length=50)
 
 
 class BlueprintDecisionCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
     selected_asset_types: dict[str, list[str]] = Field(default_factory=dict)
     depth_overrides: dict[str, dict[str, Any]] = Field(default_factory=dict)
     anchor_waivers: set[str] = Field(default_factory=set)
@@ -111,5 +114,6 @@ class BlueprintDecisionCommand(VersionedCommand):
 
 
 class ContentReviewCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
     decision: Literal["pending", "approved", "changes_requested"]
     feedback: str | None = Field(default=None, max_length=12000)

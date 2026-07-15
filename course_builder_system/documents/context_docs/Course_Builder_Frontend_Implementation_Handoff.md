@@ -1,7 +1,7 @@
 # Course Builder Studio — Frontend Implementation Handoff
 
 > **Status:** Implemented local product prototype
-> **Updated:** 2026-07-14
+> **Updated:** 2026-07-15
 > **Scope:** React frontend, FastAPI adapter, browser workflow, and current UX contracts
 > **Read with:** `Course_Builder_Master_Context.md` and `Course_Builder_Four_Week_Prototype_Completion_Handoff.md`
 
@@ -10,6 +10,13 @@
 > implementation-backlog, and acceptance/pilot companion documents. This handoff remains
 > authoritative for current behavior; the next-cycle package defines the target behavior
 > and implementation order.
+
+> **NC-10 lifecycle update — 2026-07-15:** The browser and API now use explicit
+> backend-projected capabilities, graph-derived invalidation, checksum-protected impact
+> confirmation, server-side approval guards, explicit reopen, scoped Content revision,
+> and retryable persisted failure state. Unsupported generic revision controls were
+> removed or disabled. The stage-specific typed editors and repair workflows described
+> by NC-20 and later packages remain future work.
 
 ## 1. Purpose of this document
 
@@ -44,13 +51,13 @@ The implemented browser path supports:
 - Live agent mode by default, with deterministic mode available;
 - running one product stage at a time;
 - persisted background jobs and Server-Sent Event progress;
-- explicit stage approval and guided revision requests;
+- explicit stage approval and one registered scoped Student Content revision flow;
 - automatic navigation to the next stage after approval;
 - explicit source selection and a saved source registry;
 - purpose-built views for all eight stages;
 - claim-level Student Content review and verifier findings;
 - durable per-asset human review decisions;
-- targeted content-revision and bounded research-repair entry points;
+- targeted Content revision with bounded impact and preserved unrelated assets;
 - Lesson Plan sequence and coverage review;
 - Package release checks, rendered file tree, and Markdown file access;
 - inspection of committed acceptance and live-run snapshots as read-only courses.
@@ -181,9 +188,17 @@ human checkpoint while removing the earlier manual navigation step.
 
 ### Requesting changes
 
-Awaiting-review, attention, stale, and failed stages expose `Request changes`. A guided
-dialog offers stage-specific revision categories, accepts scoped detail, and previews
-likely downstream impact. The revision runs as a job in the currently selected mode.
+Only Student Content currently registers a scoped revision handler. It targets named
+assets, accepts one of the backend-projected categories, previews the exact affected and
+preserved assets, requires an acknowledged impact checksum, and recomputes that impact
+while holding the course mutation lock before the job mutates artifacts. A valid scoped
+Content revision preserves unrelated assets and the Lesson Plan while making the Package
+outputs stale.
+
+Outcomes, Course Model, Blueprint, Lesson Plan, and Package do not expose generic
+free-text revision. Their unimplemented controls are disabled with a truthful
+explanation until their typed commands arrive in later work packages. Failed stages
+expose retry; stale stages expose rerun after their prerequisites are current.
 
 ### Locked and read-only states
 
@@ -205,9 +220,9 @@ for review. This is the richest structured editor in the current frontend.
 ### 6.2 Outcomes
 
 Outcomes are displayed as an ordered set with measurable evidence and rationale. The
-current UI is primarily a structured review surface. Fine-grained outcome editing is
-supported by the API contract but is not yet wired into the React stage view; changes
-currently use the guided stage revision command.
+current UI is a structured review surface. Fine-grained outcome editing is not yet wired
+into React, and there is no enabled generic revision fallback. The controls remain
+disabled until the NC-30 typed Outcomes editor is implemented.
 
 ### 6.3 Research & Sources
 
@@ -227,9 +242,9 @@ The page uses a hierarchy-and-detail workspace. The left side contains modules a
 ordered subtopics; the selected subtopic opens its purpose, metadata, scope contract,
 concepts, coverage requirements, prerequisites, and approved source IDs.
 
-It also exposes referential-integrity context. Inline structural editing is not yet
-implemented in React; requested changes run through the scoped revision flow so stable
-IDs remain controlled by backend/domain logic.
+It also exposes referential-integrity context. Inline structural editing and scoped
+Course Model revision are not yet implemented; the visible structural controls remain
+disabled until the NC-40 typed operation contract is available.
 
 ### 6.5 Blueprint
 
@@ -239,7 +254,8 @@ exceptions, and each plan shows timing/depth budget plus asset-selection state.
 
 Course Content remains visibly marked as the required anchor. Selected, proposed, and
 unselected assets are distinct. The existing API supports a typed Blueprint decision,
-but the current React view is a review surface; changes use the stage revision flow.
+but the current React view is a review surface and does not expose a generic revision
+fallback. Interactive controls remain deferred to NC-50.
 
 ### 6.6 Student Content
 
@@ -265,13 +281,11 @@ Verification semantics are important:
 Per-asset human decisions are saved in the canonical `content_review` artifact. Marking
 an asset reviewed cannot clear hard verifier blockers.
 
-Repair entry points distinguish:
-
-- revising only the affected asset using existing approved evidence;
-- reopening bounded research for a specific evidence gap.
-
-The complete automatic source-repair loop remains follow-on work; the frontend exposes
-the correct operator choices and command boundaries.
+The implemented repair entry point revises only a named asset using currently approved
+evidence. It is checksum protected, rejects unsupported or ambiguous targets before job
+creation, rejects no-op or scope-escaping output without overwriting the prior artifact,
+and resets human review only for changed content. The “find better evidence” action is
+absent until the dedicated NC-70/NC-80 source-repair contract exists.
 
 ### 6.7 Lesson Plan
 
@@ -282,8 +296,8 @@ session count, total time, delivery modes, and break policy.
 Coverage is calculated from the actual session mapping. Missing, duplicated, or unexpected
 subtopics produce a warning rather than a misleading complete state.
 
-Timing, mode, and order are not fake inline controls. The page directs the operator to
-`Request changes`, which matches the implemented mutation contract.
+Timing, mode, and order are not fake inline controls. The page states that structured
+Lesson Plan changes are unavailable until the NC-60 command contract is implemented.
 
 ### 6.8 Package
 
@@ -379,8 +393,12 @@ flowchart LR
 |---|---|
 | `ArtifactRepository` | Confined access to runtime artifacts, rendered output, and read-only examples; atomic saves and checksums. |
 | `PipelineCatalog` | Maps existing pipeline steps to the eight product stages. |
+| `ImpactPreviewService` / `InvalidationService` | Derive general or registered bounded impact from the catalog graph, protect previews with checksums, and preserve stale bodies. |
+| `ApprovalGuardService` | Rechecks every human checkpoint on the server and returns structured failures. |
+| `StageCapabilityService` | Projects only actions backed by registered domain operations. |
 | `WorkspaceProjector` | Derives course summaries, stage states, counts, attention, next action, and active job. |
 | `DecisionService` | Applies typed human decisions and approvals without moving artifact logic into the API. |
+| `RevisionService` | Validates registered scoped revision targets and rejects ambiguous requests before queuing. |
 | `StageRunner` | Executes the existing step callables for one stage and saves draft outputs. |
 | `LocalJobRunner` | Persists jobs/events and enforces one active mutation per course. |
 
@@ -399,7 +417,8 @@ GET    /api/courses/{course_id}/artifacts/{artifact_type}
 POST   /api/courses/{course_id}/stages/{stage}/run
 POST   /api/courses/{course_id}/stages/{stage}/approve
 POST   /api/courses/{course_id}/stages/{stage}/reopen
-POST   /api/courses/{course_id}/stages/{stage}/request-changes
+POST   /api/courses/{course_id}/stages/{stage}/impact
+POST   /api/courses/{course_id}/stages/{stage}/revisions
 
 PUT    /api/courses/{course_id}/brief/answers
 PUT    /api/courses/{course_id}/outcomes/decision
@@ -529,11 +548,13 @@ content verification workbench, Lesson Plan review, and Package default selectio
 1. **Local single-director system.** There is no authentication, authorization,
    collaboration, or production deployment configuration.
 2. **One API worker.** The current job runner and locks are not a distributed queue.
-3. **Editing depth is uneven.** Brief editing and source/content decisions are wired;
-   Outcomes, Course Model, Blueprint, and Lesson Plan rely mainly on scoped revision jobs.
-4. **Source repair is not closed-loop automation.** The UI provides the right bounded
-   action, but evidence acquisition, approval, rerouting, regeneration, and reverification
-   still require explicit operator checkpoints.
+3. **Editing depth is uneven.** Brief editing, source decisions, content review, and
+   scoped Content revision are wired. Outcomes, Course Model, Blueprint, and Lesson Plan
+   typed editing remain in NC-30 through NC-60; unsupported generic revisions are not
+   exposed in the meantime.
+4. **Source repair is not closed-loop automation.** Better-evidence repair is not exposed
+   until NC-70/NC-80 implement evidence acquisition, approval, rerouting, targeted
+   regeneration, and reverification.
 5. **Package preview is representative.** The selected raw Markdown is served correctly,
    but the inline pane does not yet fetch and render the complete selected file.
 6. **Settings and full diagnostics are deferred.** Their navigation/actions are visibly
@@ -569,14 +590,10 @@ content verification workbench, Lesson Plan review, and Package default selectio
 
 ## 15. Recommended next frontend-related work
 
-The highest-value next work remains the backend/product package from the prototype
-handoff:
-
-`source repair + verifier-driven targeted revision`
-
-The frontend already exposes the two operator intents—revise using approved evidence or
-find better evidence. The next implementation should make that repair loop complete and
-observable without regenerating unaffected assets.
+The next dependency-ordered package is NC-20 guided Brief intake, followed by the typed
+stage editors in NC-30 through NC-60. Source repair and verifier-driven targeted revision
+remain the central trust milestone, but begin only after those lifecycle and command
+foundations are stable.
 
 After that, sensible frontend increments are:
 

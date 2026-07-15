@@ -276,6 +276,27 @@ function ImpactConfirmationDialog({ stage, preview, busy, onCancel, onConfirm }:
   );
 }
 
+function RevisionImpactConfirmationDialog({ preview, busy, onCancel, onConfirm }: { preview: ImpactPreview; busy: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const [acknowledged, setAcknowledged] = useState(false);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onCancel(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onCancel]);
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onCancel(); }}>
+      <div className="feedback-dialog impact-dialog" role="dialog" aria-modal="true" aria-labelledby="revision-impact-title">
+        <header><span className="eyebrow">Scoped revision impact</span><h2 id="revision-impact-title">Confirm this Content revision?</h2><p>The server proved the bounded asset scope and will revalidate this preview while holding the course mutation lock.</p></header>
+        <div className="impact-summary-grid"><div><strong>{preview.targetedAssets.length}</strong><span>content asset revised</span></div><div><strong>{preview.preservedAssets.length}</strong><span>content assets preserved</span></div><div><strong>{preview.staleArtifacts.length}</strong><span>Package artifacts made stale</span></div></div>
+        <dl className="impact-boundaries"><div><dt>Target asset</dt><dd>{preview.targetedAssets.join(", ")}</dd></div><div><dt>Preserved assets</dt><dd>{preview.preservedAssets.length} unchanged</dd></div><div><dt>Marked stale</dt><dd>{preview.staleArtifacts.map((item) => item.replaceAll("_", " ")).join(", ") || "None"}</dd></div><div><dt>Preserved stage</dt><dd>Lesson Plan</dd></div></dl>
+        {preview.warnings.length ? <div className="impact-warnings">{preview.warnings.map((warning) => <p key={warning}><span aria-hidden="true">!</span>{warning}</p>)}</div> : null}
+        <label className="impact-ack"><input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} /><span>I understand the changed asset will require human review again and the current Package will become stale.</span></label>
+        <footer><button className="button button-quiet" onClick={onCancel}>Back</button><button className="button button-primary" disabled={!acknowledged || busy} onClick={onConfirm}>{busy ? "Revalidating impact…" : "Confirm and start revision"}</button></footer>
+      </div>
+    </div>
+  );
+}
+
 const briefSectionLabels: Record<BriefEditSection, string> = {
   settings: "Course settings",
   learner: "Learner and intent",
@@ -366,6 +387,8 @@ export function WorkspacePage() {
   const [activityOpen, setActivityOpen] = useState(false);
   const [impactPreview, setImpactPreview] = useState<ImpactPreview | null>(null);
   const [revisionTarget, setRevisionTarget] = useState<{ asset: ContentAsset; claim?: Claim; expectedChecksum?: string } | null>(null);
+  const [pendingRevision, setPendingRevision] = useState<{ asset: ContentAsset; category: string; instruction: string; expectedChecksum: string } | null>(null);
+  const [revisionImpact, setRevisionImpact] = useState<ImpactPreview | null>(null);
   const [briefEditSection, setBriefEditSection] = useState<BriefEditSection | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; tone: "good" | "attention" | "neutral" } | null>(() => new URLSearchParams(location.search).get("setup") === "incomplete" ? {
@@ -491,7 +514,10 @@ export function WorkspacePage() {
   const impactMutation = useMutation({
     mutationFn: () => {
       if (!currentSummary?.checksum) throw new Error("Reopen requires the current stage checksum.");
-      return previewStageImpact(courseId, stage, currentSummary.checksum, `Reopen ${stageName(stage)}`);
+      return previewStageImpact(courseId, stage, currentSummary.checksum, {
+        action: "reopen",
+        operationSummary: `Reopen ${stageName(stage)}`,
+      });
     },
     onSuccess: setImpactPreview,
     onError: (error) => setToast({ tone: "attention", message: error instanceof Error ? error.message : "The impact preview could not be computed." }),
@@ -519,28 +545,61 @@ export function WorkspacePage() {
     },
   });
 
-  const revisionMutation = useMutation({
+  const revisionImpactMutation = useMutation({
     mutationFn: ({ category, instruction }: { category: string; instruction: string }) => {
       if (!revisionTarget) throw new Error("Choose a content asset to revise.");
       if (!revisionTarget.expectedChecksum) throw new Error("Revision requires the current Content checksum.");
-      return reviseStage(courseId, "content", {
+      return previewStageImpact(courseId, "content", revisionTarget.expectedChecksum, {
+        action: "revise",
         targetType: "asset",
         targetIds: [revisionTarget.asset.id],
-        category,
-        instruction,
-        expectedChecksum: revisionTarget.expectedChecksum,
+        operationSummary: instruction,
+      }).then((preview) => ({
+        preview,
+        pending: {
+          asset: revisionTarget.asset,
+          category,
+          instruction,
+          expectedChecksum: revisionTarget.expectedChecksum as string,
+        },
+      }));
+    },
+    onSuccess: ({ preview, pending }) => {
+      setRevisionTarget(null);
+      setPendingRevision(pending);
+      setRevisionImpact(preview);
+    },
+    onError: (error) => setToast({ tone: "attention", message: error instanceof Error ? error.message : "The revision impact could not be computed." }),
+  });
+
+  const revisionMutation = useMutation({
+    mutationFn: () => {
+      if (!pendingRevision || !revisionImpact) throw new Error("A current scoped revision impact preview is required.");
+      return reviseStage(courseId, "content", {
+        targetType: "asset",
+        targetIds: [pendingRevision.asset.id],
+        category: pendingRevision.category,
+        instruction: pendingRevision.instruction,
+        expectedChecksum: pendingRevision.expectedChecksum,
+        impactChecksum: revisionImpact.impactChecksum,
         mode: runMode,
       });
     },
     onSuccess: (result) => {
-      setRevisionTarget(null);
+      setPendingRevision(null);
+      setRevisionImpact(null);
       setActiveJobId(result.job.job_id);
       setActiveJobStage("content");
       setRunProgress({ message: "Scoped revision queued" });
       setToast({ tone: "good", message: "Scoped revision started. Unaffected content assets will be preserved." });
       void refresh();
     },
-    onError: (error) => setToast({ tone: "attention", message: error instanceof Error ? error.message : "The scoped revision could not start." }),
+    onError: (error) => {
+      setRevisionImpact(null);
+      setPendingRevision(null);
+      setToast({ tone: "attention", message: error instanceof ApiError && error.status === 409 ? "The course changed after this impact preview. Review the asset and try again." : error instanceof Error ? error.message : "The scoped revision could not start." });
+      void refresh();
+    },
   });
 
   async function contentAction(action: string, asset: ContentAsset, claim?: Claim) {
@@ -548,6 +607,7 @@ export function WorkspacePage() {
     try {
       if (action === "approved" || action === "changes_requested") {
         if (!currentSummary?.actions.some((candidate) => candidate.id === "review_asset" && candidate.enabled)) throw new Error("Content review is not available in the current stage state.");
+        if (!workspace.content.reviewChecksum) throw new Error("Content review requires the current checksum.");
         await reviewContentAsset(courseId, asset.id, action, workspace.content.reviewChecksum, claim?.note);
       } else if (action === "revise") {
         if (!currentSummary?.actions.some((candidate) => candidate.id === "revise" && candidate.enabled)) throw new Error("Scoped revision is not available in the current stage state.");
@@ -570,7 +630,8 @@ export function WorkspacePage() {
     if (!workspace) return;
     try {
       if (!currentSummary?.actions.some((candidate) => candidate.id === "source_decision" && candidate.enabled)) throw new Error("Source decisions are not available in the current stage state.");
-      await saveSourceDecision(courseId, selectedIds, currentSummary?.checksum);
+      if (!currentSummary.checksum) throw new Error("Source decisions require the current Research checksum.");
+      await saveSourceDecision(courseId, selectedIds, currentSummary.checksum);
       setToast({ tone: "good", message: `${selectedIds.length} grounding source${selectedIds.length === 1 ? "" : "s"} saved for review.` });
       void refresh();
     } catch (error) {
@@ -650,12 +711,13 @@ export function WorkspacePage() {
           stage={stage}
           status={currentSummary?.status ?? "ready"}
           actions={currentSummary?.actions ?? []}
-          busy={mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionMutation.isPending || Boolean(activeJobId)}
+          busy={mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || Boolean(activeJobId)}
           onAction={handleStageAction}
         />
       </div>
       {activityOpen ? <ActivityDrawer workspace={workspace} onClose={() => setActivityOpen(false)} /> : null}
-      {revisionTarget ? <ScopedRevisionDialog asset={revisionTarget.asset} claim={revisionTarget.claim} categories={currentSummary?.actions.find((action) => action.id === "revise")?.revisionTargets?.find((target) => target.targetType === "asset")?.categories ?? []} busy={revisionMutation.isPending} onCancel={() => setRevisionTarget(null)} onSubmit={(category, instruction) => revisionMutation.mutate({ category, instruction })} /> : null}
+      {revisionTarget ? <ScopedRevisionDialog asset={revisionTarget.asset} claim={revisionTarget.claim} categories={currentSummary?.actions.find((action) => action.id === "revise")?.revisionTargets?.find((target) => target.targetType === "asset")?.categories ?? []} busy={revisionImpactMutation.isPending} onCancel={() => setRevisionTarget(null)} onSubmit={(category, instruction) => revisionImpactMutation.mutate({ category, instruction })} /> : null}
+      {revisionImpact ? <RevisionImpactConfirmationDialog preview={revisionImpact} busy={revisionMutation.isPending} onCancel={() => { setRevisionImpact(null); setPendingRevision(null); }} onConfirm={() => revisionMutation.mutate()} /> : null}
       {impactPreview ? <ImpactConfirmationDialog stage={stage} preview={impactPreview} busy={reopenMutation.isPending} onCancel={() => setImpactPreview(null)} onConfirm={(reason) => reopenMutation.mutate(reason)} /> : null}
       {briefEditSection ? <BriefEditDialog section={briefEditSection} brief={workspace.brief} busy={briefMutation.isPending} onCancel={() => setBriefEditSection(null)} onSubmit={(brief) => briefMutation.mutate(brief)} /> : null}
       {toast ? <Toast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} /> : null}

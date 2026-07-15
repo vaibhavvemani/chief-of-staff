@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import create_app
+from api.services.local_job_runner import CourseBusy
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,13 +24,7 @@ def revision_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator
         runtime_root=tmp_path / "runtime",
         include_examples=False,
     )
-    fixture_root = (
-        REPO_ROOT
-        / "examples"
-        / "acceptance"
-        / "coffee-acceptance"
-        / "course_artifacts"
-    )
+    fixture_root = REPO_ROOT / "examples" / "acceptance" / "coffee-acceptance" / "course_artifacts"
     for path in fixture_root.glob("*.json"):
         artifact = json.loads(path.read_text(encoding="utf-8"))
         artifact["course_id"] = "revision-course"
@@ -63,9 +58,7 @@ def test_unsupported_and_ambiguous_revisions_never_create_a_job(
     revision_client: TestClient,
 ) -> None:
     client = revision_client
-    course_model = client.get(
-        "/api/courses/revision-course/stages/course-model"
-    ).json()
+    course_model = client.get("/api/courses/revision-course/stages/course-model").json()
     unsupported = client.post(
         "/api/courses/revision-course/stages/course-model/revisions",
         json={
@@ -133,6 +126,7 @@ def test_unsupported_and_ambiguous_revisions_never_create_a_job(
 
 def test_scoped_content_revision_changes_only_named_asset(
     revision_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     client = revision_client
     repository = client.app.state.repository
@@ -143,7 +137,29 @@ def test_scoped_content_revision_changes_only_named_asset(
         for asset in subtopic["assets"]
     }
     stage = client.get("/api/courses/revision-course/stages/content").json()
-    response = client.post(
+    impact_response = client.post(
+        "/api/courses/revision-course/stages/content/impact",
+        json={
+            "action": "revise",
+            "target_type": "asset",
+            "target_ids": ["m1_s4_assess"],
+            "operation_summary": "Clarify the diagnostic explanation.",
+            "expected_checksum": stage["checksum"],
+        },
+    )
+    assert impact_response.status_code == 200, impact_response.text
+    impact = impact_response.json()
+    assert impact["impact_level"] == "targeted"
+    assert impact["targeted_assets"] == ["m1_s4_assess"]
+    assert set(impact["direct_artifacts"]) == {
+        "content_package",
+        "content_progress",
+        "content_review",
+    }
+    assert set(impact["stale_artifacts"]) == {"render_manifest", "run_summary"}
+    assert impact["requires_rerun_stages"] == ["package"]
+
+    without_impact = client.post(
         "/api/courses/revision-course/stages/content/revisions",
         json={
             "target_type": "asset",
@@ -154,9 +170,71 @@ def test_scoped_content_revision_changes_only_named_asset(
             "expected_checksum": stage["checksum"],
         },
     )
+    assert without_impact.status_code == 409
+    assert without_impact.json()["error"]["code"] == "impact_confirmation_required"
+    assert _job_count(client) == 0
+
+    review = repository.require("revision-course", "content_review")
+    review_checksum = repository.checksum(review)
+    review["revision_note"] = "A concurrent human review changed"
+    repository.save(review, expected_checksum=review_checksum)
+    stale_impact = client.post(
+        "/api/courses/revision-course/stages/content/revisions",
+        json={
+            "target_type": "asset",
+            "target_ids": ["m1_s4_assess"],
+            "category": "clarity",
+            "instruction": "Clarify the diagnostic explanation.",
+            "mode": "deterministic",
+            "expected_checksum": stage["checksum"],
+            "impact_acknowledged": True,
+            "expected_impact_checksum": impact["impact_checksum"],
+        },
+    )
+    assert stale_impact.status_code == 409
+    assert stale_impact.json()["error"]["code"] == "stale_impact_preview"
+    assert _job_count(client) == 0
+    impact = client.post(
+        "/api/courses/revision-course/stages/content/impact",
+        json={
+            "action": "revise",
+            "target_type": "asset",
+            "target_ids": ["m1_s4_assess"],
+            "operation_summary": "Clarify the diagnostic explanation.",
+            "expected_checksum": stage["checksum"],
+        },
+    ).json()
+
+    lock_states: list[bool] = []
+    original_preview = client.app.state.impact.preview
+
+    def observed_preview(*args, **kwargs):
+        try:
+            with client.app.state.jobs.locks.acquire("revision-course", blocking=False):
+                lock_states.append(False)
+        except CourseBusy:
+            lock_states.append(True)
+        return original_preview(*args, **kwargs)
+
+    monkeypatch.setattr(client.app.state.impact, "preview", observed_preview)
+
+    response = client.post(
+        "/api/courses/revision-course/stages/content/revisions",
+        json={
+            "target_type": "asset",
+            "target_ids": ["m1_s4_assess"],
+            "category": "clarity",
+            "instruction": "Clarify the diagnostic explanation.",
+            "mode": "deterministic",
+            "expected_checksum": stage["checksum"],
+            "impact_acknowledged": True,
+            "expected_impact_checksum": impact["impact_checksum"],
+        },
+    )
     assert response.status_code == 202, response.text
     job = _wait(client, response.json()["job_url"])
     assert job["status"] == "completed", job
+    assert lock_states == [False, True]
     assert job["result"]["revision"]["changed_ids"] == ["m1_s4_assess"]
 
     after = repository.require("revision-course", "content_package")
@@ -168,3 +246,6 @@ def test_scoped_content_revision_changes_only_named_asset(
     assert after_assets["m1_s4_assess"] != before_assets["m1_s4_assess"]
     for asset_id in set(before_assets) - {"m1_s4_assess"}:
         assert after_assets[asset_id] == before_assets[asset_id]
+    assert repository.require("revision-course", "lesson_plan")["status"] == "approved"
+    assert repository.require("revision-course", "render_manifest")["status"] == "stale"
+    assert repository.require("revision-course", "run_summary")["status"] == "stale"

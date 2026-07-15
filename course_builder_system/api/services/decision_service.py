@@ -37,9 +37,7 @@ class DecisionService:
     ) -> None:
         self.repository = repository
         self.catalog = catalog
-        self.approval_guards = approval_guards or ApprovalGuardService(
-            repository, catalog
-        )
+        self.approval_guards = approval_guards or ApprovalGuardService(repository, catalog)
         self.invalidation = invalidation or InvalidationService(repository, catalog)
         self.impact = impact or ImpactPreviewService(repository, catalog)
 
@@ -84,8 +82,7 @@ class DecisionService:
         ]
         if missing:
             raise ArtifactNotFound(
-                f"stage {stage_slug!r} is missing required decision output(s): "
-                f"{', '.join(missing)}"
+                f"stage {stage_slug!r} is missing required decision output(s): {', '.join(missing)}"
             )
         artifacts = []
         for artifact_type in definition.artifacts:
@@ -94,9 +91,7 @@ class DecisionService:
                 continue
             checksum = self.repository.checksum(artifact)
             artifact["status"] = "approved"
-            artifacts.append(
-                self.repository.save(artifact, expected_checksum=checksum)
-            )
+            artifacts.append(self.repository.save(artifact, expected_checksum=checksum))
         if not artifacts:
             raise ArtifactNotFound(f"stage has no output to approve: {stage_slug}")
         return artifacts
@@ -120,9 +115,7 @@ class DecisionService:
         if not current:
             raise ArtifactNotFound(f"stage has no output to reopen: {stage_slug}")
         if any(artifact.get("status") != "approved" for artifact in current):
-            raise StageNotReopened(
-                f"stage {stage_slug!r} can only be reopened while approved"
-            )
+            raise StageNotReopened(f"stage {stage_slug!r} can only be reopened while approved")
         preview = self.impact.preview(
             course_id,
             stage_slug,
@@ -149,9 +142,7 @@ class DecisionService:
                 if isinstance(reason, str) and reason.strip()
                 else "Reopened by the course director."
             )
-            artifacts.append(
-                self.repository.save(artifact, expected_checksum=checksum)
-            )
+            artifacts.append(self.repository.save(artifact, expected_checksum=checksum))
         invalidated = self.invalidation.invalidate(
             course_id,
             set(definition.artifacts),
@@ -163,9 +154,7 @@ class DecisionService:
             "impact": preview,
         }
 
-    def save_brief_answers(
-        self, course_id: str, answers: dict[str, Any]
-    ) -> dict[str, Any]:
+    def save_brief_answers(self, course_id: str, answers: dict[str, Any]) -> dict[str, Any]:
         self._writable(course_id)
         subject = self.repository.require(course_id, "subject_request")
         existing = self.repository.load(course_id, "brief")
@@ -215,9 +204,7 @@ class DecisionService:
         self._invalidate_if_changed(course_id, existing, saved, {"course_outcomes"})
         return saved
 
-    def save_source_decision(
-        self, course_id: str, *, selected_ids: list[str]
-    ) -> dict[str, Any]:
+    def save_source_decision(self, course_id: str, *, selected_ids: list[str]) -> dict[str, Any]:
         """Capture an explicit grounding-source selection as its own checkpoint."""
         import steps as pipeline_steps
 
@@ -236,9 +223,7 @@ class DecisionService:
             produced,
             expected_checksum=self.repository.checksum(existing) if existing else None,
         )
-        self._invalidate_if_changed(
-            course_id, existing, saved, {"approved_source_registry"}
-        )
+        self._invalidate_if_changed(course_id, existing, saved, {"approved_source_registry"})
         return saved
 
     def save_blueprint_decision(
@@ -262,9 +247,7 @@ class DecisionService:
         )
         decided["revision"] = int(blueprint.get("revision", 0)) + 1
         decided["status"] = "draft"
-        saved = self.repository.save(
-            decided, expected_checksum=self.repository.checksum(blueprint)
-        )
+        saved = self.repository.save(decided, expected_checksum=self.repository.checksum(blueprint))
         self._invalidate_if_changed(course_id, blueprint, saved, {"blueprint"})
         return saved
 
@@ -288,9 +271,7 @@ class DecisionService:
         )
         artifact["revision"] = int(existing.get("revision", 0)) + 1 if existing else 0
         artifact["status"] = "approved"
-        saved = self.repository.save(
-            artifact, expected_checksum=self.repository.checksum(existing)
-        )
+        saved = self.repository.save(artifact, expected_checksum=self.repository.checksum(existing))
         self._invalidate_if_changed(course_id, existing, saved, {"content_review"})
         return saved
 
@@ -299,32 +280,28 @@ class DecisionService:
         self._writable(course_id)
         package = self.repository.require(course_id, "content_package")
         existing = self.repository.load(course_id, "content_review")
-        artifact = content_review.build_content_review_artifact(
-            package, existing_review=existing
-        )
+        artifact = content_review.build_content_review_artifact(package, existing_review=existing)
         artifact["revision"] = int(existing.get("revision", 0)) + 1 if existing else 0
         artifact["status"] = "approved"
-        return self.repository.save(
+        saved = self.repository.save(
             artifact,
             expected_checksum=self.repository.checksum(existing) if existing else None,
         )
+        self._invalidate_if_changed(course_id, existing, saved, {"content_review"})
+        return saved
 
     def _writable(self, course_id: str) -> None:
         if self.repository.locate(course_id).read_only:
             raise ReadOnlyCourse(f"committed example course is read-only: {course_id}")
 
     @staticmethod
-    def _ensure_editable(
-        artifact: dict[str, Any] | None, artifact_type: str
-    ) -> None:
+    def _ensure_editable(artifact: dict[str, Any] | None, artifact_type: str) -> None:
         if artifact is not None and artifact.get("status") == "approved":
             raise StageNotReopened(
                 f"approved {artifact_type} must be reopened before it can change"
             )
         if artifact is not None and artifact.get("status") == "stale":
-            raise StageNotReopened(
-                f"stale {artifact_type} must be rerun before a direct decision"
-            )
+            raise StageNotReopened(f"stale {artifact_type} must be rerun before a direct decision")
 
     def _invalidate_if_changed(
         self,

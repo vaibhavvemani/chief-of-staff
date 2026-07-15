@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** Ready-to-sequence implementation backlog  
+> **Status:** NC-10 checkpoint complete; NC-20 ready
 > **Updated:** 2026-07-15  
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -46,6 +46,11 @@ Unless a task says otherwise, it is complete only when:
 10. context documents are updated if the implemented behavior differs from the plan.
 
 ## 4. Dependency overview
+
+Implementation checkpoint (2026-07-15): NC-002, NC-004, NC-005, and NC-101 through
+NC-109 are implemented and verified against their deterministic exit gates. NC-20 is
+the next package. This status note does not mark later packages complete or alter their
+contracts.
 
 ```text
 NC-00 acceptance foundation

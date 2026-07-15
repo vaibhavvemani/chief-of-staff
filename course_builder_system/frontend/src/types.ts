@@ -341,6 +341,7 @@ export interface ScopedRevisionCommand {
   category: string;
   instruction: string;
   expectedChecksum: string;
+  impactChecksum: string;
   mode: "deterministic" | "live";
 }
 
