@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-20 independently checkpointed; NC-30 ready
+> **Status:** NC-301 and NC-302 independently verified; NC-40 not started
 > **Updated:** 2026-07-17
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -48,9 +48,10 @@ Unless a task says otherwise, it is complete only when:
 ## 4. Dependency overview
 
 Implementation checkpoint (2026-07-17): NC-002, NC-004, NC-005, NC-101 through
-NC-109, and NC-201 through NC-207 are independently verified. NC-30 is the next safe
-package to begin. This status note does not mark NC-30 or later packages complete or
-alter their contracts.
+NC-109, NC-201 through NC-207, NC-301, and NC-302 are independently verified. NC-303
+remains deferred to NC-90 behind NC-902, and NC-40 has not started. The next safe
+implementation action is NC-401. This status note does not mark
+Milestone 3, NC-40, or any later package complete.
 
 ```text
 NC-00 acceptance foundation
@@ -353,37 +354,66 @@ complete inputs do not receive unnecessary questions; the contract is ready for 
 
 ## 8. Work package NC-30 — Outcomes decisions
 
+**Implementation status (2026-07-17):** NC-301 and NC-302 have passed independent
+checkpoint review. NC-303 remains deferred to NC-90 behind NC-902 and has not started.
+NC-40 has not started; NC-401 is the next safe implementation action.
+
 ### Tasks
 
 #### NC-301 — Complete Outcomes reducer validation
 
 - **Priority:** P0-D
 - **Dependencies:** NC-104
-- Validate additions, edits, removal, unique IDs, priority order, and minimum selection.
+- **Status:** Independently verified.
+- Validate the complete resulting collection across additions, edits, removal, stable
+  IDs, deterministic backend ID allocation, priority order, and minimum selection.
+- Reject strict-payload, type, enum, length, target, collision, ambiguity, and no-op
+  failures without changing the previous valid artifact.
+- Resolve request-local addition references into canonical IDs. A supplied nonempty
+  priority order is complete; omitted or empty order falls back to selected-ID order
+  followed by addition order.
+- Reject client-supplied canonical IDs for additions and persist a monotonic backend
+  allocation cursor so removed IDs are never reused.
+- Return structured nonblocking advisories for vague verbs, duplicate or near-duplicate
+  statements, and mechanically weak evidence.
 
 #### NC-302 — Build Outcomes editor
 
 - **Priority:** P0-D
 - **Dependencies:** NC-301, NC-105
-- Add/edit/remove/reorder outcomes and evidence.
-- Show advisory quality checks.
-- Save a draft and require approval.
+- **Status:** Independently verified.
+- Add, edit, confirm removal, and keyboard-reorder Outcomes and evidence; change
+  cognitive level and priority without renumbering canonical IDs.
+- Use backend-projected edit, approve, and reopen capabilities; do not recreate Brief or
+  lifecycle gates in React.
+- Show structured advisory quality checks and field-level validation accessibly.
+- Warn on unsaved navigation and rebase nonoverlapping stale changes while requiring an
+  explicit choice for overlapping field or order conflicts.
+- Save the canonical result as a draft, preserve it across refresh, and require separate
+  explicit approval.
 
 #### NC-303 — Add scoped Outcomes revision
 
 - **Priority:** P0-L
 - **Dependencies:** NC-107, NC-902
+- **Status:** Deferred to NC-90 behind NC-902; not started.
 - Target named outcomes/categories.
 - Reduce live output through the Outcomes validator.
 
 ### Deterministic package exit gate
 
-- The deterministic operator can make and approve a structural Outcomes change.
+- Deterministic evidence shows that the operator can make a complete structural Outcomes
+  change in the browser, save it as a durable draft, refresh, and approve it explicitly.
+- Backend validation, stable IDs, capability/reopen gates, and catalog-driven downstream
+  invalidation remain authoritative.
 
 The live revision requirement closes with NC-303 during NC-90. It must change only named
 Outcomes and preserve stable IDs where possible.
 
 ## 9. Work package NC-40 — Course Model decisions
+
+**Implementation status (2026-07-17):** Not started. The independent NC-30 checkpoint
+is resolved, so NC-401 is safe to begin.
 
 ### Tasks
 

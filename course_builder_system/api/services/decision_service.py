@@ -239,6 +239,7 @@ class DecisionService:
         edits: dict[str, dict[str, Any]],
         additions: list[dict[str, Any]],
         priority_order: list[str],
+        expected_checksum: str,
     ) -> dict[str, Any]:
         self._writable(course_id)
         brief = self._require_ready_brief(course_id, "outcomes")
@@ -249,19 +250,41 @@ class DecisionService:
             if existing
             else outcomes.draft_outcomes_from_brief(brief)
         )
+        stored_cursor = (
+            existing.get("body", {}).get("next_outcome_id") if existing else None
+        )
+        allocation_start = max(
+            stored_cursor
+            if type(stored_cursor) is int and stored_cursor > 0
+            else 1,
+            outcomes.next_outcome_id(candidates),
+        )
         decided = outcomes.apply_outcome_decision(
             candidates,
             selected_ids,
             edits=edits,
             additions=additions,
             priority_order=priority_order,
+            allocation_start=allocation_start,
+            reject_noop=existing is not None,
         )
-        artifact = outcomes.build_course_outcomes_artifact(brief, decided)
+        next_canonical_id = max(
+            allocation_start + len(additions),
+            outcomes.next_outcome_id(decided),
+        )
+        artifact = outcomes.build_course_outcomes_artifact(
+            brief,
+            decided,
+            next_canonical_id=next_canonical_id,
+        )
         artifact["revision"] = int(existing.get("revision", 0)) + 1 if existing else 0
         artifact["status"] = "draft"
         saved = self.repository.save(
             artifact,
-            expected_checksum=self.repository.checksum(existing) if existing else None,
+            # Use the operator's exact precondition, including the ``missing``
+            # sentinel. This closes the check/load/save race if an artifact appears
+            # after the route's first version check.
+            expected_checksum=expected_checksum,
         )
         self._invalidate_if_changed(course_id, existing, saved, {"course_outcomes"})
         return saved

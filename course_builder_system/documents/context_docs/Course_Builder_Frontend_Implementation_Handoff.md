@@ -11,15 +11,19 @@
 > authoritative for current behavior; the next-cycle package defines the target behavior
 > and implementation order.
 
-> **NC-10/NC-20 checkpoint update — 2026-07-17:** Both packages have passed independent
-> review. The browser and API use explicit
+> **NC-10/NC-20/NC-30 checkpoint update — 2026-07-17:** NC-10 and
+> NC-20 have passed independent review. The browser and API use explicit
 > backend-projected capabilities, graph-derived invalidation, checksum-protected impact
 > confirmation, server-side approval guards, explicit reopen, scoped Content revision,
 > and retryable persisted failure state. Guided Brief Intake now adds canonical durable
 > intake state, typed bounded question rounds, explicit default acceptance, deterministic
 > conditional/gap clarification, backend approval/run gates, and reopen-protected partial
-> editing. Unsupported generic revision controls remain removed or disabled. NC-30 and
-> later typed editors and repair workflows remain future work.
+> editing. NC-301 and NC-302 have passed independent review: Outcomes
+> now has strict backend reduction and a capability-gated typed editor that saves a
+> canonical draft, survives refresh, protects unsaved work, resolves stale conflicts
+> without silent loss, and leaves approval explicit. NC-303 remains deferred to NC-90
+> behind NC-902, and NC-40 has not started. Unsupported generic revision controls remain
+> removed or disabled.
 
 ## 1. Purpose of this document
 
@@ -51,6 +55,8 @@ The implemented browser path supports:
 - listing runtime courses and committed example courses;
 - creating a course from a sparse subject request;
 - durable Guided Brief intake with visible, explicitly accepted defaults;
+- typed Outcomes editing with deterministic validation, advisory feedback, and explicit
+  draft review;
 - Live agent mode by default, with deterministic mode available;
 - running one product stage at a time;
 - persisted background jobs and Server-Sent Event progress;
@@ -190,17 +196,19 @@ human checkpoint while removing the earlier manual navigation step.
 
 ### Requesting changes
 
-Only Student Content currently registers a scoped revision handler. It targets named
-assets, accepts one of the backend-projected categories, previews the exact affected and
-preserved assets, requires an acknowledged impact checksum, and recomputes that impact
-while holding the course mutation lock before the job mutates artifacts. A valid scoped
-Content revision preserves unrelated assets and the Lesson Plan while making the Package
-outputs stale.
+Only Student Content currently registers a scoped free-text revision handler. It targets
+named assets, accepts one of the backend-projected categories, previews the exact
+affected and preserved assets, requires an acknowledged impact checksum, and recomputes
+that impact while holding the course mutation lock before the job mutates artifacts. A
+valid scoped Content revision preserves unrelated assets and the Lesson Plan while
+making the Package outputs stale.
 
-Outcomes, Course Model, Blueprint, Lesson Plan, and Package do not expose generic
-free-text revision. Their unimplemented controls are disabled with a truthful
-explanation until their typed commands arrive in later work packages. Failed stages
-expose retry; stale stages expose rerun after their prerequisites are current.
+Outcomes exposes its registered typed structural decision only when backend-projected
+capabilities allow editing. An approved Outcomes artifact must first use the existing
+impact-confirmed Reopen flow. Course Model, Blueprint, Lesson Plan, and Package do not
+expose generic free-text revision. Their unimplemented controls are disabled with a
+truthful explanation until their typed commands arrive in later work packages. Failed
+stages expose retry; stale stages expose rerun after their prerequisites are current.
 
 ### Locked and read-only states
 
@@ -231,10 +239,33 @@ workspace rather than leaving an editor trapped on an obsolete version.
 
 ### 6.2 Outcomes
 
-Outcomes are displayed as an ordered set with measurable evidence and rationale. The
-current UI is a structured review surface. Fine-grained outcome editing is not yet wired
-into React, and there is no enabled generic revision fallback. The controls remain
-disabled until the NC-30 typed Outcomes editor is implemented.
+Outcomes are displayed as an ordered set with measurable evidence and rationale. When
+the backend projects the direct-edit capability, the operator can enter a typed editor,
+change the statement, evidence, cognitive level, or priority, add an Outcome, remove one
+after explicit confirmation, and reorder the complete set with keyboard-operable
+controls. Cancel restores the current canonical server artifact; unsaved changes remain
+visibly distinct from the saved state.
+
+Retained Outcomes keep their canonical stable IDs when edited or reordered. New rows
+use request-local client references for ordering; clients cannot supply canonical IDs.
+Deterministic backend domain logic allocates the collision-free IDs returned after save
+and persists a monotonic allocation cursor so removed IDs are never reused. A nonempty
+`priority_order` is a complete order over every retained Outcome and request-local
+addition reference. For backward compatibility, an omitted or empty order uses selected
+Outcome order followed by addition order. Client references never become stored IDs.
+
+The backend validates the complete resulting collection, not just individual patches,
+and returns structured advisory checks for vague or non-observable verbs, duplicate or
+near-duplicate statements, and mechanically weak evidence. Advisories do not block an
+otherwise valid decision. Saving produces a new draft and refreshes the view from the
+canonical response; it does not auto-approve. The draft survives refresh and requires
+the normal explicit approval action. Editing is unavailable while the Brief gate is
+unresolved, during an active mutation, or while Outcomes is approved. Approved editing
+first follows capability-projected Reopen and impact confirmation. A stale checksum
+never silently overwrites the server artifact: the editor refetches and rebases
+nonoverlapping local work, then requires explicit choices for overlapping field or order
+changes. No generic Outcomes revision control is exposed; NC-303 remains deferred to
+NC-90 behind NC-902.
 
 ### 6.3 Research & Sources
 
@@ -567,6 +598,13 @@ Important frontend/API regression files include:
 - `tests/test_api_jobs_and_reviews.py`;
 - `tests/test_api_full_workflow.py`.
 
+NC-30 validation additionally includes `tests/test_outcomes_decisions.py`,
+`frontend/src/features/workspace/OutcomesEditor.test.tsx`, the Outcomes cases in
+`frontend/src/features/workspace/WorkspacePage.test.tsx` and `StageViews.test.tsx`,
+`frontend/src/api/client.test.ts`, and the bounded deterministic Outcomes path in
+`frontend/e2e/deterministic-course.e2e.ts`. The independent checkpoint reran those
+focused tests and the complete Python, frontend, build, and browser regression matrix.
+
 The UI contract tests intentionally protect the artifact-first layout, pre-generation
 states, source checkpoint, stage progression, structured Course Model/Blueprint views,
 content verification workbench, Lesson Plan review, and Package default selection.
@@ -576,10 +614,10 @@ content verification workbench, Lesson Plan review, and Package default selectio
 1. **Local single-director system.** There is no authentication, authorization,
    collaboration, or production deployment configuration.
 2. **One API worker.** The current job runner and locks are not a distributed queue.
-3. **Editing depth is uneven.** Brief editing, source decisions, content review, and
-   scoped Content revision are wired. Outcomes, Course Model, Blueprint, and Lesson Plan
-   typed editing remain in NC-30 through NC-60; unsupported generic revisions are not
-   exposed in the meantime.
+3. **Editing depth is uneven.** Brief and Outcomes typed editing, source decisions,
+   content review, and scoped Content revision are wired. Course Model, Blueprint, and
+   Lesson Plan typed editing remain in NC-40 through NC-60; unsupported generic
+   revisions are not exposed in the meantime.
 4. **Source repair is not closed-loop automation.** Better-evidence repair is not exposed
    until NC-70/NC-80 implement evidence acquisition, approval, rerouting, targeted
    regeneration, and reverification.
@@ -618,15 +656,17 @@ content verification workbench, Lesson Plan review, and Package default selectio
 
 ## 15. Recommended next frontend-related work
 
-The next dependency-ordered package is NC-30 Outcomes decisions, followed by the typed
-stage editors in NC-40 through NC-60. Source
+NC-301 and NC-302 have passed independent review. NC-303 remains deferred to NC-90
+behind NC-902, and NC-40 has not started. The next dependency-ordered implementation
+work begins with NC-401 and continues through the typed stage editor sequence in NC-40
+through NC-60. Source
 repair and verifier-driven targeted revision remain the central trust milestone, but
 begin only after those intervening command contracts are stable.
 
 After that, sensible frontend increments are:
 
 1. render the actual selected Markdown file inside the Package preview;
-2. wire typed Outcomes and Blueprint editing surfaces;
+2. wire typed Blueprint editing after the NC-40 Course Model contract is stable;
 3. add structured Course Model edit commands with downstream impact confirmation;
 4. add Lesson Plan constraint editing;
 5. improve activity/model-call diagnostics without exposing private reasoning;
@@ -638,7 +678,9 @@ After that, sensible frontend increments are:
 Course Builder Studio is now the working operator interface for the prototype. It
 preserves the artifact pipeline and human checkpoint model while making stage outputs,
 evidence, attention, revisions, progress, and final packaging understandable in the
-browser.
+browser. Guided Brief intake and typed Outcomes decisions now form the first two
+independently verified, dependency-gated design checkpoints that can be completed
+structurally without terminal or JSON intervention.
 
 The implementation should be extended as a thin, truthful product layer over canonical
 artifacts and typed commands. The frontend may improve how decisions are presented, but

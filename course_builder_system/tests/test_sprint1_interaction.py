@@ -179,14 +179,14 @@ def test_outcome_decisions_support_edit_add_reprioritize_and_block_empty() -> No
         edits={"co2": {"statement": "Apply a repeatable pour-over brewing workflow."}},
         additions=[
             {
-                "id": "co5",
+                "client_key": "new_brew_log",
                 "statement": "Create a personal brew log for future adjustments.",
                 "cognitive_level": "create",
                 "evidence": "Learner completes a usable brew log template.",
                 "priority": "optional",
             }
         ],
-        priority_order=["co5", "co1", "co2"],
+        priority_order=["new_brew_log", "co1", "co2"],
     )
 
     assert [outcome["id"] for outcome in approved] == ["co5", "co1", "co2"]

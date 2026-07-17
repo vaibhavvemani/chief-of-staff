@@ -32,6 +32,24 @@ SubjectSeed = Annotated[str, Field(strict=True, min_length=1, max_length=200)]
 PurposeSeed = Annotated[str, Field(strict=True, max_length=700)]
 BriefListItem = Annotated[str, Field(strict=True, min_length=1, max_length=300)]
 KnownSourceLocator = Annotated[str, Field(strict=True, min_length=1, max_length=1000)]
+OutcomeId = Annotated[
+    str,
+    Field(strict=True, pattern=r"^[a-z0-9][a-z0-9_-]*$"),
+]
+OutcomeClientKey = Annotated[
+    str,
+    Field(strict=True, pattern=r"^new_[a-z0-9_-]+$"),
+]
+OutcomeText = Annotated[str, Field(strict=True, min_length=1, max_length=300)]
+OutcomeCognitiveLevel = Literal[
+    "remember",
+    "understand",
+    "apply",
+    "analyze",
+    "evaluate",
+    "create",
+]
+OutcomePriority = Literal["core", "supporting", "optional"]
 
 
 class CreateCourseRequest(StrictCommand):
@@ -200,12 +218,41 @@ class BriefQuestionRoundResponse(BaseModel):
     checksum: str
 
 
+class OutcomeEditCommand(StrictCommand):
+    statement: OutcomeText | None = None
+    evidence: OutcomeText | None = None
+    cognitive_level: OutcomeCognitiveLevel | None = None
+    priority: OutcomePriority | None = None
+
+    @model_validator(mode="after")
+    def at_least_one_non_null_edit(self) -> OutcomeEditCommand:
+        editable = ("statement", "evidence", "cognitive_level", "priority")
+        explicitly_null = [
+            field
+            for field in editable
+            if field in self.model_fields_set and getattr(self, field) is None
+        ]
+        if explicitly_null:
+            raise ValueError("Outcome edit fields cannot be null")
+        if not any(getattr(self, field) is not None for field in editable):
+            raise ValueError("Outcome edit must include at least one supported field")
+        return self
+
+
+class OutcomeAdditionCommand(StrictCommand):
+    client_key: OutcomeClientKey | None = None
+    statement: OutcomeText
+    evidence: OutcomeText
+    cognitive_level: OutcomeCognitiveLevel
+    priority: OutcomePriority
+
+
 class OutcomeDecisionCommand(VersionedCommand):
     expected_checksum: str = Field(min_length=6, max_length=128)
-    selected_ids: list[str]
-    edits: dict[str, dict[str, Any]] = Field(default_factory=dict)
-    additions: list[dict[str, Any]] = Field(default_factory=list)
-    priority_order: list[str] = Field(default_factory=list)
+    selected_ids: list[OutcomeId]
+    edits: dict[OutcomeId, OutcomeEditCommand] = Field(default_factory=dict)
+    additions: list[OutcomeAdditionCommand] = Field(default_factory=list)
+    priority_order: list[OutcomeId] = Field(default_factory=list)
 
 
 class SourceDecisionCommand(VersionedCommand):

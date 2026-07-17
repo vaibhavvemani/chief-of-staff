@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from agents.outcomes import OutcomeDecisionValidationError, outcome_advisories
 from api.models import (
     ApproveStageCommand,
     BlueprintDecisionCommand,
@@ -214,6 +215,16 @@ def create_app(
     @app.exception_handler(AmbiguousRevision)
     async def _ambiguous_revision(_request: Request, exc: AmbiguousRevision):
         return _error_response(400, str(exc), extra={"code": "ambiguous_revision"})
+
+    @app.exception_handler(OutcomeDecisionValidationError)
+    async def _invalid_outcome_decision(
+        _request: Request, exc: OutcomeDecisionValidationError
+    ):
+        return _error_response(
+            400,
+            str(exc),
+            extra={"code": "invalid_outcome_decision", "issues": exc.issues},
+        )
 
     @app.exception_handler(ValueError)
     async def _bad_request(_request: Request, exc: ValueError):
@@ -511,12 +522,22 @@ def create_app(
             )
             value = decisions.save_outcome_decision(
                 course_id,
-                selected_ids=command.selected_ids,
-                edits=command.edits,
-                additions=command.additions,
-                priority_order=command.priority_order,
+                selected_ids=list(command.selected_ids),
+                edits={
+                    outcome_id: patch.model_dump(exclude_none=True)
+                    for outcome_id, patch in command.edits.items()
+                },
+                additions=[
+                    addition.model_dump(exclude_none=True) for addition in command.additions
+                ],
+                priority_order=list(command.priority_order),
+                expected_checksum=command.expected_checksum,
             )
-        return {"artifact": value, "checksum": repository.checksum(value)}
+        return {
+            "artifact": value,
+            "checksum": repository.checksum(value),
+            "advisories": outcome_advisories(value.get("body", {}).get("outcomes", [])),
+        }
 
     @app.put("/api/courses/{course_id}/research/sources/decision")
     def source_decision(course_id: str, command: SourceDecisionCommand) -> dict[str, Any]:

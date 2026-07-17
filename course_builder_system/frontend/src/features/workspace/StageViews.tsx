@@ -7,12 +7,15 @@ import type {
   Claim,
   ContentAsset,
   CourseModule,
+  OutcomeDecisionDraft,
+  OutcomeValidationIssue,
   OutputFile,
   StageSlug,
   Subtopic,
   Workspace,
 } from "../../types";
 import { BriefQuestionRound } from "./BriefQuestionRound";
+import { OutcomesEditor } from "./OutcomesEditor";
 
 function stageIntro(title: string, kicker: string, description: string, aside?: React.ReactNode) {
   return (
@@ -186,7 +189,31 @@ function BriefView({
   );
 }
 
-function OutcomesView({ workspace }: { workspace: Workspace }) {
+function OutcomesView({
+  workspace,
+  editing = false,
+  busy = false,
+  conflict = false,
+  serverError,
+  serverIssues = [],
+  onStartEdit,
+  onCancel,
+  onSave,
+  onResolveConflict,
+  onDirtyChange,
+}: {
+  workspace: Workspace;
+  editing?: boolean;
+  busy?: boolean;
+  conflict?: boolean;
+  serverError?: string;
+  serverIssues?: OutcomeValidationIssue[];
+  onStartEdit?: () => void;
+  onCancel?: () => void;
+  onSave?: (decision: OutcomeDecisionDraft) => void;
+  onResolveConflict?: (choice: "latest" | "keep") => void;
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   return (
     <div className="stage-view">
       {stageIntro(
@@ -195,31 +222,21 @@ function OutcomesView({ workspace }: { workspace: Workspace }) {
         "These outcomes control downstream coverage and assessment. Each one states the observable evidence the learner should produce.",
         <div className="outcome-summary"><strong>{workspace.outcomes.length}</strong><span>measurable outcomes</span></div>,
       )}
-      <div className="outcome-toolbar">
-        <div className="quality-note"><span aria-hidden="true">✓</span><div><strong>Outcome quality check passed</strong><small>No vague verbs or obvious duplicates found.</small></div></div>
-        <button className="button button-secondary" disabled title="Structured outcome editing is not implemented in this release">+ Add outcome</button>
-      </div>
-      <ol className="outcome-list">
-        {workspace.outcomes.map((outcome, index) => (
-          <li key={outcome.id} className="outcome-card">
-            <span className="outcome-order">{String(index + 1).padStart(2, "0")}</span>
-            <div className="outcome-main">
-              <div className="outcome-meta">
-                <span className={`priority priority-${outcome.priority}`}>{outcome.priority}</span>
-                <span>{outcome.cognitiveLevel}</span>
-                <code>{outcome.id}</code>
-              </div>
-              <h3>{outcome.statement}</h3>
-              <div className="evidence-line"><span>Evidence of learning</span><p>{outcome.evidence}</p></div>
-            </div>
-            <div className="row-actions">
-              <button disabled aria-label={`Move ${outcome.id}`} title="Structured outcome editing is follow-on work">↕</button>
-              <button disabled aria-label={`Edit ${outcome.id}`} title="Structured outcome editing is not implemented in this release">Edit</button>
-              <button disabled aria-label={`More options for ${outcome.id}`} title="Structured outcome editing is follow-on work">···</button>
-            </div>
-          </li>
-        ))}
-      </ol>
+      <OutcomesEditor
+        outcomes={workspace.outcomes}
+        advisories={workspace.outcomeAdvisories ?? []}
+        canEdit={Boolean(onStartEdit)}
+        editing={editing}
+        busy={busy}
+        conflict={conflict}
+        serverError={serverError}
+        serverIssues={serverIssues}
+        onStartEdit={onStartEdit ?? (() => undefined)}
+        onCancel={onCancel ?? (() => undefined)}
+        onSave={onSave ?? (() => undefined)}
+        onResolveConflict={onResolveConflict ?? (() => undefined)}
+        onDirtyChange={onDirtyChange}
+      />
     </div>
   );
 }
@@ -646,10 +663,10 @@ function PackageView({ workspace }: { workspace: Workspace }) {
   );
 }
 
-export function StageView({ stage, workspace, contentCapabilities, onContentAction, onSourceDecision, onEditBrief, briefQuestionRound, briefQuestionsLoading, briefQuestionsBusy, briefQuestionsError, onRetryBriefQuestions, onSubmitBriefQuestions }: { stage: StageSlug; workspace: Workspace; contentCapabilities?: { review: boolean; revise: boolean }; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onEditBrief?: (section: BriefEditSection) => void; briefQuestionRound?: BriefQuestionRoundData; briefQuestionsLoading?: boolean; briefQuestionsBusy?: boolean; briefQuestionsError?: string; onRetryBriefQuestions?: () => void; onSubmitBriefQuestions?: (answers: BriefQuestionAnswer[]) => void }) {
+export function StageView({ stage, workspace, contentCapabilities, onContentAction, onSourceDecision, onEditBrief, outcomesEditing, outcomesBusy, outcomesConflict, outcomesServerError, outcomesServerIssues, onStartOutcomesEdit, onCancelOutcomesEdit, onSaveOutcomes, onResolveOutcomesConflict, onOutcomesDirtyChange, briefQuestionRound, briefQuestionsLoading, briefQuestionsBusy, briefQuestionsError, onRetryBriefQuestions, onSubmitBriefQuestions }: { stage: StageSlug; workspace: Workspace; contentCapabilities?: { review: boolean; revise: boolean }; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onEditBrief?: (section: BriefEditSection) => void; outcomesEditing?: boolean; outcomesBusy?: boolean; outcomesConflict?: boolean; outcomesServerError?: string; outcomesServerIssues?: OutcomeValidationIssue[]; onStartOutcomesEdit?: () => void; onCancelOutcomesEdit?: () => void; onSaveOutcomes?: (decision: OutcomeDecisionDraft) => void; onResolveOutcomesConflict?: (choice: "latest" | "keep") => void; onOutcomesDirtyChange?: (dirty: boolean) => void; briefQuestionRound?: BriefQuestionRoundData; briefQuestionsLoading?: boolean; briefQuestionsBusy?: boolean; briefQuestionsError?: string; onRetryBriefQuestions?: () => void; onSubmitBriefQuestions?: (answers: BriefQuestionAnswer[]) => void }) {
   switch (stage) {
     case "brief": return <BriefView workspace={workspace} onEdit={onEditBrief} questionRound={briefQuestionRound} questionsLoading={briefQuestionsLoading} questionsBusy={briefQuestionsBusy} questionsError={briefQuestionsError} onRetryQuestions={onRetryBriefQuestions} onSubmitQuestions={onSubmitBriefQuestions} />;
-    case "outcomes": return <OutcomesView workspace={workspace} />;
+    case "outcomes": return <OutcomesView workspace={workspace} editing={outcomesEditing} busy={outcomesBusy} conflict={outcomesConflict} serverError={outcomesServerError} serverIssues={outcomesServerIssues} onStartEdit={onStartOutcomesEdit} onCancel={onCancelOutcomesEdit} onSave={onSaveOutcomes} onResolveConflict={onResolveOutcomesConflict} onDirtyChange={onOutcomesDirtyChange} />;
     case "research": return <ResearchView workspace={workspace} onSourceDecision={onSourceDecision} />;
     case "course-model": return <CourseModelView workspace={workspace} />;
     case "blueprint": return <BlueprintView workspace={workspace} />;

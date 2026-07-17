@@ -11,8 +11,15 @@
 > deterministic review. Evidence covers bounded relevant rounds, durable refresh and
 > multi-round merges, status-aware historical normalization without fixture writes,
 > stale/concurrent mutation rejection, unresolved approval and transitive execution
-> gates, impact-confirmed reopen, and browser conflict recovery. This does not mark any
-> NC-30 or later scenario complete.
+> gates, impact-confirmed reopen, and browser conflict recovery.
+
+> **NC-30 independent checkpoint — 2026-07-17:** NC-301 and NC-302 passed independent
+> deterministic review. Evidence covers strict complete-collection reduction, stable
+> monotonic backend-owned IDs, canonical ordering, typed browser editing, unsaved-work
+> protection, explicit stale-conflict resolution, durable draft refresh, explicit
+> approval, capability/reopen gates, and downstream invalidation. NC-303 remains
+> deferred to NC-90 behind NC-902. NC-40 has not started; NC-401 is now safe to begin.
+> This does not mark Milestone 3 or the whole cycle complete.
 
 ## 1. Purpose
 
@@ -131,6 +138,13 @@ For each formal acceptance run retain:
 - browser test report/screenshots on failure;
 - operator pilot notes and issue classification.
 
+For the NC-30 deterministic checkpoint, retain the results from
+`tests/test_outcomes_decisions.py`, `OutcomesEditor.test.tsx`, the Outcomes cases in
+`WorkspacePage.test.tsx` and `StageViews.test.tsx`, `client.test.ts`, and the bounded
+Playwright Outcomes path in `deterministic-course.e2e.ts`. The checkpoint evidence
+identifies the saved canonical draft and explicit approval transition and is supplemented
+by the complete Python, frontend, build, and browser regression matrix.
+
 ## 5. Scenario A — Deterministic complete operator journey
 
 This scenario is the primary automated browser acceptance path.
@@ -195,15 +209,40 @@ audience, and resolve it.
 **Operator action**
 
 - Run Outcomes.
-- Edit one outcome to make evidence more observable.
-- Reorder two outcomes.
-- Approve.
+- Open the typed Outcomes editor.
+- Edit one existing Outcome statement and its evidence to make the result more
+  observable.
+- Add one Outcome.
+- Change a cognitive level and a priority.
+- Reorder Outcomes using the keyboard-operable controls.
+- Remove a different existing Outcome and confirm the removal.
+- Save the complete structural decision as a draft.
+- Confirm the canonical server result is still awaiting review rather than approved.
+- Refresh the browser and confirm the saved draft, IDs, fields, and order persist.
+- Approve the Outcomes explicitly.
+- Confirm Research becomes available as the next stage.
 
 **Expected result**
 
 - The deterministic proposal is structured.
-- Stable IDs remain unique.
-- The saved decision matches the visible order.
+- Retained and edited canonical IDs remain stable and unique; reordering does not
+  renumber them.
+- Backend domain logic assigns a deterministic collision-free canonical ID to the added
+  Outcome; clients cannot supply it, request-local client order references do not
+  persist, and a removed canonical ID is never reused by a later addition.
+- The removed Outcome is absent only after confirmation.
+- The saved decision contains one unambiguous complete order matching the visible order.
+- An omitted or empty order remains backward compatible by using selected Outcome order
+  followed by addition order, while any supplied nonempty order must be complete.
+- The save returns a canonical draft, survives refresh, and does not auto-approve.
+- Advisory vague-verb, duplicate/near-duplicate, and weak-evidence findings are
+  structured and nonblocking when hard validation passes.
+- Editing availability comes from backend capabilities. An approved artifact does not
+  become directly editable without impact-confirmed Reopen.
+- Unsaved edits warn before navigation. A stale save rebases nonoverlapping work onto the
+  latest canonical artifact and requires explicit resolution for overlapping field or
+  order changes before resubmission.
+- Explicit approval succeeds only after the server revalidates the complete collection.
 - Research becomes ready.
 
 ### A5 — Research and explicit source decision
@@ -459,6 +498,12 @@ Automate these API/browser checks:
 13. Submit an unsupported generic revision — rejected before job creation.
 14. Submit a revision with an ambiguous target — rejected before job creation.
 15. Attempt to run a locked stage — rejected with blocking prerequisites.
+16. Submit an Outcomes decision while the Brief is unresolved, unapproved, stale, or
+    invalid — rejected without changing Outcomes.
+17. Submit a malformed, incomplete-order, scope-escaping, or no-op Outcomes decision —
+    rejected without changing the previous valid artifact.
+18. Attempt to approve structurally invalid Outcomes — rejected without recording
+    approval.
 
 ## 9. Scenario E — Bounded live-agent acceptance
 

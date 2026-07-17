@@ -94,7 +94,7 @@ SUPPORT_ARTIFACT_STAGES: dict[str, str] = {"content_review": "content"}
 
 STAGE_CAPABILITIES: dict[str, StageCapabilities] = {
     "brief": StageCapabilities(direct_actions=("edit",)),
-    "outcomes": StageCapabilities(),
+    "outcomes": StageCapabilities(direct_actions=("edit",)),
     "research": StageCapabilities(direct_actions=("source_decision",)),
     "course-model": StageCapabilities(),
     "blueprint": StageCapabilities(),

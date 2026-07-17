@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from typing import Any
 
 from agents import content_review, lesson_plan
+from agents import outcomes as outcomes_agent
 from api.services.artifact_repository import ArtifactRepository
 from api.services.brief_intake import BriefIntakeService
 from api.services.pipeline_catalog import PipelineCatalog
@@ -243,40 +244,55 @@ class ApprovalGuardService:
         return failures
 
     def _guard_outcomes(self, course_id: str) -> list[GuardFailure]:
-        outcomes = self.repository.require(course_id, "course_outcomes").get("body", {}).get(
-            "outcomes", []
-        )
-        ids = [item.get("id") for item in outcomes if isinstance(item, dict)]
-        invalid = [
-            str(item.get("id") or "missing")
-            for item in outcomes
-            if not isinstance(item, dict)
-            or not self._present(item.get("id"))
-            or not self._present(item.get("statement"))
-            or not self._present(item.get("evidence"))
-        ]
-        failures: list[GuardFailure] = []
-        if not outcomes:
-            failures.append(
-                GuardFailure(
-                    "outcomes_empty",
-                    "At least one valid Course Outcome is required.",
-                    "outcomes",
-                    "course_outcomes",
+        body = self.repository.require(course_id, "course_outcomes").get("body", {})
+        collection = body.get("outcomes", [])
+        try:
+            outcomes_agent.validate_outcome_collection(collection)
+        except outcomes_agent.OutcomeDecisionValidationError as exc:
+            record_ids = tuple(
+                sorted(
+                    {
+                        str(issue["outcome_id"])
+                        for issue in exc.issues
+                        if issue.get("outcome_id")
+                    }
                 )
             )
-        duplicates = sorted({str(value) for value in ids if ids.count(value) > 1})
-        if invalid or duplicates:
-            failures.append(
+            if any(issue["code"] == "outcomes_empty" for issue in exc.issues):
+                return [
+                    GuardFailure(
+                        "outcomes_empty",
+                        "At least one valid Course Outcome is required.",
+                        "outcomes",
+                        "course_outcomes",
+                    )
+                ]
+            return [
                 GuardFailure(
                     "outcomes_invalid",
-                    "Course Outcome IDs, statements, and evidence must be valid and unique.",
+                    (
+                        "Course Outcomes must have unique valid IDs, statements, evidence, "
+                        "cognitive levels, priorities, and ordering."
+                    ),
                     "outcomes",
                     "course_outcomes",
-                    tuple(sorted({*invalid, *duplicates})),
+                    record_ids,
                 )
-            )
-        return failures
+            ]
+        cursor = body.get("next_outcome_id")
+        if cursor is not None and (
+            type(cursor) is not int
+            or cursor < outcomes_agent.next_outcome_id(collection)
+        ):
+            return [
+                GuardFailure(
+                    "outcomes_invalid",
+                    "Course Outcomes have an invalid canonical ID allocation cursor.",
+                    "outcomes",
+                    "course_outcomes",
+                )
+            ]
+        return []
 
     def _guard_research(self, course_id: str) -> list[GuardFailure]:
         registry = self.repository.require(course_id, "approved_source_registry").get(

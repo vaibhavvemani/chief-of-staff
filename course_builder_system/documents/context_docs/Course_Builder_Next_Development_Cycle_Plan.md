@@ -11,9 +11,11 @@
 > `Course_Builder_Frontend_Implementation_Handoff.md`
 
 > **Implementation update — 2026-07-17:** NC-10 and NC-20 have passed independent
-> review. The post-frontend audit below records the gap that led to NC-20; current Guided
-> Brief behavior is documented in the frontend implementation handoff. NC-30 Outcomes
-> decisions is the next safe package to begin.
+> review. The post-frontend audit below records the gaps that led to those packages;
+> current Guided Brief behavior is documented in the frontend implementation handoff.
+> NC-301 and NC-302 have passed independent NC-30 checkpoint review. NC-303 remains
+> deferred to NC-90 behind NC-902. NC-40 has not started; the next safe implementation
+> action is NC-401. This does not complete Milestone 3 or the cycle.
 
 ## 1. Purpose of this document
 
@@ -106,6 +108,7 @@ The current product provides a strong base:
 - optimistic concurrency through expected checksums;
 - explicit source selection and approved-source enforcement;
 - Course Model, Blueprint, Student Content, Lesson Plan, and Package review views;
+- durable Guided Brief intake and a typed Outcomes structural decision editor;
 - live Student Content generation and independent verification;
 - durable per-asset human content review;
 - targeted Student Content revision;
@@ -125,7 +128,7 @@ The most important gaps are not cosmetic.
 | Area | Current behavior | Required direction |
 |---|---|---|
 | Brief questions | Typed question and gap-detection primitives exist in Python, but the browser immediately creates a default Brief. | Expose the question contract through the API and implement bounded question rounds. |
-| Outcomes editing | The backend has a typed decision command, but React presents disabled controls. | Wire add, edit, remove, reorder, evidence, and priority decisions. |
+| Outcomes editing | NC-301 and NC-302 now provide independently verified strict deterministic reduction and a typed React editor. | Preserve the typed contract and keep NC-303 live scoped revision deferred to NC-90 behind NC-902. |
 | Blueprint editing | The backend has a typed decision command, but React is read-only. | Wire asset selection, defaults, exceptions, and depth controls. |
 | Course Model editing | The view is structured, but there is no typed mutation contract. | Add validated structural commands that preserve stable IDs and integrity. |
 | Lesson Plan editing | The view shows constraints, but changes rely on generic feedback. | Add typed constraint and sequence commands. |
@@ -409,11 +412,20 @@ operator-relevant decisions.
 
 ### 9.2 Outcomes
 
+**Implementation status (2026-07-17):** NC-301 and NC-302 have passed independent
+checkpoint review. This does not complete the Milestone 3 exit gate. NC-303 remains
+deferred to NC-90 behind NC-902, and NC-40 has not started.
+
 1. Wire the existing typed Outcomes API command into React.
 2. Support add, edit, remove, reorder, evidence, cognitive level, and priority.
-3. Validate duplicate IDs and invalid selections on the backend.
-4. Provide advisory vague-verb and duplicate checks without pretending to judge pedagogy.
-5. Save the changed Outcomes as a new draft for review.
+3. Validate the complete resulting collection on the backend, preserve stable retained
+   IDs, and allocate deterministic collision-free IDs for additions.
+4. Require a complete nonempty priority order when supplied; for compatibility, an
+   omitted or empty order resolves to selected Outcome order followed by addition order.
+5. Provide structured advisory checks for vague verbs, duplicate or near-duplicate
+   statements, and mechanically weak evidence without pretending to judge pedagogy.
+6. Save the changed Outcomes as a new draft, survive refresh, and require separate
+   explicit approval.
 
 ### 9.3 Course Model
 

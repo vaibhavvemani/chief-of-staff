@@ -176,12 +176,71 @@ export interface BriefData {
   intakeState: BriefIntakeState;
 }
 
+export type OutcomeCognitiveLevel =
+  | "remember"
+  | "understand"
+  | "apply"
+  | "analyze"
+  | "evaluate"
+  | "create";
+
+export type OutcomePriority = "core" | "supporting" | "optional";
+
 export interface Outcome {
   id: string;
   statement: string;
-  cognitiveLevel: string;
+  cognitiveLevel: OutcomeCognitiveLevel;
   evidence: string;
-  priority: "core" | "supporting" | string;
+  priority: OutcomePriority;
+}
+
+export type OutcomeEditableField =
+  | "statement"
+  | "evidence"
+  | "cognitiveLevel"
+  | "priority";
+
+export interface OutcomeEdit {
+  statement?: string;
+  evidence?: string;
+  cognitiveLevel?: OutcomeCognitiveLevel;
+  priority?: OutcomePriority;
+}
+
+export interface OutcomeAddition {
+  clientKey: string;
+  statement: string;
+  evidence: string;
+  cognitiveLevel: OutcomeCognitiveLevel;
+  priority: OutcomePriority;
+}
+
+export interface OutcomeDecisionDraft {
+  selectedIds: string[];
+  edits: Record<string, OutcomeEdit>;
+  additions: OutcomeAddition[];
+  priorityOrder: string[];
+}
+
+export interface OutcomeDecisionCommand extends OutcomeDecisionDraft {
+  expectedChecksum: string;
+}
+
+export interface OutcomeAdvisory {
+  code: string;
+  outcomeId: string;
+  relatedOutcomeId?: string;
+  field: string;
+  reason: string;
+  level: "advisory";
+}
+
+export interface OutcomeValidationIssue {
+  code: string;
+  message: string;
+  outcomeId?: string;
+  field?: string;
+  index?: number;
 }
 
 export interface SourceCandidate {
@@ -321,6 +380,8 @@ export interface Workspace {
   estimatedCost?: number;
   brief: BriefData;
   outcomes: Outcome[];
+  outcomesChecksum?: string;
+  outcomeAdvisories?: OutcomeAdvisory[];
   research: {
     sources: SourceCandidate[];
     competitors: CompetitorFinding[];

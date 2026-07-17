@@ -16,6 +16,12 @@ import type {
   JobResponse,
   LessonSession,
   Outcome,
+  OutcomeAdvisory,
+  OutcomeCognitiveLevel,
+  OutcomeDecisionCommand,
+  OutcomeEdit,
+  OutcomePriority,
+  OutcomeValidationIssue,
   OutputFile,
   SourceCandidate,
   ScopedRevisionCommand,
@@ -59,6 +65,10 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       if (isRecord(detail.error) && typeof detail.error.message === "string") message = detail.error.message;
       else if (typeof detail.detail === "string") message = detail.detail;
       else if (isRecord(detail.detail) && typeof detail.detail.message === "string") message = detail.detail.message;
+      else if (Array.isArray(detail.detail)) {
+        const issue = detail.detail.find((item) => isRecord(item) && typeof item.msg === "string");
+        if (isRecord(issue) && typeof issue.msg === "string") message = issue.msg;
+      }
     }
     throw new ApiError(message, response.status, detail);
   }
@@ -69,6 +79,30 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function versionConflictChecksum(error: unknown): string | undefined {
+  if (!(error instanceof ApiError) || error.status !== 409 || !isRecord(error.detail)) return undefined;
+  const detail = error.detail.error;
+  if (!isRecord(detail)) return undefined;
+  return typeof detail.actual_checksum === "string" ? detail.actual_checksum : undefined;
+}
+
+export function outcomeValidationIssues(error: unknown): OutcomeValidationIssue[] {
+  if (!(error instanceof ApiError) || !isRecord(error.detail) || !isRecord(error.detail.error)) return [];
+  return asArray(error.detail.error.issues).flatMap((issue) => {
+    if (!isRecord(issue)) return [];
+    const code = asString(issue.code);
+    const message = asString(issue.message);
+    if (!code || !message) return [];
+    return [{
+      code,
+      message,
+      outcomeId: asString(issue.outcome_id ?? issue.outcomeId) || undefined,
+      field: asString(issue.field) || undefined,
+      index: typeof issue.index === "number" && Number.isInteger(issue.index) ? issue.index : undefined,
+    }];
+  });
 }
 
 function asArray(value: unknown): unknown[] {
@@ -270,20 +304,7 @@ interface BackendWorkspace {
     flagged_assets?: unknown[];
     failed_units?: unknown[];
   };
-  stages?: Array<{
-    slug?: string;
-    label?: string;
-    state?: string;
-    attention_count?: number;
-    checksum?: string;
-    can_mutate?: boolean;
-    dependencies?: unknown[];
-    downstream_stages?: unknown[];
-    prerequisites_ready?: boolean;
-    approval_failures?: unknown[];
-    last_failure?: unknown;
-    actions?: unknown[];
-  }>;
+  stages?: BackendStage[];
   artifact_types?: string[];
 }
 
@@ -307,6 +328,7 @@ interface BackendStage {
   approval_failures?: unknown[];
   last_failure?: unknown;
   actions?: unknown[];
+  advisories?: unknown[];
   artifacts?: StageArtifact[];
 }
 
@@ -421,22 +443,52 @@ function normalizeBrief(value: unknown, fallback: BriefData): BriefData {
   };
 }
 
+const outcomeCognitiveLevels: OutcomeCognitiveLevel[] = [
+  "remember",
+  "understand",
+  "apply",
+  "analyze",
+  "evaluate",
+  "create",
+];
+
+const outcomePriorities: OutcomePriority[] = ["core", "supporting", "optional"];
+
 function normalizeOutcomes(value: unknown, fallback: Outcome[]): Outcome[] {
   if (!isRecord(value)) return fallback;
-  const outcomes = asArray(value.outcomes).flatMap((item) =>
-    isRecord(item)
-      ? [
-          {
-            id: asString(item.id),
-            statement: asString(item.statement),
-            cognitiveLevel: asString(item.cognitive_level),
-            evidence: asString(item.evidence),
-            priority: asString(item.priority),
-          },
-        ]
-      : [],
-  );
+  const outcomes = asArray(value.outcomes).flatMap((item) => {
+    if (!isRecord(item)) return [];
+    const cognitiveLevel = asString(item.cognitive_level) as OutcomeCognitiveLevel;
+    const priority = asString(item.priority) as OutcomePriority;
+    if (!outcomeCognitiveLevels.includes(cognitiveLevel) || !outcomePriorities.includes(priority)) return [];
+    return [{
+      id: asString(item.id),
+      statement: asString(item.statement),
+      cognitiveLevel,
+      evidence: asString(item.evidence),
+      priority,
+    }];
+  });
   return outcomes.length ? outcomes : fallback;
+}
+
+function normalizeOutcomeAdvisories(value: unknown): OutcomeAdvisory[] {
+  return asArray(value).flatMap((item) => {
+    if (!isRecord(item)) return [];
+    const code = asString(item.code);
+    const outcomeId = asString(item.outcome_id ?? item.outcomeId);
+    const reason = asString(item.message ?? item.reason);
+    if (!code || !outcomeId || !reason) return [];
+    const relatedOutcomeId = asString(item.related_outcome_id ?? item.relatedOutcomeId) || undefined;
+    return [{
+      code,
+      outcomeId,
+      relatedOutcomeId,
+      field: asString(item.field),
+      reason,
+      level: "advisory" as const,
+    }];
+  });
 }
 
 function normalizeSources(value: unknown, registry: unknown, registryStatus: string | undefined, fallback: SourceCandidate[]): SourceCandidate[] {
@@ -801,6 +853,8 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
     const stageResults = await Promise.allSettled(allStageSlugs.map((slug) => getStage(courseId, slug)));
     const backendStages = stageResults.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
     const artifacts = artifactMap(backendStages);
+    const outcomeStage = backendStages.find((candidate) => candidate.slug === "outcomes")
+      ?? projection.stages?.find((candidate) => candidate.slug === "outcomes");
     const demoShape = demoWorkspaceFor(courseId);
     const emptyCourse = normalizeCourse({
       course_id: projection.course_id ?? courseId,
@@ -846,6 +900,8 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
         intakeState: emptyIntakeState(),
       },
       outcomes: [],
+      outcomesChecksum: artifacts.get("course_outcomes")?.checksum,
+      outcomeAdvisories: normalizeOutcomeAdvisories(outcomeStage?.advisories),
       research: { sources: [], competitors: [], observations: [], registrySaved: false, registryApproved: false },
       modules: [],
       blueprint: {
@@ -928,6 +984,8 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       brief: normalizeBrief(artifacts.get("brief")?.body, base.brief),
       briefChecksum: artifacts.get("brief")?.checksum,
       outcomes: normalizeOutcomes(artifacts.get("course_outcomes")?.body, base.outcomes),
+      outcomesChecksum: artifacts.get("course_outcomes")?.checksum,
+      outcomeAdvisories: normalizeOutcomeAdvisories(outcomeStage?.advisories),
       research: {
         sources: normalizeSources(
           artifacts.get("research_dossier")?.body,
@@ -1188,6 +1246,48 @@ export async function reviewContentAsset(
     method: "PUT",
     body: JSON.stringify({ decision: status, expected_checksum: expectedChecksum, feedback: note }),
   });
+}
+
+function outcomeEditPayload(edit: OutcomeEdit): Record<string, unknown> {
+  return Object.fromEntries(Object.entries({
+    statement: edit.statement,
+    evidence: edit.evidence,
+    cognitive_level: edit.cognitiveLevel,
+    priority: edit.priority,
+  }).filter(([, value]) => value !== undefined));
+}
+
+export async function saveOutcomeDecision(
+  courseId: string,
+  command: OutcomeDecisionCommand,
+): Promise<{ outcomes: Outcome[]; checksum: string; advisories: OutcomeAdvisory[] }> {
+  const response = await apiFetch<Record<string, unknown>>(
+    `/api/courses/${encodeURIComponent(courseId)}/outcomes/decision`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        expected_checksum: command.expectedChecksum,
+        selected_ids: command.selectedIds,
+        edits: Object.fromEntries(
+          Object.entries(command.edits).map(([outcomeId, edit]) => [outcomeId, outcomeEditPayload(edit)]),
+        ),
+        additions: command.additions.map((addition) => ({
+          client_key: addition.clientKey,
+          statement: addition.statement,
+          evidence: addition.evidence,
+          cognitive_level: addition.cognitiveLevel,
+          priority: addition.priority,
+        })),
+        priority_order: command.priorityOrder,
+      }),
+    },
+  );
+  const artifact = isRecord(response.artifact) ? response.artifact : {};
+  return {
+    outcomes: normalizeOutcomes(artifact.body, []),
+    checksum: asString(response.checksum),
+    advisories: normalizeOutcomeAdvisories(response.advisories),
+  };
 }
 
 export async function saveSourceDecision(

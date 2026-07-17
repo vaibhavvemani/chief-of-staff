@@ -41,6 +41,21 @@ interface BriefArtifact {
   checksum: string;
 }
 
+interface OutcomeRecord {
+  id: string;
+  statement: string;
+  evidence: string;
+  cognitive_level: string;
+  priority: string;
+}
+
+interface OutcomesArtifact {
+  artifact: {
+    body: { outcomes: OutcomeRecord[] };
+  };
+  checksum: string;
+}
+
 async function stage(
   request: APIRequestContext,
   courseId: string,
@@ -67,6 +82,17 @@ async function briefArtifact(
   const response = await request.get(`/api/courses/${courseId}/artifacts/brief`);
   expect(response.ok()).toBe(true);
   return response.json() as Promise<BriefArtifact>;
+}
+
+async function outcomesArtifact(
+  request: APIRequestContext,
+  courseId: string,
+): Promise<OutcomesArtifact> {
+  const response = await request.get(
+    `/api/courses/${courseId}/artifacts/course_outcomes`,
+  );
+  expect(response.ok()).toBe(true);
+  return response.json() as Promise<OutcomesArtifact>;
 }
 
 function questionCard(page: Page, questionId: string) {
@@ -420,6 +446,176 @@ test("completes bounded durable Guided Brief intake and protects approved editin
   await expect.poll(async () => (await stage(request, courseId, "brief")).state).toBe(
     "approved",
   );
+
+  await page.goto(`/courses/${courseId}/outcomes?mode=deterministic`);
+  await expect(page.getByRole("button", { name: "Run Outcomes" })).toBeVisible();
+  await page.getByRole("button", { name: "Run Outcomes" }).click();
+  await expect.poll(
+    async () => (await stage(request, courseId, "outcomes")).state,
+    { timeout: 30_000 },
+  ).toBe("awaiting_review");
+  await expect(page.getByRole("heading", { name: "Course Outcomes" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit Outcomes" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit Outcomes" }).click();
+  await page
+    .getByLabel("Outcome statement for co1")
+    .fill("My first unsaved Outcome statement.");
+  const navigationDialog = page.waitForEvent("dialog");
+  const navigationClick = page.getByRole("link", { name: /Research & Sources/ }).click();
+  const dialog = await navigationDialog;
+  expect(dialog.message()).toContain("unsaved Outcomes changes");
+  await dialog.dismiss();
+  await navigationClick;
+  await expect(page).toHaveURL(new RegExp(`/courses/${courseId}/outcomes\\?mode=deterministic$`));
+  await expect(page.getByLabel("Outcome statement for co1")).toHaveValue(
+    "My first unsaved Outcome statement.",
+  );
+
+  const beforeUseLatest = await outcomesArtifact(request, courseId);
+  const useLatestIds = beforeUseLatest.artifact.body.outcomes.map((outcome) => outcome.id);
+  const concurrentUseLatest = await request.put(
+    `/api/courses/${courseId}/outcomes/decision`,
+    {
+      data: {
+        expected_checksum: beforeUseLatest.checksum,
+        selected_ids: useLatestIds,
+        edits: {
+          co2: {
+            evidence: "The server saved this concurrent evidence description.",
+          },
+        },
+        additions: [],
+        priority_order: useLatestIds,
+      },
+    },
+  );
+  expect(concurrentUseLatest.ok()).toBe(true);
+  await page.getByRole("button", { name: "Save Outcomes draft" }).click();
+  await expect(page.getByText("These Outcomes changed elsewhere.")).toBeVisible();
+  await page.getByRole("button", { name: "Use latest server version" }).click();
+  await expect(page.getByLabel("Outcome statement for co1")).not.toHaveValue(
+    "My first unsaved Outcome statement.",
+  );
+  await expect(page.getByLabel("Evidence of learning for co2")).toHaveValue(
+    "The server saved this concurrent evidence description.",
+  );
+  await page.getByRole("button", { name: "Cancel changes" }).click();
+
+  await page.getByRole("button", { name: "Edit Outcomes" }).click();
+  await page
+    .getByLabel("Evidence of learning for co1")
+    .fill("My nonconflicting local evidence description.");
+  const beforeKeepLocal = await outcomesArtifact(request, courseId);
+  const keepLocalIds = beforeKeepLocal.artifact.body.outcomes.map((outcome) => outcome.id);
+  const concurrentKeepLocal = await request.put(
+    `/api/courses/${courseId}/outcomes/decision`,
+    {
+      data: {
+        expected_checksum: beforeKeepLocal.checksum,
+        selected_ids: keepLocalIds,
+        edits: { co3: { priority: "supporting" } },
+        additions: [],
+        priority_order: keepLocalIds,
+      },
+    },
+  );
+  expect(concurrentKeepLocal.ok()).toBe(true);
+  await page.getByRole("button", { name: "Save Outcomes draft" }).click();
+  await expect(page.getByText("These Outcomes changed elsewhere.")).toBeVisible();
+  await page.getByRole("button", { name: "Keep my edits against latest" }).click();
+  await expect(page.getByLabel("Evidence of learning for co1")).toHaveValue(
+    "My nonconflicting local evidence description.",
+  );
+  await expect(page.getByLabel("Priority for co3")).toHaveValue("supporting");
+  await page.getByRole("button", { name: "Save Outcomes draft" }).click();
+  await expect.poll(async () => {
+    const artifact = await outcomesArtifact(request, courseId);
+    return artifact.artifact.body.outcomes.find((outcome) => outcome.id === "co1")?.evidence;
+  }).toBe("My nonconflicting local evidence description.");
+
+  await page.getByRole("button", { name: "Edit Outcomes" }).click();
+  await page
+    .getByLabel("Outcome statement for co1")
+    .fill("Explain core coffee concepts and use them to choose a sound starting recipe.");
+  await page
+    .getByLabel("Evidence of learning for co1")
+    .fill("Learner explains the key concepts and justifies a starting recipe.");
+
+  await page.getByRole("button", { name: "+ Add Outcome" }).click();
+  await page
+    .getByLabel("Outcome statement for new Outcome 5")
+    .fill("Create a repeatable brew log for controlled improvement.");
+  await page
+    .getByLabel("Evidence of learning for new Outcome 5")
+    .fill("Learner produces a brew log with one justified variable change.");
+  await page.getByLabel("Cognitive level for new Outcome 5").selectOption("create");
+  await page.getByLabel("Priority for new Outcome 5").selectOption("optional");
+  await page.getByRole("button", { name: "Move new Outcome 5 up" }).click();
+
+  await page.getByRole("button", { name: "Remove co2" }).click();
+  const removalDialog = page.getByRole("dialog", { name: "Remove this Outcome?" });
+  await expect(removalDialog).toContainText("co2");
+  await removalDialog.getByRole("button", { name: "Remove Outcome" }).click();
+  await page.getByRole("button", { name: "Save Outcomes draft" }).click();
+
+  await expect.poll(
+    async () => {
+      const artifact = await outcomesArtifact(request, courseId);
+      return artifact.artifact.body.outcomes.map((outcome) => outcome.id);
+    },
+    { timeout: 30_000 },
+  ).toEqual(["co1", "co3", "co5", "co4"]);
+  expect((await stage(request, courseId, "outcomes")).state).toBe("awaiting_review");
+
+  const savedOutcomes = (await outcomesArtifact(request, courseId)).artifact.body.outcomes;
+  expect(savedOutcomes).toEqual([
+    expect.objectContaining({
+      id: "co1",
+      statement:
+        "Explain core coffee concepts and use them to choose a sound starting recipe.",
+      evidence: "Learner explains the key concepts and justifies a starting recipe.",
+    }),
+    expect.objectContaining({ id: "co3" }),
+    expect.objectContaining({
+      id: "co5",
+      statement: "Create a repeatable brew log for controlled improvement.",
+      evidence: "Learner produces a brew log with one justified variable change.",
+      cognitive_level: "create",
+      priority: "optional",
+    }),
+    expect.objectContaining({ id: "co4" }),
+  ]);
+
+  await page.reload();
+  await expect(
+    page.getByRole("heading", {
+      name: "Explain core coffee concepts and use them to choose a sound starting recipe.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Learner explains the key concepts and justifies a starting recipe."),
+  ).toBeVisible();
+  await expect(page.locator(".outcome-list > .outcome-card code")).toHaveText([
+    "co1",
+    "co3",
+    "co5",
+    "co4",
+  ]);
+  await expect(page.getByText("Create", { exact: true })).toBeVisible();
+  await expect(page.getByText("optional", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Approve Outcomes" }).click();
+  await expect.poll(
+    async () => (await stage(request, courseId, "outcomes")).state,
+  ).toBe("approved");
+  await expect.poll(
+    async () => (await stage(request, courseId, "research")).state,
+  ).toBe("ready");
+
+  await page.goto(`/courses/${courseId}/research?mode=deterministic`);
+  await expect(page.getByRole("heading", { name: "Research & Sources" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Run Research" })).toBeVisible();
 });
 
 test("keeps the seeded Course Model reopen lifecycle scenario", async ({ page, request }) => {

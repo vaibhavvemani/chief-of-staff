@@ -6,6 +6,11 @@
 > observability boundaries needed to implement the next development cycle  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`
 
+> **NC-30 contract update — 2026-07-17:** NC-301 and NC-302 have passed independent
+> checkpoint review. NC-303 remains deferred to NC-90 behind NC-902. NC-40 has not
+> started, and the next safe implementation action is NC-401. This does not complete
+> Milestone 3 or the cycle.
+
 ## 1. How to use this document
 
 The parent plan defines the product outcome and milestone order. This document defines
@@ -238,6 +243,11 @@ The following matrix is the target capability boundary for this cycle.
 Package should not present a generic “request changes” action. A Package problem must
 route to the responsible stage or retry deterministic rendering.
 
+The matrix is the target boundary for the full cycle, not a claim that every capability
+is currently projected. Outcomes direct edit and typed decision are implemented through
+NC-302. Outcomes scoped agent revision remains NC-303 and must not be projected before
+its NC-90 implementation behind NC-902.
+
 ## 8. Brief intake contract
 
 ### 8.1 Draft representation
@@ -310,15 +320,66 @@ POST /api/courses/{course_id}/brief/clarifications/run
 
 ### 9.1 Outcomes decision
 
-Keep the current typed reducer and wire it through React. It supports:
+The deterministic Outcomes reducer is the authoritative decision boundary used by the
+API and React. The command supports selected IDs, bounded field edits, additions,
+removals by omission after browser confirmation, and priority order. Strict request
+models reject unknown command, edit, and addition fields.
 
-- selected IDs;
-- field edits;
-- additions;
-- removals by omission after confirmation;
-- priority order.
+The reducer validates the complete resulting collection atomically, not only individual
+patches. It must reject:
 
-Backend validation must guarantee unique stable IDs and at least one selected outcome.
+- an empty or meaningless final collection;
+- duplicate selected IDs, unknown selected IDs, duplicate final IDs, or any
+  client-supplied canonical ID for an addition;
+- edits to unknown IDs, unsupported editable fields, or any attempt to mutate an ID;
+- invalid ID syntax outside `^[a-z0-9][a-z0-9_-]*$`;
+- non-string, empty, whitespace-only, or longer-than-300-character statements or
+  evidence;
+- cognitive levels outside `remember`, `understand`, `apply`, `analyze`, `evaluate`, or
+  `create`;
+- priorities outside `core`, `supporting`, or `optional`;
+- a malformed, ambiguous, scope-escaping, or no-op decision;
+- a duplicate, unknown, removed, or incomplete nonempty priority order.
+
+Statement and evidence whitespace is normalized before comparison and persistence.
+Retained and edited Outcomes preserve their stable canonical IDs, and display reordering
+never renumbers them. Clients cannot choose canonical IDs for additions. The backend
+allocates deterministic collision-free canonical IDs and persists a monotonic
+`next_outcome_id` cursor, so removing the highest-numbered Outcome does not permit that
+ID to be reused later. React may assign a request-local client reference so a new row can
+appear in the order before it has a canonical ID; the reducer resolves that reference
+during the same atomic decision, and the reference never persists as an Outcome ID.
+
+A nonempty `priority_order` claims to be the complete final order. It must contain each
+retained canonical ID and each request-local addition reference exactly once. For
+backward compatibility, an omitted or empty `priority_order` falls back deterministically
+to `selected_ids` order followed by additions in request order. Removal remains omission
+from `selected_ids`, with confirmation owned by the browser.
+
+A valid meaningful decision saves a new draft; it never auto-approves. The canonical
+response replaces local editor state and persists across refresh. Approval remains a
+separate command guarded against an empty collection, duplicate IDs, invalid statements
+or evidence, invalid cognitive levels or priorities, and invalid ordering. Failed
+decision or approval validation leaves the previous valid artifact unchanged.
+
+On a checksum conflict, the browser refetches the canonical artifact and performs a
+three-way rebase. Nonoverlapping local edits, additions, and confirmed removals are
+preserved; server additions are incorporated and server removals are not resurrected.
+Overlapping field or order changes require an explicit operator choice before another
+save. Unsaved Outcomes edits warn before browser unload or internal stage navigation.
+
+Every Outcomes creation, edit, approval, and run remains behind the normalized Brief
+readiness gate. Changing an existing artifact requires its expected checksum and occurs
+under the per-course mutation lock. Read-only examples cannot be changed. An approved
+Outcomes artifact exposes edit only after explicit Reopen and current impact
+acknowledgement. The backend projector and capability service own those decisions;
+React must not infer them. A meaningful saved change derives downstream invalidation
+from `PipelineCatalog` and preserves stale artifact bodies.
+
+The backend also returns structured nonblocking advisories tied to Outcome IDs for vague
+or non-observable verbs, duplicate or near-duplicate statements, and missing or
+mechanically weak evidence. These checks guide operator attention and do not claim to
+judge final pedagogical quality.
 
 ### 9.2 Source decision
 
@@ -520,7 +581,7 @@ Two strategies are supported:
 | Stage | Required guard |
 |---|---|
 | Brief | Mandatory fields resolved; accepted defaults recorded; no high-severity intake conflict. |
-| Outcomes | At least one valid outcome; unique IDs; valid priority order. |
+| Outcomes | At least one meaningful outcome; unique valid IDs; nonempty schema-bounded statements and evidence; valid cognitive levels and priorities; complete duplicate-free order. |
 | Research | Dossier present; explicit source decision; at least one approved content-bearing source; no invalid selected IDs. |
 | Course Model | Referential integrity passes; all source IDs are approved/content-bearing; outcome links resolve. |
 | Blueprint | Every Course Model subtopic has one plan; selected assets are valid; anchor rule passes; source routes are approved. |
@@ -680,6 +741,11 @@ Before a command is considered implemented, add tests for:
 
 Source and content repair additionally require byte-for-byte preservation assertions for
 unaffected assets.
+
+The Outcomes command additionally requires focused coverage of complete-collection
+reduction, deterministic ID allocation and temporary-reference ordering, strict payloads,
+normalization and no-op rejection, advisory results, Brief-readiness gates, draft
+persistence, approval/reopen capability gates, and canonical refresh behavior.
 
 ## 18. Technical start gate
 

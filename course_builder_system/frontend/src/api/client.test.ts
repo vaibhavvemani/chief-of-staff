@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  ApiError,
   approveStage,
   createCourse,
   getBriefQuestions,
   getWorkspace,
   normalizeStatus,
+  outcomeValidationIssues,
   previewStageImpact,
   reopenStage,
   reviseStage,
@@ -12,7 +14,9 @@ import {
   runStage,
   saveBriefAnswers,
   saveBriefUpdates,
+  saveOutcomeDecision,
   saveSourceDecision,
+  versionConflictChecksum,
 } from "./client";
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -423,5 +427,184 @@ describe("typed API commands", () => {
       selected_ids: ["source-1", "source-3"],
       expected_checksum: "checksum-5",
     });
+  });
+
+  it("preserves the individual Outcomes checksum and normalizes projected advisories", async () => {
+    const fetchMock = vi.fn((path: string) => {
+      if (path.endsWith("/workspace")) {
+        return Promise.resolve(jsonResponse({
+          course_id: "herb-course",
+          title: "Indoor herbs",
+          current_stage: "outcomes",
+          operator_status: "pending_review",
+          stages: [{
+            slug: "outcomes",
+            label: "Outcomes",
+            state: "awaiting_review",
+            checksum: "stage-checksum",
+            actions: [{ id: "edit", label: "Edit Outcomes", enabled: true }],
+            advisories: [{
+              severity: "advisory",
+              code: "vague_verb",
+              outcome_id: "co1",
+              field: "statement",
+              message: "Use a more observable verb.",
+            }],
+          }],
+        }));
+      }
+      if (path.endsWith("/stages/outcomes")) {
+        return Promise.resolve(jsonResponse({
+          slug: "outcomes",
+          advisories: [{
+            severity: "advisory",
+            code: "vague_verb",
+            outcome_id: "co1",
+            field: "statement",
+            message: "Use a more observable verb.",
+          }],
+          artifacts: [{
+            artifact_type: "course_outcomes",
+            checksum: "outcomes-artifact-checksum",
+            body: {
+              outcomes: [{
+                id: "co1",
+                statement: "Understand indoor herbs.",
+                evidence: "Learner explains a growing decision.",
+                cognitive_level: "understand",
+                priority: "core",
+              }],
+            },
+          }],
+        }));
+      }
+      return Promise.resolve(jsonResponse({ slug: path.split("/").at(-1), artifacts: [] }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await getWorkspace("herb-course");
+
+    expect(result.workspace.outcomesChecksum).toBe("outcomes-artifact-checksum");
+    expect(result.workspace.outcomes).toEqual([expect.objectContaining({
+      id: "co1",
+      cognitiveLevel: "understand",
+      priority: "core",
+    })]);
+    expect(result.workspace.outcomeAdvisories).toEqual([{
+      code: "vague_verb",
+      outcomeId: "co1",
+      relatedOutcomeId: undefined,
+      field: "statement",
+      reason: "Use a more observable verb.",
+      level: "advisory",
+    }]);
+    expect(result.workspace.stages[0]?.checksum).toBe("stage-checksum");
+  });
+
+  it("serializes a complete typed Outcomes decision and returns the canonical draft", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
+      artifact: {
+        body: {
+          outcomes: [
+            {
+              id: "co2",
+              statement: "Apply a safe watering routine.",
+              evidence: "Learner completes a watering scenario.",
+              cognitive_level: "apply",
+              priority: "core",
+            },
+            {
+              id: "co3",
+              statement: "Evaluate an indoor growing location.",
+              evidence: "Learner compares two locations.",
+              cognitive_level: "evaluate",
+              priority: "supporting",
+            },
+          ],
+        },
+      },
+      checksum: "outcomes-next",
+      advisories: [],
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await saveOutcomeDecision("herb-course", {
+      expectedChecksum: "outcomes-before",
+      selectedIds: ["co2"],
+      edits: {
+        co2: {
+          statement: "Apply a safe watering routine.",
+          cognitiveLevel: "apply",
+          priority: "core",
+        },
+      },
+      additions: [{
+        clientKey: "new_1",
+        statement: "Evaluate an indoor growing location.",
+        evidence: "Learner compares two locations.",
+        cognitiveLevel: "evaluate",
+        priority: "supporting",
+      }],
+      priorityOrder: ["co2", "new_1"],
+    });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/courses/herb-course/outcomes/decision");
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe("PUT");
+    expect(requestBody(fetchMock)).toEqual({
+      expected_checksum: "outcomes-before",
+      selected_ids: ["co2"],
+      edits: {
+        co2: {
+          statement: "Apply a safe watering routine.",
+          cognitive_level: "apply",
+          priority: "core",
+        },
+      },
+      additions: [{
+        client_key: "new_1",
+        statement: "Evaluate an indoor growing location.",
+        evidence: "Learner compares two locations.",
+        cognitive_level: "evaluate",
+        priority: "supporting",
+      }],
+      priority_order: ["co2", "new_1"],
+    });
+    expect(result).toMatchObject({
+      checksum: "outcomes-next",
+      outcomes: [
+        { id: "co2", cognitiveLevel: "apply" },
+        { id: "co3", cognitiveLevel: "evaluate" },
+      ],
+      advisories: [],
+    });
+  });
+
+  it("distinguishes checksum conflicts from other 409 responses", () => {
+    expect(versionConflictChecksum(new ApiError("changed", 409, {
+      error: { message: "changed", actual_checksum: "latest-checksum" },
+    }))).toBe("latest-checksum");
+    expect(versionConflictChecksum(new ApiError("course busy", 409, {
+      error: { message: "course busy" },
+    }))).toBeUndefined();
+    expect(versionConflictChecksum(new ApiError("invalid", 400, {
+      error: { actual_checksum: "irrelevant" },
+    }))).toBeUndefined();
+    expect(outcomeValidationIssues(new ApiError("invalid decision", 400, {
+      error: {
+        code: "invalid_outcome_decision",
+        issues: [{
+          code: "empty_evidence",
+          message: "Evidence cannot be blank.",
+          outcome_id: "co1",
+          field: "evidence",
+        }],
+      },
+    }))).toEqual([{
+      code: "empty_evidence",
+      message: "Evidence cannot be blank.",
+      outcomeId: "co1",
+      field: "evidence",
+      index: undefined,
+    }]);
   });
 });

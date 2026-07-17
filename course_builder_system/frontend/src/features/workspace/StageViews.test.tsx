@@ -96,4 +96,56 @@ describe("truthful lifecycle controls", () => {
     expect(screen.getByText(/an inline renderer is not implemented/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /open raw file/i })).toHaveAttribute("href", expect.stringContaining("/outputs/"));
   });
+
+  it("renders Outcomes editing only when the backend-projected edit capability is wired", () => {
+    const onStartOutcomesEdit = vi.fn();
+    const workspace: Workspace = {
+      ...demoWorkspace,
+      outcomeAdvisories: [{
+        code: "weak_evidence",
+        outcomeId: "co2",
+        field: "evidence",
+        reason: "Describe a more observable learner product.",
+        level: "advisory",
+      }],
+    };
+    const view = render(<StageView stage="outcomes" workspace={workspace} />);
+
+    expect(screen.queryByRole("button", { name: "Edit Outcomes" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Outcome advisory checks")).toHaveTextContent("co2");
+
+    view.rerender(
+      <StageView
+        stage="outcomes"
+        workspace={workspace}
+        onStartOutcomesEdit={onStartOutcomesEdit}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Edit Outcomes" }));
+    expect(onStartOutcomesEdit).toHaveBeenCalledOnce();
+  });
+
+  it("routes the controlled Outcomes edit state and save callback", () => {
+    const onSaveOutcomes = vi.fn();
+    render(
+      <StageView
+        stage="outcomes"
+        workspace={demoWorkspace}
+        outcomesEditing
+        onStartOutcomesEdit={vi.fn()}
+        onSaveOutcomes={onSaveOutcomes}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Outcome statement for co1"), {
+      target: { value: "Explain a revised set of core coffee concepts." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Outcomes draft" }));
+
+    expect(onSaveOutcomes).toHaveBeenCalledWith(expect.objectContaining({
+      selectedIds: ["co1", "co2", "co3", "co4"],
+      edits: { co1: { statement: "Explain a revised set of core coffee concepts." } },
+      priorityOrder: ["co1", "co2", "co3", "co4"],
+    }));
+  });
 });

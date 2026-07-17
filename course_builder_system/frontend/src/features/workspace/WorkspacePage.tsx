@@ -6,6 +6,7 @@ import {
   approveStage,
   getBriefQuestions,
   getWorkspace,
+  outcomeValidationIssues,
   previewStageImpact,
   reopenStage,
   reviseStage,
@@ -13,13 +14,15 @@ import {
   runStage,
   saveBriefAnswers,
   saveBriefUpdates,
+  saveOutcomeDecision,
   saveSourceDecision,
   subscribeToJob,
+  versionConflictChecksum,
 } from "../../api/client";
 import { AppBrand } from "../../components/AppBrand";
 import { ErrorState, LoadingState } from "../../components/States";
 import { StatusBadge } from "../../components/StatusBadge";
-import type { BriefData, BriefQuestionAnswer, BriefUpdates, Claim, ContentAsset, ImpactPreview, StageAction, StageActionId, StageSlug, UiStatus, Workspace } from "../../types";
+import type { BriefData, BriefQuestionAnswer, BriefUpdates, Claim, ContentAsset, ImpactPreview, OutcomeDecisionDraft, OutcomeValidationIssue, StageAction, StageActionId, StageSlug, UiStatus, Workspace } from "../../types";
 import { StageView, stageData, type BriefEditSection } from "./StageViews";
 
 const stageSlugs: StageSlug[] = ["brief", "outcomes", "research", "course-model", "blueprint", "content", "lesson-plan", "package"];
@@ -429,6 +432,11 @@ export function WorkspacePage() {
   const [pendingRevision, setPendingRevision] = useState<{ asset: ContentAsset; category: string; instruction: string; expectedChecksum: string } | null>(null);
   const [revisionImpact, setRevisionImpact] = useState<ImpactPreview | null>(null);
   const [briefEditSection, setBriefEditSection] = useState<BriefEditSection | null>(null);
+  const [outcomesEditing, setOutcomesEditing] = useState(false);
+  const [outcomesDirty, setOutcomesDirty] = useState(false);
+  const [outcomesConflict, setOutcomesConflict] = useState(false);
+  const [outcomesServerError, setOutcomesServerError] = useState<string>();
+  const [outcomesServerIssues, setOutcomesServerIssues] = useState<OutcomeValidationIssue[]>([]);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; tone: "good" | "attention" | "neutral" } | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -442,6 +450,8 @@ export function WorkspacePage() {
   });
   const workspace = query.data?.workspace;
   const currentSummary = workspace?.stages.find((item) => item.slug === stage);
+  const outcomesEditCapability = stage === "outcomes"
+    && Boolean(currentSummary?.actions.some((action) => action.id === "edit" && action.enabled));
   const briefQuestionsQuery = useQuery({
     queryKey: ["brief-questions", courseId],
     queryFn: () => getBriefQuestions(courseId),
@@ -459,6 +469,40 @@ export function WorkspacePage() {
     setRunProgress({ message: workspace.activeJob.status === "queued" ? "Run queued" : "Agent run in progress" });
   }, [activeJobId, workspace?.activeJob]);
 
+  useEffect(() => {
+    if (!outcomesEditing || stage === "outcomes" && outcomesEditCapability) return;
+    setOutcomesEditing(false);
+    setOutcomesDirty(false);
+    setOutcomesConflict(false);
+    setOutcomesServerError(undefined);
+    setOutcomesServerIssues([]);
+  }, [outcomesEditCapability, outcomesEditing, stage]);
+
+  useEffect(() => {
+    if (!outcomesDirty) return;
+    const message = "You have unsaved Outcomes changes. Leave this page and discard them?";
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = message;
+    };
+    const onDocumentClick = (event: MouseEvent) => {
+      const target = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      if (!(target instanceof HTMLAnchorElement)) return;
+      const destination = new URL(target.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+      if (!window.confirm(message)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    document.addEventListener("click", onDocumentClick, true);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      document.removeEventListener("click", onDocumentClick, true);
+    };
+  }, [outcomesDirty]);
+
   const briefMutation = useMutation({
     mutationFn: async (updates: BriefUpdates) => {
       if (!workspace || query.data?.demoMode) return { demo: true };
@@ -472,7 +516,7 @@ export function WorkspacePage() {
       void queryClient.invalidateQueries({ queryKey: ["brief-questions", courseId] });
     },
     onError: (error) => {
-      const stale = error instanceof ApiError && error.status === 409;
+      const stale = Boolean(versionConflictChecksum(error));
       setToast({ tone: "attention", message: stale ? "The Brief changed in another session. The latest values are loaded; reopen the section and try again." : error.message });
       if (stale) {
         setBriefEditSection(null);
@@ -496,7 +540,7 @@ export function WorkspacePage() {
       ]);
     },
     onError: (error) => {
-      const stale = error instanceof ApiError && error.status === 409;
+      const stale = Boolean(versionConflictChecksum(error));
       setToast({ tone: "attention", message: stale ? "The Brief changed in another session. Refresh before answering this round." : error instanceof Error ? error.message : "The answers could not be saved." });
       if (stale) {
         void queryClient.invalidateQueries({ queryKey: ["workspace", courseId] });
@@ -561,8 +605,53 @@ export function WorkspacePage() {
       void refresh();
     },
     onError: (error) => {
-      const stale = error instanceof ApiError && error.status === 409;
+      const stale = Boolean(versionConflictChecksum(error));
       setToast({ tone: "attention", message: stale ? "This artifact changed in another session. Refresh before submitting your decision." : error.message });
+    },
+  });
+
+  const outcomesMutation = useMutation({
+    mutationFn: (decision: OutcomeDecisionDraft) => {
+      if (!workspace?.outcomesChecksum) throw new Error("Outcomes editing requires the current artifact checksum.");
+      return saveOutcomeDecision(courseId, {
+        ...decision,
+        expectedChecksum: workspace.outcomesChecksum,
+      });
+    },
+    onSuccess: async (result) => {
+      setOutcomesConflict(false);
+      setOutcomesServerError(undefined);
+      setOutcomesServerIssues([]);
+      setOutcomesDirty(false);
+      queryClient.setQueryData<{ workspace: Workspace; demoMode: boolean; readOnly: boolean }>(
+        ["workspace", courseId],
+        (current) => current ? {
+          ...current,
+          workspace: {
+            ...current.workspace,
+            outcomes: result.outcomes,
+            outcomesChecksum: result.checksum || current.workspace.outcomesChecksum,
+            outcomeAdvisories: result.advisories,
+          },
+        } : current,
+      );
+      setOutcomesEditing(false);
+      await refresh();
+      setToast({ tone: "good", message: "Outcomes saved as a draft. Review the canonical result before approval." });
+    },
+    onError: async (error) => {
+      if (versionConflictChecksum(error)) {
+        setOutcomesServerError(undefined);
+        setOutcomesServerIssues([]);
+        await refresh();
+        setOutcomesConflict(true);
+        setToast({ tone: "attention", message: "The Outcomes changed elsewhere. Your local edits are preserved until you choose how to continue." });
+        return;
+      }
+      const message = error instanceof Error ? error.message : "The Outcomes decision could not be saved.";
+      setOutcomesServerError(message);
+      setOutcomesServerIssues(outcomeValidationIssues(error));
+      setToast({ tone: "attention", message });
     },
   });
 
@@ -725,13 +814,20 @@ export function WorkspacePage() {
       return;
     }
     if (action.id === "edit") {
+      if (stage === "outcomes") {
+        setOutcomesServerError(undefined);
+        setOutcomesServerIssues([]);
+        setOutcomesConflict(false);
+        setOutcomesEditing(true);
+        return;
+      }
       if (stage === "brief" && currentSummary?.status === "needs_input") {
         const intake = document.querySelector<HTMLElement>(".brief-intake-panel");
         intake?.scrollIntoView({ behavior: "smooth", block: "start" });
         intake?.querySelector<HTMLElement>("input, textarea, button")?.focus();
         return;
       }
-      setBriefEditSection("learner");
+      if (stage === "brief") setBriefEditSection("learner");
       return;
     }
     const selector = action.id === "source_decision"
@@ -770,14 +866,14 @@ export function WorkspacePage() {
             <AgentRunScreen stage={stage} mode={runMode} progress={runProgress} />
           ) : currentSummary?.status === "locked" && !demoMode ? (
             <div className="locked-stage-state"><span className="locked-glyph" aria-hidden="true">·</span><span className="eyebrow">{currentSummary.label}</span><h1>This stage is waiting on an upstream decision.</h1><p>{currentSummary.dependencies.length ? `${currentSummary.dependencies.map((item) => item.replaceAll("_", " ")).join(", ")} must be approved and current before this stage can run.` : "A backend prerequisite must be completed before this stage can run."}</p></div>
-          ) : <StageView stage={stage} workspace={workspace} contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise") }} onContentAction={actionEnabled("review_asset") || actionEnabled("revise") ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined} onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined} onEditBrief={actionEnabled("edit") ? setBriefEditSection : undefined} briefQuestionRound={briefQuestionsQuery.data} briefQuestionsLoading={briefQuestionsQuery.isLoading || briefQuestionsQuery.isFetching && !briefQuestionsQuery.data} briefQuestionsBusy={briefAnswersMutation.isPending} briefQuestionsError={briefQuestionsError} onRetryBriefQuestions={() => void briefQuestionsQuery.refetch()} onSubmitBriefQuestions={(answers) => briefAnswersMutation.mutate(answers)} />}
+          ) : <StageView stage={stage} workspace={workspace} contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise") }} onContentAction={actionEnabled("review_asset") || actionEnabled("revise") ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined} onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined} onEditBrief={stage === "brief" && actionEnabled("edit") ? setBriefEditSection : undefined} outcomesEditing={outcomesEditing} outcomesBusy={outcomesMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)} outcomesConflict={outcomesConflict} outcomesServerError={outcomesServerError} outcomesServerIssues={outcomesServerIssues} onStartOutcomesEdit={outcomesEditCapability ? () => { setOutcomesServerError(undefined); setOutcomesServerIssues([]); setOutcomesConflict(false); setOutcomesDirty(false); setOutcomesEditing(true); } : undefined} onCancelOutcomesEdit={() => { setOutcomesEditing(false); setOutcomesDirty(false); setOutcomesConflict(false); setOutcomesServerError(undefined); setOutcomesServerIssues([]); }} onSaveOutcomes={(decision) => { setOutcomesServerError(undefined); setOutcomesServerIssues([]); outcomesMutation.mutate(decision); }} onResolveOutcomesConflict={() => { setOutcomesConflict(false); setOutcomesServerError(undefined); setOutcomesServerIssues([]); }} onOutcomesDirtyChange={setOutcomesDirty} briefQuestionRound={briefQuestionsQuery.data} briefQuestionsLoading={briefQuestionsQuery.isLoading || briefQuestionsQuery.isFetching && !briefQuestionsQuery.data} briefQuestionsBusy={briefAnswersMutation.isPending} briefQuestionsError={briefQuestionsError} onRetryBriefQuestions={() => void briefQuestionsQuery.refetch()} onSubmitBriefQuestions={(answers) => briefAnswersMutation.mutate(answers)} />}
         </main>
         {inspectorOpen ? <ContextInspector workspace={workspace} stage={stage} onClose={() => setInspectorOpen(false)} /> : null}
         <DecisionBar
           stage={stage}
           status={currentSummary?.status ?? "ready"}
           actions={currentSummary?.actions ?? []}
-          busy={mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)}
+          busy={mutation.isPending || outcomesMutation.isPending || outcomesEditing || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)}
           onAction={handleStageAction}
         />
       </div>

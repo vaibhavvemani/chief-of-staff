@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import run_summary
+from agents.outcomes import outcome_advisories
 from api.services.approval_guard import (
     ApprovalGuardService,
     hard_verifier_blocker_count,
@@ -294,6 +295,19 @@ class WorkspaceProjector:
             blocking_stage=blocking_stage,
             requires_reopen=requires_reopen,
         )
+        if active_job is not None:
+            actions = [
+                action
+                for action in actions
+                if action.get("id") in {"continue", "go_to_blocker"}
+            ]
+        advisories = (
+            outcome_advisories(
+                artifacts.get("course_outcomes", {}).get("body", {}).get("outcomes", [])
+            )
+            if stage.slug == "outcomes"
+            else []
+        )
         downstream_artifacts = self.catalog.downstream_artifacts(set(stage.artifacts))
         return {
             "slug": stage.slug,
@@ -316,6 +330,7 @@ class WorkspaceProjector:
                 self.catalog.stages_for_artifacts(downstream_artifacts)
             ),
             "approval_failures": approval_failures,
+            "advisories": advisories,
             "last_failure": (
                 latest_job.get("error")
                 if latest_job and latest_job.get("status") == "failed"
