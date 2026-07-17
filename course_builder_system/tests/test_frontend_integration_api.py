@@ -69,17 +69,23 @@ def test_http_create_and_stage_commands_are_confined_and_versioned(
     assert created.status_code == 201
     assert created.json()["workspace"]["course_id"] == "herb-course"
 
-    answers = client.put(
-        "/api/courses/herb-course/brief/answers",
+    current_brief = client.get("/api/courses/herb-course/artifacts/brief").json()
+    answers = client.patch(
+        "/api/courses/herb-course/brief",
         json={
-            "answers": {
+            "expected_checksum": current_brief["checksum"],
+            "updates": {
                 "audience": "Apartment renters",
                 "prior_knowledge": "No gardening experience",
                 "purpose": "Grow useful herbs indoors",
-                "in_scope": "light, watering, containers",
-                "out_of_scope": "outdoor beds",
-                "must_have_topics": "basil and mint",
-            }
+                "level": "beginner",
+                "duration": "3 hours",
+                "modality": "self_paced",
+                "language": "English",
+                "in_scope": ["light", "watering", "containers"],
+                "out_of_scope": ["outdoor beds"],
+                "must_have_topics": ["basil and mint"],
+            },
         },
     )
     assert answers.status_code == 200

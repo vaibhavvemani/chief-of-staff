@@ -1,7 +1,7 @@
 # Course Builder — Next Development Cycle Plan
 
 > **Status:** Approved planning baseline for the next development cycle  
-> **Updated:** 2026-07-15  
+> **Updated:** 2026-07-17
 > **Planning model:** Milestone-gated; no fixed time constraint  
 > **Target user:** One internal, nontechnical course director  
 > **Scope:** Finish the eight-stage browser product, close the content-trust loop,
@@ -9,6 +9,11 @@
 > **Read with:** `Course_Builder_Master_Context.md`,
 > `Course_Builder_Four_Week_Prototype_Completion_Handoff.md`, and
 > `Course_Builder_Frontend_Implementation_Handoff.md`
+
+> **Implementation update — 2026-07-17:** NC-10 and NC-20 have passed independent
+> review. The post-frontend audit below records the gap that led to NC-20; current Guided
+> Brief behavior is documented in the frontend implementation handoff. NC-30 Outcomes
+> decisions is the next safe package to begin.
 
 ## 1. Purpose of this document
 

@@ -35,8 +35,32 @@ def test_run_stage_returns_nested_durable_job_contract(client: TestClient) -> No
     )
     assert created.status_code == 201
 
+    brief = client.get("/api/courses/indoor-gardening/artifacts/brief").json()
+    completed = client.patch(
+        "/api/courses/indoor-gardening/brief",
+        json={
+            "expected_checksum": brief["checksum"],
+            "updates": {
+                "audience": "Apartment gardeners",
+                "purpose": "Grow herbs indoors",
+                "prior_knowledge": "None",
+                "level": "beginner",
+                "duration": "3 hours",
+                "modality": "self_paced",
+                "language": "English",
+            },
+        },
+    )
+    assert completed.status_code == 200
+    brief_stage = client.get("/api/courses/indoor-gardening/stages/brief").json()
+    approved = client.post(
+        "/api/courses/indoor-gardening/stages/brief/approve",
+        json={"expected_checksum": brief_stage["checksum"]},
+    )
+    assert approved.status_code == 200
+
     response = client.post(
-        "/api/courses/indoor-gardening/stages/brief/run",
+        "/api/courses/indoor-gardening/stages/outcomes/run",
         json={"mode": "deterministic"},
     )
 

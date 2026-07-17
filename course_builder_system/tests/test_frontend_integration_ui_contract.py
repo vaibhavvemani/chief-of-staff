@@ -65,15 +65,13 @@ def test_ui_uses_scoped_artifact_decisions_instead_of_a_generic_chat_surface() -
         assert forbidden not in source
 
 
-def test_new_courses_start_live_with_visible_editable_defaults() -> None:
+def test_new_courses_start_live_with_sparse_guided_intake() -> None:
     source = NEW_COURSE_SOURCE.read_text(encoding="utf-8")
 
     assert 'useState<"deterministic" | "live">("live")' in source
-    assert "3 hours of self-paced learning" in source
-    assert 'level: "beginner"' in source
-    assert 'modality: "self_paced"' in source
-    assert 'language: "English"' in source
-    assert "briefAnswers" in source
+    assert "Defaults stay unconfirmed until the next step" in source
+    assert "accept each one explicitly or replace it" in source
+    assert "briefAnswers" not in source
     assert "?mode=${mode}" in source
 
 

@@ -43,6 +43,11 @@
       "items": { "type": "string", "minLength": 1, "maxLength": 300 },
       "uniqueItems": true
     },
+    "locator_list": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 },
+      "uniqueItems": true
+    },
     "nullable_text": {
       "type": ["string", "null"],
       "maxLength": 500
@@ -75,6 +80,39 @@
         "field": { "type": "string", "minLength": 1, "maxLength": 100 },
         "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
         "blocking": { "type": "boolean" }
+      }
+    },
+    "intake_gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "field", "severity", "message"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "kind": { "enum": ["missing", "ambiguity", "conflict"] },
+        "field": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "severity": { "enum": ["low", "medium", "high"] },
+        "message": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "intake_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "explicit_fields",
+        "accepted_default_fields",
+        "unresolved_required_fields",
+        "answered_question_ids",
+        "last_gap_analysis"
+      ],
+      "properties": {
+        "explicit_fields": { "$ref": "#/$defs/text_list" },
+        "accepted_default_fields": { "$ref": "#/$defs/text_list" },
+        "unresolved_required_fields": { "$ref": "#/$defs/text_list" },
+        "answered_question_ids": { "$ref": "#/$defs/text_list" },
+        "last_gap_analysis": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/intake_gap" }
+        }
       }
     },
     "body": {
@@ -123,7 +161,7 @@
         "out_of_scope": { "$ref": "#/$defs/text_list" },
         "must_have_topics": { "$ref": "#/$defs/text_list" },
         "constraints": { "$ref": "#/$defs/text_list" },
-        "available_materials": { "$ref": "#/$defs/text_list" },
+        "available_materials": { "$ref": "#/$defs/locator_list" },
         "jurisdiction": { "$ref": "#/$defs/nullable_text" },
         "accessibility_requirements": { "$ref": "#/$defs/nullable_text" },
         "assessment_expectations": { "$ref": "#/$defs/nullable_text" },
@@ -141,7 +179,8 @@
         "unresolved_decisions": {
           "type": "array",
           "items": { "$ref": "#/$defs/unresolved_decision" }
-        }
+        },
+        "intake_state": { "$ref": "#/$defs/intake_state" }
       }
     }
   }

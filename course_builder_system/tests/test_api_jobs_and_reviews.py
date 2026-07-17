@@ -24,6 +24,31 @@ def _wait_for_terminal(runner: LocalJobRunner, job_id: str) -> dict:
     raise AssertionError("job did not reach a terminal state")
 
 
+def _create_with_approved_brief(
+    decisions: DecisionService,
+    *,
+    subject: str,
+    course_id: str,
+) -> None:
+    decisions.create_course(
+        subject=subject,
+        description=None,
+        constraints=[],
+        known_source_locators=[],
+        brief_details={
+            "audience": "Adult learners new to the subject",
+            "purpose": f"Apply {subject.lower()} safely and reliably.",
+            "prior_knowledge": "No prior knowledge required.",
+            "level": "beginner",
+            "duration": "3 hours",
+            "modality": "self_paced",
+            "language": "English",
+        },
+        course_id=course_id,
+    )
+    decisions.approve_stage(course_id, "brief")
+
+
 def test_local_job_runner_persists_job_and_versioned_events(tmp_path: Path) -> None:
     runner = LocalJobRunner(tmp_path / "runtime", max_workers=1)
     try:
@@ -72,11 +97,9 @@ def test_content_review_endpoint_service_uses_canonical_review_ledger(tmp_path: 
         include_examples=False,
     )
     decisions = DecisionService(repository, PipelineCatalog(rendered_root=tmp_path / "rendered"))
-    decisions.create_course(
+    _create_with_approved_brief(
+        decisions,
         subject="Safe lifting",
-        description=None,
-        constraints=[],
-        known_source_locators=[],
         course_id="review-course",
     )
     package = make_artifact(
@@ -137,11 +160,9 @@ def test_source_decision_service_persists_explicit_registry(tmp_path: Path) -> N
         include_examples=False,
     )
     decisions = DecisionService(repository, PipelineCatalog(rendered_root=tmp_path / "rendered"))
-    decisions.create_course(
+    _create_with_approved_brief(
+        decisions,
         subject="Indoor gardening",
-        description=None,
-        constraints=[],
-        known_source_locators=[],
         course_id="source-course",
     )
     dossier = make_artifact(

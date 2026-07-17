@@ -1,9 +1,44 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { demoWorkspace } from "../../data/demo";
+import type { Workspace } from "../../types";
 import { StageView } from "./StageViews";
 
 describe("truthful lifecycle controls", () => {
+  it("distinguishes explicit Brief answers from accepted defaults", () => {
+    render(<StageView stage="brief" workspace={demoWorkspace} />);
+
+    const provenance = screen.getByLabelText("Brief answer provenance");
+    expect(provenance).toHaveTextContent(/1 provided directly/i);
+    expect(provenance).toHaveTextContent(/3 defaults accepted/i);
+    expect(screen.getAllByText("Accepted default")).toHaveLength(3);
+  });
+
+  it("labels a saved incomplete Brief as input required and exposes all direct-edit groups", () => {
+    const onEditBrief = vi.fn();
+    const workspace: Workspace = {
+      ...demoWorkspace,
+      stages: demoWorkspace.stages.map((stage) => stage.slug === "brief"
+        ? { ...stage, status: "needs_input" }
+        : stage),
+    };
+
+    render(
+      <StageView
+        stage="brief"
+        workspace={workspace}
+        onEditBrief={onEditBrief}
+      />,
+    );
+
+    expect(screen.getByText("Input required", { exact: true })).toBeInTheDocument();
+    const requirements = screen.getByRole("button", {
+      name: "Adjust additional requirements and materials in Course Brief",
+    });
+    fireEvent.click(requirements);
+    expect(onEditBrief).toHaveBeenCalledWith("requirements");
+  });
+
   it("does not expose unsupported content repairs or review mutations", () => {
     render(
       <StageView

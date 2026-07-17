@@ -12,6 +12,7 @@ from api.services.artifact_repository import (
     ArtifactRepository,
     ReadOnlyCourse,
 )
+from api.services.brief_intake import BriefIntakeService
 from api.services.lifecycle import (
     ImpactConfirmationRequired,
     ImpactPreviewService,
@@ -25,6 +26,15 @@ class StageNotReopened(RuntimeError):
     pass
 
 
+class PrerequisiteNotApproved(RuntimeError):
+    def __init__(self, stage: str, artifact_type: str) -> None:
+        super().__init__(
+            f"{artifact_type} must be approved and current before changing {stage}"
+        )
+        self.stage = stage
+        self.artifact_type = artifact_type
+
+
 class DecisionService:
     def __init__(
         self,
@@ -34,10 +44,16 @@ class DecisionService:
         approval_guards: ApprovalGuardService | None = None,
         invalidation: InvalidationService | None = None,
         impact: ImpactPreviewService | None = None,
+        brief_intake: BriefIntakeService | None = None,
     ) -> None:
         self.repository = repository
         self.catalog = catalog
-        self.approval_guards = approval_guards or ApprovalGuardService(repository, catalog)
+        self.brief_intake = brief_intake or BriefIntakeService()
+        self.approval_guards = approval_guards or ApprovalGuardService(
+            repository,
+            catalog,
+            brief_intake=self.brief_intake,
+        )
         self.invalidation = invalidation or InvalidationService(repository, catalog)
         self.impact = impact or ImpactPreviewService(repository, catalog)
 
@@ -48,7 +64,8 @@ class DecisionService:
         description: str | None,
         constraints: list[str],
         known_source_locators: list[str],
-        course_id: str | None,
+        brief_details: dict[str, Any] | None = None,
+        course_id: str | None = None,
     ) -> dict[str, Any]:
         if not subject.strip():
             raise ValueError("subject cannot be empty")
@@ -69,7 +86,17 @@ class DecisionService:
         )
         # Subject Request is a human-supplied seed, matching save_seed_artifact.
         artifact["status"] = "approved"
-        return self.repository.save(artifact)
+        brief = intake.build_initial_brief_artifact(artifact)
+        if brief_details:
+            body = self.brief_intake.merge_updates(
+                artifact,
+                brief.get("body", {}),
+                brief_details,
+            )
+            brief = intake.brief_artifact_from_body(artifact, body)
+        saved_subject = self.repository.save(artifact)
+        self.repository.save(brief)
+        return saved_subject
 
     def approve_stage(self, course_id: str, stage_slug: str) -> list[dict[str, Any]]:
         self._writable(course_id)
@@ -154,17 +181,52 @@ class DecisionService:
             "impact": preview,
         }
 
-    def save_brief_answers(self, course_id: str, answers: dict[str, Any]) -> dict[str, Any]:
+    def save_brief_answers(
+        self,
+        course_id: str,
+        answers: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         self._writable(course_id)
         subject = self.repository.require(course_id, "subject_request")
-        existing = self.repository.load(course_id, "brief")
+        existing = self.repository.require(course_id, "brief")
         self._ensure_editable(existing, "brief")
-        artifact = intake.build_brief_artifact(subject, answers)
-        artifact["revision"] = int(existing.get("revision", 0)) + 1 if existing else 0
+        normalized = self.brief_intake.normalize_artifact(subject, existing)
+        body = self.brief_intake.merge_answers(
+            subject, normalized.get("body", {}), answers
+        )
+        artifact = intake.brief_artifact_from_body(subject, body)
+        artifact["revision"] = int(existing.get("revision", 0)) + 1
         artifact["status"] = "draft"
         saved = self.repository.save(
             artifact,
-            expected_checksum=self.repository.checksum(existing) if existing else None,
+            expected_checksum=self.repository.checksum(existing),
+        )
+        self._invalidate_if_changed(course_id, existing, saved, {"brief"})
+        return saved
+
+    def save_brief_updates(
+        self,
+        course_id: str,
+        updates: dict[str, Any],
+    ) -> dict[str, Any]:
+        self._writable(course_id)
+        subject = self.repository.require(course_id, "subject_request")
+        existing = self.repository.require(course_id, "brief")
+        self._ensure_editable(existing, "brief")
+        normalized = self.brief_intake.normalize_artifact(subject, existing)
+        body = self.brief_intake.merge_updates(
+            subject, normalized.get("body", {}), updates
+        )
+        if self.repository.checksum(existing.get("body")) == self.repository.checksum(
+            body
+        ):
+            raise ValueError("Brief update does not change the durable intake state")
+        artifact = intake.brief_artifact_from_body(subject, body)
+        artifact["revision"] = int(existing.get("revision", 0)) + 1
+        artifact["status"] = "draft"
+        saved = self.repository.save(
+            artifact,
+            expected_checksum=self.repository.checksum(existing),
         )
         self._invalidate_if_changed(course_id, existing, saved, {"brief"})
         return saved
@@ -179,7 +241,7 @@ class DecisionService:
         priority_order: list[str],
     ) -> dict[str, Any]:
         self._writable(course_id)
-        brief = self.repository.require(course_id, "brief")
+        brief = self._require_ready_brief(course_id, "outcomes")
         existing = self.repository.load(course_id, "course_outcomes")
         self._ensure_editable(existing, "course_outcomes")
         candidates = (
@@ -209,6 +271,7 @@ class DecisionService:
         import steps as pipeline_steps
 
         self._writable(course_id)
+        self._require_ready_brief(course_id, "research")
         dossier = self.repository.require(course_id, "research_dossier")
         existing = self.repository.load(course_id, "approved_source_registry")
         self._ensure_editable(dossier, "research_dossier")
@@ -236,6 +299,7 @@ class DecisionService:
         rationale: str,
     ) -> dict[str, Any]:
         self._writable(course_id)
+        self._require_ready_brief(course_id, "blueprint")
         blueprint = self.repository.require(course_id, "blueprint")
         self._ensure_editable(blueprint, "blueprint")
         decided = blueprint_agent.apply_blueprint_decision(
@@ -260,6 +324,7 @@ class DecisionService:
         note: str | None,
     ) -> dict[str, Any]:
         self._writable(course_id)
+        self._require_ready_brief(course_id, "content")
         existing = self.repository.load(course_id, "content_review")
         if existing is None:
             existing = self.sync_content_review(course_id)
@@ -278,6 +343,7 @@ class DecisionService:
     def sync_content_review(self, course_id: str) -> dict[str, Any]:
         """Create or synchronize review records with the current Content Package."""
         self._writable(course_id)
+        self._require_ready_brief(course_id, "content")
         package = self.repository.require(course_id, "content_package")
         existing = self.repository.load(course_id, "content_review")
         artifact = content_review.build_content_review_artifact(package, existing_review=existing)
@@ -293,6 +359,16 @@ class DecisionService:
     def _writable(self, course_id: str) -> None:
         if self.repository.locate(course_id).read_only:
             raise ReadOnlyCourse(f"committed example course is read-only: {course_id}")
+
+    def _require_ready_brief(self, course_id: str, stage_slug: str) -> dict[str, Any]:
+        """Enforce the transitive Brief gate for every later typed decision."""
+        if not self.catalog.stage_depends_on_artifact(stage_slug, "brief"):
+            raise ValueError(f"stage {stage_slug!r} is not downstream of the Brief")
+        subject = self.repository.require(course_id, "subject_request")
+        brief = self.repository.require(course_id, "brief")
+        if not self.brief_intake.is_approved_and_resolved(subject, brief):
+            raise PrerequisiteNotApproved(stage_slug, "brief")
+        return self.brief_intake.normalize_artifact(subject, brief)
 
     @staticmethod
     def _ensure_editable(artifact: dict[str, Any] | None, artifact_type: str) -> None:

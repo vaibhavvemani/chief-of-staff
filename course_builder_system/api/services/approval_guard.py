@@ -7,6 +7,7 @@ from typing import Any
 
 from agents import content_review, lesson_plan
 from api.services.artifact_repository import ArtifactRepository
+from api.services.brief_intake import BriefIntakeService
 from api.services.pipeline_catalog import PipelineCatalog
 from course_model_integrity import validate_course_model_semantics
 
@@ -89,9 +90,16 @@ class ApprovalGuardFailed(RuntimeError):
 
 
 class ApprovalGuardService:
-    def __init__(self, repository: ArtifactRepository, catalog: PipelineCatalog) -> None:
+    def __init__(
+        self,
+        repository: ArtifactRepository,
+        catalog: PipelineCatalog,
+        *,
+        brief_intake: BriefIntakeService | None = None,
+    ) -> None:
         self.repository = repository
         self.catalog = catalog
+        self.brief_intake = brief_intake or BriefIntakeService()
 
     def failures(self, course_id: str, stage_slug: str) -> list[GuardFailure]:
         stage = self.catalog.stage(stage_slug)
@@ -130,6 +138,27 @@ class ApprovalGuardService:
                         artifact_type,
                     )
                 )
+        if self.catalog.stage_depends_on_artifact(stage_slug, "brief"):
+            subject = self.repository.load(course_id, "subject_request")
+            brief = self.repository.load(course_id, "brief")
+            brief_ready = (
+                subject is not None
+                and brief is not None
+                and self.brief_intake.is_approved_and_resolved(subject, brief)
+            )
+            if not brief_ready and not any(
+                failure.code == "prerequisite_not_approved"
+                and failure.artifact_type == "brief"
+                for failure in failures
+            ):
+                failures.append(
+                    GuardFailure(
+                        "prerequisite_not_approved",
+                        "brief must be approved, current, and fully resolved.",
+                        stage_slug,
+                        "brief",
+                    )
+                )
         # A preserved stale/draft prerequisite can still be inspected by the
         # stage-specific guard.  Report its substantive blockers alongside the
         # lifecycle failure so an operator knows what must actually be repaired.
@@ -147,7 +176,9 @@ class ApprovalGuardService:
             raise ApprovalGuardFailed(stage_slug, failures)
 
     def _guard_brief(self, course_id: str) -> list[GuardFailure]:
-        body = self.repository.require(course_id, "brief").get("body", {})
+        subject = self.repository.require(course_id, "subject_request")
+        brief = self.repository.require(course_id, "brief")
+        body = self.brief_intake.normalize_artifact(subject, brief).get("body", {})
         required = (
             "subject",
             "audience",

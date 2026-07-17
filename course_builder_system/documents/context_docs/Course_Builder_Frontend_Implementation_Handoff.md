@@ -1,7 +1,7 @@
 # Course Builder Studio — Frontend Implementation Handoff
 
 > **Status:** Implemented local product prototype
-> **Updated:** 2026-07-15
+> **Updated:** 2026-07-17
 > **Scope:** React frontend, FastAPI adapter, browser workflow, and current UX contracts
 > **Read with:** `Course_Builder_Master_Context.md` and `Course_Builder_Four_Week_Prototype_Completion_Handoff.md`
 
@@ -11,12 +11,15 @@
 > authoritative for current behavior; the next-cycle package defines the target behavior
 > and implementation order.
 
-> **NC-10 lifecycle update — 2026-07-15:** The browser and API now use explicit
+> **NC-10/NC-20 checkpoint update — 2026-07-17:** Both packages have passed independent
+> review. The browser and API use explicit
 > backend-projected capabilities, graph-derived invalidation, checksum-protected impact
 > confirmation, server-side approval guards, explicit reopen, scoped Content revision,
-> and retryable persisted failure state. Unsupported generic revision controls were
-> removed or disabled. The stage-specific typed editors and repair workflows described
-> by NC-20 and later packages remain future work.
+> and retryable persisted failure state. Guided Brief Intake now adds canonical durable
+> intake state, typed bounded question rounds, explicit default acceptance, deterministic
+> conditional/gap clarification, backend approval/run gates, and reopen-protected partial
+> editing. Unsupported generic revision controls remain removed or disabled. NC-30 and
+> later typed editors and repair workflows remain future work.
 
 ## 1. Purpose of this document
 
@@ -47,7 +50,7 @@ The implemented browser path supports:
 
 - listing runtime courses and committed example courses;
 - creating a course from a sparse subject request;
-- visible, editable starting defaults;
+- durable Guided Brief intake with visible, explicitly accepted defaults;
 - Live agent mode by default, with deterministic mode available;
 - running one product stage at a time;
 - persisted background jobs and Server-Sent Event progress;
@@ -107,21 +110,20 @@ Route: `/courses/new`
 The required input is a subject. Optional inputs include a practical goal, constraints,
 and known source URLs.
 
-Starting defaults are intentionally prefilled:
+The creation request may remain sparse. The backend saves the approved `subject_request`
+and the first durable Brief draft in the same API operation; structured callers may
+also include already-known Brief fields so a complete request receives no redundant
+questions. Browser defaults do not silently count as human answers. The browser submits
+the same deterministic course ID it displays, so connection-loss recovery returns to
+the durable course that may already have been created.
 
-- audience: general adult beginners;
-- prior knowledge: none assumed;
-- level: beginner;
-- duration: three hours of self-paced learning;
-- delivery: self-paced;
-- language: English.
-
-The user can edit these before creating the Brief. The default run mode is **Live agent**;
-Deterministic preview remains available for offline demos and repeatable testing.
-
-The browser creates the `subject_request` first and then saves typed Brief answers. If
-the second call loses its connection, the created course is preserved and the Brief page
-explains that the starting values still need to be saved.
+The Brief route then shows at most five backend-projected mandatory questions per round.
+Defaults such as level, duration, modality, prior knowledge, and English remain visible
+but unresolved until the director explicitly accepts or replaces them. Conditional and
+deterministic gap questions appear only when Python marks them applicable, with at most
+three questions in the normal additional round. Answers are saved after every round and
+survive refresh. The default run mode remains **Live agent**; NC-20 clarification itself
+is deterministic in both modes until the NC-909 live implementation.
 
 ### 4.3 Course workspace
 
@@ -214,8 +216,18 @@ The Brief is a readable working agreement rather than a questionnaire transcript
 shows course intent, level, duration, delivery, language, learner, prior knowledge,
 assessment expectation, scope, required coverage, constraints, and assumptions.
 
-The operator can directly edit one bounded section at a time. Saving creates a new draft
-for review. This is the richest structured editor in the current frontend.
+While intake is incomplete, the page renders typed controls directly from serialized
+`QuestionSpec` data. React does not own visibility or validation rules. The durable
+`intake_state` distinguishes explicit human fields, accepted defaults, unresolved
+decisions, answered question IDs, and current gap analysis; the review view makes that
+provenance visible.
+
+The operator can directly edit one bounded section at a time. The client submits only
+changed fields, and the backend applies them through the same merge/validation path as
+question answers. Approved Briefs must first be reopened with impact confirmation.
+Saving creates a new draft without resetting unrelated answers or accepted defaults;
+no-op edits are rejected. Stale answer and direct-edit checksums reload the current
+workspace rather than leaving an editor trapped on an obsolete version.
 
 ### 6.2 Outcomes
 
@@ -345,8 +357,9 @@ server and serves `frontend/dist` for the single-process local build.
 |---|---|
 | `frontend/src/app/App.tsx` | Route table. |
 | `frontend/src/features/courses/CoursesPage.tsx` | Course dashboard and filters. |
-| `frontend/src/features/courses/NewCoursePage.tsx` | Course creation, defaults, and mode selection. |
+| `frontend/src/features/courses/NewCoursePage.tsx` | Sparse course creation and mode selection. |
 | `frontend/src/features/workspace/WorkspacePage.tsx` | Workspace shell, queries, mutations, SSE, navigation, inspector, dialogs, and decision bar. |
+| `frontend/src/features/workspace/BriefQuestionRound.tsx` | Accessible typed Brief controls, explicit default acceptance, optional skip, and round validation. |
 | `frontend/src/features/workspace/StageViews.tsx` | All eight purpose-built stage views. |
 | `frontend/src/api/client.ts` | HTTP commands plus normalization from backend artifacts into UI types. |
 | `frontend/src/types.ts` | Frontend view models and command types. |
@@ -397,10 +410,17 @@ flowchart LR
 | `ApprovalGuardService` | Rechecks every human checkpoint on the server and returns structured failures. |
 | `StageCapabilityService` | Projects only actions backed by registered domain operations. |
 | `WorkspaceProjector` | Derives course summaries, stage states, counts, attention, next action, and active job. |
+| `BriefIntakeService` | Provides the shared read-only normalization/readiness boundary for historical and new Briefs, injects bounded clarification, and merges answers/direct edits. Historical draft assumptions stay unresolved; approved pre-NC-20 snapshots remain compatible without a file rewrite. |
 | `DecisionService` | Applies typed human decisions and approvals without moving artifact logic into the API. |
 | `RevisionService` | Validates registered scoped revision targets and rejects ambiguous requests before queuing. |
 | `StageRunner` | Executes the existing step callables for one stage and saves draft outputs. |
 | `LocalJobRunner` | Persists jobs/events and enforces one active mutation per course. |
+
+Every stage transitively downstream of `brief` derives that relationship from the
+`PipelineCatalog` graph. Projection, approval, typed decisions, API preflight, and the
+locked execution boundary all require the normalized Brief to be both resolved and
+approved. An invalid historical approved Brief exposes impact-confirmed Reopen so it can
+return to `needs_input` without bypassing the lifecycle.
 
 ### Implemented command surface
 
@@ -420,7 +440,10 @@ POST   /api/courses/{course_id}/stages/{stage}/reopen
 POST   /api/courses/{course_id}/stages/{stage}/impact
 POST   /api/courses/{course_id}/stages/{stage}/revisions
 
+GET    /api/courses/{course_id}/brief/questions
+POST   /api/courses/{course_id}/brief/clarifications/run
 PUT    /api/courses/{course_id}/brief/answers
+PATCH  /api/courses/{course_id}/brief
 PUT    /api/courses/{course_id}/outcomes/decision
 PUT    /api/courses/{course_id}/research/sources/decision
 PUT    /api/courses/{course_id}/blueprint/decision
@@ -521,6 +544,7 @@ Primary checks:
 cd frontend
 npm run build
 npm test
+npm run test:e2e
 cd ..
 .venv/bin/python -m pytest -q
 .venv/bin/ruff check .
@@ -530,6 +554,10 @@ git diff --check
 Important frontend/API regression files include:
 
 - `frontend/src/api/client.test.ts`;
+- `frontend/src/features/workspace/BriefQuestionRound.test.tsx`;
+- `frontend/src/features/workspace/WorkspacePage.test.tsx`;
+- `frontend/e2e/deterministic-course.e2e.ts`;
+- `tests/test_guided_brief_intake.py`;
 - `tests/test_frontend_integration_ui_contract.py`;
 - `tests/test_frontend_integration_api.py`;
 - `tests/test_frontend_integration_commands.py`;
@@ -590,10 +618,10 @@ content verification workbench, Lesson Plan review, and Package default selectio
 
 ## 15. Recommended next frontend-related work
 
-The next dependency-ordered package is NC-20 guided Brief intake, followed by the typed
-stage editors in NC-30 through NC-60. Source repair and verifier-driven targeted revision
-remain the central trust milestone, but begin only after those lifecycle and command
-foundations are stable.
+The next dependency-ordered package is NC-30 Outcomes decisions, followed by the typed
+stage editors in NC-40 through NC-60. Source
+repair and verifier-driven targeted revision remain the central trust milestone, but
+begin only after those intervening command contracts are stable.
 
 After that, sensible frontend increments are:
 

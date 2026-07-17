@@ -26,6 +26,7 @@ class StageCapabilityService:
         approval_failures: list[dict[str, Any]] | None = None,
         prerequisites_ready: bool = True,
         blocking_stage: str | None = None,
+        requires_reopen: bool = False,
     ) -> list[dict[str, Any]]:
         self.catalog.stage(stage_slug)
         if read_only:
@@ -72,6 +73,14 @@ class StageCapabilityService:
         elif state == "needs_input":
             for direct in registered.direct_actions:
                 actions.append(self._direct_action(direct, needs_input=True))
+        elif state == "requires_attention" and requires_reopen:
+            actions.append(
+                self._action(
+                    "reopen",
+                    f"Reopen {self._label(stage_slug)}",
+                    requires_impact_confirmation=True,
+                )
+            )
         elif state in {"awaiting_review", "requires_attention"}:
             for direct in registered.direct_actions:
                 actions.append(self._direct_action(direct))
@@ -145,6 +154,7 @@ class StageCapabilityService:
         approval_failures: list[dict[str, Any]] | None = None,
         prerequisites_ready: bool = True,
         blocking_stage: str | None = None,
+        requires_reopen: bool = False,
     ) -> None:
         match = next(
             (
@@ -156,6 +166,7 @@ class StageCapabilityService:
                     approval_failures=approval_failures,
                     prerequisites_ready=prerequisites_ready,
                     blocking_stage=blocking_stage,
+                    requires_reopen=requires_reopen,
                 )
                 if action["id"] == action_id
             ),

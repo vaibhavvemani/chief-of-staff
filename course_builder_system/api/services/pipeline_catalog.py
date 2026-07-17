@@ -215,6 +215,18 @@ class PipelineCatalog:
                 queue.append(dependent)
         return tuple(sorted(downstream))
 
+    def stage_depends_on_artifact(
+        self,
+        stage_slug: str,
+        artifact_type: str,
+        *,
+        mode: str = "deterministic",
+    ) -> bool:
+        """Answer transitive stage dependency questions from the canonical graph."""
+        stage = self.stage(stage_slug)
+        downstream = set(self.downstream_artifacts({artifact_type}, mode=mode))
+        return any(output in downstream for output in stage.artifacts)
+
     def stage_for_artifact(self, artifact_type: str) -> str | None:
         if artifact_type in SUPPORT_ARTIFACT_STAGES:
             return SUPPORT_ARTIFACT_STAGES[artifact_type]

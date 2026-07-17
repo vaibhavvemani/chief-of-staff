@@ -10,6 +10,7 @@ from api.services.approval_guard import (
     hard_verifier_blocker_count,
 )
 from api.services.artifact_repository import ArtifactNotFound, ArtifactRepository
+from api.services.brief_intake import BriefIntakeService
 from api.services.capability_service import StageCapabilityService
 from api.services.pipeline_catalog import PipelineCatalog, StageDefinition
 
@@ -25,12 +26,16 @@ class WorkspaceProjector:
         job_runner: Any | None = None,
         approval_guards: ApprovalGuardService | None = None,
         capabilities: StageCapabilityService | None = None,
+        brief_intake: BriefIntakeService | None = None,
     ) -> None:
         self.repository = repository
         self.catalog = catalog
         self.job_runner = job_runner
+        self.brief_intake = brief_intake or BriefIntakeService()
         self.approval_guards = approval_guards or ApprovalGuardService(
-            repository, catalog
+            repository,
+            catalog,
+            brief_intake=self.brief_intake,
         )
         self.capabilities = capabilities or StageCapabilityService(catalog)
 
@@ -64,6 +69,10 @@ class WorkspaceProjector:
             for artifact_type in self.repository.list_artifact_types(course_id)
         }
         artifacts = {name: value for name, value in artifacts.items() if value is not None}
+        if "brief" in artifacts and "subject_request" in artifacts:
+            artifacts["brief"] = self.brief_intake.normalize_artifact(
+                artifacts["subject_request"], artifacts["brief"]
+            )
         attention = self._attention(artifacts)
         active = self._active_job(course_id)
         stages = [
@@ -124,10 +133,14 @@ class WorkspaceProjector:
         for artifact_type in definition.artifacts:
             artifact = self.repository.load(course_id, artifact_type)
             if artifact is not None:
+                persisted = artifact
+                if artifact_type == "brief":
+                    subject = self.repository.require(course_id, "subject_request")
+                    artifact = self.brief_intake.normalize_artifact(subject, artifact)
                 artifacts.append(
                     {
                         "artifact_type": artifact_type,
-                        "checksum": self.repository.checksum(artifact),
+                        "checksum": self.repository.checksum(persisted),
                         "envelope": {
                             key: value for key, value in artifact.items() if key != "body"
                         },
@@ -202,6 +215,18 @@ class WorkspaceProjector:
             ),
             None,
         )
+        brief_ready = True
+        if self.catalog.stage_depends_on_artifact(stage.slug, "brief"):
+            subject = artifacts.get("subject_request")
+            brief = artifacts.get("brief")
+            brief_ready = (
+                subject is not None
+                and brief is not None
+                and self.brief_intake.is_approved_and_resolved(subject, brief)
+            )
+            if not brief_ready:
+                prerequisites_ready = False
+                blocking_stage = "brief"
         if stage.slug == "package":
             review_summary = (
                 artifacts.get("content_review", {}).get("body", {}).get("summary")
@@ -213,18 +238,29 @@ class WorkspaceProjector:
                 if not review_summary.get("ready_for_package"):
                     blocking_stage = "content"
         latest_job = self._latest_stage_job(course_id, stage.slug)
+        needs_input = self._needs_input(stage, artifacts)
+        requires_reopen = bool(
+            stage.slug == "brief"
+            and needs_input
+            and present
+            and all(artifact.get("status") == "approved" for artifact in present)
+        )
         if active_job and active_job.get("stage") == stage.slug:
             state = "running"
         elif latest_job and latest_job.get("status") == "failed":
             state = "failed"
         elif any(artifact.get("status") == "failed" for artifact in present):
             state = "failed"
+        elif requires_reopen:
+            state = "requires_attention"
         elif not present:
-            if self._needs_input(stage, artifacts):
+            if needs_input:
                 state = "needs_input"
             else:
                 state = "ready" if prerequisites_ready else "locked"
         elif any(artifact.get("status") == "stale" for artifact in present):
+            state = "stale"
+        elif not brief_ready:
             state = "stale"
         elif stage.slug in {"content", "package"} and attention["blocking_total"]:
             state = "requires_attention"
@@ -232,7 +268,7 @@ class WorkspaceProjector:
             state = "stale"
         elif stage.slug in {"content", "package"} and self._review_state(artifacts):
             state = self._review_state(artifacts) or "approved"
-        elif self._needs_input(stage, artifacts):
+        elif needs_input:
             state = "needs_input"
         elif any(artifact.get("status") != "approved" for artifact in present):
             state = "awaiting_review"
@@ -256,6 +292,7 @@ class WorkspaceProjector:
             approval_failures=approval_failures,
             prerequisites_ready=prerequisites_ready,
             blocking_stage=blocking_stage,
+            requires_reopen=requires_reopen,
         )
         downstream_artifacts = self.catalog.downstream_artifacts(set(stage.artifacts))
         return {
@@ -274,6 +311,7 @@ class WorkspaceProjector:
             "checksum": self.repository.checksum(present) if present else None,
             "dependencies": list(prerequisite_artifacts),
             "prerequisites_ready": prerequisites_ready,
+            "requires_reopen": requires_reopen,
             "downstream_stages": list(
                 self.catalog.stages_for_artifacts(downstream_artifacts)
             ),

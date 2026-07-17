@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 from agents import content_review
 from api.services.artifact_repository import ArtifactRepository, ReadOnlyCourse
+from api.services.brief_intake import BriefIntakeService
 from api.services.capability_service import StageCapabilityService
 from api.services.lifecycle import InvalidationService
 from api.services.pipeline_catalog import PipelineCatalog
@@ -29,11 +30,13 @@ class StageRunner:
         *,
         revisions: RevisionService | None = None,
         invalidation: InvalidationService | None = None,
+        brief_intake: BriefIntakeService | None = None,
     ) -> None:
         self.repository = repository
         self.catalog = catalog
         self.revisions = revisions or RevisionService(repository, StageCapabilityService(catalog))
         self.invalidation = invalidation or InvalidationService(repository, catalog)
+        self.brief_intake = brief_intake or BriefIntakeService()
 
     def run(
         self,
@@ -49,6 +52,14 @@ class StageRunner:
             raise ReadOnlyCourse(f"committed example course is read-only: {course_id}")
         emit = emit or (lambda *_args, **_kwargs: {})
         stage = self.catalog.stage(stage_slug)
+        if self.catalog.stage_depends_on_artifact(stage_slug, "brief"):
+            subject = self.repository.require(course_id, "subject_request")
+            brief = self.repository.require(course_id, "brief")
+            if not self.brief_intake.is_approved_and_resolved(subject, brief):
+                raise RuntimeError(
+                    "a fully resolved and approved Brief is required before "
+                    f"running {stage_slug}"
+                )
         if mode == "live" and stage_slug == "content":
             load_dotenv()
         if mode == "live" and stage_slug == "content" and not os.getenv("ANTHROPIC_API_KEY"):

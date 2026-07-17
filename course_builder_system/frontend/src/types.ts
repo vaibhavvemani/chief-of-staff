@@ -82,6 +82,74 @@ export interface CourseSummary {
   demo?: boolean;
 }
 
+export type QuestionAnswerType =
+  | "free_text"
+  | "single_choice"
+  | "multiple_choice"
+  | "number"
+  | "duration"
+  | "confirmation";
+
+export type QuestionAnswerValue = string | string[] | number | boolean | null;
+
+export type BriefGapKind = "missing" | "ambiguity" | "conflict";
+export type BriefGapSeverity = "low" | "medium" | "high";
+export type BriefQuestionRoundKind =
+  | "mandatory"
+  | "conditional"
+  | "clarification"
+  | "complete";
+
+export interface BriefGap {
+  id: string;
+  kind: BriefGapKind;
+  field: string;
+  severity: BriefGapSeverity;
+  message: string;
+}
+
+export interface BriefIntakeState {
+  explicitFields: string[];
+  acceptedDefaultFields: string[];
+  unresolvedRequiredFields: string[];
+  answeredQuestionIds: string[];
+  lastGapAnalysis: BriefGap[];
+}
+
+export interface BriefProvenance {
+  field: string;
+  source: "user" | "default";
+  confidence: "explicit" | "assumed";
+}
+
+export interface BriefQuestionSpec {
+  id: string;
+  field: string;
+  prompt: string;
+  rationale: string;
+  answerType: QuestionAnswerType;
+  options: string[];
+  defaultValue?: QuestionAnswerValue;
+  required: boolean;
+  allowSkip: boolean;
+  visibility: Record<string, unknown>;
+}
+
+export interface BriefQuestionRound {
+  questions: BriefQuestionSpec[];
+  roundKind: BriefQuestionRoundKind;
+  gapAnalysis: BriefGap[];
+  intakeState: BriefIntakeState;
+  checksum: string;
+}
+
+export interface BriefQuestionAnswer {
+  questionId: string;
+  value?: QuestionAnswerValue;
+  acceptDefault?: boolean;
+  skip?: boolean;
+}
+
 export interface BriefData {
   courseTitle: string;
   subject: string;
@@ -96,8 +164,16 @@ export interface BriefData {
   outOfScope: string[];
   mustHaveTopics: string[];
   constraints: string[];
-  assessmentExpectations: string;
+  availableMaterials: string[];
+  jurisdiction: string | null;
+  accessibilityRequirements: string | null;
+  assessmentExpectations: string | null;
+  liveTeachingConstraints: string | null;
+  toolsOrEquipment: string | null;
+  freshnessRequirement: string | null;
   assumptions: Array<{ field: string; value: string; rationale: string }>;
+  provenance: BriefProvenance[];
+  intakeState: BriefIntakeState;
 }
 
 export interface Outcome {
@@ -291,28 +367,35 @@ export interface Workspace {
   briefChecksum?: string;
 }
 
-export interface BriefAnswers {
+export interface BriefUpdates {
   courseTitle?: string;
-  audience: string;
-  priorKnowledge: string;
+  audience?: string;
+  priorKnowledge?: string;
   purpose?: string;
-  level: string;
-  duration: string;
-  modality: string;
-  language: string;
+  level?: string;
+  duration?: string;
+  modality?: string;
+  language?: string;
   inScope?: string[];
   outOfScope?: string[];
   mustHaveTopics?: string[];
   constraints?: string[];
-  assessmentExpectations?: string;
+  availableMaterials?: string[];
+  jurisdiction?: string | null;
+  accessibilityRequirements?: string | null;
+  assessmentExpectations?: string | null;
+  liveTeachingConstraints?: string | null;
+  toolsOrEquipment?: string | null;
+  freshnessRequirement?: string | null;
 }
 
 export interface CreateCourseRequest {
+  courseId?: string;
   subject: string;
   description?: string;
   constraints?: string;
   sourceUrls?: string[];
-  briefAnswers: BriefAnswers;
+  brief?: BriefUpdates;
 }
 
 export interface StageCommand {

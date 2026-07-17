@@ -433,5 +433,5 @@ def test_interrupted_job_can_be_retried_through_api_after_restart(
         assert brief["status"] == "draft"
         assert (
             client.get(f"/api/courses/{course_id}/stages/brief").json()["state"]
-            == "awaiting_review"
+            == "needs_input"
         )

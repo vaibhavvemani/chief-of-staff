@@ -9,8 +9,8 @@ agent instruction file.
 The Course Builder four-week prototype is complete as of 2026-07-06. The first
 local Course Builder Studio frontend and FastAPI adapter are implemented as of
 2026-07-14. The next milestone-gated development cycle is planned as of
-2026-07-15, and its NC-10 lifecycle and command foundation has passed its
-deterministic exit gate.
+2026-07-15. Its NC-10 lifecycle/command foundation and NC-20 Guided Brief Intake
+package have passed independent review.
 
 The system turns a sparse subject request into a rendered course folder through:
 
@@ -37,8 +37,9 @@ Primary context docs:
 The active next-cycle program makes the browser dependable for a nontechnical
 internal course director and then proves the same workflow with live agent-backed
 stages. NC-002, NC-004, NC-005, and NC-101 through NC-109 are implemented and
-verified. Start the next package at NC-20 guided Brief intake; do not skip ahead
-to source repair or live-agent parity. Source repair plus verifier-driven targeted
+independently verified. NC-201 through NC-207 are also independently verified. NC-30
+Outcomes decisions is the next safe package to begin. Do not skip ahead to source
+repair or live-agent parity. Source repair plus verifier-driven targeted
 revision remains the central trust milestone after the intervening stage contracts.
 
 ## Commands

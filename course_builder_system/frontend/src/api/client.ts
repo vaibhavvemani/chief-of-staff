@@ -1,8 +1,13 @@
 import { demoCourses, demoWorkspaceFor } from "../data/demo";
 import type {
   BlueprintPlan,
-  BriefAnswers,
   BriefData,
+  BriefGap,
+  BriefIntakeState,
+  BriefQuestionAnswer,
+  BriefQuestionRound,
+  BriefQuestionSpec,
+  BriefUpdates,
   ContentAsset,
   CourseModule,
   CourseSummary,
@@ -80,6 +85,92 @@ function asNumber(value: unknown, fallback = 0): number {
 
 function asStringArray(value: unknown): string[] {
   return asArray(value).filter((item): item is string => typeof item === "string");
+}
+
+function asNullableString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function asGapKind(value: unknown): BriefGap["kind"] {
+  return value === "conflict" || value === "missing" ? value : "ambiguity";
+}
+
+function asGapSeverity(value: unknown): BriefGap["severity"] {
+  return value === "high" || value === "low" ? value : "medium";
+}
+
+function asRoundKind(value: unknown): BriefQuestionRound["roundKind"] {
+  return value === "conditional"
+    || value === "clarification"
+    || value === "complete"
+    ? value
+    : "mandatory";
+}
+
+function normalizeGapAnalysis(value: unknown): BriefGap[] {
+  return asArray(value).flatMap((item) =>
+    isRecord(item)
+      ? [{
+          id: asString(item.id),
+          kind: asGapKind(item.kind),
+          field: asString(item.field),
+          severity: asGapSeverity(item.severity),
+          message: asString(item.message),
+        }]
+      : [],
+  );
+}
+
+const emptyIntakeState = (): BriefIntakeState => ({
+  explicitFields: [],
+  acceptedDefaultFields: [],
+  unresolvedRequiredFields: [],
+  answeredQuestionIds: [],
+  lastGapAnalysis: [],
+});
+
+function normalizeIntakeState(value: unknown): BriefIntakeState {
+  if (!isRecord(value)) return emptyIntakeState();
+  return {
+    explicitFields: asStringArray(value.explicit_fields),
+    acceptedDefaultFields: asStringArray(value.accepted_default_fields),
+    unresolvedRequiredFields: asStringArray(value.unresolved_required_fields),
+    answeredQuestionIds: asStringArray(value.answered_question_ids),
+    lastGapAnalysis: normalizeGapAnalysis(value.last_gap_analysis),
+  };
+}
+
+function asQuestionValue(value: unknown): BriefQuestionSpec["defaultValue"] {
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
+  const list = asStringArray(value);
+  return Array.isArray(value) && list.length === value.length ? list : undefined;
+}
+
+function normalizeQuestion(value: unknown): BriefQuestionSpec | null {
+  if (!isRecord(value)) return null;
+  const answerType = asString(value.answer_type);
+  const validAnswerTypes: BriefQuestionSpec["answerType"][] = [
+    "free_text",
+    "single_choice",
+    "multiple_choice",
+    "number",
+    "duration",
+    "confirmation",
+  ];
+  return {
+    id: asString(value.id),
+    field: asString(value.field),
+    prompt: asString(value.prompt),
+    rationale: asString(value.rationale),
+    answerType: validAnswerTypes.includes(answerType as BriefQuestionSpec["answerType"])
+      ? answerType as BriefQuestionSpec["answerType"]
+      : "free_text",
+    options: asStringArray(value.options),
+    defaultValue: Object.hasOwn(value, "default") ? asQuestionValue(value.default) : undefined,
+    required: value.required !== false,
+    allowSkip: value.allow_skip === true,
+    visibility: isRecord(value.visibility) ? value.visibility : {},
+  };
 }
 
 const stageStateMap: Record<string, UiStatus> = {
@@ -297,7 +388,15 @@ function normalizeBrief(value: unknown, fallback: BriefData): BriefData {
     outOfScope: asStringArray(value.out_of_scope),
     mustHaveTopics: asStringArray(value.must_have_topics),
     constraints: asStringArray(value.constraints),
-    assessmentExpectations: asString(value.assessment_expectations, fallback.assessmentExpectations),
+    availableMaterials: asStringArray(value.available_materials),
+    jurisdiction: asNullableString(value.jurisdiction),
+    accessibilityRequirements: asNullableString(value.accessibility_requirements),
+    assessmentExpectations: Object.prototype.hasOwnProperty.call(value, "assessment_expectations")
+      ? asNullableString(value.assessment_expectations)
+      : fallback.assessmentExpectations,
+    liveTeachingConstraints: asNullableString(value.live_teaching_constraints),
+    toolsOrEquipment: asNullableString(value.tools_or_equipment),
+    freshnessRequirement: asNullableString(value.freshness_requirement),
     assumptions: asArray(value.assumptions).flatMap((item) =>
       isRecord(item)
         ? [
@@ -309,6 +408,16 @@ function normalizeBrief(value: unknown, fallback: BriefData): BriefData {
           ]
         : [],
     ),
+    provenance: asArray(value.provenance).flatMap((item) =>
+      isRecord(item)
+        ? [{
+            field: asString(item.field),
+            source: item.source === "default" ? "default" as const : "user" as const,
+            confidence: item.confidence === "assumed" ? "assumed" as const : "explicit" as const,
+          }]
+        : [],
+    ),
+    intakeState: normalizeIntakeState(value.intake_state),
   };
 }
 
@@ -725,8 +834,16 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
         outOfScope: ["advanced specialist topics"],
         mustHaveTopics: ["practical examples"],
         constraints: [],
+        availableMaterials: [],
+        jurisdiction: null,
+        accessibilityRequirements: null,
         assessmentExpectations: "Short practical checks and scenario questions.",
+        liveTeachingConstraints: null,
+        toolsOrEquipment: null,
+        freshnessRequirement: null,
         assumptions: [],
+        provenance: [],
+        intakeState: emptyIntakeState(),
       },
       outcomes: [],
       research: { sources: [], competitors: [], observations: [], registrySaved: false, registryApproved: false },
@@ -860,57 +977,93 @@ function workspaceSourceCount(value: unknown): number {
   return isRecord(value) ? asArray(value.source_registry).length : 0;
 }
 
-export async function createCourse(request: CreateCourseRequest): Promise<{ courseId: string; briefInitialized: boolean }> {
+export async function createCourse(request: CreateCourseRequest): Promise<{ courseId: string }> {
   const data = await apiFetch<{ course_id?: string; courseId?: string }>("/api/courses", {
     method: "POST",
     body: JSON.stringify({
       subject: request.subject,
+      course_id: request.courseId,
       description: request.description,
       constraints: request.constraints
         ? request.constraints.split("\n").map((value) => value.trim()).filter(Boolean)
         : [],
       known_source_locators: request.sourceUrls ?? [],
+      brief: request.brief ? briefUpdatesPayload(request.brief) : undefined,
     }),
   });
   const courseId = data.course_id ?? data.courseId ?? "";
-  try {
-    await saveBriefAnswers(courseId, request.briefAnswers);
-    return { courseId, briefInitialized: true };
-  } catch (error) {
-    // The subject request already exists. Preserve that successful creation so a
-    // transient connection loss does not lead the user into a duplicate-course retry.
-    if (error instanceof ApiError && error.status === 0) return { courseId, briefInitialized: false };
-    throw error;
-  }
+  return { courseId };
 }
 
-function briefAnswersPayload(answers: BriefAnswers): Record<string, unknown> {
+export async function getBriefQuestions(courseId: string): Promise<BriefQuestionRound> {
+  const response = await apiFetch<Record<string, unknown>>(
+    `/api/courses/${encodeURIComponent(courseId)}/brief/questions`,
+  );
+  const questions = asArray(response.questions).flatMap((item) => {
+    const question = normalizeQuestion(item);
+    return question ? [question] : [];
+  });
   return {
-    course_title: answers.courseTitle,
-    audience: answers.audience,
-    prior_knowledge: answers.priorKnowledge,
-    purpose: answers.purpose,
-    level: answers.level,
-    duration: answers.duration,
-    modality: answers.modality,
-    language: answers.language,
-    in_scope: answers.inScope,
-    out_of_scope: answers.outOfScope,
-    must_have_topics: answers.mustHaveTopics,
-    constraints: answers.constraints,
-    assessment_expectations: answers.assessmentExpectations,
+    questions,
+    roundKind: asRoundKind(response.round_kind),
+    gapAnalysis: normalizeGapAnalysis(response.gap_analysis),
+    intakeState: normalizeIntakeState(response.intake_state),
+    checksum: asString(response.checksum),
   };
 }
 
 export async function saveBriefAnswers(
   courseId: string,
-  answers: BriefAnswers,
-  expectedChecksum?: string,
+  answers: BriefQuestionAnswer[],
+  expectedChecksum: string,
 ): Promise<{ checksum?: string }> {
   return apiFetch<{ checksum?: string }>(`/api/courses/${encodeURIComponent(courseId)}/brief/answers`, {
     method: "PUT",
     body: JSON.stringify({
-      answers: Object.fromEntries(Object.entries(briefAnswersPayload(answers)).filter(([, value]) => value !== undefined)),
+      answers: answers.map((answer) => ({
+        question_id: answer.questionId,
+        ...(answer.value !== undefined ? { value: answer.value } : {}),
+        ...(answer.acceptDefault ? { accept_default: true } : {}),
+        ...(answer.skip ? { skip: true } : {}),
+      })),
+      expected_checksum: expectedChecksum,
+    }),
+  });
+}
+
+function briefUpdatesPayload(updates: BriefUpdates): Record<string, unknown> {
+  return {
+    course_title: updates.courseTitle,
+    audience: updates.audience,
+    prior_knowledge: updates.priorKnowledge,
+    purpose: updates.purpose,
+    level: updates.level,
+    duration: updates.duration,
+    modality: updates.modality,
+    language: updates.language,
+    in_scope: updates.inScope,
+    out_of_scope: updates.outOfScope,
+    must_have_topics: updates.mustHaveTopics,
+    constraints: updates.constraints,
+    available_materials: updates.availableMaterials,
+    jurisdiction: updates.jurisdiction,
+    accessibility_requirements: updates.accessibilityRequirements,
+    assessment_expectations: updates.assessmentExpectations,
+    live_teaching_constraints: updates.liveTeachingConstraints,
+    tools_or_equipment: updates.toolsOrEquipment,
+    freshness_requirement: updates.freshnessRequirement,
+  };
+}
+
+export async function saveBriefUpdates(
+  courseId: string,
+  updates: BriefUpdates,
+  expectedChecksum: string,
+): Promise<{ checksum?: string }> {
+  return apiFetch<{ checksum?: string }>(`/api/courses/${encodeURIComponent(courseId)}/brief`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      updates: Object.fromEntries(Object.entries(briefUpdatesPayload(updates)).filter(([, value]) => value !== undefined)),
       expected_checksum: expectedChecksum,
     }),
   });

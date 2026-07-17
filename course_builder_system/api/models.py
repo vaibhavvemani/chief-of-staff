@@ -6,9 +6,9 @@ Canonical artifact validation remains in the existing domain layer.
 
 from __future__ import annotations
 
-from typing import Any, Literal, get_args
+from typing import Annotated, Any, Literal, get_args
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_validator, model_validator
 
 type StageState = Literal[
     "locked",
@@ -28,12 +28,49 @@ class StrictCommand(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+SubjectSeed = Annotated[str, Field(strict=True, min_length=1, max_length=200)]
+PurposeSeed = Annotated[str, Field(strict=True, max_length=700)]
+BriefListItem = Annotated[str, Field(strict=True, min_length=1, max_length=300)]
+KnownSourceLocator = Annotated[str, Field(strict=True, min_length=1, max_length=1000)]
+
+
 class CreateCourseRequest(StrictCommand):
-    subject: str = Field(min_length=1, max_length=300)
-    description: str | None = Field(default=None, max_length=4000)
-    constraints: list[str] = Field(default_factory=list, max_length=50)
-    known_source_locators: list[str] = Field(default_factory=list, max_length=50)
+    subject: SubjectSeed
+    description: PurposeSeed | None = None
+    constraints: list[BriefListItem] = Field(default_factory=list, max_length=50)
+    known_source_locators: list[KnownSourceLocator] = Field(default_factory=list, max_length=50)
+    brief: dict[str, Any] = Field(default_factory=dict, max_length=30)
     course_id: str | None = None
+
+    @field_validator("subject")
+    @classmethod
+    def normalize_subject(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("subject cannot be blank")
+        return normalized
+
+    @field_validator("description")
+    @classmethod
+    def normalize_description(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip() or None
+
+    @field_validator("constraints", "known_source_locators")
+    @classmethod
+    def normalize_seed_lists(cls, values: list[str]) -> list[str]:
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            item = value.strip()
+            if not item:
+                raise ValueError("seed list items cannot be blank")
+            if item in seen:
+                continue
+            seen.add(item)
+            normalized.append(item)
+        return normalized
 
 
 class VersionedCommand(StrictCommand):
@@ -88,8 +125,79 @@ class ImpactPreviewResponse(BaseModel):
     impact_checksum: str
 
 
+class BriefQuestionAnswer(StrictCommand):
+    question_id: str = Field(min_length=1, max_length=200)
+    value: Any = None
+    accept_default: StrictBool = False
+    skip: StrictBool = False
+
+    @model_validator(mode="after")
+    def exactly_one_resolution(self) -> BriefQuestionAnswer:
+        has_value = "value" in self.model_fields_set
+        if sum((has_value, self.accept_default, self.skip)) != 1:
+            raise ValueError(
+                "choose exactly one of value, accept_default, or skip for each question"
+            )
+        return self
+
+
 class BriefAnswersCommand(VersionedCommand):
-    answers: dict[str, Any]
+    expected_checksum: str = Field(min_length=6, max_length=128)
+    answers: list[BriefQuestionAnswer] = Field(min_length=1, max_length=5)
+
+
+class BriefUpdatesCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
+    updates: dict[str, Any] = Field(min_length=1, max_length=30)
+
+
+class BriefClarificationCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
+    mode: Literal["deterministic", "live"] = "deterministic"
+
+
+class BriefGapView(BaseModel):
+    id: str
+    kind: Literal["missing", "ambiguity", "conflict"]
+    field: str
+    severity: Literal["low", "medium", "high"]
+    message: str
+
+
+class BriefIntakeStateView(BaseModel):
+    explicit_fields: list[str]
+    accepted_default_fields: list[str]
+    unresolved_required_fields: list[str]
+    answered_question_ids: list[str]
+    last_gap_analysis: list[BriefGapView]
+
+
+class QuestionSpecView(BaseModel):
+    id: str
+    field: str
+    prompt: str
+    rationale: str
+    answer_type: Literal[
+        "free_text",
+        "single_choice",
+        "multiple_choice",
+        "number",
+        "duration",
+        "confirmation",
+    ]
+    options: list[str]
+    default: Any | None = None
+    required: bool
+    allow_skip: bool
+    visibility: dict[str, Any]
+
+
+class BriefQuestionRoundResponse(BaseModel):
+    questions: list[QuestionSpecView] = Field(max_length=5)
+    round_kind: Literal["mandatory", "conditional", "clarification", "complete"]
+    gap_analysis: list[BriefGapView]
+    intake_state: BriefIntakeStateView
+    checksum: str
 
 
 class OutcomeDecisionCommand(VersionedCommand):

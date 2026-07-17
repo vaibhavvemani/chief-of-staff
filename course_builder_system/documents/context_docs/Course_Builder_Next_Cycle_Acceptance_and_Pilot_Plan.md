@@ -1,11 +1,18 @@
 # Course Builder — Next Cycle Acceptance and Pilot Plan
 
 > **Status:** Acceptance baseline for implementation and release  
-> **Updated:** 2026-07-15  
+> **Updated:** 2026-07-17
 > **Target user:** One internal, nontechnical course director  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
 > **Backlog:** `Course_Builder_Next_Cycle_Implementation_Backlog.md`  
 > **Technical contracts:** `Course_Builder_Next_Cycle_Technical_Contract_Plan.md`
+
+> **NC-20 checkpoint — 2026-07-17:** Guided Brief Intake passed independent
+> deterministic review. Evidence covers bounded relevant rounds, durable refresh and
+> multi-round merges, status-aware historical normalization without fixture writes,
+> stale/concurrent mutation rejection, unresolved approval and transitive execution
+> gates, impact-confirmed reopen, and browser conflict recovery. This does not mark any
+> NC-30 or later scenario complete.
 
 ## 1. Purpose
 

@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
   approveStage,
+  getBriefQuestions,
   getWorkspace,
   previewStageImpact,
   reopenStage,
@@ -11,13 +12,14 @@ import {
   reviewContentAsset,
   runStage,
   saveBriefAnswers,
+  saveBriefUpdates,
   saveSourceDecision,
   subscribeToJob,
 } from "../../api/client";
 import { AppBrand } from "../../components/AppBrand";
 import { ErrorState, LoadingState } from "../../components/States";
 import { StatusBadge } from "../../components/StatusBadge";
-import type { BriefAnswers, BriefData, Claim, ContentAsset, ImpactPreview, StageAction, StageActionId, StageSlug, UiStatus, Workspace } from "../../types";
+import type { BriefData, BriefQuestionAnswer, BriefUpdates, Claim, ContentAsset, ImpactPreview, StageAction, StageActionId, StageSlug, UiStatus, Workspace } from "../../types";
 import { StageView, stageData, type BriefEditSection } from "./StageViews";
 
 const stageSlugs: StageSlug[] = ["brief", "outcomes", "research", "course-model", "blueprint", "content", "lesson-plan", "package"];
@@ -302,6 +304,7 @@ const briefSectionLabels: Record<BriefEditSection, string> = {
   learner: "Learner and intent",
   scope: "Scope boundary",
   coverage: "Coverage and constraints",
+  requirements: "Additional requirements and materials",
   assumptions: "Starting assumptions",
 };
 
@@ -309,16 +312,42 @@ function listFromText(value: string): string[] {
   return value.split("\n").map((item) => item.trim()).filter(Boolean);
 }
 
-function BriefEditDialog({ section, brief, busy, onCancel, onSubmit }: { section: BriefEditSection; brief: BriefData; busy: boolean; onCancel: () => void; onSubmit: (brief: BriefData) => void }) {
+export function briefSectionUpdates(section: BriefEditSection, draft: BriefData, original: BriefData): BriefUpdates {
+  const candidates: BriefUpdates = section === "settings"
+    ? { courseTitle: draft.courseTitle, level: draft.level, duration: draft.duration, modality: draft.modality, language: draft.language }
+    : section === "learner"
+      ? { audience: draft.audience, priorKnowledge: draft.priorKnowledge, purpose: draft.purpose, assessmentExpectations: draft.assessmentExpectations }
+      : section === "scope"
+        ? { inScope: draft.inScope, outOfScope: draft.outOfScope }
+        : section === "coverage"
+          ? { mustHaveTopics: draft.mustHaveTopics, constraints: draft.constraints }
+          : section === "requirements"
+            ? {
+                availableMaterials: draft.availableMaterials,
+                jurisdiction: draft.jurisdiction,
+                accessibilityRequirements: draft.accessibilityRequirements,
+                liveTeachingConstraints: draft.liveTeachingConstraints,
+                toolsOrEquipment: draft.toolsOrEquipment,
+                freshnessRequirement: draft.freshnessRequirement,
+              }
+            : { courseTitle: draft.courseTitle, audience: draft.audience, level: draft.level, duration: draft.duration, modality: draft.modality, language: draft.language };
+  return Object.fromEntries(
+    Object.entries(candidates).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(original[key as keyof BriefData])),
+  ) as BriefUpdates;
+}
+
+function BriefEditDialog({ section, brief, busy, onCancel, onSubmit }: { section: BriefEditSection; brief: BriefData; busy: boolean; onCancel: () => void; onSubmit: (updates: BriefUpdates) => void }) {
   const [draft, setDraft] = useState<BriefData>(() => ({
     ...brief,
     inScope: [...brief.inScope],
     outOfScope: [...brief.outOfScope],
     mustHaveTopics: [...brief.mustHaveTopics],
     constraints: [...brief.constraints],
+    availableMaterials: [...brief.availableMaterials],
     assumptions: [...brief.assumptions],
   }));
   const update = <K extends keyof BriefData>(key: K, value: BriefData[K]) => setDraft((current) => ({ ...current, [key]: value }));
+  const updates = briefSectionUpdates(section, draft, brief);
   const canSave = Boolean(draft.courseTitle.trim() && draft.audience.trim() && draft.level && draft.duration.trim() && draft.modality && draft.language.trim());
 
   useEffect(() => {
@@ -347,7 +376,7 @@ function BriefEditDialog({ section, brief, busy, onCancel, onSubmit }: { section
             <label><span>Audience</span><textarea autoFocus rows={3} value={draft.audience} onChange={(event) => update("audience", event.target.value)} /></label>
             <label><span>Prior knowledge</span><textarea rows={2} value={draft.priorKnowledge} onChange={(event) => update("priorKnowledge", event.target.value)} /></label>
             <label><span>Practical purpose</span><textarea rows={3} value={draft.purpose} onChange={(event) => update("purpose", event.target.value)} /></label>
-            <label><span>Assessment expectation</span><textarea rows={2} value={draft.assessmentExpectations} onChange={(event) => update("assessmentExpectations", event.target.value)} /></label>
+            <label><span>Assessment expectation</span><textarea rows={2} value={draft.assessmentExpectations ?? ""} onChange={(event) => update("assessmentExpectations", event.target.value)} /></label>
           </> : null}
           {section === "scope" ? <div className="brief-editor-grid">
             <label><span>In scope <small>One item per line</small></span><textarea autoFocus rows={6} value={draft.inScope.join("\n")} onChange={(event) => update("inScope", listFromText(event.target.value))} /></label>
@@ -357,13 +386,23 @@ function BriefEditDialog({ section, brief, busy, onCancel, onSubmit }: { section
             <label><span>Must-have topics <small>One item per line</small></span><textarea autoFocus rows={6} value={draft.mustHaveTopics.join("\n")} onChange={(event) => update("mustHaveTopics", listFromText(event.target.value))} /></label>
             <label><span>Constraints <small>One item per line</small></span><textarea rows={6} value={draft.constraints.join("\n")} onChange={(event) => update("constraints", listFromText(event.target.value))} /></label>
           </div> : null}
+          {section === "requirements" ? <>
+            <div className="brief-editor-grid">
+              <label><span>Jurisdiction or geography</span><textarea autoFocus rows={2} value={draft.jurisdiction ?? ""} onChange={(event) => update("jurisdiction", event.target.value)} /></label>
+              <label><span>Accessibility requirements</span><textarea rows={2} value={draft.accessibilityRequirements ?? ""} onChange={(event) => update("accessibilityRequirements", event.target.value)} /></label>
+              <label><span>Live-teaching constraints</span><textarea rows={2} value={draft.liveTeachingConstraints ?? ""} onChange={(event) => update("liveTeachingConstraints", event.target.value)} /></label>
+              <label><span>Tools or equipment</span><textarea rows={2} value={draft.toolsOrEquipment ?? ""} onChange={(event) => update("toolsOrEquipment", event.target.value)} /></label>
+              <label><span>Freshness requirement</span><textarea rows={2} value={draft.freshnessRequirement ?? ""} onChange={(event) => update("freshnessRequirement", event.target.value)} /></label>
+              <label><span>Available materials <small>One item per line</small></span><textarea rows={4} value={draft.availableMaterials.join("\n")} onChange={(event) => update("availableMaterials", listFromText(event.target.value))} /></label>
+            </div>
+          </> : null}
           {section === "assumptions" ? <>
             <div className="assumption-editor-note"><span aria-hidden="true">i</span><p>These are the most common defaults to correct. Saving them makes your choices explicit in the Brief.</p></div>
             <label><span>Audience</span><textarea autoFocus rows={2} value={draft.audience} onChange={(event) => update("audience", event.target.value)} /></label>
             {settingsFields}
           </> : null}
         </div>
-        <footer><button className="button button-quiet" onClick={onCancel}>Cancel</button><button className="button button-primary" disabled={!canSave || busy} onClick={() => onSubmit(draft)}>{busy ? "Saving…" : "Save section"}</button></footer>
+        <footer><button className="button button-quiet" onClick={onCancel}>Cancel</button><button className="button button-primary" disabled={!canSave || !Object.keys(updates).length || busy} onClick={() => onSubmit(updates)}>{busy ? "Saving…" : "Save section"}</button></footer>
       </div>
     </div>
   );
@@ -391,10 +430,7 @@ export function WorkspacePage() {
   const [revisionImpact, setRevisionImpact] = useState<ImpactPreview | null>(null);
   const [briefEditSection, setBriefEditSection] = useState<BriefEditSection | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
-  const [toast, setToast] = useState<{ message: string; tone: "good" | "attention" | "neutral" } | null>(() => new URLSearchParams(location.search).get("setup") === "incomplete" ? {
-    tone: "attention",
-    message: "The course was created, but its starting Brief could not be saved. Review the suggested defaults and use Adjust to save them.",
-  } : null);
+  const [toast, setToast] = useState<{ message: string; tone: "good" | "attention" | "neutral" } | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [activeJobStage, setActiveJobStage] = useState<StageSlug | null>(null);
   const completedJobIds = useRef(new Set<string>());
@@ -406,6 +442,15 @@ export function WorkspacePage() {
   });
   const workspace = query.data?.workspace;
   const currentSummary = workspace?.stages.find((item) => item.slug === stage);
+  const briefQuestionsQuery = useQuery({
+    queryKey: ["brief-questions", courseId],
+    queryFn: () => getBriefQuestions(courseId),
+    enabled: stage === "brief"
+      && Boolean(workspace)
+      && !query.data?.demoMode
+      && !query.data?.readOnly
+      && currentSummary?.status === "needs_input",
+  });
 
   useEffect(() => {
     if (!workspace?.activeJob || activeJobId === workspace.activeJob.jobId || completedJobIds.current.has(workspace.activeJob.jobId)) return;
@@ -415,38 +460,48 @@ export function WorkspacePage() {
   }, [activeJobId, workspace?.activeJob]);
 
   const briefMutation = useMutation({
-    mutationFn: async (edited: BriefData) => {
+    mutationFn: async (updates: BriefUpdates) => {
       if (!workspace || query.data?.demoMode) return { demo: true };
-      const answers: BriefAnswers = {
-        courseTitle: edited.courseTitle,
-        audience: edited.audience,
-        priorKnowledge: edited.priorKnowledge,
-        purpose: edited.purpose,
-        level: edited.level,
-        duration: edited.duration,
-        modality: edited.modality,
-        language: edited.language,
-        inScope: edited.inScope,
-        outOfScope: edited.outOfScope,
-        mustHaveTopics: edited.mustHaveTopics,
-        constraints: edited.constraints,
-        assessmentExpectations: edited.assessmentExpectations,
-      };
-      return saveBriefAnswers(courseId, answers, workspace.briefChecksum);
+      if (!workspace.briefChecksum) throw new Error("Brief editing requires the current checksum.");
+      return saveBriefUpdates(courseId, updates, workspace.briefChecksum);
     },
     onSuccess: (result) => {
       setBriefEditSection(null);
       setToast({ tone: "good", message: result && "demo" in result ? "Preview changes recorded for this section." : "Brief section saved. Review the updated draft before approval." });
-      const params = new URLSearchParams(location.search);
-      if (params.has("setup")) {
-        params.delete("setup");
-        navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-      }
       void queryClient.invalidateQueries({ queryKey: ["workspace", courseId] });
+      void queryClient.invalidateQueries({ queryKey: ["brief-questions", courseId] });
     },
     onError: (error) => {
       const stale = error instanceof ApiError && error.status === 409;
-      setToast({ tone: "attention", message: stale ? "The Brief changed in another session. Refresh and try again." : error.message });
+      setToast({ tone: "attention", message: stale ? "The Brief changed in another session. The latest values are loaded; reopen the section and try again." : error.message });
+      if (stale) {
+        setBriefEditSection(null);
+        void queryClient.invalidateQueries({ queryKey: ["workspace", courseId] });
+        void queryClient.invalidateQueries({ queryKey: ["brief-questions", courseId] });
+      }
+    },
+  });
+
+  const briefAnswersMutation = useMutation({
+    mutationFn: (answers: BriefQuestionAnswer[]) => {
+      const round = briefQuestionsQuery.data;
+      if (!round?.checksum) throw new Error("Brief answers require the current checksum.");
+      return saveBriefAnswers(courseId, answers, round.checksum);
+    },
+    onSuccess: async () => {
+      setToast({ tone: "good", message: "Brief answers saved. The next relevant round is ready." });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["workspace", courseId] }),
+        queryClient.invalidateQueries({ queryKey: ["brief-questions", courseId] }),
+      ]);
+    },
+    onError: (error) => {
+      const stale = error instanceof ApiError && error.status === 409;
+      setToast({ tone: "attention", message: stale ? "The Brief changed in another session. Refresh before answering this round." : error instanceof Error ? error.message : "The answers could not be saved." });
+      if (stale) {
+        void queryClient.invalidateQueries({ queryKey: ["workspace", courseId] });
+        void queryClient.invalidateQueries({ queryKey: ["brief-questions", courseId] });
+      }
     },
   });
 
@@ -646,6 +701,11 @@ export function WorkspacePage() {
   const demoMode = query.data?.demoMode ?? false;
   const readOnly = query.data?.readOnly ?? false;
   const actionEnabled = (id: StageActionId) => Boolean(currentSummary?.actions.some((action) => action.id === id && action.enabled));
+  const briefQuestionsError = briefAnswersMutation.error instanceof Error
+    ? briefAnswersMutation.error.message
+    : briefQuestionsQuery.error instanceof Error
+      ? briefQuestionsQuery.error.message
+      : undefined;
   const handleStageAction = (action: StageAction) => {
     if (!action.enabled) return;
     if (action.id === "run" || action.id === "retry") {
@@ -665,6 +725,12 @@ export function WorkspacePage() {
       return;
     }
     if (action.id === "edit") {
+      if (stage === "brief" && currentSummary?.status === "needs_input") {
+        const intake = document.querySelector<HTMLElement>(".brief-intake-panel");
+        intake?.scrollIntoView({ behavior: "smooth", block: "start" });
+        intake?.querySelector<HTMLElement>("input, textarea, button")?.focus();
+        return;
+      }
       setBriefEditSection("learner");
       return;
     }
@@ -704,14 +770,14 @@ export function WorkspacePage() {
             <AgentRunScreen stage={stage} mode={runMode} progress={runProgress} />
           ) : currentSummary?.status === "locked" && !demoMode ? (
             <div className="locked-stage-state"><span className="locked-glyph" aria-hidden="true">·</span><span className="eyebrow">{currentSummary.label}</span><h1>This stage is waiting on an upstream decision.</h1><p>{currentSummary.dependencies.length ? `${currentSummary.dependencies.map((item) => item.replaceAll("_", " ")).join(", ")} must be approved and current before this stage can run.` : "A backend prerequisite must be completed before this stage can run."}</p></div>
-          ) : <StageView stage={stage} workspace={workspace} contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise") }} onContentAction={actionEnabled("review_asset") || actionEnabled("revise") ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined} onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined} onEditBrief={actionEnabled("edit") ? setBriefEditSection : undefined} />}
+          ) : <StageView stage={stage} workspace={workspace} contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise") }} onContentAction={actionEnabled("review_asset") || actionEnabled("revise") ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined} onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined} onEditBrief={actionEnabled("edit") ? setBriefEditSection : undefined} briefQuestionRound={briefQuestionsQuery.data} briefQuestionsLoading={briefQuestionsQuery.isLoading || briefQuestionsQuery.isFetching && !briefQuestionsQuery.data} briefQuestionsBusy={briefAnswersMutation.isPending} briefQuestionsError={briefQuestionsError} onRetryBriefQuestions={() => void briefQuestionsQuery.refetch()} onSubmitBriefQuestions={(answers) => briefAnswersMutation.mutate(answers)} />}
         </main>
         {inspectorOpen ? <ContextInspector workspace={workspace} stage={stage} onClose={() => setInspectorOpen(false)} /> : null}
         <DecisionBar
           stage={stage}
           status={currentSummary?.status ?? "ready"}
           actions={currentSummary?.actions ?? []}
-          busy={mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || Boolean(activeJobId)}
+          busy={mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)}
           onAction={handleStageAction}
         />
       </div>

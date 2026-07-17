@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { SourceStatus, VerificationBadge } from "../../components/StatusBadge";
 import type {
+  BriefQuestionAnswer,
+  BriefQuestionRound as BriefQuestionRoundData,
   Claim,
   ContentAsset,
   CourseModule,
@@ -10,6 +12,7 @@ import type {
   Subtopic,
   Workspace,
 } from "../../types";
+import { BriefQuestionRound } from "./BriefQuestionRound";
 
 function stageIntro(title: string, kicker: string, description: string, aside?: React.ReactNode) {
   return (
@@ -45,27 +48,84 @@ function displayAssumptionValue(value: string): string {
   return value;
 }
 
-export type BriefEditSection = "settings" | "learner" | "scope" | "coverage" | "assumptions";
+export type BriefEditSection = "settings" | "learner" | "scope" | "coverage" | "requirements" | "assumptions";
 
 function BriefSectionAction({ section, label, onEdit }: { section: BriefEditSection; label: string; onEdit?: (section: BriefEditSection) => void }) {
   if (!onEdit) return null;
   return <button className="section-edit-button" onClick={() => onEdit(section)} aria-label={`${label} in Course Brief`}><span>Adjust</span><span aria-hidden="true">→</span></button>;
 }
 
-function BriefView({ workspace, onEdit }: { workspace: Workspace; onEdit?: (section: BriefEditSection) => void }) {
+function BriefView({
+  workspace,
+  onEdit,
+  questionRound,
+  questionsLoading = false,
+  questionsBusy = false,
+  questionsError,
+  onRetryQuestions,
+  onSubmitQuestions,
+}: {
+  workspace: Workspace;
+  onEdit?: (section: BriefEditSection) => void;
+  questionRound?: BriefQuestionRoundData;
+  questionsLoading?: boolean;
+  questionsBusy?: boolean;
+  questionsError?: string;
+  onRetryQuestions?: () => void;
+  onSubmitQuestions?: (answers: BriefQuestionAnswer[]) => void;
+}) {
   const brief = workspace.brief;
   const summary = workspace.stages.find((stage) => stage.slug === "brief");
   const hasArtifact = Boolean(workspace.briefChecksum);
+  const explicitFields = new Set(brief.intakeState.explicitFields);
+  const acceptedDefaults = new Set(brief.intakeState.acceptedDefaultFields);
+  const artifactStatus = summary?.status === "approved"
+    ? "Approved"
+    : summary?.status === "needs_input"
+      ? "Input required"
+      : summary?.status === "requires_attention"
+        ? "Needs attention"
+        : summary?.status === "stale"
+          ? "Stale"
+          : summary?.status === "failed"
+            ? "Failed"
+            : hasArtifact
+              ? "Ready for review"
+              : "Not saved yet";
+  const additionalRequirements = [
+    ["Jurisdiction", brief.jurisdiction],
+    ["Accessibility", brief.accessibilityRequirements],
+    ["Live teaching", brief.liveTeachingConstraints],
+    ["Tools or equipment", brief.toolsOrEquipment],
+    ["Freshness", brief.freshnessRequirement],
+  ].filter((item): item is [string, string] => Boolean(item[1]));
   return (
     <div className="stage-view">
       {stageIntro(
         "Course Brief",
         "01 · Direction",
-        hasArtifact
+        summary?.status === "needs_input"
+          ? "The draft is saved. Complete the relevant questions before reviewing and approving the working agreement."
+          : hasArtifact
           ? "The starting request is now a practical working agreement. Review the details before downstream work begins."
           : "Start with these sensible defaults, then adjust only the details that matter for this course.",
-        <div className={`artifact-stamp ${hasArtifact ? "" : "suggested"}`}><span>{hasArtifact ? "Working artifact" : "Suggested starting point"}</span><strong>{summary?.status === "approved" ? "Approved" : hasArtifact ? "Ready for review" : "Not saved yet"}</strong></div>,
+        <div className={`artifact-stamp ${hasArtifact ? "" : "suggested"}`}><span>{hasArtifact ? "Working artifact" : "Suggested starting point"}</span><strong>{artifactStatus}</strong></div>,
       )}
+      {questionsLoading && summary?.status === "needs_input" ? (
+        <section className="brief-intake-panel brief-intake-loading" aria-live="polite"><span className="loading-orbit" aria-hidden="true" /><div><h2>Loading the next question round…</h2><p>The saved Brief remains the source of truth.</p></div></section>
+      ) : null}
+      {!questionsLoading && questionsError && summary?.status === "needs_input" && !questionRound ? (
+        <section className="brief-intake-panel brief-intake-unavailable" role="alert"><div><span className="eyebrow">Guided Brief intake</span><h2>The question round could not be loaded.</h2><p>{questionsError}</p></div>{onRetryQuestions ? <button className="button button-secondary" onClick={onRetryQuestions}>Try again</button> : null}</section>
+      ) : null}
+      {summary?.status === "needs_input" && questionRound?.questions.length && onSubmitQuestions ? (
+        <BriefQuestionRound
+          key={`${questionRound.checksum}:${questionRound.roundKind}`}
+          round={questionRound}
+          busy={questionsBusy}
+          serverError={questionsError}
+          onSubmit={onSubmitQuestions}
+        />
+      ) : null}
       <div className="brief-hero-card">
         <div className="brief-hero-heading">
           <div><span className="card-kicker">Course intent</span><h2>{brief.courseTitle}</h2><p>{brief.purpose}</p></div>
@@ -84,7 +144,7 @@ function BriefView({ workspace, onEdit }: { workspace: Workspace; onEdit?: (sect
           <dl className="stacked-definitions">
             <DefinitionItem label="Audience" value={brief.audience} />
             <DefinitionItem label="Prior knowledge" value={brief.priorKnowledge} />
-            <DefinitionItem label="Assessment expectation" value={brief.assessmentExpectations} />
+            <DefinitionItem label="Assessment expectation" value={brief.assessmentExpectations || "Not specified"} />
           </dl>
         </section>
         <section className="stage-card">
@@ -101,14 +161,22 @@ function BriefView({ workspace, onEdit }: { workspace: Workspace; onEdit?: (sect
           <span className="micro-label">Constraints</span>
           <ul className="clean-list">{brief.constraints.map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
+        <section className="stage-card">
+          <div className="card-heading"><div><span className="card-index">D</span><h3>Additional requirements and materials</h3></div><BriefSectionAction section="requirements" label="Adjust additional requirements and materials" onEdit={onEdit} /></div>
+          {additionalRequirements.length ? <dl className="stacked-definitions">{additionalRequirements.map(([label, value]) => <DefinitionItem key={label} label={label} value={value} />)}</dl> : <span className="muted">No additional requirements recorded</span>}
+          <div className="card-divider" />
+          <span className="micro-label">Available materials</span>
+          <TagList values={brief.availableMaterials} tone="source" />
+        </section>
         <section className="stage-card assumption-card">
-          <div className="card-heading"><div><span className="card-index">D</span><h3>Visible assumptions</h3></div><BriefSectionAction section="assumptions" label="Review visible assumptions" onEdit={onEdit} /></div>
+          <div className="card-heading"><div><span className="card-index">E</span><h3>Visible assumptions</h3></div><BriefSectionAction section="assumptions" label="Review visible assumptions" onEdit={onEdit} /></div>
           <p className="card-note">Defaults are proposals, not hidden facts. Use Adjust to correct any of them.</p>
+          <div className="intake-provenance-summary" aria-label="Brief answer provenance"><span><strong>{explicitFields.size}</strong> provided directly</span><span><strong>{acceptedDefaults.size}</strong> defaults accepted</span></div>
           <div className="assumption-list">
             {brief.assumptions.length ? brief.assumptions.map((assumption) => (
               <div key={assumption.field} className="assumption-row">
                 <div><strong>{assumption.field.replaceAll("_", " ")}</strong><span>{displayAssumptionValue(assumption.value)}</span></div>
-                <small>Agent default</small>
+                <small className={acceptedDefaults.has(assumption.field) ? "accepted" : ""}>{acceptedDefaults.has(assumption.field) ? "Accepted default" : explicitFields.has(assumption.field) ? "Provided by you" : "Suggested default"}</small>
               </div>
             )) : <div className="no-assumptions"><span aria-hidden="true">✓</span><p>All current Brief values have been explicitly confirmed.</p></div>}
           </div>
@@ -578,9 +646,9 @@ function PackageView({ workspace }: { workspace: Workspace }) {
   );
 }
 
-export function StageView({ stage, workspace, contentCapabilities, onContentAction, onSourceDecision, onEditBrief }: { stage: StageSlug; workspace: Workspace; contentCapabilities?: { review: boolean; revise: boolean }; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onEditBrief?: (section: BriefEditSection) => void }) {
+export function StageView({ stage, workspace, contentCapabilities, onContentAction, onSourceDecision, onEditBrief, briefQuestionRound, briefQuestionsLoading, briefQuestionsBusy, briefQuestionsError, onRetryBriefQuestions, onSubmitBriefQuestions }: { stage: StageSlug; workspace: Workspace; contentCapabilities?: { review: boolean; revise: boolean }; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onEditBrief?: (section: BriefEditSection) => void; briefQuestionRound?: BriefQuestionRoundData; briefQuestionsLoading?: boolean; briefQuestionsBusy?: boolean; briefQuestionsError?: string; onRetryBriefQuestions?: () => void; onSubmitBriefQuestions?: (answers: BriefQuestionAnswer[]) => void }) {
   switch (stage) {
-    case "brief": return <BriefView workspace={workspace} onEdit={onEditBrief} />;
+    case "brief": return <BriefView workspace={workspace} onEdit={onEditBrief} questionRound={briefQuestionRound} questionsLoading={briefQuestionsLoading} questionsBusy={briefQuestionsBusy} questionsError={briefQuestionsError} onRetryQuestions={onRetryBriefQuestions} onSubmitQuestions={onSubmitBriefQuestions} />;
     case "outcomes": return <OutcomesView workspace={workspace} />;
     case "research": return <ResearchView workspace={workspace} onSourceDecision={onSourceDecision} />;
     case "course-model": return <CourseModelView workspace={workspace} />;

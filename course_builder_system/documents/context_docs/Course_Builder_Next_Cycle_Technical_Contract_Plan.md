@@ -1,7 +1,7 @@
 # Course Builder — Next Cycle Technical Contract Plan
 
 > **Status:** Implementation contract baseline  
-> **Updated:** 2026-07-15  
+> **Updated:** 2026-07-17
 > **Purpose:** Lock the state, command, invalidation, repair, execution, and
 > observability boundaries needed to implement the next development cycle  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`
@@ -262,6 +262,12 @@ Conceptual addition:
 The existing readable Brief fields remain the downstream contract. `intake_state` is
 stage-specific body data, not an orchestrator field.
 
+All Brief reads and mutations use one pure normalization boundary. It does not rewrite
+stored historical artifacts: explicitly accepted historical defaults remain accepted,
+assumed defaults on a historical draft remain unresolved, and approved pre-NC-20
+snapshots are grandfathered for compatibility. API checksums continue to identify the
+persisted artifact even when the returned read view is normalized.
+
 ### 8.2 Required fields
 
 - subject, provided by the Subject Request;
@@ -289,11 +295,16 @@ POST /api/courses/{course_id}/brief/clarifications/run
 ```
 
 - Saving answers is synchronous and durable.
+- A detailed creation request may atomically populate already-known Brief fields; a
+  complete input set returns no redundant questions.
 - Gap analysis is deterministic first.
 - Live clarification may propose at most three additional validated questions.
 - A live clarifier cannot invent artifact fields outside the allowed question set.
 - The Brief projects `needs_input` while required fields remain unresolved.
 - When required fields are resolved, it projects `awaiting_review`.
+- Every later stage and typed decision derives its transitive dependency from the
+  `PipelineCatalog` graph and requires the normalized Brief to be resolved and approved,
+  including at the locked execution boundary.
 
 ## 9. Typed stage-decision contracts
 

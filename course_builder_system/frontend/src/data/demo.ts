@@ -326,24 +326,43 @@ export const demoWorkspace: Workspace = {
     outOfScope: ["Advanced specialist topics", "Commercial cafe operations"],
     mustHaveTopics: ["Practical examples"],
     constraints: ["Keep the course compact for the prototype run."],
+    availableMaterials: [],
+    jurisdiction: null,
+    accessibilityRequirements: null,
     assessmentExpectations: "Short practical checks and scenario questions.",
+    liveTeachingConstraints: null,
+    toolsOrEquipment: null,
+    freshnessRequirement: null,
     assumptions: [
       {
         field: "audience",
         value: "General adult learners who are new to the subject.",
-        rationale: "No explicit audience was supplied; the prototype used a safe default.",
+        rationale: "The course director explicitly accepted this visible default.",
       },
       {
         field: "duration",
         value: "3 hours of self-paced learning",
-        rationale: "No duration was supplied; this fits the compact prototype constraint.",
+        rationale: "The course director explicitly accepted this visible default.",
       },
       {
         field: "level",
         value: "Beginner",
-        rationale: "The sparse request did not imply specialist prior knowledge.",
+        rationale: "The course director explicitly accepted this visible default.",
       },
     ],
+    provenance: [
+      { field: "purpose", source: "user", confidence: "explicit" },
+      { field: "audience", source: "default", confidence: "explicit" },
+      { field: "duration", source: "default", confidence: "explicit" },
+      { field: "level", source: "default", confidence: "explicit" },
+    ],
+    intakeState: {
+      explicitFields: ["purpose"],
+      acceptedDefaultFields: ["audience", "duration", "level"],
+      unresolvedRequiredFields: [],
+      answeredQuestionIds: ["brief_purpose", "brief_audience", "brief_duration", "brief_level"],
+      lastGapAnalysis: [],
+    },
   },
   outcomes: [
     {

@@ -4,7 +4,7 @@
 
 ---
 
-## Current status - 2026-07-15
+## Current status - 2026-07-17
 
 The four-week Course Builder prototype is complete as a working vertical product prototype. It has passed deterministic local acceptance, a second-topic domain-neutral smoke test, and one full live end-to-end run using live research, live LLM-backed content generation, live verification, lesson-plan generation, and Markdown rendering.
 
@@ -14,7 +14,7 @@ Course Builder Studio, the artifact-oriented browser interface, is also implemen
 
 The next development cycle is now planned as a milestone-gated program whose release target is one internal, nontechnical course director completing a sample course without terminal or JSON intervention. Read `Course_Builder_Next_Development_Cycle_Plan.md` for the product roadmap, then use its technical-contract, implementation-backlog, and acceptance/pilot companion documents before starting cycle work.
 
-The NC-10 lifecycle and command foundation is implemented and independently checkpointed. NC-002, NC-004, NC-005, and NC-101 through NC-109 have deterministic evidence covering lifecycle vocabulary, catalog-driven invalidation, impact checksums and mutation locking, approval guards, explicit reopen, backend-projected capabilities, scoped Content revision, failure preservation/retry, read-only examples, and truthful controls. NC-20 guided Brief intake is the next package; later packages remain unstarted.
+The NC-10 lifecycle and command foundation and NC-20 Guided Brief Intake package are implemented and independently checkpointed. NC-002, NC-004, NC-005, NC-101 through NC-109, and NC-201 through NC-207 have deterministic evidence covering lifecycle vocabulary, catalog-driven invalidation, impact checksums and mutation locking, approval guards, explicit reopen, backend-projected capabilities, scoped Content revision, failure preservation/retry, read-only examples, truthful controls, durable multi-round Brief intake, typed questions, explicit default acceptance, conditional clarification, normalized historical reads, transitive backend intake gates, and reopen-protected direct editing. NC-30 Outcomes decisions is the next safe package to begin; NC-30 and later packages remain unstarted.
 
 The most important current conclusion:
 
@@ -363,10 +363,10 @@ The Phase 0 handoff has been archived at `documents/context_docs/archive/Course_
 ## 20. Team & current state
 
 - **Team:** two engineers, both new to agentic AI.
-- **Current state:** The four-week pipeline prototype and the first local Course Builder Studio frontend are complete. The NC-10 lifecycle and command foundation has passed its deterministic exit gate. The reusable contracts, prompts, context builder, verification, integrity path, FastAPI adapter, React workspace, local acceptance course, live-run evidence, and FRM benchmark are in place. FRM-specific fixtures remain benchmark data, not reusable prompt or contract assumptions.
+- **Current state:** The four-week pipeline prototype and the local Course Builder Studio frontend are implemented and independently reviewed through NC-20 Guided Brief Intake. The reusable contracts, prompts, context builder, verification, integrity path, FastAPI adapter, React workspace, durable guided intake, local acceptance course, live-run evidence, and FRM benchmark are in place. FRM-specific fixtures remain benchmark data, not reusable prompt or contract assumptions.
 - **Building method:** the project is being built largely with AI assistance — this document exists to give any AI collaborator full context.
 - **Key asset:** existing, manually-built courses (risk & governance subjects). These are the reference for designing the artifacts AND the quality bar the agent's output is measured against.
-- **Immediate next action:** begin NC-20 guided Brief intake from `Course_Builder_Next_Cycle_Implementation_Backlog.md`, preserving the verified NC-10 lifecycle, invalidation, impact, locking, approval, capability, and failure-recovery contracts.
+- **Immediate next action:** begin NC-30 Outcomes decisions from `Course_Builder_Next_Cycle_Implementation_Backlog.md`, preserving the verified NC-10 lifecycle guarantees and NC-20 intake, persistence, validation, provenance, normalization, and approval-gate contracts.
 
 ---
 

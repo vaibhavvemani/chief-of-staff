@@ -25,7 +25,7 @@ def _services(tmp_path: Path) -> tuple[ArtifactRepository, DecisionService]:
     return repository, DecisionService(repository, catalog)
 
 
-def test_create_course_writes_only_a_valid_approved_subject_request(tmp_path: Path) -> None:
+def test_create_course_writes_approved_request_and_durable_intake_draft(tmp_path: Path) -> None:
     repository, decisions = _services(tmp_path)
 
     artifact = decisions.create_course(
@@ -39,10 +39,14 @@ def test_create_course_writes_only_a_valid_approved_subject_request(tmp_path: Pa
     assert artifact["course_id"] == "herb-gardening"
     assert artifact["artifact_type"] == "subject_request"
     assert artifact["status"] == "approved"
-    assert repository.list_artifact_types("herb-gardening") == ["subject_request"]
+    assert repository.list_artifact_types("herb-gardening") == ["brief", "subject_request"]
+    brief = repository.require("herb-gardening", "brief")
+    assert brief["status"] == "draft"
+    assert brief["body"]["intake_state"]["unresolved_required_fields"]
     assert (
         tmp_path / "courses" / "herb-gardening" / "subject_request.json"
     ).is_file()
+    assert (tmp_path / "courses" / "herb-gardening" / "brief.json").is_file()
 
 
 def test_create_course_rejects_unsafe_duplicate_and_empty_requests(tmp_path: Path) -> None:

@@ -20,6 +20,9 @@ from api.models import (
     ApproveStageCommand,
     BlueprintDecisionCommand,
     BriefAnswersCommand,
+    BriefClarificationCommand,
+    BriefQuestionRoundResponse,
+    BriefUpdatesCommand,
     ContentReviewCommand,
     CreateCourseRequest,
     ImpactPreviewCommand,
@@ -37,11 +40,16 @@ from api.services.artifact_repository import (
     ReadOnlyCourse,
     VersionConflict,
 )
+from api.services.brief_intake import BriefIntakeService, serialize_round
 from api.services.capability_service import (
     StageCapabilityService,
     UnsupportedStageAction,
 )
-from api.services.decision_service import DecisionService, StageNotReopened
+from api.services.decision_service import (
+    DecisionService,
+    PrerequisiteNotApproved,
+    StageNotReopened,
+)
 from api.services.lifecycle import (
     ImpactConfirmationRequired,
     ImpactPreviewService,
@@ -74,7 +82,8 @@ def create_app(
     )
     catalog = PipelineCatalog(rendered_root=repository.rendered_root)
     jobs = LocalJobRunner(runtime_root or repo_root / "runtime")
-    guards = ApprovalGuardService(repository, catalog)
+    brief_intake = BriefIntakeService()
+    guards = ApprovalGuardService(repository, catalog, brief_intake=brief_intake)
     capabilities = StageCapabilityService(catalog)
     impact = ImpactPreviewService(repository, catalog)
     invalidation = InvalidationService(repository, catalog)
@@ -85,6 +94,7 @@ def create_app(
         job_runner=jobs,
         approval_guards=guards,
         capabilities=capabilities,
+        brief_intake=brief_intake,
     )
     decisions = DecisionService(
         repository,
@@ -92,12 +102,14 @@ def create_app(
         approval_guards=guards,
         invalidation=invalidation,
         impact=impact,
+        brief_intake=brief_intake,
     )
     stages = StageRunner(
         repository,
         catalog,
         revisions=revisions,
         invalidation=invalidation,
+        brief_intake=brief_intake,
     )
     frontend_dist = repo_root / "frontend" / "dist"
 
@@ -128,6 +140,7 @@ def create_app(
     app.state.approval_guards = guards
     app.state.capabilities = capabilities
     app.state.impact = impact
+    app.state.brief_intake = brief_intake
     app.state.revisions = revisions
 
     @app.exception_handler(ArtifactNotFound)
@@ -182,6 +195,18 @@ def create_app(
     async def _stage_not_reopened(_request: Request, exc: StageNotReopened):
         return _error_response(409, str(exc), extra={"code": "reopen_required"})
 
+    @app.exception_handler(PrerequisiteNotApproved)
+    async def _prerequisite_not_approved(_request: Request, exc: PrerequisiteNotApproved):
+        return _error_response(
+            409,
+            str(exc),
+            extra={
+                "code": "prerequisite_not_approved",
+                "stage": exc.stage,
+                "artifact_type": exc.artifact_type,
+            },
+        )
+
     @app.exception_handler(UnsupportedStageAction)
     async def _unsupported_action(_request: Request, exc: UnsupportedStageAction):
         return _error_response(409, str(exc), extra={"code": "unsupported_action"})
@@ -217,6 +242,7 @@ def create_app(
             description=command.description,
             constraints=command.constraints,
             known_source_locators=command.known_source_locators,
+            brief_details=command.brief,
             course_id=command.course_id,
         )
         return {
@@ -235,9 +261,13 @@ def create_app(
     @app.get("/api/courses/{course_id}/artifacts/{artifact_type}")
     def artifact(course_id: str, artifact_type: str) -> dict[str, Any]:
         value = repository.require(course_id, artifact_type)
+        persisted = value
+        if artifact_type == "brief":
+            subject = repository.require(course_id, "subject_request")
+            value = brief_intake.normalize_artifact(subject, value)
         return {
             "artifact": value,
-            "checksum": repository.checksum(value),
+            "checksum": repository.checksum(persisted),
             "read_only": repository.locate(course_id).read_only,
         }
 
@@ -302,6 +332,9 @@ def create_app(
                 read_only=repository.locate(course_id).read_only,
                 prerequisites_ready=projector.stage(course_id, stage_slug).get(
                     "prerequisites_ready", False
+                ),
+                requires_reopen=projector.stage(course_id, stage_slug).get(
+                    "requires_reopen", False
                 ),
             )
             result = decisions.reopen_stage(
@@ -419,14 +452,55 @@ def create_app(
         )
         return _job_accepted(job)
 
+    @app.get(
+        "/api/courses/{course_id}/brief/questions",
+        response_model=BriefQuestionRoundResponse,
+    )
+    def brief_questions(course_id: str) -> dict[str, Any]:
+        subject = repository.require(course_id, "subject_request")
+        brief = repository.require(course_id, "brief")
+        normalized = brief_intake.normalize_artifact(subject, brief)
+        return serialize_round(
+            brief_intake.question_round(subject, normalized.get("body", {})),
+            checksum=repository.checksum(brief),
+        )
+
+    @app.post(
+        "/api/courses/{course_id}/brief/clarifications/run",
+        response_model=BriefQuestionRoundResponse,
+    )
+    def brief_clarifications(
+        course_id: str,
+        command: BriefClarificationCommand,
+    ) -> dict[str, Any]:
+        # NC-20 always runs deterministic gap detection. ``mode`` reserves the
+        # provider-neutral command shape for NC-909 without invoking a model here.
+        brief = repository.require(course_id, "brief")
+        checksum = repository.checksum(brief)
+        if checksum != command.expected_checksum:
+            raise VersionConflict(checksum)
+        subject = repository.require(course_id, "subject_request")
+        normalized = brief_intake.normalize_artifact(subject, brief)
+        return serialize_round(
+            brief_intake.question_round(subject, normalized.get("body", {})),
+            checksum=checksum,
+        )
+
     @app.put("/api/courses/{course_id}/brief/answers")
     def brief_answers(course_id: str, command: BriefAnswersCommand) -> dict[str, Any]:
         with jobs.mutate_now(course_id):
-            existing_brief = repository.load(course_id, "brief")
-            if existing_brief is not None and command.expected_checksum is None:
-                raise VersionConflict(repository.checksum(existing_brief))
             _check_artifact_version(repository, course_id, "brief", command.expected_checksum)
-            value = decisions.save_brief_answers(course_id, command.answers)
+            value = decisions.save_brief_answers(
+                course_id,
+                [answer.model_dump(exclude_unset=True) for answer in command.answers],
+            )
+        return {"artifact": value, "checksum": repository.checksum(value)}
+
+    @app.patch("/api/courses/{course_id}/brief")
+    def brief_updates(course_id: str, command: BriefUpdatesCommand) -> dict[str, Any]:
+        with jobs.mutate_now(course_id):
+            _check_artifact_version(repository, course_id, "brief", command.expected_checksum)
+            value = decisions.save_brief_updates(course_id, command.updates)
         return {"artifact": value, "checksum": repository.checksum(value)}
 
     @app.put("/api/courses/{course_id}/outcomes/decision")

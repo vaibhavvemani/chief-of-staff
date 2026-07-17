@@ -4,15 +4,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { ApiError, createCourse } from "../../api/client";
 import { AppBrand } from "../../components/AppBrand";
 
-export const DEFAULT_COURSE_SETTINGS = {
-  audience: "General adult learners who are new to the subject.",
-  priorKnowledge: "No prior knowledge assumed.",
-  level: "beginner",
-  duration: "3 hours of self-paced learning",
-  modality: "self_paced",
-  language: "English",
-} as const;
-
 function slugify(value: string): string {
   return value
     .toLowerCase()
@@ -22,22 +13,22 @@ function slugify(value: string): string {
     .slice(0, 48);
 }
 
+export function courseIdForSubject(subject: string): string {
+  const base = slugify(subject);
+  return base ? `${base}-course` : "your-course";
+}
+
 export function NewCoursePage() {
   const navigate = useNavigate();
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [constraints, setConstraints] = useState("");
   const [sources, setSources] = useState("");
-  const [audience, setAudience] = useState<string>(DEFAULT_COURSE_SETTINGS.audience);
-  const [level, setLevel] = useState<string>(DEFAULT_COURSE_SETTINGS.level);
-  const [duration, setDuration] = useState<string>(DEFAULT_COURSE_SETTINGS.duration);
-  const [modality, setModality] = useState<string>(DEFAULT_COURSE_SETTINGS.modality);
-  const [language, setLanguage] = useState<string>(DEFAULT_COURSE_SETTINGS.language);
   const [mode, setMode] = useState<"deterministic" | "live">("live");
-  const courseId = useMemo(() => slugify(subject) || "your-course", [subject]);
+  const courseId = useMemo(() => courseIdForSubject(subject), [subject]);
   const mutation = useMutation({
     mutationFn: createCourse,
-    onSuccess: ({ courseId: createdId, briefInitialized }) => navigate(`/courses/${createdId || courseId}/brief?mode=${mode}${briefInitialized ? "" : "&setup=incomplete"}`),
+    onSuccess: ({ courseId: createdId }) => navigate(`/courses/${createdId || courseId}/brief?mode=${mode}`),
   });
 
   async function submit(event: FormEvent) {
@@ -45,20 +36,11 @@ export function NewCoursePage() {
     if (!subject.trim()) return;
     try {
       await mutation.mutateAsync({
+        courseId,
         subject: subject.trim(),
         description: description.trim() || undefined,
         constraints: constraints.trim() || undefined,
         sourceUrls: sources.split("\n").map((value) => value.trim()).filter(Boolean),
-        briefAnswers: {
-          audience: audience.trim(),
-          priorKnowledge: DEFAULT_COURSE_SETTINGS.priorKnowledge,
-          purpose: description.trim() || `Build practical working knowledge of ${subject.trim()}.`,
-          level,
-          duration: duration.trim(),
-          modality,
-          language: language.trim(),
-          constraints: constraints.split("\n").map((value) => value.trim()).filter(Boolean),
-        },
       });
     } catch (error) {
       if (error instanceof ApiError && error.status === 0) {
@@ -77,10 +59,10 @@ export function NewCoursePage() {
         <section className="create-intro">
           <span className="eyebrow">New course</span>
           <h1>Give the agent a clear starting point.</h1>
-          <p>You do not need a finished specification. A subject is enough to create a first Brief; the workspace will surface assumptions for you to approve or correct.</p>
+          <p>You do not need a finished specification. A subject is enough to create a durable first Brief; the workspace will then ask only the questions that still matter.</p>
           <ol className="create-steps" aria-label="Creation steps">
             <li className="active"><span>1</span><div><strong>Starting request</strong><small>Subject and useful context</small></div></li>
-            <li><span>2</span><div><strong>Brief review</strong><small>Confirm scope and assumptions</small></div></li>
+            <li><span>2</span><div><strong>Guided Brief</strong><small>Answer questions and accept defaults</small></div></li>
             <li><span>3</span><div><strong>Build the course</strong><small>Approve each structured stage</small></div></li>
           </ol>
         </section>
@@ -109,22 +91,7 @@ export function NewCoursePage() {
             />
             <small>Optional. The Brief will make any missing assumptions visible.</small>
           </label>
-          <section className="starting-defaults" aria-labelledby="starting-defaults-title">
-            <div className="starting-defaults-heading">
-              <div><span className="eyebrow">Starting defaults</span><h3 id="starting-defaults-title">A practical first draft</h3></div>
-              <span className="editable-note">Everything here can be changed later</span>
-            </div>
-            <label className="form-field default-audience">
-              <span>Audience</span>
-              <input value={audience} onChange={(event) => setAudience(event.target.value)} />
-            </label>
-            <div className="course-default-grid">
-              <label className="form-field"><span>Level</span><select value={level} onChange={(event) => setLevel(event.target.value)}><option value="introductory">Introductory</option><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option><option value="mixed">Mixed</option><option value="custom">Custom</option></select></label>
-              <label className="form-field"><span>Course length</span><input value={duration} onChange={(event) => setDuration(event.target.value)} /></label>
-              <label className="form-field"><span>Delivery</span><select value={modality} onChange={(event) => setModality(event.target.value)}><option value="self_paced">Self-paced</option><option value="live">Live</option><option value="blended">Blended</option><option value="workshop">Workshop</option><option value="custom">Custom</option></select></label>
-              <label className="form-field"><span>Language</span><input value={language} onChange={(event) => setLanguage(event.target.value)} /></label>
-            </div>
-          </section>
+          <div className="guided-intake-note"><span aria-hidden="true">i</span><div><strong>Defaults stay unconfirmed until the next step</strong><p>The guided Brief will show suggestions such as language and level. You can accept each one explicitly or replace it.</p></div></div>
           <details className="additional-context">
             <summary><span><strong>Add constraints or source links</strong><small>Optional context for the agent</small></span><span aria-hidden="true">+</span></summary>
             <div className="form-grid-two">
@@ -154,7 +121,7 @@ export function NewCoursePage() {
           ) : null}
           <div className="create-submit-row">
             <div><span>Course ID preview</span><code>{courseId}</code></div>
-            <button className="button button-primary button-large" disabled={!subject.trim() || !audience.trim() || !duration.trim() || !language.trim() || mutation.isPending}>
+            <button className="button button-primary button-large" disabled={!subject.trim() || mutation.isPending}>
               {mutation.isPending ? "Creating workspace…" : "Create Brief"} <span aria-hidden="true">→</span>
             </button>
           </div>

@@ -40,6 +40,26 @@ def _approve(client: TestClient, course_id: str, stage: str) -> None:
     assert response.status_code == 200, response.text
 
 
+def _complete_brief(client: TestClient, course_id: str) -> None:
+    current = client.get(f"/api/courses/{course_id}/artifacts/brief").json()
+    response = client.patch(
+        f"/api/courses/{course_id}/brief",
+        json={
+            "expected_checksum": current["checksum"],
+            "updates": {
+                "audience": "Home coffee beginners",
+                "purpose": "Brew balanced coffee and diagnose common taste problems.",
+                "prior_knowledge": "No prior knowledge assumed.",
+                "level": "beginner",
+                "duration": "3 hours",
+                "modality": "self_paced",
+                "language": "English",
+            },
+        },
+    )
+    assert response.status_code == 200, response.text
+
+
 def test_full_deterministic_studio_workflow_reaches_a_rendered_package(
     tmp_path: Path, monkeypatch
 ) -> None:
@@ -64,9 +84,10 @@ def test_full_deterministic_studio_workflow_reaches_a_rendered_package(
         )
         assert created.status_code == 201
 
-        for stage in ("brief", "outcomes"):
-            _run_and_wait(client, "studio-smoke", stage)
-            _approve(client, "studio-smoke", stage)
+        _complete_brief(client, "studio-smoke")
+        _approve(client, "studio-smoke", "brief")
+        _run_and_wait(client, "studio-smoke", "outcomes")
+        _approve(client, "studio-smoke", "outcomes")
 
         _run_and_wait(client, "studio-smoke", "research")
         research_stage = client.get(
