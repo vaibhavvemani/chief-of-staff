@@ -72,7 +72,7 @@ class StageCapabilityService:
             )
         elif state == "needs_input":
             for direct in registered.direct_actions:
-                actions.append(self._direct_action(direct, needs_input=True))
+                actions.append(self._direct_action(stage_slug, direct, needs_input=True))
         elif state == "requires_attention" and requires_reopen:
             actions.append(
                 self._action(
@@ -83,7 +83,7 @@ class StageCapabilityService:
             )
         elif state in {"awaiting_review", "requires_attention"}:
             for direct in registered.direct_actions:
-                actions.append(self._direct_action(direct))
+                actions.append(self._direct_action(stage_slug, direct))
             if registered.revisions:
                 actions.append(
                     {
@@ -195,9 +195,19 @@ class StageCapabilityService:
             "requires_impact_confirmation": requires_impact_confirmation,
         }
 
-    def _direct_action(self, action_id: str, *, needs_input: bool = False) -> dict[str, Any]:
+    def _direct_action(
+        self, stage_slug: str, action_id: str, *, needs_input: bool = False
+    ) -> dict[str, Any]:
         labels = {
-            "edit": "Provide required input" if needs_input else "Edit stage",
+            "edit": (
+                "Provide required input"
+                if needs_input
+                else (
+                    "Edit Course Model"
+                    if stage_slug == "course-model"
+                    else "Edit stage"
+                )
+            ),
             "source_decision": "Save source decision",
             "review_asset": "Review content assets",
         }

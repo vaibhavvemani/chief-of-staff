@@ -9,6 +9,10 @@ import type {
   BriefQuestionSpec,
   BriefUpdates,
   ContentAsset,
+  CourseModelData,
+  CourseModelOperation,
+  CourseModelPreview,
+  CourseModelValidationIssue,
   CourseModule,
   CourseSummary,
   CreateCourseRequest,
@@ -101,6 +105,25 @@ export function outcomeValidationIssues(error: unknown): OutcomeValidationIssue[
       outcomeId: asString(issue.outcome_id ?? issue.outcomeId) || undefined,
       field: asString(issue.field) || undefined,
       index: typeof issue.index === "number" && Number.isInteger(issue.index) ? issue.index : undefined,
+    }];
+  });
+}
+
+export function courseModelValidationIssues(error: unknown): CourseModelValidationIssue[] {
+  if (!(error instanceof ApiError) || !isRecord(error.detail) || !isRecord(error.detail.error)) return [];
+  return asArray(error.detail.error.issues).flatMap((issue) => {
+    if (!isRecord(issue)) return [];
+    const code = asString(issue.code);
+    const message = asString(issue.message);
+    if (!code || !message) return [];
+    return [{
+      code,
+      message,
+      operationIndex: Number.isInteger(issue.operation_index) ? Number(issue.operation_index) : undefined,
+      recordType: asString(issue.record_type) || undefined,
+      recordId: asString(issue.record_id) || undefined,
+      field: asString(issue.field) || undefined,
+      path: asString(issue.path) || undefined,
     }];
   });
 }
@@ -549,7 +572,7 @@ function normalizeCompetitors(value: unknown, fallback: Workspace["research"]["c
   return competitors.length ? competitors : fallback;
 }
 
-function normalizeModules(value: unknown, fallback: CourseModule[]): CourseModule[] {
+export function normalizeCourseModel(value: unknown, fallback: CourseModelData): CourseModelData {
   if (!isRecord(value)) return fallback;
   const modules = asArray(value.modules).flatMap((moduleValue) => {
     if (!isRecord(moduleValue)) return [];
@@ -560,6 +583,9 @@ function normalizeModules(value: unknown, fallback: CourseModule[]): CourseModul
         order: asNumber(moduleValue.order),
         title: asString(moduleValue.title),
         purpose: asString(moduleContext.purpose),
+        inScope: asStringArray(moduleContext.in_scope),
+        outOfScope: asStringArray(moduleContext.out_of_scope),
+        prerequisiteModuleIds: asStringArray(moduleValue.prerequisite_module_ids),
         subtopics: asArray(moduleValue.subtopics).flatMap((subtopicValue) => {
           if (!isRecord(subtopicValue)) return [];
           const context = isRecord(subtopicValue.context) ? subtopicValue.context : {};
@@ -579,6 +605,7 @@ function normalizeModules(value: unknown, fallback: CourseModule[]): CourseModul
                         id: asString(conceptValue.id),
                         name: asString(conceptValue.name),
                         summary: asString(conceptValue.summary),
+                        dependsOn: asStringArray(conceptValue.depends_on),
                         sourceIds: asStringArray(conceptValue.source_ids),
                       },
                     ]
@@ -590,6 +617,7 @@ function normalizeModules(value: unknown, fallback: CourseModule[]): CourseModul
                       {
                         id: asString(requirement.id),
                         statement: asString(requirement.statement),
+                        conceptIds: asStringArray(requirement.concept_ids),
                         sourceIds: asStringArray(requirement.source_ids),
                       },
                     ]
@@ -602,7 +630,29 @@ function normalizeModules(value: unknown, fallback: CourseModule[]): CourseModul
       },
     ];
   });
-  return modules.length ? modules : fallback;
+  const metadata = isRecord(value.course_metadata) ? value.course_metadata : {};
+  return {
+    modules: modules.length ? modules : fallback.modules,
+    courseOutcomeIds: asStringArray(metadata.course_outcome_ids),
+    rationales: asArray(value.structural_rationale).flatMap((rationale) =>
+      isRecord(rationale)
+        ? [{
+            id: asString(rationale.id),
+            statement: asString(rationale.statement),
+            relatedOutcomeIds: asStringArray(rationale.related_outcome_ids),
+          }]
+        : [],
+    ),
+    eligibleSources: asArray(value.source_registry).flatMap((source) =>
+      isRecord(source)
+        ? [{
+            id: asString(source.id),
+            title: asString(source.title),
+            publisher: asString(source.publisher),
+          }]
+        : [],
+    ),
+  };
 }
 
 function normalizeBlueprint(value: unknown, fallback: Workspace["blueprint"]): Workspace["blueprint"] {
@@ -904,6 +954,8 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       outcomeAdvisories: normalizeOutcomeAdvisories(outcomeStage?.advisories),
       research: { sources: [], competitors: [], observations: [], registrySaved: false, registryApproved: false },
       modules: [],
+      courseModel: { modules: [], courseOutcomeIds: [], rationales: [], eligibleSources: [] },
+      courseModelChecksum: artifacts.get("course_model")?.checksum,
       blueprint: {
         defaults: { depth: "", minutes: 0, wordTarget: 0, examples: 0, caseDepth: "", assessmentComplexity: "" },
         plans: [],
@@ -1003,7 +1055,9 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
         registrySaved: artifacts.has("approved_source_registry"),
         registryApproved: artifacts.get("approved_source_registry")?.status === "approved",
       },
-      modules: normalizeModules(artifacts.get("course_model")?.body, base.modules),
+      courseModel: normalizeCourseModel(artifacts.get("course_model")?.body, base.courseModel),
+      courseModelChecksum: artifacts.get("course_model")?.checksum,
+      modules: normalizeCourseModel(artifacts.get("course_model")?.body, base.courseModel).modules,
       blueprint: normalizeBlueprint(artifacts.get("blueprint")?.body, base.blueprint),
       content,
       lessonPlan: normalizeLessonPlan(artifacts.get("lesson_plan")?.body, base.lessonPlan),
@@ -1148,6 +1202,134 @@ export async function approveStage(courseId: string, stage: StageSlug, command: 
   });
 }
 
+function courseModelOperationPayload(operation: CourseModelOperation): Record<string, unknown> {
+  switch (operation.op) {
+    case "add_module": return { op: operation.op, client_ref: operation.clientRef, position: operation.position, title: operation.title, purpose: operation.purpose, in_scope: operation.inScope, out_of_scope: operation.outOfScope, prerequisite_module_ids: operation.prerequisiteModuleIds };
+    case "update_module": return { op: operation.op, target_id: operation.targetId, title: operation.title, purpose: operation.purpose, in_scope: operation.inScope, out_of_scope: operation.outOfScope, prerequisite_module_ids: operation.prerequisiteModuleIds };
+    case "remove_module": return { op: operation.op, target_id: operation.targetId };
+    case "move_module": return { op: operation.op, target_id: operation.targetId, position: operation.position };
+    case "reorder_modules": return { op: operation.op, module_ids: operation.moduleIds };
+    case "add_subtopic": return { op: operation.op, client_ref: operation.clientRef, parent_id: operation.parentId, position: operation.position, title: operation.title, purpose: operation.purpose, in_scope: operation.inScope, out_of_scope: operation.outOfScope, prerequisite_subtopic_ids: operation.prerequisiteSubtopicIds };
+    case "update_subtopic": return { op: operation.op, target_id: operation.targetId, title: operation.title, purpose: operation.purpose, in_scope: operation.inScope, out_of_scope: operation.outOfScope, prerequisite_subtopic_ids: operation.prerequisiteSubtopicIds };
+    case "remove_subtopic": return { op: operation.op, target_id: operation.targetId };
+    case "move_subtopic": return { op: operation.op, target_id: operation.targetId, parent_id: operation.parentId, position: operation.position };
+    case "reorder_subtopics": return { op: operation.op, parent_id: operation.parentId, subtopic_ids: operation.subtopicIds };
+    case "add_concept": return { op: operation.op, client_ref: operation.clientRef, parent_id: operation.parentId, position: operation.position, name: operation.name, summary: operation.summary, depends_on: operation.dependsOn };
+    case "update_concept": return { op: operation.op, target_id: operation.targetId, name: operation.name, summary: operation.summary, depends_on: operation.dependsOn };
+    case "remove_concept": return { op: operation.op, target_id: operation.targetId };
+    case "add_coverage": return { op: operation.op, client_ref: operation.clientRef, parent_id: operation.parentId, position: operation.position, statement: operation.statement, concept_ids: operation.conceptIds };
+    case "update_coverage": return { op: operation.op, target_id: operation.targetId, statement: operation.statement, concept_ids: operation.conceptIds };
+    case "remove_coverage": return { op: operation.op, target_id: operation.targetId };
+    case "assign_sources": return { op: operation.op, target_type: operation.targetType, target_id: operation.targetId, source_ids: operation.sourceIds };
+    case "set_course_outcome_links": return { op: operation.op, outcome_ids: operation.outcomeIds };
+    case "set_rationale_outcome_links": return { op: operation.op, target_id: operation.targetId, outcome_ids: operation.outcomeIds };
+  }
+}
+
+function compactPayload(value: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined));
+}
+
+function normalizeImpactResponse(
+  response: Record<string, unknown>,
+  stage: StageSlug,
+  action: ImpactPreview["action"],
+): ImpactPreview {
+  return {
+    action,
+    stage,
+    operationSummary: asString(response.operation_summary) || undefined,
+    directArtifacts: asStringArray(response.direct_artifacts),
+    staleArtifacts: asStringArray(response.stale_artifacts),
+    targetedAssets: asStringArray(response.targeted_assets),
+    preservedAssets: asStringArray(response.preserved_assets),
+    requiresRerunStages: asStringArray(response.requires_rerun_stages).filter(
+      (candidate): candidate is StageSlug => allStageSlugs.includes(candidate as StageSlug),
+    ),
+    warnings: asStringArray(response.warnings),
+    impactLevel: ["targeted", "downstream", "full"].includes(asString(response.impact_level))
+      ? asString(response.impact_level) as ImpactPreview["impactLevel"]
+      : "downstream",
+    impactChecksum: asString(response.impact_checksum),
+  };
+}
+
+function normalizeAffectedRecords(value: unknown): CourseModelPreview["affectedRecords"] {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(Object.entries(value).flatMap(([family, record]) =>
+    isRecord(record)
+      ? (() => {
+          const changedIds = asStringArray(record.changed_ids);
+          const removedIds = asStringArray(record.removed_ids);
+          return changedIds.length || removedIds.length
+            ? [[family, { changedIds, removedIds }]]
+            : [];
+        })()
+      : [],
+  ));
+}
+
+function normalizeCourseModelPreview(response: Record<string, unknown>): CourseModelPreview {
+  const candidateArtifact = isRecord(response.candidate_artifact) ? response.candidate_artifact : {};
+  const impact = isRecord(response.impact) ? response.impact : {};
+  return {
+    candidate: normalizeCourseModel(candidateArtifact.body, { modules: [], courseOutcomeIds: [], rationales: [], eligibleSources: [] }),
+    allocatedIds: isRecord(response.allocated_ids)
+      ? Object.fromEntries(Object.entries(response.allocated_ids).filter((entry): entry is [string, string] => typeof entry[1] === "string"))
+      : {},
+    changeRecords: asArray(response.change_records).filter(isRecord),
+    affectedRecords: normalizeAffectedRecords(response.affected_records),
+    impact: normalizeImpactResponse(impact, "course-model", "edit"),
+  };
+}
+
+export async function previewCourseModelDecision(
+  courseId: string,
+  operations: CourseModelOperation[],
+  expectedChecksum: string,
+): Promise<CourseModelPreview> {
+  const response = await apiFetch<Record<string, unknown>>(
+    `/api/courses/${encodeURIComponent(courseId)}/course-model/decision/preview`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        expected_checksum: expectedChecksum,
+        operations: operations.map((operation) => compactPayload(courseModelOperationPayload(operation))),
+      }),
+    },
+  );
+  return normalizeCourseModelPreview(response);
+}
+
+export async function saveCourseModelDecision(
+  courseId: string,
+  operations: CourseModelOperation[],
+  expectedChecksum: string,
+  expectedImpactChecksum: string,
+): Promise<{ courseModel: CourseModelData; checksum: string; allocatedIds: Record<string, string>; impact: ImpactPreview }> {
+  const response = await apiFetch<Record<string, unknown>>(
+    `/api/courses/${encodeURIComponent(courseId)}/course-model/decision`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        expected_checksum: expectedChecksum,
+        operations: operations.map((operation) => compactPayload(courseModelOperationPayload(operation))),
+        impact_acknowledged: true,
+        expected_impact_checksum: expectedImpactChecksum,
+      }),
+    },
+  );
+  const artifact = isRecord(response.artifact) ? response.artifact : {};
+  return {
+    courseModel: normalizeCourseModel(artifact.body, { modules: [], courseOutcomeIds: [], rationales: [], eligibleSources: [] }),
+    checksum: asString(response.checksum),
+    allocatedIds: isRecord(response.allocated_ids)
+      ? Object.fromEntries(Object.entries(response.allocated_ids).filter((entry): entry is [string, string] => typeof entry[1] === "string"))
+      : {},
+    impact: normalizeImpactResponse(isRecord(response.impact) ? response.impact : {}, "course-model", "edit"),
+  };
+}
+
 export async function previewStageImpact(
   courseId: string,
   stage: StageSlug,
@@ -1172,23 +1354,7 @@ export async function previewStageImpact(
       }),
     },
   );
-  return {
-    action: command.action,
-    stage,
-    operationSummary: asString(response.operation_summary) || undefined,
-    directArtifacts: asStringArray(response.direct_artifacts),
-    staleArtifacts: asStringArray(response.stale_artifacts),
-    targetedAssets: asStringArray(response.targeted_assets),
-    preservedAssets: asStringArray(response.preserved_assets),
-    requiresRerunStages: asStringArray(response.requires_rerun_stages).filter(
-      (candidate): candidate is StageSlug => allStageSlugs.includes(candidate as StageSlug),
-    ),
-    warnings: asStringArray(response.warnings),
-    impactLevel: ["targeted", "downstream", "full"].includes(asString(response.impact_level))
-      ? asString(response.impact_level) as ImpactPreview["impactLevel"]
-      : "downstream",
-    impactChecksum: asString(response.impact_checksum),
-  };
+  return normalizeImpactResponse(response, stage, command.action);
 }
 
 export async function reopenStage(

@@ -3,10 +3,12 @@ import {
   ApiError,
   approveStage,
   createCourse,
+  courseModelValidationIssues,
   getBriefQuestions,
   getWorkspace,
   normalizeStatus,
   outcomeValidationIssues,
+  previewCourseModelDecision,
   previewStageImpact,
   reopenStage,
   reviseStage,
@@ -14,6 +16,7 @@ import {
   runStage,
   saveBriefAnswers,
   saveBriefUpdates,
+  saveCourseModelDecision,
   saveOutcomeDecision,
   saveSourceDecision,
   versionConflictChecksum,
@@ -37,6 +40,62 @@ afterEach(() => {
 });
 
 describe("typed API commands", () => {
+  it("sends only typed Course Model operations through preview and acknowledged save", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({
+        candidate_artifact: { body: { course_metadata: { course_outcome_ids: ["co1"] }, modules: [], structural_rationale: [], source_registry: [] } },
+        allocated_ids: { new_coverage_ui: "cr3" },
+        change_records: [],
+        affected_records: { subtopic: { changed_ids: ["s1"], removed_ids: [] } },
+        impact: { direct_artifacts: ["course_model"], stale_artifacts: ["blueprint"], requires_rerun_stages: ["blueprint"], warnings: [], impact_level: "downstream", impact_checksum: "impact-1" },
+      }))
+      .mockResolvedValueOnce(jsonResponse({
+        artifact: { body: { course_metadata: { course_outcome_ids: ["co1"] }, modules: [], structural_rationale: [], source_registry: [] } },
+        checksum: "course-model-2",
+        allocated_ids: { new_coverage_ui: "cr3" },
+        impact: { direct_artifacts: ["course_model"], stale_artifacts: ["blueprint"], requires_rerun_stages: ["blueprint"], warnings: [], impact_level: "downstream", impact_checksum: "impact-1" },
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+    const operations = [
+      { op: "update_subtopic" as const, targetId: "s1", title: "Renamed" },
+      { op: "add_coverage" as const, clientRef: "new_coverage_ui", parentId: "s1", position: 2, statement: "Cover the new requirement.", conceptIds: ["c1"] },
+      { op: "reorder_subtopics" as const, parentId: "m1", subtopicIds: ["s2", "s1"] },
+    ];
+
+    const preview = await previewCourseModelDecision("herb-course", operations, "course-model-1");
+    expect(requestBody(fetchMock, 0)).toEqual({
+      expected_checksum: "course-model-1",
+      operations: [
+        { op: "update_subtopic", target_id: "s1", title: "Renamed" },
+        { op: "add_coverage", client_ref: "new_coverage_ui", parent_id: "s1", position: 2, statement: "Cover the new requirement.", concept_ids: ["c1"] },
+        { op: "reorder_subtopics", parent_id: "m1", subtopic_ids: ["s2", "s1"] },
+      ],
+    });
+    expect(preview.allocatedIds).toEqual({ new_coverage_ui: "cr3" });
+    expect(preview.impact.impactChecksum).toBe("impact-1");
+
+    await saveCourseModelDecision("herb-course", operations, "course-model-1", "impact-1");
+    expect(requestBody(fetchMock, 1)).toMatchObject({
+      expected_checksum: "course-model-1",
+      impact_acknowledged: true,
+      expected_impact_checksum: "impact-1",
+    });
+    expect(requestBody(fetchMock, 1)).not.toHaveProperty("body");
+  });
+
+  it("normalizes structured Course Model validation issues", () => {
+    const error = new ApiError("invalid", 400, { error: { issues: [{ code: "unknown_reference", message: "Unknown concept.", operation_index: 2, record_type: "coverage", record_id: "cr1", field: "concept_ids", path: "$.operations[2]" }] } });
+    expect(courseModelValidationIssues(error)).toEqual([{
+      code: "unknown_reference",
+      message: "Unknown concept.",
+      operationIndex: 2,
+      recordType: "coverage",
+      recordId: "cr1",
+      field: "concept_ids",
+      path: "$.operations[2]",
+    }]);
+  });
+
   it("normalizes every lifecycle state exhaustively", () => {
     const states = [
       "locked",

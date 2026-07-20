@@ -123,6 +123,30 @@ def test_state_actions_are_explicit_and_read_only_has_no_mutations() -> None:
     assert service.actions("brief", "approved", read_only=True) == []
 
 
+def test_course_model_edit_is_available_only_at_reviewable_mutable_checkpoints() -> None:
+    service = StageCapabilityService(PipelineCatalog())
+
+    for state in ("awaiting_review", "requires_attention"):
+        actions = service.actions("course-model", state, read_only=False)
+        assert [item["id"] for item in actions] == ["edit", "approve"]
+        assert actions[0]["label"] == "Edit Course Model"
+
+    assert [
+        item["id"]
+        for item in service.actions("course-model", "approved", read_only=False)
+    ] == ["reopen", "continue"]
+    assert [
+        item["id"]
+        for item in service.actions("course-model", "stale", read_only=False)
+    ] == ["run"]
+    assert [
+        item["id"]
+        for item in service.actions("course-model", "failed", read_only=False)
+    ] == ["retry"]
+    assert service.actions("course-model", "running", read_only=False) == []
+    assert service.actions("course-model", "awaiting_review", read_only=True) == []
+
+
 def test_projector_exposes_needs_input_with_one_documented_action(
     tmp_path: Path,
 ) -> None:

@@ -4,16 +4,19 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
   approveStage,
+  courseModelValidationIssues,
   getBriefQuestions,
   getWorkspace,
   outcomeValidationIssues,
   previewStageImpact,
+  previewCourseModelDecision,
   reopenStage,
   reviseStage,
   reviewContentAsset,
   runStage,
   saveBriefAnswers,
   saveBriefUpdates,
+  saveCourseModelDecision,
   saveOutcomeDecision,
   saveSourceDecision,
   subscribeToJob,
@@ -22,7 +25,7 @@ import {
 import { AppBrand } from "../../components/AppBrand";
 import { ErrorState, LoadingState } from "../../components/States";
 import { StatusBadge } from "../../components/StatusBadge";
-import type { BriefData, BriefQuestionAnswer, BriefUpdates, Claim, ContentAsset, ImpactPreview, OutcomeDecisionDraft, OutcomeValidationIssue, StageAction, StageActionId, StageSlug, UiStatus, Workspace } from "../../types";
+import type { BriefData, BriefQuestionAnswer, BriefUpdates, Claim, ContentAsset, CourseModelOperation, CourseModelPreview, CourseModelValidationIssue, ImpactPreview, OutcomeDecisionDraft, OutcomeValidationIssue, StageAction, StageActionId, StageSlug, UiStatus, Workspace } from "../../types";
 import { StageView, stageData, type BriefEditSection } from "./StageViews";
 
 const stageSlugs: StageSlug[] = ["brief", "outcomes", "research", "course-model", "blueprint", "content", "lesson-plan", "package"];
@@ -437,6 +440,12 @@ export function WorkspacePage() {
   const [outcomesConflict, setOutcomesConflict] = useState(false);
   const [outcomesServerError, setOutcomesServerError] = useState<string>();
   const [outcomesServerIssues, setOutcomesServerIssues] = useState<OutcomeValidationIssue[]>([]);
+  const [courseModelEditing, setCourseModelEditing] = useState(false);
+  const [courseModelDirty, setCourseModelDirty] = useState(false);
+  const [courseModelConflict, setCourseModelConflict] = useState(false);
+  const [courseModelServerError, setCourseModelServerError] = useState<string>();
+  const [courseModelServerIssues, setCourseModelServerIssues] = useState<CourseModelValidationIssue[]>([]);
+  const [courseModelPreview, setCourseModelPreview] = useState<CourseModelPreview | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; tone: "good" | "attention" | "neutral" } | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -451,6 +460,8 @@ export function WorkspacePage() {
   const workspace = query.data?.workspace;
   const currentSummary = workspace?.stages.find((item) => item.slug === stage);
   const outcomesEditCapability = stage === "outcomes"
+    && Boolean(currentSummary?.actions.some((action) => action.id === "edit" && action.enabled));
+  const courseModelEditCapability = stage === "course-model"
     && Boolean(currentSummary?.actions.some((action) => action.id === "edit" && action.enabled));
   const briefQuestionsQuery = useQuery({
     queryKey: ["brief-questions", courseId],
@@ -479,8 +490,20 @@ export function WorkspacePage() {
   }, [outcomesEditCapability, outcomesEditing, stage]);
 
   useEffect(() => {
-    if (!outcomesDirty) return;
-    const message = "You have unsaved Outcomes changes. Leave this page and discard them?";
+    if (!courseModelEditing || stage === "course-model") return;
+    setCourseModelEditing(false);
+    setCourseModelDirty(false);
+    setCourseModelConflict(false);
+    setCourseModelServerError(undefined);
+    setCourseModelServerIssues([]);
+    setCourseModelPreview(null);
+  }, [courseModelEditing, stage]);
+
+  useEffect(() => {
+    if (!outcomesDirty && !courseModelDirty) return;
+    const message = courseModelDirty
+      ? "You have unsaved Course Model changes. Leave this page and discard them?"
+      : "You have unsaved Outcomes changes. Leave this page and discard them?";
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = message;
@@ -501,7 +524,7 @@ export function WorkspacePage() {
       window.removeEventListener("beforeunload", onBeforeUnload);
       document.removeEventListener("click", onDocumentClick, true);
     };
-  }, [outcomesDirty]);
+  }, [courseModelDirty, outcomesDirty]);
 
   const briefMutation = useMutation({
     mutationFn: async (updates: BriefUpdates) => {
@@ -651,6 +674,71 @@ export function WorkspacePage() {
       const message = error instanceof Error ? error.message : "The Outcomes decision could not be saved.";
       setOutcomesServerError(message);
       setOutcomesServerIssues(outcomeValidationIssues(error));
+      setToast({ tone: "attention", message });
+    },
+  });
+
+  const courseModelPreviewMutation = useMutation({
+    mutationFn: (operations: CourseModelOperation[]) => {
+      if (!workspace?.courseModelChecksum) throw new Error("Course Model editing requires the current artifact checksum.");
+      return previewCourseModelDecision(courseId, operations, workspace.courseModelChecksum);
+    },
+    onSuccess: (result) => {
+      setCourseModelConflict(false);
+      setCourseModelServerError(undefined);
+      setCourseModelServerIssues([]);
+      setCourseModelPreview(result);
+      setToast({ tone: "good", message: "The typed Course Model batch passed backend validation. Review and acknowledge its impact before save." });
+    },
+    onError: async (error) => {
+      setCourseModelPreview(null);
+      if (error instanceof ApiError && error.status === 409) {
+        await refresh();
+        setCourseModelConflict(true);
+        setCourseModelServerError(undefined);
+        setCourseModelServerIssues([]);
+        setToast({ tone: "attention", message: "The Course Model changed elsewhere. Your operation batch is preserved, but it needs review and a new preview." });
+        return;
+      }
+      const message = error instanceof Error ? error.message : "The Course Model batch could not be previewed.";
+      setCourseModelServerError(message);
+      setCourseModelServerIssues(courseModelValidationIssues(error));
+      setToast({ tone: "attention", message });
+    },
+  });
+
+  const courseModelSaveMutation = useMutation({
+    mutationFn: ({ operations, impactChecksum }: { operations: CourseModelOperation[]; impactChecksum: string }) => {
+      if (!workspace?.courseModelChecksum) throw new Error("Course Model editing requires the current artifact checksum.");
+      return saveCourseModelDecision(courseId, operations, workspace.courseModelChecksum, impactChecksum);
+    },
+    onSuccess: async (result) => {
+      setCourseModelDirty(false);
+      setCourseModelEditing(false);
+      setCourseModelConflict(false);
+      setCourseModelServerError(undefined);
+      setCourseModelServerIssues([]);
+      setCourseModelPreview(null);
+      queryClient.setQueryData<{ workspace: Workspace; demoMode: boolean; readOnly: boolean }>(
+        ["workspace", courseId],
+        (current) => current ? { ...current, workspace: { ...current.workspace, courseModel: result.courseModel, modules: result.courseModel.modules, courseModelChecksum: result.checksum || current.workspace.courseModelChecksum } } : current,
+      );
+      await refresh();
+      setToast({ tone: "good", message: "Course Model saved as a canonical draft. Review it before the separate approval checkpoint." });
+    },
+    onError: async (error) => {
+      setCourseModelPreview(null);
+      if (error instanceof ApiError && error.status === 409) {
+        await refresh();
+        setCourseModelConflict(true);
+        setCourseModelServerError(undefined);
+        setCourseModelServerIssues([]);
+        setToast({ tone: "attention", message: "The Course Model or impact checksum became stale. No changes were saved; review the latest model and preview again." });
+        return;
+      }
+      const message = error instanceof Error ? error.message : "The Course Model draft could not be saved.";
+      setCourseModelServerError(message);
+      setCourseModelServerIssues(courseModelValidationIssues(error));
       setToast({ tone: "attention", message });
     },
   });
@@ -821,6 +909,15 @@ export function WorkspacePage() {
         setOutcomesEditing(true);
         return;
       }
+      if (stage === "course-model") {
+        setCourseModelServerError(undefined);
+        setCourseModelServerIssues([]);
+        setCourseModelConflict(false);
+        setCourseModelPreview(null);
+        setCourseModelDirty(false);
+        setCourseModelEditing(true);
+        return;
+      }
       if (stage === "brief" && currentSummary?.status === "needs_input") {
         const intake = document.querySelector<HTMLElement>(".brief-intake-panel");
         intake?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -866,14 +963,14 @@ export function WorkspacePage() {
             <AgentRunScreen stage={stage} mode={runMode} progress={runProgress} />
           ) : currentSummary?.status === "locked" && !demoMode ? (
             <div className="locked-stage-state"><span className="locked-glyph" aria-hidden="true">·</span><span className="eyebrow">{currentSummary.label}</span><h1>This stage is waiting on an upstream decision.</h1><p>{currentSummary.dependencies.length ? `${currentSummary.dependencies.map((item) => item.replaceAll("_", " ")).join(", ")} must be approved and current before this stage can run.` : "A backend prerequisite must be completed before this stage can run."}</p></div>
-          ) : <StageView stage={stage} workspace={workspace} contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise") }} onContentAction={actionEnabled("review_asset") || actionEnabled("revise") ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined} onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined} onEditBrief={stage === "brief" && actionEnabled("edit") ? setBriefEditSection : undefined} outcomesEditing={outcomesEditing} outcomesBusy={outcomesMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)} outcomesConflict={outcomesConflict} outcomesServerError={outcomesServerError} outcomesServerIssues={outcomesServerIssues} onStartOutcomesEdit={outcomesEditCapability ? () => { setOutcomesServerError(undefined); setOutcomesServerIssues([]); setOutcomesConflict(false); setOutcomesDirty(false); setOutcomesEditing(true); } : undefined} onCancelOutcomesEdit={() => { setOutcomesEditing(false); setOutcomesDirty(false); setOutcomesConflict(false); setOutcomesServerError(undefined); setOutcomesServerIssues([]); }} onSaveOutcomes={(decision) => { setOutcomesServerError(undefined); setOutcomesServerIssues([]); outcomesMutation.mutate(decision); }} onResolveOutcomesConflict={() => { setOutcomesConflict(false); setOutcomesServerError(undefined); setOutcomesServerIssues([]); }} onOutcomesDirtyChange={setOutcomesDirty} briefQuestionRound={briefQuestionsQuery.data} briefQuestionsLoading={briefQuestionsQuery.isLoading || briefQuestionsQuery.isFetching && !briefQuestionsQuery.data} briefQuestionsBusy={briefAnswersMutation.isPending} briefQuestionsError={briefQuestionsError} onRetryBriefQuestions={() => void briefQuestionsQuery.refetch()} onSubmitBriefQuestions={(answers) => briefAnswersMutation.mutate(answers)} />}
+          ) : <StageView stage={stage} workspace={workspace} contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise") }} onContentAction={actionEnabled("review_asset") || actionEnabled("revise") ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined} onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined} onEditBrief={stage === "brief" && actionEnabled("edit") ? setBriefEditSection : undefined} outcomesEditing={outcomesEditing} outcomesBusy={outcomesMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)} outcomesConflict={outcomesConflict} outcomesServerError={outcomesServerError} outcomesServerIssues={outcomesServerIssues} onStartOutcomesEdit={outcomesEditCapability ? () => { setOutcomesServerError(undefined); setOutcomesServerIssues([]); setOutcomesConflict(false); setOutcomesDirty(false); setOutcomesEditing(true); } : undefined} onCancelOutcomesEdit={() => { setOutcomesEditing(false); setOutcomesDirty(false); setOutcomesConflict(false); setOutcomesServerError(undefined); setOutcomesServerIssues([]); }} onSaveOutcomes={(decision) => { setOutcomesServerError(undefined); setOutcomesServerIssues([]); outcomesMutation.mutate(decision); }} onResolveOutcomesConflict={() => { setOutcomesConflict(false); setOutcomesServerError(undefined); setOutcomesServerIssues([]); }} onOutcomesDirtyChange={setOutcomesDirty} courseModelEditing={courseModelEditing} courseModelBusy={courseModelPreviewMutation.isPending || courseModelSaveMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || Boolean(activeJobId)} courseModelConflict={courseModelConflict} courseModelServerError={courseModelServerError} courseModelServerIssues={courseModelServerIssues} courseModelPreview={courseModelPreview} onStartCourseModelEdit={courseModelEditCapability ? () => { setCourseModelServerError(undefined); setCourseModelServerIssues([]); setCourseModelConflict(false); setCourseModelPreview(null); setCourseModelDirty(false); setCourseModelEditing(true); } : undefined} onCancelCourseModelEdit={() => { setCourseModelEditing(false); setCourseModelDirty(false); setCourseModelConflict(false); setCourseModelServerError(undefined); setCourseModelServerIssues([]); setCourseModelPreview(null); }} onPreviewCourseModel={(operations) => { setCourseModelServerError(undefined); setCourseModelServerIssues([]); courseModelPreviewMutation.mutate(operations); }} onSaveCourseModel={(operations, impactChecksum) => courseModelSaveMutation.mutate({ operations, impactChecksum })} onInvalidateCourseModelPreview={() => setCourseModelPreview(null)} onRecoverCourseModelConflict={(choice) => { setCourseModelConflict(false); setCourseModelServerError(undefined); setCourseModelServerIssues([]); setCourseModelPreview(null); if (choice === "discard") { setCourseModelEditing(false); setCourseModelDirty(false); } }} onCourseModelDirtyChange={setCourseModelDirty} briefQuestionRound={briefQuestionsQuery.data} briefQuestionsLoading={briefQuestionsQuery.isLoading || briefQuestionsQuery.isFetching && !briefQuestionsQuery.data} briefQuestionsBusy={briefAnswersMutation.isPending} briefQuestionsError={briefQuestionsError} onRetryBriefQuestions={() => void briefQuestionsQuery.refetch()} onSubmitBriefQuestions={(answers) => briefAnswersMutation.mutate(answers)} />}
         </main>
         {inspectorOpen ? <ContextInspector workspace={workspace} stage={stage} onClose={() => setInspectorOpen(false)} /> : null}
         <DecisionBar
           stage={stage}
           status={currentSummary?.status ?? "ready"}
           actions={currentSummary?.actions ?? []}
-          busy={mutation.isPending || outcomesMutation.isPending || outcomesEditing || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)}
+          busy={mutation.isPending || outcomesMutation.isPending || outcomesEditing || courseModelPreviewMutation.isPending || courseModelSaveMutation.isPending || courseModelEditing || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)}
           onAction={handleStageAction}
         />
       </div>

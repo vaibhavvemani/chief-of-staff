@@ -9,10 +9,10 @@
 > **NC-40 backend contract update — 2026-07-20:** NC-301 and NC-302 have passed
 > independent checkpoint review, and NC-303 remains deferred to NC-90 behind NC-902.
 > NC-401 through NC-403 passed independent NC-40 backend checkpoint review on
-> 2026-07-20 after corrective hardening. NC-40 is not complete. NC-404 through NC-406
-> and all later packages remain unstarted, Course Model browser editing stays disabled,
-> and the next safe implementation action is NC-404. NC-405 remains dependent on
-> NC-404. This does not complete Milestone 3 or the cycle.
+> 2026-07-20 after corrective hardening. NC-404 passed independent review with
+> deterministic browser Scenario A6 evidence. NC-40 is not complete. NC-405, NC-406,
+> and all later packages remain unstarted. This does not complete
+> Milestone 3 or the cycle.
 
 ## 1. How to use this document
 
@@ -583,8 +583,9 @@ remains out of scope for this cycle.
 Domain failures return a stable issue list with `code`, `message`, operation index when
 applicable, record type/ID, and field/path when applicable. Successful preview/save
 responses return ordered change records, changed/removed/preserved IDs by record family,
-and the resolved request-local ID map for NC-404/NC-405. Course Model edit capability
-remains unprojected until NC-404; this backend contract does not enable a React control.
+and the resolved request-local ID map for NC-404/NC-405. Independently verified NC-404
+projects the Course Model edit capability only when the complete typed React workflow is
+available. NC-405's polished detailed diff remains unstarted.
 
 ### 9.4 Blueprint decision
 

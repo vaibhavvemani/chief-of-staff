@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 const SEEDED_LIFECYCLE_COURSE_ID = "studio-course-model-reopen-fixture";
+const COURSE_MODEL_EDITOR_COURSE_ID = "studio-course-model-editor-fixture";
 
 interface StageProjection {
   state: string;
@@ -624,9 +625,8 @@ test("keeps the seeded Course Model reopen lifecycle scenario", async ({ page, r
   );
   await expect(page.getByRole("heading", { name: "Course Model" })).toBeVisible();
   await expect(page.getByText("Grind Size", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Edit subtopic" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Add module" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: /Add subtopic/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Edit Course Model" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add module" })).toHaveCount(0);
   await page.getByRole("button", { name: "Open activity" }).click();
   await expect(
     page.getByRole("button", { name: "Model-call diagnostics unavailable" }),
@@ -648,4 +648,67 @@ test("keeps the seeded Course Model reopen lifecycle scenario", async ({ page, r
     return (await stage(request, SEEDED_LIFECYCLE_COURSE_ID, "blueprint")).state;
   }).toBe("stale");
   await expect(page.getByText("Grind Size", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit Course Model" }).first()).toBeVisible();
+});
+
+test("Scenario A6 edits, previews, persists, and approves the typed Course Model", async ({
+  page,
+  request,
+}) => {
+  await page.goto(
+    `/courses/${COURSE_MODEL_EDITOR_COURSE_ID}/course-model?mode=deterministic`,
+  );
+  await expect(page.getByRole("button", { name: "Run Course Model" })).toBeVisible();
+  await page.getByRole("button", { name: "Run Course Model" }).click();
+  await expect.poll(
+    async () => (await stage(request, COURSE_MODEL_EDITOR_COURSE_ID, "course-model")).state,
+    { timeout: 30_000 },
+  ).toBe("awaiting_review");
+  await expect(page.getByRole("heading", { name: "Course Model" })).toBeVisible();
+
+  await page.locator(".decision-bar").getByRole("button", { name: "Edit Course Model" }).click();
+  const firstTitle = page.getByLabel("Subtopic title for m1_s1");
+  await expect(firstTitle).toBeVisible();
+  await firstTitle.fill("Grind Size and Extraction Control");
+
+  await page.getByRole("button", { name: "Add coverage requirement" }).click();
+  const newCoverageStatement = page.getByLabel(/^Coverage statement for new_coverage_/);
+  await newCoverageStatement.fill(
+    "Compare two grind settings and justify the next extraction adjustment.",
+  );
+  const newCoverageConcepts = page.getByLabel(/^Concept references for coverage new_coverage_/);
+  await newCoverageConcepts.selectOption({ index: 0 });
+
+  await page.getByRole("button", {
+    name: "Reorder subtopic Grind Size and Extraction Control down",
+  }).click();
+  await page.getByRole("button", { name: "Preview impact" }).click();
+  await expect(page.getByText("Backend validation passed")).toBeVisible();
+  await expect(page.getByText(/Affected records:/)).toBeVisible();
+  await expect(page.getByText(/Downstream impact:/)).toBeVisible();
+  await page.getByRole("checkbox", { name: /reviewed the allocated ids/i }).check();
+  await page.getByRole("button", { name: "Save Course Model draft" }).click();
+
+  await expect.poll(
+    async () => (await stage(request, COURSE_MODEL_EDITOR_COURSE_ID, "course-model")).state,
+  ).toBe("awaiting_review");
+  await expect(
+    page.getByRole("heading", { name: "Grind Size and Extraction Control" }),
+  ).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: /Grind Size and Extraction Control/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Grind Size and Extraction Control" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Compare two grind settings and justify the next extraction adjustment."),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Approve Course Model" }).click();
+  await expect.poll(
+    async () => (await stage(request, COURSE_MODEL_EDITOR_COURSE_ID, "course-model")).state,
+  ).toBe("approved");
+  await expect.poll(
+    async () => (await stage(request, COURSE_MODEL_EDITOR_COURSE_ID, "blueprint")).state,
+  ).toBe("ready");
 });

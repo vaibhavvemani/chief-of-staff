@@ -183,7 +183,7 @@ def test_preview_is_read_only_and_save_atomically_invalidates_exact_descendants(
 
     stage = client.get(f"/api/courses/{course_id}/stages/course-model").json()
     action_ids = {action["id"] for action in stage["actions"]}
-    assert "edit" not in action_ids
+    assert "edit" in action_ids
     assert "revise" not in action_ids
 
     approved = client.post(
@@ -577,3 +577,31 @@ def test_course_model_approval_uses_shared_schema_and_cursor_validator(
         for failure in rejected.json()["error"]["failures"]
     )
     assert repository.require(course_id, "course_model") == invalid
+
+
+def test_active_course_job_suppresses_course_model_mutation_capabilities(
+    client: TestClient,
+) -> None:
+    course_id = "active-job-course-model"
+    _copy_acceptance_course(client, course_id)
+    projector = client.app.state.projector
+    original_runner = projector.job_runner
+
+    class ActiveJobRunner:
+        @staticmethod
+        def active_for_course(_course_id: str) -> dict[str, Any]:
+            return {"job_id": "active", "stage": "blueprint", "status": "running"}
+
+        @staticmethod
+        def latest_for_stage(_course_id: str, _stage_slug: str) -> None:
+            return None
+
+    projector.job_runner = ActiveJobRunner()
+    try:
+        stage = projector.stage(course_id, "course-model")
+    finally:
+        projector.job_runner = original_runner
+
+    assert stage["state"] == "awaiting_review"
+    assert stage["actions"] == []
+    assert stage["can_mutate"] is False

@@ -148,4 +148,13 @@ describe("truthful lifecycle controls", () => {
       priorityOrder: ["co1", "co2", "co3", "co4"],
     }));
   });
+
+  it("exposes Course Model editing only when the backend edit action is wired", () => {
+    const onStartCourseModelEdit = vi.fn();
+    const view = render(<StageView stage="course-model" workspace={demoWorkspace} />);
+    expect(screen.queryByRole("button", { name: "Edit Course Model" })).not.toBeInTheDocument();
+    view.rerender(<StageView stage="course-model" workspace={demoWorkspace} onStartCourseModelEdit={onStartCourseModelEdit} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit Course Model" }));
+    expect(onStartCourseModelEdit).toHaveBeenCalledOnce();
+  });
 });

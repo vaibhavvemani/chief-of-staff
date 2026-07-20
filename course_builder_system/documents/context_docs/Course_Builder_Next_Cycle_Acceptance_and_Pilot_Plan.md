@@ -23,9 +23,9 @@
 > **NC-40 backend checkpoint — 2026-07-20:** NC-401 through NC-403 passed independent
 > deterministic review after corrective hardening of stable ID history, ordered typed
 > references, source provenance, shared schema enforcement, and rollback cleanup.
-> NC-40 is not complete. NC-404 through NC-406 and all later packages remain unstarted,
-> Course Model browser editing stays disabled, and the next safe implementation action
-> is NC-404. NC-405 remains dependent on NC-404. This does not mark Milestone 3 or the
+> NC-404 passed independent review with deterministic browser Scenario A6 evidence.
+> NC-40 is not complete. NC-405, NC-406, and all later packages remain
+> unstarted. This does not mark Milestone 3 or the
 > whole cycle complete.
 
 ## 1. Purpose
@@ -275,8 +275,8 @@ audience, and resolve it.
 ### A6 — Generate and edit Course Model
 
 **Current checkpoint status:** The NC-401 through NC-403 backend portion is independently
-verified. The browser operator actions below remain unexecuted and continue to gate
-NC-404/NC-405 and completion of NC-40.
+verified. NC-404 passed independent review with deterministic browser evidence for the
+operator actions below. NC-405 remains unstarted, and NC-40 is not complete.
 
 **Operator action**
 
@@ -284,7 +284,8 @@ NC-404/NC-405 and completion of NC-40.
 - Rename one subtopic.
 - Add one coverage requirement to the troubleshooting subtopic.
 - Reorder two subtopics or move one within its module.
-- Review impact and commit.
+- Preview and acknowledge downstream impact, then save the canonical draft.
+- Refresh and verify the edited structure persists.
 - Approve.
 
 **Expected result**

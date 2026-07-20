@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-401 through NC-403 independently verified; NC-404 is next
+> **Status:** NC-404 independently verified with deterministic browser evidence
 > **Updated:** 2026-07-20
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -51,9 +51,9 @@ Implementation checkpoint (2026-07-20): NC-002, NC-004, NC-005, NC-101 through
 NC-109, NC-201 through NC-207, NC-301, and NC-302 are independently verified. NC-303
 remains deferred to NC-90 behind NC-902. NC-401 through NC-403 passed independent NC-40
 backend checkpoint review on 2026-07-20 after corrective hardening. NC-40 is not
-complete. NC-404 through NC-406 and every later package remain unstarted, Course Model
-browser editing stays disabled, and the next safe implementation action is NC-404.
-NC-405 remains dependent on NC-404. This status note does not mark Milestone 3, NC-40,
+complete. NC-404 is independently verified with deterministic browser Scenario A6
+evidence. NC-405, NC-406, and every later package remain unstarted.
+This status note does not mark Milestone 3, NC-40,
 or any later package complete.
 
 ```text
@@ -360,9 +360,8 @@ complete inputs do not receive unnecessary questions; the contract is ready for 
 **Implementation status (2026-07-20):** NC-301 and NC-302 have passed independent
 checkpoint review. NC-303 remains deferred to NC-90 behind NC-902 and has not started.
 NC-401 through NC-403 are independently verified after the NC-40 backend checkpoint.
-NC-40 is not complete, and NC-404 through NC-406 and every later package remain
-unstarted. The next safe implementation action is NC-404; NC-405 remains dependent on
-NC-404.
+NC-404 is independently verified with deterministic browser Scenario A6 evidence.
+NC-40 is not complete. NC-405, NC-406, and every later package remain unstarted.
 
 ### Tasks
 
@@ -420,9 +419,8 @@ Outcomes and preserve stable IDs where possible.
 
 **Implementation status (2026-07-20):** NC-401 through NC-403 passed independent NC-40
 backend checkpoint review after corrective hardening. This does not complete NC-40.
-NC-404 through NC-406 and every later package remain unstarted, Course Model browser
-editing stays disabled, and the next safe implementation action is NC-404. NC-405
-remains dependent on NC-404.
+NC-404 is independently verified with deterministic browser Scenario A6 evidence.
+NC-405, NC-406, and every later package remain unstarted. NC-40 is not complete.
 
 ### Tasks
 
@@ -460,7 +458,7 @@ remains dependent on NC-404.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-403, NC-105
-- **Status:** Not started; unblocked by the independent NC-40 backend checkpoint.
+- **Status:** Independently verified with deterministic browser Scenario A6 evidence.
 - Support consequential controls listed in the technical capability matrix.
 - Show impact before commit.
 

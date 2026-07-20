@@ -96,7 +96,7 @@ STAGE_CAPABILITIES: dict[str, StageCapabilities] = {
     "brief": StageCapabilities(direct_actions=("edit",)),
     "outcomes": StageCapabilities(direct_actions=("edit",)),
     "research": StageCapabilities(direct_actions=("source_decision",)),
-    "course-model": StageCapabilities(),
+    "course-model": StageCapabilities(direct_actions=("edit",)),
     "blueprint": StageCapabilities(),
     "content": StageCapabilities(
         direct_actions=("review_asset",),

@@ -9,6 +9,9 @@ WORKSPACE_SOURCE = (
 STAGE_VIEWS_SOURCE = (
     ROOT / "frontend" / "src" / "features" / "workspace" / "StageViews.tsx"
 )
+COURSE_MODEL_EDITOR_SOURCE = (
+    ROOT / "frontend" / "src" / "features" / "workspace" / "CourseModelEditor.tsx"
+)
 NEW_COURSE_SOURCE = (
     ROOT / "frontend" / "src" / "features" / "courses" / "NewCoursePage.tsx"
 )
@@ -101,15 +104,16 @@ def test_research_requires_an_explicit_saved_source_selection() -> None:
 
 
 def test_course_model_uses_a_structured_hierarchy_and_detail_contract() -> None:
-    stage_views = STAGE_VIEWS_SOURCE.read_text(encoding="utf-8")
+    editor = COURSE_MODEL_EDITOR_SOURCE.read_text(encoding="utf-8")
 
-    assert 'className="model-workspace"' in stage_views
-    assert 'className="module-copy"' in stage_views
-    assert 'className="tree-item-copy"' in stage_views
-    assert '<dl className="model-metadata">' in stage_views
-    assert 'className="model-scope-grid"' in stage_views
-    assert 'className="model-record-list"' in stage_views
-    assert 'className="model-integrity-note"' in stage_views
+    assert 'className="model-workspace"' in editor
+    assert 'className="model-tree"' in editor
+    assert 'className="model-detail"' in editor
+    assert 'className="course-model-edit-grid"' in editor
+    assert 'aria-label="Editable Course Model hierarchy"' in editor
+    assert 'className="operation-ledger"' in editor
+    assert "Preview impact" in editor
+    assert "Save Course Model draft" in editor
 
 
 def test_blueprint_uses_readable_asset_plans_and_explicit_override_context() -> None:

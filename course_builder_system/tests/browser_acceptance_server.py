@@ -21,6 +21,7 @@ os.environ["COURSE_BUILDER_INCLUDE_EXAMPLES"] = "false"
 # lifecycle tests can reopen an approved mid-pipeline stage without mutating the
 # committed example or replaying later work packages through the UI.
 SEEDED_LIFECYCLE_COURSE_ID = "studio-course-model-reopen-fixture"
+COURSE_MODEL_EDITOR_COURSE_ID = "studio-course-model-editor-fixture"
 _fixture_root = (
     Path(__file__).resolve().parents[1]
     / "examples"
@@ -34,6 +35,25 @@ for _fixture_path in _fixture_root.glob("*.json"):
     _artifact = json.loads(_fixture_path.read_text(encoding="utf-8"))
     _artifact["course_id"] = SEEDED_LIFECYCLE_COURSE_ID
     (_seed_root / _fixture_path.name).write_text(
+        json.dumps(_artifact, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+# A second bounded fixture stops at the approved Research checkpoint so the browser
+# acceptance scenario exercises the real deterministic Course Model run before editing.
+_editor_seed_root = _acceptance_root / "courses" / COURSE_MODEL_EDITOR_COURSE_ID
+_editor_seed_root.mkdir(parents=True)
+for _artifact_type in (
+    "subject_request",
+    "brief",
+    "course_outcomes",
+    "research_dossier",
+    "approved_source_registry",
+):
+    _fixture_path = _fixture_root / f"{_artifact_type}.json"
+    _artifact = json.loads(_fixture_path.read_text(encoding="utf-8"))
+    _artifact["course_id"] = COURSE_MODEL_EDITOR_COURSE_ID
+    (_editor_seed_root / _fixture_path.name).write_text(
         json.dumps(_artifact, indent=2) + "\n",
         encoding="utf-8",
     )

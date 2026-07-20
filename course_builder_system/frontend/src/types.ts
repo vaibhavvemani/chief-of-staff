@@ -269,6 +269,14 @@ export interface Concept {
   id: string;
   name: string;
   summary: string;
+  dependsOn: string[];
+  sourceIds: string[];
+}
+
+export interface CoverageRequirement {
+  id: string;
+  statement: string;
+  conceptIds: string[];
   sourceIds: string[];
 }
 
@@ -281,7 +289,7 @@ export interface Subtopic {
   outOfScope: string[];
   prerequisiteSubtopicIds: string[];
   concepts: Concept[];
-  coverageRequirements: Array<{ id: string; statement: string; sourceIds: string[] }>;
+  coverageRequirements: CoverageRequirement[];
   approvedSourceIds: string[];
 }
 
@@ -290,7 +298,68 @@ export interface CourseModule {
   order: number;
   title: string;
   purpose: string;
+  inScope: string[];
+  outOfScope: string[];
+  prerequisiteModuleIds: string[];
   subtopics: Subtopic[];
+}
+
+export interface CourseModelRationale {
+  id: string;
+  statement: string;
+  relatedOutcomeIds: string[];
+}
+
+export interface CourseModelSource {
+  id: string;
+  title: string;
+  publisher: string;
+}
+
+export interface CourseModelData {
+  modules: CourseModule[];
+  courseOutcomeIds: string[];
+  rationales: CourseModelRationale[];
+  eligibleSources: CourseModelSource[];
+}
+
+export type CourseModelOperation =
+  | { op: "add_module"; clientRef: string; position: number; title: string; purpose: string; inScope: string[]; outOfScope: string[]; prerequisiteModuleIds: string[] }
+  | { op: "update_module"; targetId: string; title?: string; purpose?: string; inScope?: string[]; outOfScope?: string[]; prerequisiteModuleIds?: string[] }
+  | { op: "remove_module"; targetId: string }
+  | { op: "move_module"; targetId: string; position: number }
+  | { op: "reorder_modules"; moduleIds: string[] }
+  | { op: "add_subtopic"; clientRef: string; parentId: string; position: number; title: string; purpose: string; inScope: string[]; outOfScope: string[]; prerequisiteSubtopicIds: string[] }
+  | { op: "update_subtopic"; targetId: string; title?: string; purpose?: string; inScope?: string[]; outOfScope?: string[]; prerequisiteSubtopicIds?: string[] }
+  | { op: "remove_subtopic"; targetId: string }
+  | { op: "move_subtopic"; targetId: string; parentId: string; position: number }
+  | { op: "reorder_subtopics"; parentId: string; subtopicIds: string[] }
+  | { op: "add_concept"; clientRef: string; parentId: string; position: number; name: string; summary: string; dependsOn: string[] }
+  | { op: "update_concept"; targetId: string; name?: string; summary?: string; dependsOn?: string[] }
+  | { op: "remove_concept"; targetId: string }
+  | { op: "add_coverage"; clientRef: string; parentId: string; position: number; statement: string; conceptIds: string[] }
+  | { op: "update_coverage"; targetId: string; statement?: string; conceptIds?: string[] }
+  | { op: "remove_coverage"; targetId: string }
+  | { op: "assign_sources"; targetType: "subtopic" | "concept" | "coverage"; targetId: string; sourceIds: string[] }
+  | { op: "set_course_outcome_links"; outcomeIds: string[] }
+  | { op: "set_rationale_outcome_links"; targetId: string; outcomeIds: string[] };
+
+export interface CourseModelValidationIssue {
+  code: string;
+  message: string;
+  operationIndex?: number;
+  recordType?: string;
+  recordId?: string;
+  field?: string;
+  path?: string;
+}
+
+export interface CourseModelPreview {
+  candidate: CourseModelData;
+  allocatedIds: Record<string, string>;
+  changeRecords: Array<Record<string, unknown>>;
+  affectedRecords: Record<string, { changedIds: string[]; removedIds: string[] }>;
+  impact: ImpactPreview;
 }
 
 export interface AssetPlan {
@@ -390,6 +459,8 @@ export interface Workspace {
     registryApproved?: boolean;
   };
   modules: CourseModule[];
+  courseModel: CourseModelData;
+  courseModelChecksum?: string;
   blueprint: {
     defaults: {
       depth: string;
