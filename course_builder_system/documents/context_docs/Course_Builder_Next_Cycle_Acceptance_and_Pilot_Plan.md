@@ -20,12 +20,13 @@
 > approval, capability/reopen gates, and downstream invalidation. NC-303 remains
 > deferred to NC-90 behind NC-902.
 
-> **NC-40 backend evidence update — 2026-07-20:** NC-401 through NC-403 are
-> implemented with deterministic backend evidence but remain pending independent NC-40
-> backend checkpoint review. NC-40 is not complete. NC-404 through NC-406 and all later
-> packages remain unstarted, Course Model browser editing stays disabled, and the next
-> action is independent backend checkpoint review rather than NC-404. This does not mark
-> Milestone 3 or the whole cycle complete.
+> **NC-40 backend checkpoint — 2026-07-20:** NC-401 through NC-403 passed independent
+> deterministic review after corrective hardening of stable ID history, ordered typed
+> references, source provenance, shared schema enforcement, and rollback cleanup.
+> NC-40 is not complete. NC-404 through NC-406 and all later packages remain unstarted,
+> Course Model browser editing stays disabled, and the next safe implementation action
+> is NC-404. NC-405 remains dependent on NC-404. This does not mark Milestone 3 or the
+> whole cycle complete.
 
 ## 1. Purpose
 
@@ -272,6 +273,10 @@ audience, and resolve it.
 - Course Model becomes ready.
 
 ### A6 — Generate and edit Course Model
+
+**Current checkpoint status:** The NC-401 through NC-403 backend portion is independently
+verified. The browser operator actions below remain unexecuted and continue to gate
+NC-404/NC-405 and completion of NC-40.
 
 **Operator action**
 

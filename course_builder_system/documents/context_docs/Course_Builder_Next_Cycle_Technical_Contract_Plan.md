@@ -8,11 +8,11 @@
 
 > **NC-40 backend contract update — 2026-07-20:** NC-301 and NC-302 have passed
 > independent checkpoint review, and NC-303 remains deferred to NC-90 behind NC-902.
-> NC-401 through NC-403 are implemented with deterministic backend evidence but remain
-> pending independent NC-40 backend checkpoint review. NC-40 is not complete. NC-404
-> through NC-406 and all later packages remain unstarted, Course Model browser editing
-> stays disabled, and the next action is independent backend checkpoint review rather
-> than NC-404. This does not complete Milestone 3 or the cycle.
+> NC-401 through NC-403 passed independent NC-40 backend checkpoint review on
+> 2026-07-20 after corrective hardening. NC-40 is not complete. NC-404 through NC-406
+> and all later packages remain unstarted, Course Model browser editing stays disabled,
+> and the next safe implementation action is NC-404. NC-405 remains dependent on
+> NC-404. This does not complete Milestone 3 or the cycle.
 
 ## 1. How to use this document
 
@@ -468,8 +468,11 @@ declares one globally unique, type-correct `client_ref` beginning with `new_modu
 `new_subtopic_`, `new_concept_`, or `new_coverage_`. Later operations may use a
 previously declared reference anywhere the corresponding canonical ID is allowed,
 including parent, prerequisite, dependency, concept, move, and reorder fields. Forward,
-duplicate, wrong-type, or unresolved references are rejected. The response returns the
-request-local-to-canonical mapping; no `new_*` reference is persisted.
+duplicate, wrong-type, unresolved, or guessed-future canonical references are rejected:
+every structural reference must resolve to a record present at that point in the batch.
+The response returns the request-local-to-canonical mapping; no typed request-local
+alias matching one of the four declared `new_<family>_*` patterns is persisted. Other
+historical IDs and prose that merely begin with `new_` remain valid.
 
 Physical array order is canonical because Blueprint, generation, Lesson Plan, and
 rendering consume it. Every add, move, or reorder changes the arrays and then derives
@@ -492,7 +495,10 @@ authoritative.
 The optional Course Model body field `id_allocation` contains positive, non-boolean
 `next_module_id`, `next_subtopic_id`, `next_concept_id`, and `next_coverage_id` cursors.
 The backend allocates `mN`, `sN`, `cN`, and `crN` IDs in operation order, skipping any
-collision. Clients cannot submit or edit the cursors.
+collision. It may also contain per-family `retired_module_ids`,
+`retired_subtopic_ids`, `retired_concept_ids`, and `retired_coverage_ids` lists. These
+lists are backend-owned tombstone history for deleted legacy or canonical IDs that a
+numeric cursor alone cannot represent. Clients cannot submit or edit allocation state.
 
 For a historical model with no allocation state, normalization derives each starting
 cursor from the greater of the current family cardinality and recognized numeric IDs,
@@ -502,14 +508,24 @@ the IDs-derived floor or its previously persisted value, and rejects booleans, f
 strings, zero, and negative values. Allocation happens before later deletion in the
 same batch; every ID allocated by a successful batch advances its durable cursor even
 if that new record is subsequently removed. Preview, rejection, and failed save do not
-burn IDs. Once state exists, deletion never makes an ID reusable.
+burn IDs. Deletion appends every removed record, including cascaded descendants, to its
+family history. Cursors cannot fall below active or retired numeric IDs, and prior
+tombstone history cannot be discarded. API and CLI generation reruns carry both cursor
+and tombstone history forward; a generator that attempts to reintroduce a retired ID
+fails before persistence rather than silently reusing it. Once state exists, deletion
+never makes an ID reusable.
 
 #### Authoritative candidate validation
 
-Mutation and Course Model approval call the same validator. It checks the full artifact
-schema and field bounds before semantic checks, then requires:
+Mutation and Course Model approval call the same validator. It checks the full Course
+Model, Course Outcomes, and Research Dossier schemas and rejects whitespace-only body
+text before semantic checks. The shared schema helper explicitly inventories its
+supported keyword subset, evaluates assertion siblings of `$ref` and `anyOf`, and fails
+closed if a checked-in contract introduces an unsupported keyword. Candidate validation
+then requires:
 
-- unique module, subtopic, concept, coverage, rationale, and source IDs;
+- unique module, subtopic, concept, coverage, rationale, source, Outcome, research
+  candidate, and normalized-topic IDs, with no structural ID shared across families;
 - deterministic physical order and contiguous module/subtopic `order` values;
 - at least one module and at least one subtopic in every module;
 - existing, non-self module/subtopic prerequisites and acyclic prerequisite graphs;
@@ -522,9 +538,14 @@ schema and field bounds before semantic checks, then requires:
 - valid, nondecreasing allocation state when it is present.
 
 Assignable source IDs are the intersection of the approved registry's explicit
-`approved_ids` and its content-bearing source records. Proposed, rejected, unavailable,
-competitor-only, contentless, or merely discovered sources are therefore ineligible.
-Clients never submit source metadata.
+`selected_ids`/`approved_ids`, its content-bearing source records, and a matching
+non-rejected Research Dossier source candidate. Registry and research metadata must
+agree; an already persisted research `content_ref` cannot be replaced. The source
+decision may explicitly promote a candidate whose persisted dossier status remains
+`proposed`, because source capture writes the downstream registry rather than rewriting
+the dossier. A merely proposed candidate without that explicit decision, and every
+rejected, absent, unavailable, competitor-only, contentless, or merely discovered
+source, remains ineligible. Clients never submit source metadata.
 
 #### Preview, save, and failure behavior
 
@@ -544,12 +565,20 @@ Stale bodies are preserved.
 
 The Course Model draft and all invalidated envelopes are one repository transaction.
 Preconditions are checked before the first replacement and an I/O failure rolls every
-replaced file back to its original bytes. Invalid, stale, concurrent, absent-artifact,
+replaced file back to its original bytes. Staging and partial-new-course failures clean
+their temporary files and any empty course directory; cleanup attempts are aggregated
+without hiding an incomplete rollback. Invalid, stale, concurrent, absent-artifact,
 unacknowledged-impact, read-only, approved-not-reopened, prerequisite-blocked, and no-op
 batches leave the Course Model, allocation state, and every downstream artifact
 byte-for-byte unchanged. Every operation must change the candidate at its position in
 the batch, and the final substantive candidate must differ from the starting model;
 allocation normalization alone is not a meaningful change.
+
+This repository transaction is deliberately rollback-based and process-local. It is not
+crash-journaled, `fsync`-durable, distributed, or safe against noncooperating writers in
+the narrow interval after final preflight. The per-course lock closes races among the
+current application's cooperating mutations; production transaction infrastructure
+remains out of scope for this cycle.
 
 Domain failures return a stable issue list with `code`, `message`, operation index when
 applicable, record type/ID, and field/path when applicable. Successful preview/save

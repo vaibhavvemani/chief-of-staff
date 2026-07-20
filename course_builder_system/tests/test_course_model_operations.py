@@ -8,12 +8,14 @@ from typing import Any
 import pytest
 
 import orchestrator
+from agents.course_model import build_course_model_artifact
 from api.models import CourseModelDecisionPreviewCommand
 from course_model_operations import (
     CourseModelReduction,
     CourseModelValidationError,
     carry_forward_course_model_allocation,
     reduce_course_model_operations,
+    validate_course_model_candidate,
 )
 from orchestrator import Decision, Step
 from run import OUTPUT_TRANSFORMS
@@ -588,6 +590,10 @@ def test_deleted_ids_are_not_reused_across_later_batches() -> None:
         "next_subtopic_id": 6,
         "next_concept_id": 6,
         "next_coverage_id": 6,
+        "retired_module_ids": ["m2"],
+        "retired_subtopic_ids": ["s5"],
+        "retired_concept_ids": ["c5"],
+        "retired_coverage_ids": ["cr5"],
     }
     assert second.allocated_ids == {
         "new_module_second": "m3",
@@ -614,6 +620,53 @@ def test_generated_model_cannot_reintroduce_an_id_below_the_prior_cursor() -> No
         carry_forward_course_model_allocation(regenerated, previous)
 
     assert exc_info.value.issues[0]["code"] == "course_model_id_reused"
+
+
+def test_generation_rerun_rejects_retired_ids_from_every_structural_family() -> None:
+    inputs = _acceptance_inputs()
+    operations = deepcopy(_add_complete_second_module_operations())
+    operations[0]["prerequisite_module_ids"] = []
+    operations[1]["prerequisite_subtopic_ids"] = []
+    operations[2]["depends_on"] = []
+    operations.append({"op": "remove_module", "target_id": "m1"})
+
+    deleted = _reduce(inputs, operations)
+    allocation = deleted.candidate_body["id_allocation"]
+    assert allocation["retired_module_ids"] == ["m1"]
+    assert allocation["retired_subtopic_ids"] == [
+        "m1_s1",
+        "m1_s2",
+        "m1_s3",
+        "m1_s4",
+    ]
+    assert allocation["retired_concept_ids"] == [
+        "c_m1_s1_1",
+        "c_m1_s2_1",
+        "c_m1_s3_1",
+        "c_m1_s4_1",
+    ]
+    assert allocation["retired_coverage_ids"] == [
+        "cr_m1_s1_1",
+        "cr_m1_s2_1",
+        "cr_m1_s3_1",
+        "cr_m1_s4_1",
+    ]
+
+    with pytest.raises(CourseModelValidationError) as exc_info:
+        carry_forward_course_model_allocation(
+            deepcopy(inputs["course_model"]),
+            deleted.candidate_artifact,
+        )
+
+    assert {issue["record_type"] for issue in exc_info.value.issues} == {
+        "module",
+        "subtopic",
+        "concept",
+        "coverage",
+    }
+    assert {issue["code"] for issue in exc_info.value.issues} == {
+        "course_model_id_reused"
+    }
 
 
 def test_cli_pipeline_injects_course_model_allocation_preservation(
@@ -655,6 +708,48 @@ def test_cli_pipeline_injects_course_model_allocation_preservation(
     assert saved["body"]["id_allocation"]["next_concept_id"] == 6
 
 
+def test_cli_pipeline_fails_closed_before_reusing_retired_legacy_ids(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    inputs = _acceptance_inputs()
+    deleted = _reduce(
+        inputs,
+        [{"op": "remove_subtopic", "target_id": "m1_s4"}],
+    ).candidate_artifact
+    deleted["course_id"] = "cli-retired-legacy"
+    deleted["status"] = "stale"
+    regenerated = deepcopy(inputs["course_model"])
+    regenerated["course_id"] = "cli-retired-legacy"
+    monkeypatch.setattr(orchestrator, "COURSES_DIR", tmp_path / "courses")
+    orchestrator.save_artifact(deleted)
+
+    with pytest.raises(CourseModelValidationError) as exc_info:
+        orchestrator.run_pipeline(
+            "cli-retired-legacy",
+            [
+                Step(
+                    name="structure",
+                    consumes=[],
+                    produces=["course_model"],
+                    run=lambda _inputs, _feedback: {
+                        "course_model": deepcopy(regenerated)
+                    },
+                )
+            ],
+            {},
+            approver=lambda _step, _produced: Decision(approved=True),
+            output_transforms=OUTPUT_TRANSFORMS,
+        )
+
+    assert any(
+        issue["code"] == "course_model_id_reused"
+        and issue["record_id"] == "m1_s4"
+        for issue in exc_info.value.issues
+    )
+    assert orchestrator.load_artifact("cli-retired-legacy", "course_model") == deleted
+
+
 def test_allocation_precedes_later_deletion_and_advances_on_success() -> None:
     inputs = _acceptance_inputs()
 
@@ -682,6 +777,20 @@ def test_allocation_precedes_later_deletion_and_advances_on_success() -> None:
     assert reduction.allocated_ids["new_concept_ephemeral"] == "c5"
     assert "c5" not in _all_ids(reduction.candidate_body)
     assert reduction.candidate_body["id_allocation"]["next_concept_id"] == 6
+    assert reduction.candidate_body["id_allocation"]["retired_concept_ids"] == ["c5"]
+
+    corrupted = {**inputs, "course_model": deepcopy(reduction.candidate_artifact)}
+    corrupted["course_model"]["body"]["id_allocation"]["next_concept_id"] = 5
+    with pytest.raises(CourseModelValidationError) as exc_info:
+        _reduce(
+            corrupted,
+            [{"op": "update_module", "target_id": "m1", "title": "Another title"}],
+        )
+
+    assert any(
+        issue["code"] == "allocation_cursor_below_floor"
+        for issue in exc_info.value.issues
+    )
 
 
 @pytest.mark.parametrize(
@@ -878,6 +987,81 @@ def test_duplicate_forward_and_wrong_type_local_references_are_rejected(
     assert all({"code", "message"} <= set(issue) for issue in exc_info.value.issues)
 
 
+@pytest.mark.parametrize(
+    "operations",
+    [
+        [
+            {
+                "op": "add_coverage",
+                "client_ref": "new_coverage_guessed",
+                "parent_id": "m1_s1",
+                "position": 2,
+                "statement": "A guessed future concept must not resolve.",
+                "concept_ids": ["c5"],
+            },
+            {
+                "op": "add_concept",
+                "client_ref": "new_concept_later",
+                "parent_id": "m1_s1",
+                "position": 2,
+                "name": "Later concept",
+                "summary": "This would receive c5 if the earlier guess were accepted.",
+                "depends_on": [],
+            },
+        ],
+        [
+            {
+                "op": "add_concept",
+                "client_ref": "new_concept_guessed_dependency",
+                "parent_id": "m1_s1",
+                "position": 2,
+                "name": "Guessed dependency",
+                "summary": "A direct canonical guess is still a forward reference.",
+                "depends_on": ["c5"],
+            },
+            {
+                "op": "add_concept",
+                "client_ref": "new_concept_dependency_target",
+                "parent_id": "m1_s1",
+                "position": 3,
+                "name": "Dependency target",
+                "summary": "This record has not been declared at the first operation.",
+                "depends_on": [],
+            },
+        ],
+        [
+            {
+                "op": "add_module",
+                "client_ref": "new_module_guessed_prerequisite",
+                "position": 2,
+                "title": "Guessed prerequisite",
+                "purpose": "A future canonical module is not currently referenceable.",
+                "in_scope": [],
+                "out_of_scope": [],
+                "prerequisite_module_ids": ["m2"],
+            },
+            {
+                "op": "add_module",
+                "client_ref": "new_module_later",
+                "position": 3,
+                "title": "Later module",
+                "purpose": "This module has not been declared at the first operation.",
+                "in_scope": [],
+                "out_of_scope": [],
+                "prerequisite_module_ids": [],
+            },
+        ],
+    ],
+)
+def test_guessed_future_canonical_ids_do_not_bypass_ordered_references(
+    operations: list[dict[str, Any]],
+) -> None:
+    with pytest.raises(CourseModelValidationError) as exc_info:
+        _reduce(_acceptance_inputs(), operations)
+
+    assert exc_info.value.issues[0]["code"] == "operation_reference_not_found"
+
+
 def test_unresolved_request_local_reference_in_existing_model_is_rejected() -> None:
     inputs = _acceptance_inputs()
     inputs["course_model"]["body"]["modules"][0]["prerequisite_module_ids"] = ["new_module_ghost"]
@@ -902,6 +1086,30 @@ def test_request_local_looking_prose_is_not_treated_as_a_reference() -> None:
     )
 
     assert _module(reduction.candidate_body, "m1")["title"] == "new_module_example"
+
+
+def test_only_typed_client_ref_patterns_are_reserved_in_reference_fields() -> None:
+    inputs = _acceptance_inputs()
+    inputs["course_model"]["body"]["modules"][0]["id"] = "new_curriculum"
+
+    reduction = _reduce(
+        inputs,
+        [
+            {
+                "op": "update_module",
+                "target_id": "new_curriculum",
+                "title": "Historical identifier retained",
+                "in_scope": ["new_product_launch", "new_module_scope"],
+            }
+        ],
+    )
+
+    module = _module(reduction.candidate_body, "new_curriculum")
+    assert module["title"] == "Historical identifier retained"
+    assert module["context"]["in_scope"] == [
+        "new_product_launch",
+        "new_module_scope",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -984,6 +1192,8 @@ def test_final_candidate_requires_a_module_and_a_subtopic_in_every_module(
         "duplicate_coverage_id",
         "duplicate_rationale_id",
         "duplicate_source_id",
+        "ambiguous_structural_id",
+        "whitespace_module_title",
     ],
 )
 def test_authoritative_validator_rejects_duplicate_ids_and_order(corrupt: str) -> None:
@@ -995,8 +1205,15 @@ def test_authoritative_validator_rejects_duplicate_ids_and_order(corrupt: str) -
         body["modules"][0]["subtopics"][1]["coverage_requirements"][0]["id"] = "cr_m1_s1_1"
     elif corrupt == "duplicate_rationale_id":
         body["structural_rationale"].append(deepcopy(body["structural_rationale"][0]))
-    else:
+    elif corrupt == "duplicate_source_id":
         body["source_registry"].append(deepcopy(body["source_registry"][0]))
+    elif corrupt == "ambiguous_structural_id":
+        body["modules"][0]["subtopics"][0]["concepts"][0]["id"] = "m1"
+        body["modules"][0]["subtopics"][0]["coverage_requirements"][0][
+            "concept_ids"
+        ] = ["m1"]
+    else:
+        body["modules"][0]["title"] = "   "
 
     with pytest.raises(CourseModelValidationError):
         _reduce(
@@ -1046,19 +1263,29 @@ def test_ineligible_source_assignments_are_rejected(source_id: str) -> None:
 def test_explicitly_approved_but_contentless_source_is_ineligible() -> None:
     inputs = _acceptance_inputs()
     registry = inputs["approved_source_registry"]["body"]
-    registry["decision"]["approved_ids"].append("contentless")
+    candidate = next(
+        item
+        for item in inputs["research_dossier"]["body"]["source_candidates"]
+        if item["id"] == "coffee_g4"
+    )
+    registry["decision"]["selected_ids"].append(candidate["id"])
+    registry["decision"]["approved_ids"].append(candidate["id"])
+    registry["decision"]["rejected_ids"].remove(candidate["id"])
     registry["source_registry"].append(
         {
-            "id": "contentless",
-            "title": "Contentless source",
-            "publisher": "example.test",
-            "source_type": "web page",
-            "locator": "https://example.test/contentless",
-            "content_ref": None,
+            key: candidate[key]
+            for key in (
+                "id",
+                "title",
+                "publisher",
+                "source_type",
+                "locator",
+                "content_ref",
+            )
         }
     )
 
-    with pytest.raises(CourseModelValidationError):
+    with pytest.raises(CourseModelValidationError) as exc_info:
         _reduce(
             inputs,
             [
@@ -1066,10 +1293,117 @@ def test_explicitly_approved_but_contentless_source_is_ineligible() -> None:
                     "op": "assign_sources",
                     "target_type": "subtopic",
                     "target_id": "m1_s1",
-                    "source_ids": ["contentless"],
+                    "source_ids": [candidate["id"]],
                 }
             ],
         )
+
+    assert any(
+        issue["code"] == "approved_source_registry_record_invalid"
+        for issue in exc_info.value.issues
+    )
+
+
+@pytest.mark.parametrize("source_kind", ["rejected", "absent", "competitor_only"])
+def test_registry_cannot_forge_source_eligibility_outside_research_candidates(
+    source_kind: str,
+) -> None:
+    inputs = _acceptance_inputs()
+    dossier = inputs["research_dossier"]["body"]
+    registry = inputs["approved_source_registry"]["body"]
+    if source_kind == "rejected":
+        candidate = next(
+            item for item in dossier["source_candidates"] if item["id"] == "coffee_g3"
+        )
+        source_id = candidate["id"]
+        forged = {
+            key: candidate[key]
+            for key in ("id", "title", "publisher", "source_type", "locator")
+        }
+        registry["decision"]["rejected_ids"].remove(source_id)
+    elif source_kind == "competitor_only":
+        competitor = next(
+            item
+            for item in dossier["competitor_findings"]
+            if item["id"] == "comp_homebrew"
+        )
+        source_id = competitor["id"]
+        forged = {
+            "id": source_id,
+            "title": competitor["offering"],
+            "publisher": competitor["provider"],
+            "source_type": "competitor outline",
+            "locator": competitor["locator"],
+        }
+    else:
+        source_id = "missing_source"
+        forged = {
+            "id": source_id,
+            "title": "Untracked source",
+            "publisher": "example.test",
+            "source_type": "web page",
+            "locator": "https://example.test/untracked",
+        }
+    forged["content_ref"] = f"sources/{source_id}.md"
+    registry["decision"]["selected_ids"].append(source_id)
+    registry["decision"]["approved_ids"].append(source_id)
+    registry["source_registry"].append(forged)
+
+    with pytest.raises(CourseModelValidationError) as exc_info:
+        _reduce(
+            inputs,
+            [{"op": "update_module", "target_id": "m1", "title": "Revised title"}],
+        )
+
+    assert any(
+        issue["code"]
+        in {
+            "approved_source_rejected_by_research",
+            "approved_source_missing_from_research",
+        }
+        for issue in exc_info.value.issues
+    )
+
+
+def test_explicit_registry_approval_can_promote_a_proposed_research_candidate() -> None:
+    inputs = _acceptance_inputs()
+    candidate = next(
+        item
+        for item in inputs["research_dossier"]["body"]["source_candidates"]
+        if item["id"] == "coffee_g1"
+    )
+    assert candidate["status"] == "proposed"
+
+    reduction = _reduce(
+        inputs,
+        [{"op": "update_module", "target_id": "m1", "title": "Revised title"}],
+    )
+
+    assert "coffee_g1" in {
+        source["id"] for source in reduction.candidate_body["source_registry"]
+    }
+
+
+def test_registry_cannot_replace_an_existing_research_content_pointer() -> None:
+    inputs = _frm_inputs()
+    for artifact_type in ("course_model", "approved_source_registry"):
+        source = next(
+            item
+            for item in inputs[artifact_type]["body"]["source_registry"]
+            if item["id"] == "g1"
+        )
+        source["content_ref"] = "sources/forged-g1.md"
+
+    with pytest.raises(CourseModelValidationError) as exc_info:
+        _reduce(
+            inputs,
+            [{"op": "update_module", "target_id": "m1", "title": "Revised title"}],
+        )
+
+    assert any(
+        issue["code"] == "approved_source_research_metadata_mismatch"
+        for issue in exc_info.value.issues
+    )
 
 
 @pytest.mark.parametrize(
@@ -1102,10 +1436,17 @@ def test_incomplete_and_unknown_course_outcome_links_are_rejected(
     "corruption",
     [
         "outcome_item",
+        "outcome_statement",
+        "outcome_whitespace",
+        "duplicate_outcome_id",
         "source_candidate_item",
+        "source_candidate_id",
         "assigned_node_id",
         "normalized_topic_item",
+        "normalized_topic_label",
+        "normalized_topic_whitespace",
         "registry_decision",
+        "registry_selected_ids",
         "registry_approved_id",
     ],
 )
@@ -1113,14 +1454,28 @@ def test_malformed_authority_artifacts_return_structured_issues(corruption: str)
     inputs = _acceptance_inputs()
     if corruption == "outcome_item":
         inputs["course_outcomes"]["body"]["outcomes"] = [None]
+    elif corruption == "outcome_statement":
+        del inputs["course_outcomes"]["body"]["outcomes"][0]["statement"]
+    elif corruption == "outcome_whitespace":
+        inputs["course_outcomes"]["body"]["outcomes"][0]["statement"] = "   "
+    elif corruption == "duplicate_outcome_id":
+        inputs["course_outcomes"]["body"]["outcomes"][1]["id"] = "co1"
     elif corruption == "source_candidate_item":
         inputs["research_dossier"]["body"]["source_candidates"] = [None]
+    elif corruption == "source_candidate_id":
+        del inputs["research_dossier"]["body"]["source_candidates"][0]["id"]
     elif corruption == "assigned_node_id":
         inputs["research_dossier"]["body"]["source_candidates"][0]["assigned_node_ids"] = [{}]
     elif corruption == "normalized_topic_item":
         inputs["research_dossier"]["body"]["normalized_topics"] = [None]
+    elif corruption == "normalized_topic_label":
+        del inputs["research_dossier"]["body"]["normalized_topics"][0]["label"]
+    elif corruption == "normalized_topic_whitespace":
+        inputs["research_dossier"]["body"]["normalized_topics"][0]["label"] = "   "
     elif corruption == "registry_decision":
         inputs["approved_source_registry"]["body"]["decision"] = []
+    elif corruption == "registry_selected_ids":
+        del inputs["approved_source_registry"]["body"]["decision"]["selected_ids"]
     else:
         inputs["approved_source_registry"]["body"]["decision"]["approved_ids"] = [{}]
 
@@ -1131,7 +1486,39 @@ def test_malformed_authority_artifacts_return_structured_issues(corruption: str)
         )
 
     assert exc_info.value.issues
-    assert any("invalid" in issue["code"] for issue in exc_info.value.issues)
+    assert any(
+        any(marker in issue["code"] for marker in ("invalid", "duplicate", "blank"))
+        for issue in exc_info.value.issues
+    )
+
+
+def test_generator_deduplicates_scope_values_before_shared_validation() -> None:
+    inputs = _acceptance_inputs()
+    brief = _load(ACCEPTANCE_ARTIFACTS / "brief.json")
+    brief["body"]["in_scope"] = ["Practical Examples"]
+    brief["body"]["must_have_topics"] = ["Practical Examples"]
+
+    generated = build_course_model_artifact(
+        brief,
+        inputs["course_outcomes"],
+        inputs["research_dossier"],
+        approved_source_registry=inputs["approved_source_registry"],
+    )
+
+    validate_course_model_candidate(
+        generated,
+        course_outcomes=inputs["course_outcomes"],
+        research_dossier=inputs["research_dossier"],
+        approved_source_registry=inputs["approved_source_registry"],
+    )
+    for module in generated["body"]["modules"]:
+        assert len(module["context"]["in_scope"]) == len(
+            set(module["context"]["in_scope"])
+        )
+        for subtopic in module["subtopics"]:
+            assert len(subtopic["context"]["in_scope"]) == len(
+                set(subtopic["context"]["in_scope"])
+            )
 
 
 @pytest.mark.parametrize(

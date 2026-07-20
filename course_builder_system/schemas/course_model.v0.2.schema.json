@@ -225,7 +225,11 @@
         "next_module_id": { "type": "integer", "minimum": 1 },
         "next_subtopic_id": { "type": "integer", "minimum": 1 },
         "next_concept_id": { "type": "integer", "minimum": 1 },
-        "next_coverage_id": { "type": "integer", "minimum": 1 }
+        "next_coverage_id": { "type": "integer", "minimum": 1 },
+        "retired_module_ids": { "$ref": "#/$defs/id_list" },
+        "retired_subtopic_ids": { "$ref": "#/$defs/id_list" },
+        "retired_concept_ids": { "$ref": "#/$defs/id_list" },
+        "retired_coverage_ids": { "$ref": "#/$defs/id_list" }
       }
     },
     "body": {

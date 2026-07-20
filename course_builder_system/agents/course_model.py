@@ -190,8 +190,12 @@ def _build_modules(brief_body: dict, topics: list[dict], sources: list[dict]) ->
                     "title": topic["label"],
                     "context": {
                         "purpose": _purpose_for_topic(topic["label"], brief_body),
-                        "in_scope": [topic["label"], *brief_body.get("must_have_topics", [])[:2]],
-                        "out_of_scope": brief_body.get("out_of_scope", [])[:3],
+                        "in_scope": _unique_strings(
+                            [topic["label"], *brief_body.get("must_have_topics", [])[:2]]
+                        ),
+                        "out_of_scope": _unique_strings(
+                            brief_body.get("out_of_scope", [])[:3]
+                        ),
                     },
                     "prerequisite_subtopic_ids": [previous_subtopic_id]
                     if previous_subtopic_id
@@ -230,8 +234,10 @@ def _build_modules(brief_body: dict, topics: list[dict], sources: list[dict]) ->
                 "title": module_title,
                 "context": {
                     "purpose": _module_purpose(module_index, brief_body),
-                    "in_scope": brief_body.get("in_scope", [])[:4],
-                    "out_of_scope": brief_body.get("out_of_scope", [])[:3],
+                    "in_scope": _unique_strings(brief_body.get("in_scope", [])[:4]),
+                    "out_of_scope": _unique_strings(
+                        brief_body.get("out_of_scope", [])[:3]
+                    ),
                 },
                 "prerequisite_module_ids": [previous_module_id] if previous_module_id else [],
                 "subtopics": subtopics,
@@ -307,3 +313,7 @@ def _humanize_topic(label: str) -> str:
 
 def _tokens(value: str) -> set[str]:
     return {token for token in re.split(r"[^a-z0-9]+", value.lower()) if token}
+
+
+def _unique_strings(values: list[str]) -> list[str]:
+    return list(dict.fromkeys(values))

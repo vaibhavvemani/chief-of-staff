@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -262,7 +263,17 @@ class ArtifactRepository:
 
         # First preflight happens before even temporary replacement files exist.
         self._preflight(prepared)
+        if course_id is None:  # pragma: no cover - guarded by the non-empty write list
+            raise RuntimeError("batch save did not resolve a course")
+        course_dir = self.runtime_location(course_id).artifact_root
+        course_dir_created = False
         try:
+            try:
+                course_dir.mkdir(parents=True, exist_ok=False)
+            except FileExistsError:
+                pass
+            else:
+                course_dir_created = True
             for item in prepared:
                 item.path.parent.mkdir(parents=True, exist_ok=True)
                 item.staged_path = self._stage_json(item)
@@ -270,17 +281,38 @@ class ArtifactRepository:
             # that this transaction is responsible for restoring.
             self._preflight(prepared)
             self._commit_prepared(prepared)
-        finally:
-            self._cleanup_staged(prepared)
+        except BaseException as exc:
+            cleanup_failures = self._cleanup_staged(prepared)
+            if course_dir_created:
+                cleanup_failures.extend(self._remove_created_course_dir(course_dir))
+            if cleanup_failures:
+                primary_error = str(exc) or type(exc).__name__
+                raise RuntimeError(
+                    f"{primary_error}; transaction cleanup was also incomplete: "
+                    + "; ".join(cleanup_failures)
+                ) from exc
+            raise
+        cleanup_failures = self._cleanup_staged(prepared)
+        if cleanup_failures:  # pragma: no cover - committed replacements consume every temp
+            raise RuntimeError(
+                "artifact batch committed but staged cleanup was incomplete: "
+                + "; ".join(cleanup_failures)
+            )
         return [item.value for item in prepared]
 
     def _preflight(self, prepared: list[_PreparedSave]) -> None:
         originals: list[bytes | None] = []
         for item in prepared:
             original = item.path.read_bytes() if item.path.is_file() else None
-            current = json.loads(original.decode("utf-8")) if original is not None else None
+            if original is None:
+                current = None
+                actual = "missing"
+            else:
+                current = json.loads(original.decode("utf-8"))
+                if not isinstance(current, dict):
+                    raise ValueError(f"artifact is not a JSON object: {item.path}")
+                actual = self.checksum(current)
             if item.expected_checksum is not None:
-                actual = self.checksum(current) if current is not None else "missing"
                 if actual != item.expected_checksum:
                     raise VersionConflict(actual)
             originals.append(original)
@@ -290,15 +322,14 @@ class ArtifactRepository:
     @staticmethod
     def _stage_json(item: _PreparedSave) -> Path:
         fd, tmp_name = tempfile.mkstemp(prefix=f".{item.artifact_type}.", dir=item.path.parent)
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                json.dump(item.value, handle, indent=2)
-                handle.write("\n")
-        except BaseException:
-            if os.path.exists(tmp_name):
-                os.unlink(tmp_name)
-            raise
-        return Path(tmp_name)
+        staged_path = Path(tmp_name)
+        # Record the path before serialization so the transaction-level cleanup
+        # can retry and aggregate a failed unlink without masking the write error.
+        item.staged_path = staged_path
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(item.value, handle, indent=2)
+            handle.write("\n")
+        return staged_path
 
     def _commit_prepared(self, prepared: list[_PreparedSave]) -> None:
         committed: list[_PreparedSave] = []
@@ -344,10 +375,36 @@ class ArtifactRepository:
                 os.unlink(tmp_name)
 
     @staticmethod
-    def _cleanup_staged(prepared: list[_PreparedSave]) -> None:
+    def _cleanup_staged(prepared: list[_PreparedSave]) -> list[str]:
+        failures: list[str] = []
         for item in prepared:
-            if item.staged_path is not None and item.staged_path.exists():
-                item.staged_path.unlink()
+            if item.staged_path is None:
+                continue
+            try:
+                item.staged_path.unlink(missing_ok=True)
+            except BaseException as exc:
+                failures.append(
+                    f"{item.artifact_type} staged file: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+            else:
+                item.staged_path = None
+        return failures
+
+    @staticmethod
+    def _remove_created_course_dir(course_dir: Path) -> list[str]:
+        """Remove only an empty course directory created by this transaction."""
+        try:
+            course_dir.rmdir()
+        except FileNotFoundError:
+            return []
+        except OSError as exc:
+            # Another cooperating or out-of-band writer may have populated the
+            # directory. Never remove content that this transaction did not stage.
+            if exc.errno in {errno.ENOTEMPTY, errno.EEXIST}:
+                return []
+            return [f"course directory: {type(exc).__name__}: {exc}"]
+        return []
 
     def output_path(self, course_id: str, relative_path: str) -> Path:
         location = self.locate(course_id)

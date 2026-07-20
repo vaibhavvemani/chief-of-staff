@@ -18,7 +18,10 @@ from typing import Any
 
 from schema_validation import validate_json_schema
 
-SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "course_model.v0.2.schema.json"
+SCHEMA_DIR = Path(__file__).resolve().parent / "schemas"
+SCHEMA_PATH = SCHEMA_DIR / "course_model.v0.2.schema.json"
+OUTCOMES_SCHEMA_PATH = SCHEMA_DIR / "course_outcomes.v0.2.schema.json"
+RESEARCH_SCHEMA_PATH = SCHEMA_DIR / "research_dossier.v0.2.schema.json"
 ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 UNRESOLVED_REF_PATTERN = re.compile(r"^new_(module|subtopic|concept|coverage)_[a-z0-9_-]+$")
 
@@ -28,6 +31,12 @@ CURSOR_FIELDS = {
     "subtopic": "next_subtopic_id",
     "concept": "next_concept_id",
     "coverage": "next_coverage_id",
+}
+RETIRED_FIELDS = {
+    "module": "retired_module_ids",
+    "subtopic": "retired_subtopic_ids",
+    "concept": "retired_concept_ids",
+    "coverage": "retired_coverage_ids",
 }
 CANONICAL_PATTERNS = {
     "module": re.compile(r"^m([1-9][0-9]*)$"),
@@ -148,12 +157,14 @@ def normalize_course_model_allocation(
     course_model_or_body: dict[str, Any],
     *,
     previous_id_allocation: dict[str, Any] | None = None,
-) -> dict[str, int]:
+) -> dict[str, Any]:
     """Return complete collision-safe cursors without mutating the supplied model.
 
     Historical models derive their first cursor from both family cardinality and
     recognized numeric IDs.  A present state is treated as durable history and may
     never fall below that derived floor or a separately supplied previous state.
+    Optional retired-ID lists preserve deletions of legacy, nonnumeric generator IDs
+    that a numeric cursor alone cannot represent.
     """
     body = _artifact_body(course_model_or_body)
     floors = _allocation_floors(body)
@@ -172,9 +183,10 @@ def normalize_course_model_allocation(
             ]
         )
     else:
-        expected = set(CURSOR_FIELDS.values())
-        missing = sorted(expected - set(state))
-        extra = sorted(set(state) - expected)
+        required = set(CURSOR_FIELDS.values())
+        allowed = required | set(RETIRED_FIELDS.values())
+        missing = sorted(required - set(state))
+        extra = sorted(set(state) - allowed)
         for field in missing:
             issues.append(
                 _issue(
@@ -208,18 +220,63 @@ def normalize_course_model_allocation(
                 )
                 continue
             normalized[field] = value
-            if value < floors[field]:
+
+        normalized.update(
+            _normalize_retired_allocation_fields(
+                state,
+                issues=issues,
+                path="$.body.id_allocation",
+                preserve_absent=True,
+            )
+        )
+        floors = _allocation_floors(body, normalized)
+        current_ids = {
+            family: {record["id"] for record in records}
+            for family, records in _records_by_family(body).items()
+        }
+        for family, field in CURSOR_FIELDS.items():
+            value = normalized.get(field)
+            if type(value) is int and value < floors[field]:
                 issues.append(
                     _issue(
                         "allocation_cursor_below_floor",
-                        f"{field} cannot be lower than the current ID floor {floors[field]}.",
+                        f"{field} cannot be lower than the current or retired ID floor "
+                        f"{floors[field]}.",
                         record_type=family,
                         field=field,
                         path=f"$.body.id_allocation.{field}",
                     )
                 )
+            retired_field = RETIRED_FIELDS[family]
+            reused = sorted(current_ids[family] & set(normalized.get(retired_field, [])))
+            for record_id in reused:
+                issues.append(
+                    _issue(
+                        "course_model_id_reused",
+                        f"Active {family} ID {record_id!r} is recorded as retired.",
+                        record_type=family,
+                        record_id=record_id,
+                        field="id",
+                        path=f"$.body.id_allocation.{retired_field}",
+                    )
+                )
 
     if previous_id_allocation is not None:
+        if not isinstance(previous_id_allocation, dict):
+            issues.append(
+                _issue(
+                    "previous_allocation_state_invalid",
+                    "Previous id_allocation must be an object.",
+                    path="$.previous_id_allocation",
+                )
+            )
+            previous_id_allocation = {}
+        previous_retired = _normalize_retired_allocation_fields(
+            previous_id_allocation,
+            issues=issues,
+            path="$.previous_id_allocation",
+            preserve_absent=False,
+        )
         for family, field in CURSOR_FIELDS.items():
             previous = previous_id_allocation.get(field)
             if type(previous) is not int or previous < 1:
@@ -239,6 +296,22 @@ def normalize_course_model_allocation(
                         record_type=family,
                         field=field,
                         path=f"$.body.id_allocation.{field}",
+                    )
+                )
+            retired_field = RETIRED_FIELDS[family]
+            missing_retired = sorted(
+                set(previous_retired.get(retired_field, []))
+                - set(normalized.get(retired_field, []))
+            )
+            if missing_retired:
+                issues.append(
+                    _issue(
+                        "retired_id_history_removed",
+                        f"{retired_field} cannot discard previously retired IDs: "
+                        + ", ".join(missing_retired),
+                        record_type=family,
+                        field=retired_field,
+                        path=f"$.body.id_allocation.{retired_field}",
                     )
                 )
 
@@ -269,9 +342,22 @@ def carry_forward_course_model_allocation(
         reuse_issues: list[dict[str, Any]] = []
         for family, records in _records_by_family(candidate["body"]).items():
             cursor = previous[CURSOR_FIELDS[family]]
+            retired = set(previous.get(RETIRED_FIELDS[family], []))
             for record in records:
                 record_id = record["id"]
                 match = CANONICAL_PATTERNS[family].fullmatch(record_id)
+                if record_id in retired:
+                    reuse_issues.append(
+                        _issue(
+                            "course_model_id_reused",
+                            f"Generated {family} ID {record_id!r} was retired by an "
+                            "earlier Course Model decision.",
+                            record_type=family,
+                            record_id=record_id,
+                            field="id",
+                        )
+                    )
+                    continue
                 if (
                     match is not None
                     and int(match.group(1)) < cursor
@@ -289,9 +375,19 @@ def carry_forward_course_model_allocation(
                     )
         if reuse_issues:
             raise CourseModelValidationError(reuse_issues)
+        candidate_allocation = allocation
         allocation = {
-            field: max(allocation[field], previous[field]) for field in CURSOR_FIELDS.values()
+            field: max(candidate_allocation[field], previous[field])
+            for field in CURSOR_FIELDS.values()
         }
+        for field in RETIRED_FIELDS.values():
+            retired = list(
+                dict.fromkeys(
+                    [*previous.get(field, []), *candidate_allocation.get(field, [])]
+                )
+            )
+            if retired:
+                allocation[field] = retired
     candidate["body"]["id_allocation"] = allocation
     return candidate
 
@@ -305,14 +401,35 @@ def validate_course_model_candidate(
     previous_id_allocation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Validate one full candidate artifact and return it unchanged on success."""
-    schema_issues = [
-        _issue(
+    schema_issues: list[dict[str, Any]] = []
+    for artifact, schema, code, path_prefix in (
+        (
+            course_model,
+            _course_model_schema(),
             "course_model_schema_invalid",
-            item["message"],
-            path=item["path"],
+            "",
+        ),
+        (
+            course_outcomes,
+            _course_outcomes_schema(),
+            "course_outcomes_schema_invalid",
+            "$.course_outcomes",
+        ),
+        (
+            research_dossier,
+            _research_dossier_schema(),
+            "research_dossier_schema_invalid",
+            "$.research_dossier",
+        ),
+    ):
+        schema_issues.extend(
+            _issue(
+                code,
+                item["message"],
+                path=_prefixed_schema_path(path_prefix, item["path"]),
+            )
+            for item in validate_json_schema(artifact, schema)
         )
-        for item in validate_json_schema(course_model, _course_model_schema())
-    ]
     if schema_issues:
         raise CourseModelValidationError(schema_issues)
 
@@ -394,6 +511,8 @@ def reduce_course_model_operations(
             )
         change_records.append(change)
 
+    _record_retired_ids(original_body, candidate_body, local_refs)
+
     if reject_noop and _substantive_body(candidate_body) == _substantive_body(original_body):
         raise CourseModelValidationError(
             [
@@ -441,6 +560,7 @@ def _apply_operation(
     name = operation["op"]
     if name == "add_module":
         prerequisites = _resolve_refs(
+            body,
             operation["prerequisite_module_ids"],
             "module",
             local_refs,
@@ -466,11 +586,14 @@ def _apply_operation(
         )
         return _change(index, name, "module", record_id, "added")
     if name == "update_module":
-        record_id = _resolve_ref(operation["target_id"], "module", local_refs, index, "target_id")
+        record_id = _resolve_ref(
+            body, operation["target_id"], "module", local_refs, index, "target_id"
+        )
         module = _require_module(body, record_id, index)
         _update_context_record(module, operation)
         if "prerequisite_module_ids" in operation:
             module["prerequisite_module_ids"] = _resolve_refs(
+                body,
                 operation["prerequisite_module_ids"],
                 "module",
                 local_refs,
@@ -479,22 +602,31 @@ def _apply_operation(
             )
         return _change(index, name, "module", record_id, "updated")
     if name == "remove_module":
-        record_id = _resolve_ref(operation["target_id"], "module", local_refs, index, "target_id")
+        record_id = _resolve_ref(
+            body, operation["target_id"], "module", local_refs, index, "target_id"
+        )
         _remove_record(body["modules"], record_id, "module", index)
         return _change(index, name, "module", record_id, "removed")
     if name == "move_module":
-        record_id = _resolve_ref(operation["target_id"], "module", local_refs, index, "target_id")
+        record_id = _resolve_ref(
+            body, operation["target_id"], "module", local_refs, index, "target_id"
+        )
         _move_record(body["modules"], record_id, operation["position"], "module", index)
         return _change(index, name, "module", record_id, "moved")
     if name == "reorder_modules":
-        ids = _resolve_refs(operation["module_ids"], "module", local_refs, index, "module_ids")
+        ids = _resolve_refs(
+            body, operation["module_ids"], "module", local_refs, index, "module_ids"
+        )
         body["modules"] = _reorder_complete(body["modules"], ids, "module", index)
         return _change(index, name, "module", None, "reordered", record_ids=ids)
 
     if name == "add_subtopic":
-        parent_id = _resolve_ref(operation["parent_id"], "module", local_refs, index, "parent_id")
+        parent_id = _resolve_ref(
+            body, operation["parent_id"], "module", local_refs, index, "parent_id"
+        )
         parent = _require_module(body, parent_id, index)
         prerequisites = _resolve_refs(
+            body,
             operation["prerequisite_subtopic_ids"],
             "subtopic",
             local_refs,
@@ -522,11 +654,14 @@ def _apply_operation(
         )
         return _change(index, name, "subtopic", record_id, "added", parent_id=parent_id)
     if name == "update_subtopic":
-        record_id = _resolve_ref(operation["target_id"], "subtopic", local_refs, index, "target_id")
+        record_id = _resolve_ref(
+            body, operation["target_id"], "subtopic", local_refs, index, "target_id"
+        )
         _, subtopic = _require_subtopic(body, record_id, index)
         _update_context_record(subtopic, operation)
         if "prerequisite_subtopic_ids" in operation:
             subtopic["prerequisite_subtopic_ids"] = _resolve_refs(
+                body,
                 operation["prerequisite_subtopic_ids"],
                 "subtopic",
                 local_refs,
@@ -535,14 +670,20 @@ def _apply_operation(
             )
         return _change(index, name, "subtopic", record_id, "updated")
     if name == "remove_subtopic":
-        record_id = _resolve_ref(operation["target_id"], "subtopic", local_refs, index, "target_id")
+        record_id = _resolve_ref(
+            body, operation["target_id"], "subtopic", local_refs, index, "target_id"
+        )
         parent, _ = _require_subtopic(body, record_id, index)
         _remove_record(parent["subtopics"], record_id, "subtopic", index)
         return _change(index, name, "subtopic", record_id, "removed", parent_id=parent["id"])
     if name == "move_subtopic":
-        record_id = _resolve_ref(operation["target_id"], "subtopic", local_refs, index, "target_id")
+        record_id = _resolve_ref(
+            body, operation["target_id"], "subtopic", local_refs, index, "target_id"
+        )
         source_parent, subtopic = _require_subtopic(body, record_id, index)
-        target_id = _resolve_ref(operation["parent_id"], "module", local_refs, index, "parent_id")
+        target_id = _resolve_ref(
+            body, operation["parent_id"], "module", local_refs, index, "parent_id"
+        )
         target_parent = _require_module(body, target_id, index)
         source_parent["subtopics"].remove(subtopic)
         _insert(
@@ -554,9 +695,12 @@ def _apply_operation(
         )
         return _change(index, name, "subtopic", record_id, "moved", parent_id=target_id)
     if name == "reorder_subtopics":
-        parent_id = _resolve_ref(operation["parent_id"], "module", local_refs, index, "parent_id")
+        parent_id = _resolve_ref(
+            body, operation["parent_id"], "module", local_refs, index, "parent_id"
+        )
         parent = _require_module(body, parent_id, index)
         ids = _resolve_refs(
+            body,
             operation["subtopic_ids"], "subtopic", local_refs, index, "subtopic_ids"
         )
         parent["subtopics"] = _reorder_complete(parent["subtopics"], ids, "subtopic", index)
@@ -565,9 +709,12 @@ def _apply_operation(
         )
 
     if name == "add_concept":
-        parent_id = _resolve_ref(operation["parent_id"], "subtopic", local_refs, index, "parent_id")
+        parent_id = _resolve_ref(
+            body, operation["parent_id"], "subtopic", local_refs, index, "parent_id"
+        )
         _, parent = _require_subtopic(body, parent_id, index)
         dependencies = _resolve_refs(
+            body,
             operation["depends_on"], "concept", local_refs, index, "depends_on"
         )
         record_id = _declare_and_allocate(
@@ -588,26 +735,34 @@ def _apply_operation(
         )
         return _change(index, name, "concept", record_id, "added", parent_id=parent_id)
     if name == "update_concept":
-        record_id = _resolve_ref(operation["target_id"], "concept", local_refs, index, "target_id")
+        record_id = _resolve_ref(
+            body, operation["target_id"], "concept", local_refs, index, "target_id"
+        )
         _, concept = _require_concept(body, record_id, index)
         for field in ("name", "summary"):
             if field in operation:
                 concept[field] = operation[field]
         if "depends_on" in operation:
             concept["depends_on"] = _resolve_refs(
+                body,
                 operation["depends_on"], "concept", local_refs, index, "depends_on"
             )
         return _change(index, name, "concept", record_id, "updated")
     if name == "remove_concept":
-        record_id = _resolve_ref(operation["target_id"], "concept", local_refs, index, "target_id")
+        record_id = _resolve_ref(
+            body, operation["target_id"], "concept", local_refs, index, "target_id"
+        )
         parent, _ = _require_concept(body, record_id, index)
         _remove_record(parent["concepts"], record_id, "concept", index)
         return _change(index, name, "concept", record_id, "removed", parent_id=parent["id"])
 
     if name == "add_coverage":
-        parent_id = _resolve_ref(operation["parent_id"], "subtopic", local_refs, index, "parent_id")
+        parent_id = _resolve_ref(
+            body, operation["parent_id"], "subtopic", local_refs, index, "parent_id"
+        )
         _, parent = _require_subtopic(body, parent_id, index)
         concept_ids = _resolve_refs(
+            body,
             operation["concept_ids"], "concept", local_refs, index, "concept_ids"
         )
         record_id = _declare_and_allocate(
@@ -627,24 +782,31 @@ def _apply_operation(
         )
         return _change(index, name, "coverage", record_id, "added", parent_id=parent_id)
     if name == "update_coverage":
-        record_id = _resolve_ref(operation["target_id"], "coverage", local_refs, index, "target_id")
+        record_id = _resolve_ref(
+            body, operation["target_id"], "coverage", local_refs, index, "target_id"
+        )
         _, coverage = _require_coverage(body, record_id, index)
         if "statement" in operation:
             coverage["statement"] = operation["statement"]
         if "concept_ids" in operation:
             coverage["concept_ids"] = _resolve_refs(
+                body,
                 operation["concept_ids"], "concept", local_refs, index, "concept_ids"
             )
         return _change(index, name, "coverage", record_id, "updated")
     if name == "remove_coverage":
-        record_id = _resolve_ref(operation["target_id"], "coverage", local_refs, index, "target_id")
+        record_id = _resolve_ref(
+            body, operation["target_id"], "coverage", local_refs, index, "target_id"
+        )
         parent, _ = _require_coverage(body, record_id, index)
         _remove_record(parent["coverage_requirements"], record_id, "coverage", index)
         return _change(index, name, "coverage", record_id, "removed", parent_id=parent["id"])
 
     if name == "assign_sources":
         family = operation["target_type"]
-        record_id = _resolve_ref(operation["target_id"], family, local_refs, index, "target_id")
+        record_id = _resolve_ref(
+            body, operation["target_id"], family, local_refs, index, "target_id"
+        )
         if family == "subtopic":
             _, target = _require_subtopic(body, record_id, index)
             target["approved_source_ids"] = operation["source_ids"]
@@ -751,7 +913,7 @@ def _normalize_operation(raw: Any, *, index: int) -> dict[str, Any]:
                 index=index,
                 issues=issues,
                 maximum=180,
-                allow_local_refs=False,
+                allow_local_refs=True,
             )
 
     id_list_families = {
@@ -870,6 +1032,18 @@ def _semantic_issues(
         "research_dossier",
         issues,
     )
+    for value, artifact_type, path in (
+        (body, "course_model", "$.body"),
+        (outcomes_body, "course_outcomes", "$.course_outcomes.body"),
+        (research_body, "research_dossier", "$.research_dossier.body"),
+    ):
+        issues.extend(
+            _blank_body_text_issues(
+                value,
+                artifact_type=artifact_type,
+                path=path,
+            )
+        )
 
     modules = body["modules"]
     subtopics = [subtopic for module in modules for subtopic in module["subtopics"]]
@@ -902,6 +1076,23 @@ def _semantic_issues(
                     )
                 )
             seen.add(record_id)
+
+    structural_families_by_id: dict[str, list[str]] = {}
+    for family in FAMILIES:
+        for record in collections[family]:
+            structural_families_by_id.setdefault(record["id"], []).append(family)
+    for record_id, families in structural_families_by_id.items():
+        if len(set(families)) > 1:
+            issues.append(
+                _issue(
+                    "ambiguous_structural_id",
+                    f"Structural ID {record_id!r} is shared by record families: "
+                    + ", ".join(dict.fromkeys(families))
+                    + ".",
+                    record_id=record_id,
+                    field="id",
+                )
+            )
 
     module_ids = {module["id"] for module in modules}
     subtopic_ids = {subtopic["id"] for subtopic in subtopics}
@@ -1035,6 +1226,7 @@ def _semantic_issues(
             )
 
     outcome_ids = [item.get("id") for item in outcome_records]
+    seen_outcome_ids: set[str] = set()
     for index, outcome_id in enumerate(outcome_ids):
         if not isinstance(outcome_id, str) or ID_PATTERN.fullmatch(outcome_id) is None:
             issues.append(
@@ -1045,6 +1237,18 @@ def _semantic_issues(
                     path=f"$.course_outcomes.body.outcomes[{index}].id",
                 )
             )
+        elif outcome_id in seen_outcome_ids:
+            issues.append(
+                _issue(
+                    "duplicate_course_outcome_id",
+                    f"Course Outcomes repeats Outcome ID {outcome_id!r}.",
+                    record_type="course_outcome",
+                    record_id=outcome_id,
+                    field="id",
+                )
+            )
+        else:
+            seen_outcome_ids.add(outcome_id)
     valid_outcomes = {item for item in outcome_ids if isinstance(item, str)}
     linked_outcomes = body["course_metadata"]["course_outcome_ids"]
     if set(linked_outcomes) != valid_outcomes:
@@ -1068,10 +1272,72 @@ def _semantic_issues(
             )
         )
 
+    research_sources_by_id: dict[str, dict[str, Any]] = {}
+    for candidate in research_candidates:
+        candidate_id = candidate["id"]
+        if candidate_id in research_sources_by_id:
+            issues.append(
+                _issue(
+                    "duplicate_research_source_id",
+                    f"Research Dossier repeats source candidate {candidate_id!r}.",
+                    record_type="research_source",
+                    record_id=candidate_id,
+                    field="id",
+                )
+            )
+        else:
+            research_sources_by_id[candidate_id] = candidate
+
     authoritative_sources, allowed_source_ids, source_authority_issues = _source_authority(
         approved_source_registry
     )
     issues.extend(source_authority_issues)
+    reconciled_source_ids: set[str] = set()
+    for source_id in allowed_source_ids:
+        candidate = research_sources_by_id.get(source_id)
+        if candidate is None:
+            issues.append(
+                _issue(
+                    "approved_source_missing_from_research",
+                    f"Approved source {source_id!r} is not a Research Dossier candidate.",
+                    record_type="source",
+                    record_id=source_id,
+                    field="id",
+                )
+            )
+            continue
+        if candidate["status"] not in {"proposed", "approved"}:
+            issues.append(
+                _issue(
+                    "approved_source_rejected_by_research",
+                    f"Approved source {source_id!r} is rejected in the Research Dossier.",
+                    record_type="source",
+                    record_id=source_id,
+                    field="status",
+                )
+            )
+            continue
+        compared_fields = ["id", "title", "publisher", "source_type", "locator"]
+        if isinstance(candidate.get("content_ref"), str) and candidate[
+            "content_ref"
+        ].strip():
+            compared_fields.append("content_ref")
+        if any(
+            authoritative_sources[source_id].get(field) != candidate.get(field)
+            for field in compared_fields
+        ):
+            issues.append(
+                _issue(
+                    "approved_source_research_metadata_mismatch",
+                    f"Approved source {source_id!r} metadata differs from its "
+                    "Research Dossier candidate.",
+                    record_type="source",
+                    record_id=source_id,
+                )
+            )
+            continue
+        reconciled_source_ids.add(source_id)
+    allowed_source_ids &= reconciled_source_ids
     for source in sources:
         source_id = source["id"]
         if source_id not in allowed_source_ids:
@@ -1171,6 +1437,16 @@ def _semantic_issues(
                     path=f"$.research_dossier.body.normalized_topics[{index}].id",
                 )
             )
+        elif topic_id in topic_ids:
+            issues.append(
+                _issue(
+                    "duplicate_research_topic_id",
+                    f"Research Dossier repeats normalized topic {topic_id!r}.",
+                    record_type="research_topic",
+                    record_id=topic_id,
+                    field="id",
+                )
+            )
         else:
             topic_ids.add(topic_id)
     for rationale in rationales:
@@ -1207,7 +1483,7 @@ def _semantic_issues(
 def _source_authority(
     approved_source_registry: dict[str, Any],
 ) -> tuple[dict[str, dict[str, Any]], set[str], list[dict[str, Any]]]:
-    body = approved_source_registry.get("body", {})
+    body = approved_source_registry.get("body")
     issues: list[dict[str, Any]] = []
     if not isinstance(body, dict):
         return (
@@ -1222,7 +1498,7 @@ def _source_authority(
                 )
             ],
         )
-    decision = body.get("decision", {})
+    decision = body.get("decision")
     if not isinstance(decision, dict):
         issues.append(
             _issue(
@@ -1233,73 +1509,164 @@ def _source_authority(
             )
         )
         decision = {}
-    records = body.get("source_registry", [])
-    approved = decision.get("approved_ids", [])
-    rejected = decision.get("rejected_ids", [])
-    if (
-        not isinstance(records, list)
-        or not isinstance(approved, list)
-        or not isinstance(rejected, list)
-    ):
+    records = body.get("source_registry")
+    if not isinstance(records, list):
         issues.append(
             _issue(
                 "approved_source_registry_invalid",
-                "Approved source registry must expose decision.approved_ids, "
-                "decision.rejected_ids, and source_registry lists.",
+                "Approved source registry source_registry must be a list.",
                 record_type="approved_source_registry",
+                path="$.approved_source_registry.body.source_registry",
             )
         )
-        return {}, set(), issues
+        records = []
+
+    decision_ids: dict[str, list[str]] = {}
+    for field in ("selected_ids", "approved_ids", "rejected_ids"):
+        raw_ids = decision.get(field)
+        if not isinstance(raw_ids, list):
+            issues.append(
+                _issue(
+                    "approved_source_registry_invalid",
+                    f"Approved source registry decision.{field} must be a list.",
+                    record_type="approved_source_registry",
+                    field=field,
+                    path=f"$.approved_source_registry.body.decision.{field}",
+                )
+            )
+            decision_ids[field] = []
+            continue
+        valid_ids: list[str] = []
+        seen_ids: set[str] = set()
+        for index, source_id in enumerate(raw_ids):
+            if not isinstance(source_id, str) or ID_PATTERN.fullmatch(source_id) is None:
+                issues.append(
+                    _issue(
+                        "approved_source_registry_record_invalid",
+                        f"Every decision.{field} item must be a valid source ID.",
+                        record_type="approved_source_registry",
+                        field=field,
+                        path=(
+                            f"$.approved_source_registry.body.decision.{field}[{index}]"
+                        ),
+                    )
+                )
+                continue
+            if source_id in seen_ids:
+                issues.append(
+                    _issue(
+                        "approved_source_registry_duplicate_decision_id",
+                        f"decision.{field} repeats source {source_id!r}.",
+                        record_type="approved_source_registry",
+                        record_id=source_id,
+                        field=field,
+                    )
+                )
+                continue
+            seen_ids.add(source_id)
+            valid_ids.append(source_id)
+        decision_ids[field] = valid_ids
+
     by_id: dict[str, dict[str, Any]] = {}
     for index, record in enumerate(records):
-        if not isinstance(record, dict) or not isinstance(record.get("id"), str):
+        if not isinstance(record, dict):
             issues.append(
                 _issue(
                     "approved_source_registry_record_invalid",
-                    "Every approved source registry record must be an object with a string ID.",
+                    "Every approved source registry record must be an object.",
                     record_type="approved_source_registry",
                     path=f"$.approved_source_registry.body.source_registry[{index}]",
                 )
             )
             continue
-        if record["id"] in by_id:
+        source_id = record.get("id")
+        if not isinstance(source_id, str) or ID_PATTERN.fullmatch(source_id) is None:
+            issues.append(
+                _issue(
+                    "approved_source_registry_record_invalid",
+                    "Every approved source registry record must have a valid string ID.",
+                    record_type="approved_source_registry",
+                    path=f"$.approved_source_registry.body.source_registry[{index}].id",
+                )
+            )
+            continue
+        required_text = ("title", "publisher", "source_type", "content_ref")
+        invalid_fields = [
+            field
+            for field in required_text
+            if not isinstance(record.get(field), str) or not record[field].strip()
+        ]
+        locator = record.get("locator")
+        if locator is not None and (not isinstance(locator, str) or not locator.strip()):
+            invalid_fields.append("locator")
+        if invalid_fields:
+            issues.append(
+                _issue(
+                    "approved_source_registry_record_invalid",
+                    f"Approved source {source_id!r} has invalid required metadata: "
+                    + ", ".join(invalid_fields)
+                    + ".",
+                    record_type="approved_source_registry",
+                    record_id=source_id,
+                )
+            )
+        if source_id in by_id:
             issues.append(
                 _issue(
                     "approved_source_registry_duplicate_id",
-                    f"Approved source registry repeats source {record['id']!r}.",
+                    f"Approved source registry repeats source {source_id!r}.",
                     record_type="approved_source_registry",
-                    record_id=record["id"],
-                )
-            )
-        by_id[record["id"]] = record
-    for index, source_id in enumerate(approved):
-        if not isinstance(source_id, str):
-            issues.append(
-                _issue(
-                    "approved_source_registry_record_invalid",
-                    "Every approved source ID must be a string.",
-                    record_type="approved_source_registry",
-                    path=(f"$.approved_source_registry.body.decision.approved_ids[{index}]"),
-                )
-            )
-    rejected_ids: set[str] = set()
-    for index, source_id in enumerate(rejected):
-        if not isinstance(source_id, str):
-            issues.append(
-                _issue(
-                    "approved_source_registry_record_invalid",
-                    "Every rejected source ID must be a string.",
-                    record_type="approved_source_registry",
-                    path=(f"$.approved_source_registry.body.decision.rejected_ids[{index}]"),
+                    record_id=source_id,
                 )
             )
         else:
-            rejected_ids.add(source_id)
+            by_id[source_id] = record
+
+    selected = decision_ids["selected_ids"]
+    approved = decision_ids["approved_ids"]
+    rejected_ids = set(decision_ids["rejected_ids"])
+    registry_ids = set(by_id)
+    if not selected:
+        issues.append(
+            _issue(
+                "approved_source_registry_empty",
+                "At least one source must be explicitly selected and approved.",
+                record_type="approved_source_registry",
+                field="selected_ids",
+            )
+        )
+    if set(selected) != set(approved):
+        issues.append(
+            _issue(
+                "approved_source_registry_decision_mismatch",
+                "decision.selected_ids and decision.approved_ids must identify the same sources.",
+                record_type="approved_source_registry",
+                field="selected_ids",
+            )
+        )
+    if set(approved) != registry_ids:
+        issues.append(
+            _issue(
+                "approved_source_registry_decision_mismatch",
+                "decision.approved_ids must exactly identify the source_registry records.",
+                record_type="approved_source_registry",
+                field="approved_ids",
+            )
+        )
+    overlap = sorted(set(approved) & rejected_ids)
+    if overlap:
+        issues.append(
+            _issue(
+                "approved_source_registry_decision_overlap",
+                "Approved and rejected source IDs must be disjoint: " + ", ".join(overlap),
+                record_type="approved_source_registry",
+                field="rejected_ids",
+            )
+        )
     allowed = {
         source_id
         for source_id in approved
-        if isinstance(source_id, str)
-        and source_id in by_id
+        if source_id in by_id
         and source_id not in rejected_ids
         and isinstance(by_id[source_id].get("content_ref"), str)
         and bool(by_id[source_id]["content_ref"].strip())
@@ -1361,18 +1728,164 @@ def _authority_object_list(
     return records
 
 
-def _allocation_floors(body: dict[str, Any]) -> dict[str, int]:
+def _blank_body_text_issues(
+    value: Any,
+    *,
+    artifact_type: str,
+    path: str,
+) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            issues.extend(
+                _blank_body_text_issues(
+                    child,
+                    artifact_type=artifact_type,
+                    path=f"{path}.{key}",
+                )
+            )
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            issues.extend(
+                _blank_body_text_issues(
+                    child,
+                    artifact_type=artifact_type,
+                    path=f"{path}[{index}]",
+                )
+            )
+    elif isinstance(value, str) and not value.strip():
+        issues.append(
+            _issue(
+                f"{artifact_type}_blank_text",
+                f"{artifact_type} body strings must not be whitespace-only.",
+                record_type=artifact_type,
+                path=path,
+            )
+        )
+    return issues
+
+
+def _normalize_retired_allocation_fields(
+    state: dict[str, Any],
+    *,
+    issues: list[dict[str, Any]],
+    path: str,
+    preserve_absent: bool,
+) -> dict[str, list[str]]:
+    normalized: dict[str, list[str]] = {}
+    for family, field in RETIRED_FIELDS.items():
+        if field not in state:
+            if not preserve_absent:
+                normalized[field] = []
+            continue
+        values = state[field]
+        if not isinstance(values, list):
+            issues.append(
+                _issue(
+                    "retired_id_history_invalid",
+                    f"{field} must be a list of unique IDs.",
+                    record_type=family,
+                    field=field,
+                    path=f"{path}.{field}",
+                )
+            )
+            normalized[field] = []
+            continue
+        valid: list[str] = []
+        seen: set[str] = set()
+        for index, record_id in enumerate(values):
+            if (
+                not isinstance(record_id, str)
+                or ID_PATTERN.fullmatch(record_id) is None
+                or UNRESOLVED_REF_PATTERN.fullmatch(record_id) is not None
+            ):
+                issues.append(
+                    _issue(
+                        "retired_id_history_invalid",
+                        f"{field} items must be persisted canonical or legacy IDs, "
+                        "not request-local references.",
+                        record_type=family,
+                        field=field,
+                        path=f"{path}.{field}[{index}]",
+                    )
+                )
+                continue
+            if record_id in seen:
+                issues.append(
+                    _issue(
+                        "retired_id_history_duplicate",
+                        f"{field} repeats ID {record_id!r}.",
+                        record_type=family,
+                        record_id=record_id,
+                        field=field,
+                        path=f"{path}.{field}[{index}]",
+                    )
+                )
+                continue
+            seen.add(record_id)
+            valid.append(record_id)
+        normalized[field] = valid
+    return normalized
+
+
+def _allocation_floors(
+    body: dict[str, Any], allocation: dict[str, Any] | None = None
+) -> dict[str, int]:
     records = _records_by_family(body)
     floors: dict[str, int] = {}
     for family in FAMILIES:
-        numeric = [
+        numeric_active = [
             int(match.group(1))
             for record in records[family]
             if isinstance(record.get("id"), str)
             and (match := CANONICAL_PATTERNS[family].fullmatch(record["id"])) is not None
         ]
-        floors[CURSOR_FIELDS[family]] = max(len(records[family]), max(numeric, default=0)) + 1
+        numeric_retired = [
+            int(match.group(1))
+            for record_id in (allocation or {}).get(RETIRED_FIELDS[family], [])
+            if isinstance(record_id, str)
+            and (match := CANONICAL_PATTERNS[family].fullmatch(record_id)) is not None
+        ]
+        floors[CURSOR_FIELDS[family]] = (
+            max(
+                len(records[family]),
+                max([*numeric_active, *numeric_retired], default=0),
+            )
+            + 1
+        )
     return floors
+
+
+def _record_retired_ids(
+    original: dict[str, Any],
+    candidate: dict[str, Any],
+    local_refs: dict[str, tuple[str, str]],
+) -> None:
+    allocation = candidate["id_allocation"]
+    original_records = _records_by_family(original)
+    candidate_records = _records_by_family(candidate)
+    allocated_by_family: dict[str, list[str]] = {family: [] for family in FAMILIES}
+    for family, record_id in local_refs.values():
+        allocated_by_family[family].append(record_id)
+
+    for family in FAMILIES:
+        active_ids = {record["id"] for record in candidate_records[family]}
+        removed = [
+            record["id"]
+            for record in original_records[family]
+            if record["id"] not in active_ids
+        ]
+        removed.extend(
+            record_id
+            for record_id in allocated_by_family[family]
+            if record_id not in active_ids
+        )
+        if not removed:
+            continue
+        field = RETIRED_FIELDS[family]
+        allocation[field] = list(
+            dict.fromkeys([*allocation.get(field, []), *removed])
+        )
 
 
 def _declare_and_allocate(
@@ -1398,8 +1911,12 @@ def _declare_and_allocate(
     cursor = body["id_allocation"]
     field = CURSOR_FIELDS[family]
     existing = {record["id"] for record in _records_by_family(body)[family]}
+    retired = set(cursor.get(RETIRED_FIELDS[family], []))
     number = cursor[field]
-    while f"{CANONICAL_PREFIXES[family]}{number}" in existing:
+    while (
+        f"{CANONICAL_PREFIXES[family]}{number}" in existing
+        or f"{CANONICAL_PREFIXES[family]}{number}" in retired
+    ):
         number += 1
     canonical_id = f"{CANONICAL_PREFIXES[family]}{number}"
     cursor[field] = number + 1
@@ -1409,6 +1926,7 @@ def _declare_and_allocate(
 
 
 def _resolve_ref(
+    body: dict[str, Any],
     value: str,
     family: str,
     local_refs: dict[str, tuple[str, str]],
@@ -1429,8 +1947,8 @@ def _resolve_ref(
                     )
                 ]
             )
-        return canonical
-    if value.startswith("new_"):
+        resolved = canonical
+    elif UNRESOLVED_REF_PATTERN.fullmatch(value):
         raise CourseModelValidationError(
             [
                 _issue(
@@ -1443,17 +1961,38 @@ def _resolve_ref(
                 )
             ]
         )
-    return value
+    else:
+        resolved = value
+    existing = {record["id"] for record in _records_by_family(body)[family]}
+    if resolved not in existing:
+        raise CourseModelValidationError(
+            [
+                _issue(
+                    "operation_reference_not_found",
+                    f"{field} references {family} ID {resolved!r}, which does not exist "
+                    "at this point in the operation batch.",
+                    operation_index=index,
+                    record_type=family,
+                    record_id=resolved,
+                    field=field,
+                )
+            ]
+        )
+    return resolved
 
 
 def _resolve_refs(
+    body: dict[str, Any],
     values: list[str],
     family: str,
     local_refs: dict[str, tuple[str, str]],
     index: int,
     field: str,
 ) -> list[str]:
-    resolved = [_resolve_ref(value, family, local_refs, index, field) for value in values]
+    resolved = [
+        _resolve_ref(body, value, family, local_refs, index, field)
+        for value in values
+    ]
     if len(resolved) != len(set(resolved)):
         raise CourseModelValidationError(
             [
@@ -1543,7 +2082,7 @@ def _normalize_string_list(
                     path=f"$.operations[{index}].{field}[{item_index}]",
                 )
             )
-        if not allow_local_refs and normalized.startswith("new_"):
+        if not allow_local_refs and UNRESOLVED_REF_PATTERN.fullmatch(normalized):
             issues.append(
                 _issue(
                     "request_local_reference_not_allowed",
@@ -1880,6 +2419,24 @@ def _artifact_body(value: dict[str, Any]) -> dict[str, Any]:
 @lru_cache(maxsize=1)
 def _course_model_schema() -> dict[str, Any]:
     return json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+
+
+@lru_cache(maxsize=1)
+def _course_outcomes_schema() -> dict[str, Any]:
+    return json.loads(OUTCOMES_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+
+@lru_cache(maxsize=1)
+def _research_dossier_schema() -> dict[str, Any]:
+    return json.loads(RESEARCH_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+
+def _prefixed_schema_path(prefix: str, path: str) -> str:
+    if not prefix:
+        return path
+    if path == "$":
+        return prefix
+    return prefix + path[1:]
 
 
 def _request_local_reference_values(body: dict[str, Any]) -> list[tuple[str, str]]:

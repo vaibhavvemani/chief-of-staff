@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-401 through NC-403 implemented; pending independent backend review
+> **Status:** NC-401 through NC-403 independently verified; NC-404 is next
 > **Updated:** 2026-07-20
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -49,12 +49,12 @@ Unless a task says otherwise, it is complete only when:
 
 Implementation checkpoint (2026-07-20): NC-002, NC-004, NC-005, NC-101 through
 NC-109, NC-201 through NC-207, NC-301, and NC-302 are independently verified. NC-303
-remains deferred to NC-90 behind NC-902. NC-401 through NC-403 are implemented with
-deterministic backend evidence but remain pending independent NC-40 backend checkpoint
-review. NC-40 is not complete. NC-404 through NC-406 and every later package remain
-unstarted, Course Model browser editing stays disabled, and the next action is the
-independent backend checkpoint review rather than NC-404. This status note does not mark
-Milestone 3, NC-40, or any later package complete.
+remains deferred to NC-90 behind NC-902. NC-401 through NC-403 passed independent NC-40
+backend checkpoint review on 2026-07-20 after corrective hardening. NC-40 is not
+complete. NC-404 through NC-406 and every later package remain unstarted, Course Model
+browser editing stays disabled, and the next safe implementation action is NC-404.
+NC-405 remains dependent on NC-404. This status note does not mark Milestone 3, NC-40,
+or any later package complete.
 
 ```text
 NC-00 acceptance foundation
@@ -359,9 +359,10 @@ complete inputs do not receive unnecessary questions; the contract is ready for 
 
 **Implementation status (2026-07-20):** NC-301 and NC-302 have passed independent
 checkpoint review. NC-303 remains deferred to NC-90 behind NC-902 and has not started.
-NC-401 through NC-403 are implemented with deterministic backend evidence but remain
-pending independent NC-40 backend checkpoint review. NC-40 is not complete, and NC-404
-through NC-406 and every later package remain unstarted.
+NC-401 through NC-403 are independently verified after the NC-40 backend checkpoint.
+NC-40 is not complete, and NC-404 through NC-406 and every later package remain
+unstarted. The next safe implementation action is NC-404; NC-405 remains dependent on
+NC-404.
 
 ### Tasks
 
@@ -417,11 +418,11 @@ Outcomes and preserve stable IDs where possible.
 
 ## 9. Work package NC-40 — Course Model decisions
 
-**Implementation status (2026-07-20):** NC-401 through NC-403 are implemented with
-deterministic backend evidence but remain pending independent NC-40 backend checkpoint
-review. This does not complete NC-40. NC-404 through NC-406 and every later package
-remain unstarted, Course Model browser editing stays disabled, and the next action is the
-independent backend checkpoint review rather than NC-404.
+**Implementation status (2026-07-20):** NC-401 through NC-403 passed independent NC-40
+backend checkpoint review after corrective hardening. This does not complete NC-40.
+NC-404 through NC-406 and every later package remain unstarted, Course Model browser
+editing stays disabled, and the next safe implementation action is NC-404. NC-405
+remains dependent on NC-404.
 
 ### Tasks
 
@@ -429,31 +430,37 @@ independent backend checkpoint review rather than NC-404.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-103, NC-107
-- **Status:** Implemented with deterministic backend evidence; pending independent review.
+- **Status:** Independently verified.
 - Implement add, update, remove, move, reorder, and assign-source operations.
 - Make operation batches atomic.
+- Resolve only earlier typed request-local references; reject guessed future canonical
+  IDs even when a later allocation would otherwise produce the guessed value.
 
 #### NC-402 — Implement stable ID allocation
 
 - **Priority:** P0-D
 - **Dependencies:** NC-401
-- **Status:** Implemented with deterministic backend evidence; pending independent review.
+- **Status:** Independently verified.
 - Generate new module, subtopic, concept, and coverage IDs through domain logic.
 - Never reuse an ID within a course.
+- Persist per-family retired-ID history so legacy generated IDs, canonical IDs, and
+  cascaded descendants remain retired across API and CLI generation reruns.
 
 #### NC-403 — Validate operation batches
 
 - **Priority:** P0-D
 - **Dependencies:** NC-401, NC-402
-- **Status:** Implemented with deterministic backend evidence; pending independent review.
+- **Status:** Independently verified.
 - Run Course Model integrity and source-eligibility checks before save.
 - Reject unresolved dependency/outcome/source references.
+- Fail closed on unsupported checked-in schema keywords, validate Outcome and Research
+  authority shapes, and reconcile approved source metadata/status to research candidates.
 
 #### NC-404 — Build Course Model edit UI
 
 - **Priority:** P0-D
 - **Dependencies:** NC-403, NC-105
-- **Status:** Not started; blocked on independent NC-40 backend checkpoint review.
+- **Status:** Not started; unblocked by the independent NC-40 backend checkpoint.
 - Support consequential controls listed in the technical capability matrix.
 - Show impact before commit.
 

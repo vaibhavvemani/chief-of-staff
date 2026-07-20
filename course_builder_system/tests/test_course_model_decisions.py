@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 import api.services.artifact_repository as repository_module
 from agents import content_review
 from api.main import create_app
+from course_model_operations import CourseModelValidationError
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ACCEPTANCE_ARTIFACTS = (
@@ -333,6 +334,43 @@ def test_structure_rerun_preserves_deleted_id_high_water_mark(
 
     assert next_add.status_code == 200, next_add.text
     assert next_add.json()["allocated_ids"]["new_concept_after_rerun"] == "c6"
+
+
+def test_api_structure_rerun_fails_closed_before_reusing_retired_legacy_ids(
+    client: TestClient,
+) -> None:
+    course_id = "course-model-rerun-retired-legacy"
+    model = _copy_acceptance_course(client, course_id)
+    repository = client.app.state.repository
+    operations = [{"op": "remove_subtopic", "target_id": "m1_s4"}]
+    preview = _preview(client, course_id, repository.checksum(model), operations)
+    assert preview.status_code == 200, preview.text
+    saved = _save(
+        client,
+        course_id,
+        repository.checksum(model),
+        preview.json()["impact"]["impact_checksum"],
+        operations,
+    )
+    assert saved.status_code == 200, saved.text
+    persisted = repository.require(course_id, "course_model")
+    assert persisted["body"]["id_allocation"]["retired_subtopic_ids"] == ["m1_s4"]
+    assert persisted["body"]["id_allocation"]["retired_concept_ids"] == [
+        "c_m1_s4_1"
+    ]
+    assert persisted["body"]["id_allocation"]["retired_coverage_ids"] == [
+        "cr_m1_s4_1"
+    ]
+
+    with pytest.raises(CourseModelValidationError) as exc_info:
+        client.app.state.stages.run(course_id, "course-model")
+
+    assert any(
+        issue["code"] == "course_model_id_reused"
+        and issue["record_id"] == "m1_s4"
+        for issue in exc_info.value.issues
+    )
+    assert repository.require(course_id, "course_model") == persisted
 
 
 @pytest.mark.parametrize(
