@@ -4,7 +4,7 @@
 
 ---
 
-## Current status - 2026-07-17
+## Current status - 2026-07-20
 
 The four-week Course Builder prototype is complete as a working vertical product prototype. It has passed deterministic local acceptance, a second-topic domain-neutral smoke test, and one full live end-to-end run using live research, live LLM-backed content generation, live verification, lesson-plan generation, and Markdown rendering.
 
@@ -14,7 +14,7 @@ Course Builder Studio, the artifact-oriented browser interface, is also implemen
 
 The next development cycle is now planned as a milestone-gated program whose release target is one internal, nontechnical course director completing a sample course without terminal or JSON intervention. Read `Course_Builder_Next_Development_Cycle_Plan.md` for the product roadmap, then use its technical-contract, implementation-backlog, and acceptance/pilot companion documents before starting cycle work.
 
-The NC-10 lifecycle and command foundation, NC-20 Guided Brief Intake package, and NC-301/NC-302 Outcomes package are implemented and independently checkpointed. NC-002, NC-004, NC-005, NC-101 through NC-109, NC-201 through NC-207, NC-301, and NC-302 have deterministic evidence covering lifecycle vocabulary, catalog-driven invalidation, impact checksums and mutation locking, approval guards, explicit reopen, backend-projected capabilities, scoped Content revision, failure preservation/retry, read-only examples, truthful controls, durable multi-round Brief intake, typed questions, explicit default acceptance, conditional clarification, normalized historical reads, transitive backend intake gates, reopen-protected direct editing, complete Outcomes reduction, stable monotonic canonical IDs, conflict recovery, and accessible typed browser editing. NC-303 remains deferred to NC-90 behind NC-902, and NC-40 has not started. The next safe implementation action is NC-401 in the NC-40 Course Model package; this does not complete Milestone 3 or the cycle.
+The NC-10 lifecycle and command foundation, NC-20 Guided Brief Intake package, and NC-301/NC-302 Outcomes package are implemented and independently checkpointed. NC-002, NC-004, NC-005, NC-101 through NC-109, NC-201 through NC-207, NC-301, and NC-302 have deterministic evidence covering lifecycle vocabulary, catalog-driven invalidation, impact checksums and mutation locking, approval guards, explicit reopen, backend-projected capabilities, scoped Content revision, failure preservation/retry, read-only examples, truthful controls, durable multi-round Brief intake, typed questions, explicit default acceptance, conditional clarification, normalized historical reads, transitive backend intake gates, reopen-protected direct editing, complete Outcomes reduction, stable monotonic canonical IDs, conflict recovery, and accessible typed browser editing. NC-303 remains deferred to NC-90 behind NC-902. NC-401 through NC-403 are implemented with deterministic backend evidence as of 2026-07-20 but remain pending independent NC-40 backend checkpoint review. NC-40 is not complete. NC-404 through NC-406 and all later packages remain unstarted, Course Model browser editing stays disabled, and the next action is independent backend checkpoint review rather than NC-404; this does not complete Milestone 3 or the cycle.
 
 The most important current conclusion:
 
@@ -363,10 +363,10 @@ The Phase 0 handoff has been archived at `documents/context_docs/archive/Course_
 ## 20. Team & current state
 
 - **Team:** two engineers, both new to agentic AI.
-- **Current state:** The four-week pipeline prototype and the local Course Builder Studio frontend are implemented and independently reviewed through NC-301 and NC-302. The reusable contracts, prompts, context builder, verification, integrity path, FastAPI adapter, React workspace, durable guided intake, Outcomes editor, local acceptance course, live-run evidence, and FRM benchmark are in place. FRM-specific fixtures remain benchmark data, not reusable prompt or contract assumptions.
+- **Current state:** The four-week pipeline prototype and the local Course Builder Studio frontend are implemented and independently reviewed through NC-301 and NC-302. NC-401 through NC-403 now add deterministic Course Model backend contracts pending independent review; they do not enable browser editing or complete NC-40. The reusable contracts, prompts, context builder, verification, integrity path, FastAPI adapter, React workspace, durable guided intake, Outcomes editor, local acceptance course, live-run evidence, and FRM benchmark are in place. FRM-specific fixtures remain benchmark data, not reusable prompt or contract assumptions.
 - **Building method:** the project is being built largely with AI assistance — this document exists to give any AI collaborator full context.
 - **Key asset:** existing, manually-built courses (risk & governance subjects). These are the reference for designing the artifacts AND the quality bar the agent's output is measured against.
-- **Immediate next action:** begin NC-401 in the NC-40 Course Model package while preserving the verified NC-10 lifecycle, NC-20 intake, and NC-30 Outcomes contracts. NC-303 stays deferred to NC-90 behind NC-902; do not skip ahead to source repair or live-agent parity.
+- **Immediate next action:** run the independent NC-40 backend checkpoint review for NC-401 through NC-403 while preserving the verified NC-10 lifecycle, NC-20 intake, and NC-30 Outcomes contracts. Do not begin NC-404 yet. NC-404 through NC-406 and all later packages remain unstarted; NC-303 stays deferred to NC-90 behind NC-902. Do not skip ahead to source repair or live-agent parity.
 
 ---
 

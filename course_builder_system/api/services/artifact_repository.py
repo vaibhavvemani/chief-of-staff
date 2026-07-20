@@ -7,6 +7,7 @@ import json
 import os
 import re
 import tempfile
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -61,6 +62,16 @@ class VersionConflict(RuntimeError):
     def __init__(self, actual_checksum: str) -> None:
         super().__init__("artifact changed since it was loaded")
         self.actual_checksum = actual_checksum
+
+
+@dataclass
+class _PreparedSave:
+    artifact_type: str
+    path: Path
+    value: dict[str, Any]
+    expected_checksum: str | None
+    original_bytes: bytes | None = None
+    staged_path: Path | None = None
 
 
 class ArtifactRepository:
@@ -187,36 +198,156 @@ class ArtifactRepository:
         *,
         expected_checksum: str | None = None,
     ) -> dict[str, Any]:
-        course_id = self.validate_course_id(str(artifact.get("course_id", "")))
-        artifact_type = self.validate_artifact_type(str(artifact.get("artifact_type", "")))
-        location = self.runtime_location(course_id)
+        return self._save_batch([(artifact, expected_checksum)], require_exact=False)[0]
+
+    def save_batch(
+        self,
+        writes: Iterable[tuple[dict[str, Any], str]],
+    ) -> list[dict[str, Any]]:
+        """Persist one course's artifacts as an exact-precondition transaction.
+
+        Every target is checked before a canonical artifact is touched. Replacements
+        are staged beside their targets and committed only after a second preflight.
+        If any replacement fails, every already-replaced target is restored to its
+        exact original bytes (or removed when it was absent before the transaction).
+
+        Callers must supply an expected checksum for every target. Use the literal
+        ``"missing"`` when creation is expected.
+        """
+        return self._save_batch(list(writes), require_exact=True)
+
+    def _save_batch(
+        self,
+        writes: list[tuple[dict[str, Any], str | None]],
+        *,
+        require_exact: bool,
+    ) -> list[dict[str, Any]]:
+        if not writes:
+            return []
+
+        prepared: list[_PreparedSave] = []
+        course_id: str | None = None
+        targets: set[Path] = set()
+        transaction_timestamp = utc_now()
+        for artifact, expected_checksum in writes:
+            if require_exact and not isinstance(expected_checksum, str):
+                raise ValueError("batch saves require an expected checksum for every artifact")
+            item_course_id = self.validate_course_id(str(artifact.get("course_id", "")))
+            artifact_type = self.validate_artifact_type(str(artifact.get("artifact_type", "")))
+            if course_id is None:
+                course_id = item_course_id
+            elif item_course_id != course_id:
+                raise ValueError("batch saves must target exactly one course")
+            location = self.runtime_location(item_course_id)
+            try:
+                existing_location = self.locate(item_course_id)
+            except ArtifactNotFound:
+                existing_location = location
+            if existing_location.read_only:
+                raise ReadOnlyCourse(f"committed example course is read-only: {item_course_id}")
+            path = self._confined(location.artifact_root, f"{artifact_type}.json")
+            if path in targets:
+                raise ValueError(f"batch save contains duplicate target: {artifact_type}")
+            targets.add(path)
+            to_save = dict(artifact)
+            to_save["updated_at"] = transaction_timestamp
+            prepared.append(
+                _PreparedSave(
+                    artifact_type=artifact_type,
+                    path=path,
+                    value=to_save,
+                    expected_checksum=expected_checksum,
+                )
+            )
+
+        # First preflight happens before even temporary replacement files exist.
+        self._preflight(prepared)
         try:
-            existing_location = self.locate(course_id)
-        except ArtifactNotFound:
-            existing_location = location
-        if existing_location.read_only:
-            raise ReadOnlyCourse(f"committed example course is read-only: {course_id}")
-        path = self._confined(location.artifact_root, f"{artifact_type}.json")
-        current = None
-        if path.is_file():
-            current = json.loads(path.read_text(encoding="utf-8"))
-        if expected_checksum is not None:
-            actual = self.checksum(current) if current is not None else "missing"
-            if actual != expected_checksum:
-                raise VersionConflict(actual)
-        to_save = dict(artifact)
-        to_save["updated_at"] = utc_now()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp_name = tempfile.mkstemp(prefix=f".{artifact_type}.", dir=path.parent)
+            for item in prepared:
+                item.path.parent.mkdir(parents=True, exist_ok=True)
+                item.staged_path = self._stage_json(item)
+            # Staging can take time. Recheck every target and retain the exact bytes
+            # that this transaction is responsible for restoring.
+            self._preflight(prepared)
+            self._commit_prepared(prepared)
+        finally:
+            self._cleanup_staged(prepared)
+        return [item.value for item in prepared]
+
+    def _preflight(self, prepared: list[_PreparedSave]) -> None:
+        originals: list[bytes | None] = []
+        for item in prepared:
+            original = item.path.read_bytes() if item.path.is_file() else None
+            current = json.loads(original.decode("utf-8")) if original is not None else None
+            if item.expected_checksum is not None:
+                actual = self.checksum(current) if current is not None else "missing"
+                if actual != item.expected_checksum:
+                    raise VersionConflict(actual)
+            originals.append(original)
+        for item, original in zip(prepared, originals, strict=True):
+            item.original_bytes = original
+
+    @staticmethod
+    def _stage_json(item: _PreparedSave) -> Path:
+        fd, tmp_name = tempfile.mkstemp(prefix=f".{item.artifact_type}.", dir=item.path.parent)
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                json.dump(to_save, handle, indent=2)
+                json.dump(item.value, handle, indent=2)
                 handle.write("\n")
-            os.replace(tmp_name, path)
+        except BaseException:
+            if os.path.exists(tmp_name):
+                os.unlink(tmp_name)
+            raise
+        return Path(tmp_name)
+
+    def _commit_prepared(self, prepared: list[_PreparedSave]) -> None:
+        committed: list[_PreparedSave] = []
+        try:
+            for item in prepared:
+                if item.staged_path is None:
+                    raise RuntimeError(f"artifact replacement was not staged: {item.artifact_type}")
+                # Include the current target before replacement. A lower-level
+                # failure may be reported after the destination was already changed.
+                committed.append(item)
+                os.replace(item.staged_path, item.path)
+                item.staged_path = None
+        except BaseException as exc:
+            rollback_failures: list[str] = []
+            for item in reversed(committed):
+                try:
+                    self._restore_original(item)
+                except BaseException as rollback_exc:
+                    rollback_failures.append(
+                        f"{item.artifact_type}: {type(rollback_exc).__name__}: {rollback_exc}"
+                    )
+            if rollback_failures:
+                raise RuntimeError(
+                    "artifact batch failed and rollback was incomplete: "
+                    + "; ".join(rollback_failures)
+                ) from exc
+            raise
+
+    @staticmethod
+    def _restore_original(item: _PreparedSave) -> None:
+        if item.original_bytes is None:
+            item.path.unlink(missing_ok=True)
+            return
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=f".{item.artifact_type}.rollback.", dir=item.path.parent
+        )
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(item.original_bytes)
+            os.replace(tmp_name, item.path)
         finally:
             if os.path.exists(tmp_name):
                 os.unlink(tmp_name)
-        return to_save
+
+    @staticmethod
+    def _cleanup_staged(prepared: list[_PreparedSave]) -> None:
+        for item in prepared:
+            if item.staged_path is not None and item.staged_path.exists():
+                item.staged_path.unlink()
 
     def output_path(self, course_id: str, relative_path: str) -> Path:
         location = self.locate(course_id)

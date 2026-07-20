@@ -212,6 +212,22 @@
         "related_topic_ids": { "$ref": "#/$defs/id_list" }
       }
     },
+    "id_allocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "next_module_id",
+        "next_subtopic_id",
+        "next_concept_id",
+        "next_coverage_id"
+      ],
+      "properties": {
+        "next_module_id": { "type": "integer", "minimum": 1 },
+        "next_subtopic_id": { "type": "integer", "minimum": 1 },
+        "next_concept_id": { "type": "integer", "minimum": 1 },
+        "next_coverage_id": { "type": "integer", "minimum": 1 }
+      }
+    },
     "body": {
       "type": "object",
       "additionalProperties": false,
@@ -236,7 +252,8 @@
         "source_registry": {
           "type": "array",
           "items": { "$ref": "#/$defs/source" }
-        }
+        },
+        "id_allocation": { "$ref": "#/$defs/id_allocation" }
       }
     }
   }

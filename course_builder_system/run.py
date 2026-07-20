@@ -10,6 +10,7 @@ import acceptance
 import integrity
 import steps
 from agents import intake
+from course_model_operations import carry_forward_course_model_allocation
 from orchestrator import (
     Decision,
     PipelineCancelled,
@@ -18,6 +19,8 @@ from orchestrator import (
     make_artifact,
     run_pipeline,
 )
+
+OUTPUT_TRANSFORMS = {"course_model": carry_forward_course_model_allocation}
 
 
 def build_pipeline() -> list[Step]:
@@ -268,8 +271,7 @@ def main() -> None:
         "--acceptance-demo",
         action="store_true",
         help=(
-            "Run the Sprint 4 local acceptance path with deterministic content "
-            "and verification."
+            "Run the Sprint 4 local acceptance path with deterministic content and verification."
         ),
     )
     parser.add_argument(
@@ -304,6 +306,7 @@ def main() -> None:
                 ),
                 seed_artifacts={"subject_request": subject_request},
                 approver=approver,
+                output_transforms=OUTPUT_TRANSFORMS,
             )
             if not integrity.report(subject_request["course_id"]):
                 raise SystemExit(1)
@@ -323,6 +326,7 @@ def main() -> None:
                 pipeline=build_sprint1_pipeline(),
                 seed_artifacts={"subject_request": subject_request},
                 approver=approver,
+                output_transforms=OUTPUT_TRANSFORMS,
             )
             return
 
@@ -342,6 +346,7 @@ def main() -> None:
                 else build_sprint2_pipeline(live_research=args.live_research),
                 seed_artifacts={"subject_request": subject_request},
                 approver=approver,
+                output_transforms=OUTPUT_TRANSFORMS,
             )
             integrity.report(subject_request["course_id"])
             return
@@ -374,6 +379,7 @@ def main() -> None:
             pipeline=build_pipeline(),
             seed_artifacts={"brief": brief},
             approver=approver,
+            output_transforms=OUTPUT_TRANSFORMS,
         )
 
         # Cheap guard that Course Model hierarchy/source references remain sound.

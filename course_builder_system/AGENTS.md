@@ -12,7 +12,10 @@ local Course Builder Studio frontend and FastAPI adapter are implemented as of
 2026-07-15. Its NC-10 lifecycle/command foundation and NC-20 Guided Brief Intake
 package have passed independent review. NC-301 and NC-302 have now also passed their
 independent NC-30 checkpoint review. NC-303 remains deferred to NC-90 behind NC-902,
-and NC-40 has not started.
+and NC-401 through NC-403 are implemented with deterministic backend evidence as of
+2026-07-20 but remain pending independent NC-40 backend checkpoint review. NC-40 is not
+complete. NC-404 through NC-406 and all later packages remain unstarted; Course Model
+browser editing remains disabled.
 
 The system turns a sparse subject request into a rendered course folder through:
 
@@ -41,11 +44,13 @@ internal course director and then proves the same workflow with live agent-backe
 stages. NC-002, NC-004, NC-005, and NC-101 through NC-109 are implemented and
 independently verified. NC-201 through NC-207 are also independently verified. NC-30
 Outcomes reducer validation and browser editing are independently verified through
-NC-301 and NC-302. NC-303 remains deferred to NC-90 behind NC-902, and NC-40 has not
-started. The next safe implementation action is NC-401 in the NC-40 Course Model
-package. Do not skip ahead to source repair or live-agent parity. Source repair plus
-verifier-driven targeted revision
-remains the central trust milestone after the intervening stage contracts.
+NC-301 and NC-302. NC-303 remains deferred to NC-90 behind NC-902. NC-401 through
+NC-403 now have deterministic backend implementation evidence, pending independent
+review; this does not complete NC-40. NC-404, NC-405, NC-406, and all later packages
+remain unstarted, and Course Model editing stays unavailable in the browser. The next
+safe action is the independent NC-40 backend checkpoint review, not NC-404. Do not skip
+ahead to source repair or live-agent parity. Source repair plus verifier-driven targeted
+revision remains the central trust milestone after the intervening stage contracts.
 
 ## Commands
 

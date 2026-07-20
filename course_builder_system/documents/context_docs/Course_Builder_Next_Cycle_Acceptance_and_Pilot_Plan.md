@@ -1,7 +1,7 @@
 # Course Builder — Next Cycle Acceptance and Pilot Plan
 
 > **Status:** Acceptance baseline for implementation and release  
-> **Updated:** 2026-07-17
+> **Updated:** 2026-07-20
 > **Target user:** One internal, nontechnical course director  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
 > **Backlog:** `Course_Builder_Next_Cycle_Implementation_Backlog.md`  
@@ -18,8 +18,14 @@
 > monotonic backend-owned IDs, canonical ordering, typed browser editing, unsaved-work
 > protection, explicit stale-conflict resolution, durable draft refresh, explicit
 > approval, capability/reopen gates, and downstream invalidation. NC-303 remains
-> deferred to NC-90 behind NC-902. NC-40 has not started; NC-401 is now safe to begin.
-> This does not mark Milestone 3 or the whole cycle complete.
+> deferred to NC-90 behind NC-902.
+
+> **NC-40 backend evidence update — 2026-07-20:** NC-401 through NC-403 are
+> implemented with deterministic backend evidence but remain pending independent NC-40
+> backend checkpoint review. NC-40 is not complete. NC-404 through NC-406 and all later
+> packages remain unstarted, Course Model browser editing stays disabled, and the next
+> action is independent backend checkpoint review rather than NC-404. This does not mark
+> Milestone 3 or the whole cycle complete.
 
 ## 1. Purpose
 

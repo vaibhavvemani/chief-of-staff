@@ -1,15 +1,18 @@
 # Course Builder — Next Cycle Technical Contract Plan
 
 > **Status:** Implementation contract baseline  
-> **Updated:** 2026-07-17
+> **Updated:** 2026-07-20
 > **Purpose:** Lock the state, command, invalidation, repair, execution, and
 > observability boundaries needed to implement the next development cycle  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`
 
-> **NC-30 contract update — 2026-07-17:** NC-301 and NC-302 have passed independent
-> checkpoint review. NC-303 remains deferred to NC-90 behind NC-902. NC-40 has not
-> started, and the next safe implementation action is NC-401. This does not complete
-> Milestone 3 or the cycle.
+> **NC-40 backend contract update — 2026-07-20:** NC-301 and NC-302 have passed
+> independent checkpoint review, and NC-303 remains deferred to NC-90 behind NC-902.
+> NC-401 through NC-403 are implemented with deterministic backend evidence but remain
+> pending independent NC-40 backend checkpoint review. NC-40 is not complete. NC-404
+> through NC-406 and all later packages remain unstarted, Course Model browser editing
+> stays disabled, and the next action is independent backend checkpoint review rather
+> than NC-404. This does not complete Milestone 3 or the cycle.
 
 ## 1. How to use this document
 
@@ -419,6 +422,140 @@ Use a batch of validated operations:
 
 The backend owns ID generation, operation order, integrity validation, and rollback on
 failure. The whole batch succeeds or nothing is saved.
+
+### 9.3A NC-40A Course Model operation contract
+
+NC-401 through NC-403 use one strict deterministic reducer. They do not accept a
+replacement `body`, JSON Patch, generic field paths, or client-selected canonical IDs.
+
+#### Operations and allowed fields
+
+Each operation is a discriminated strict object; fields not listed here are rejected.
+Positions are one-based final array positions.
+
+| Operation | Required and allowed fields |
+|---|---|
+| `add_module` | `client_ref`, `position`, `title`, `purpose`, `in_scope`, `out_of_scope`, `prerequisite_module_ids` |
+| `update_module` | `target_id` and one or more of `title`, `purpose`, `in_scope`, `out_of_scope`, `prerequisite_module_ids` |
+| `remove_module` | `target_id` |
+| `move_module` | `target_id`, `position` |
+| `reorder_modules` | complete `module_ids` order |
+| `add_subtopic` | `client_ref`, `parent_id`, `position`, `title`, `purpose`, `in_scope`, `out_of_scope`, `prerequisite_subtopic_ids` |
+| `update_subtopic` | `target_id` and one or more of `title`, `purpose`, `in_scope`, `out_of_scope`, `prerequisite_subtopic_ids` |
+| `remove_subtopic` | `target_id` |
+| `move_subtopic` | `target_id`, `parent_id`, `position` |
+| `reorder_subtopics` | `parent_id`, complete `subtopic_ids` order |
+| `add_concept` | `client_ref`, `parent_id`, `position`, `name`, `summary`, `depends_on` |
+| `update_concept` | `target_id` and one or more of `name`, `summary`, `depends_on` |
+| `remove_concept` | `target_id` |
+| `add_coverage` | `client_ref`, `parent_id`, `position`, `statement`, `concept_ids` |
+| `update_coverage` | `target_id` and one or more of `statement`, `concept_ids` |
+| `remove_coverage` | `target_id` |
+| `assign_sources` | `target_type` (`subtopic`, `concept`, or `coverage`), `target_id`, complete `source_ids` assignment |
+| `set_course_outcome_links` | complete `outcome_ids` order for `course_metadata.course_outcome_ids` |
+| `set_rationale_outcome_links` | rationale `target_id` and complete `outcome_ids` assignment for that rationale item |
+
+Module and subtopic `purpose`, `in_scope`, and `out_of_scope` fields map only to their
+existing `context` object. Source metadata and IDs are never accepted on add/update
+operations; `assign_sources` accepts IDs only. The two Outcome operations cover the
+Outcome links supported by the current schema. The Course Model-wide link list remains
+a complete resolution of current approved Outcomes; a rationale may link a valid subset.
+
+#### Ordered reduction and request-local references
+
+Operations run in request order against one in-memory candidate. An add operation
+declares one globally unique, type-correct `client_ref` beginning with `new_module_`,
+`new_subtopic_`, `new_concept_`, or `new_coverage_`. Later operations may use a
+previously declared reference anywhere the corresponding canonical ID is allowed,
+including parent, prerequisite, dependency, concept, move, and reorder fields. Forward,
+duplicate, wrong-type, or unresolved references are rejected. The response returns the
+request-local-to-canonical mapping; no `new_*` reference is persisted.
+
+Physical array order is canonical because Blueprint, generation, Lesson Plan, and
+rendering consume it. Every add, move, or reorder changes the arrays and then derives
+contiguous `order` values `1..n` for modules and subtopics. Retained records keep their
+IDs. A module move changes only its position. A subtopic move changes only its parent
+and position; it does not silently rewrite prerequisites, concepts, coverage, sources,
+or downstream IDs.
+
+Removing a module removes its contained subtopics, concepts, and coverage records from
+the candidate. Removing a subtopic removes its contained concepts and coverage records.
+Removing a concept or coverage record removes only that record. The reducer never
+silently cleans references: later operations in the same batch must repair every
+prerequisite, dependency, coverage, rationale/research assignment, Outcome, or source
+reference, otherwise final validation rejects the entire batch. Transient empty parents
+or dangling references are allowed only while reducing a batch; the final candidate is
+authoritative.
+
+#### Durable canonical IDs and historical normalization
+
+The optional Course Model body field `id_allocation` contains positive, non-boolean
+`next_module_id`, `next_subtopic_id`, `next_concept_id`, and `next_coverage_id` cursors.
+The backend allocates `mN`, `sN`, `cN`, and `crN` IDs in operation order, skipping any
+collision. Clients cannot submit or edit the cursors.
+
+For a historical model with no allocation state, normalization derives each starting
+cursor from the greater of the current family cardinality and recognized numeric IDs,
+plus one. Normalization is read-only until a meaningful operation is saved and never
+rewrites committed fixtures. A present state must be complete, must not decrease below
+the IDs-derived floor or its previously persisted value, and rejects booleans, floats,
+strings, zero, and negative values. Allocation happens before later deletion in the
+same batch; every ID allocated by a successful batch advances its durable cursor even
+if that new record is subsequently removed. Preview, rejection, and failed save do not
+burn IDs. Once state exists, deletion never makes an ID reusable.
+
+#### Authoritative candidate validation
+
+Mutation and Course Model approval call the same validator. It checks the full artifact
+schema and field bounds before semantic checks, then requires:
+
+- unique module, subtopic, concept, coverage, rationale, and source IDs;
+- deterministic physical order and contiguous module/subtopic `order` values;
+- at least one module and at least one subtopic in every module;
+- existing, non-self module/subtopic prerequisites and acyclic prerequisite graphs;
+- existing concept dependencies and an acyclic concept graph;
+- coverage concept IDs local to the containing subtopic;
+- Course Model-wide and rationale Outcome IDs from the current approved Outcomes;
+- source IDs from the current explicitly approved, content-bearing source registry;
+- concept and coverage sources also assigned to their containing subtopic;
+- existing research assignment hints and absence of unresolved request-local IDs; and
+- valid, nondecreasing allocation state when it is present.
+
+Assignable source IDs are the intersection of the approved registry's explicit
+`approved_ids` and its content-bearing source records. Proposed, rejected, unavailable,
+competitor-only, contentless, or merely discovered sources are therefore ineligible.
+Clients never submit source metadata.
+
+#### Preview, save, and failure behavior
+
+Preview and save accept the same operation list and current Course Model checksum and
+run the same reducer and validator. Preview is read-only and returns the candidate,
+allocated-ID mapping, structured affected/preserved record data, catalog-derived
+downstream impact, and an impact checksum bound to the candidate and current direct and
+downstream checksums. It does not normalize or advance allocation state on disk.
+
+Save additionally requires explicit impact acknowledgement and the preview checksum.
+Under the per-course mutation lock it rechecks the exact Course Model repository save
+precondition, every approved/current Brief, Outcomes, Research, and source-decision
+prerequisite, editability, the reducer result, affected records, and impact. A valid
+meaningful result is saved as a draft; approval remains a separate command. General
+Course Model edits invalidate exactly the descendants derived from `PipelineCatalog`.
+Stale bodies are preserved.
+
+The Course Model draft and all invalidated envelopes are one repository transaction.
+Preconditions are checked before the first replacement and an I/O failure rolls every
+replaced file back to its original bytes. Invalid, stale, concurrent, absent-artifact,
+unacknowledged-impact, read-only, approved-not-reopened, prerequisite-blocked, and no-op
+batches leave the Course Model, allocation state, and every downstream artifact
+byte-for-byte unchanged. Every operation must change the candidate at its position in
+the batch, and the final substantive candidate must differ from the starting model;
+allocation normalization alone is not a meaningful change.
+
+Domain failures return a stable issue list with `code`, `message`, operation index when
+applicable, record type/ID, and field/path when applicable. Successful preview/save
+responses return ordered change records, changed/removed/preserved IDs by record family,
+and the resolved request-local ID map for NC-404/NC-405. Course Model edit capability
+remains unprojected until NC-404; this backend contract does not enable a React control.
 
 ### 9.4 Blueprint decision
 

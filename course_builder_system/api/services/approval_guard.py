@@ -11,6 +11,10 @@ from api.services.artifact_repository import ArtifactRepository
 from api.services.brief_intake import BriefIntakeService
 from api.services.pipeline_catalog import PipelineCatalog
 from course_model_integrity import validate_course_model_semantics
+from course_model_operations import (
+    CourseModelValidationError,
+    validate_course_model_candidate,
+)
 
 
 def hard_verifier_blocker_count(asset: dict[str, Any]) -> int:
@@ -321,17 +325,31 @@ class ApprovalGuardService:
 
     def _guard_course_model(self, course_id: str) -> list[GuardFailure]:
         course_model = self.repository.require(course_id, "course_model")
-        errors = validate_course_model_semantics(
-            course_model,
-            course_outcomes=self.repository.load(course_id, "course_outcomes"),
-            research_dossier=self.repository.load(course_id, "research_dossier"),
-            approved_source_registry=self.repository.load(
-                course_id, "approved_source_registry"
-            ),
-        )
-        failures = self._integrity_failures("course-model", "course_model", errors)
-        failures.extend(self._course_model_source_failures(course_id, "course-model"))
-        return failures
+        try:
+            validate_course_model_candidate(
+                course_model,
+                course_outcomes=self.repository.require(course_id, "course_outcomes"),
+                research_dossier=self.repository.require(course_id, "research_dossier"),
+                approved_source_registry=self.repository.require(
+                    course_id, "approved_source_registry"
+                ),
+            )
+        except CourseModelValidationError as exc:
+            return [
+                GuardFailure(
+                    "referential_integrity_failed",
+                    (
+                        f"{issue['path']}: {issue['message']}"
+                        if issue.get("path")
+                        else str(issue["message"])
+                    ),
+                    "course-model",
+                    "course_model",
+                    tuple([str(issue["record_id"])] if issue.get("record_id") else []),
+                )
+                for issue in exc.issues
+            ]
+        return []
 
     def _guard_blueprint(self, course_id: str) -> list[GuardFailure]:
         course_model = self.repository.require(course_id, "course_model")

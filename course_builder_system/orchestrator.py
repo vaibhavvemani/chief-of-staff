@@ -173,9 +173,7 @@ def console_approver(step_name: str, produced: dict) -> Decision:
             print(f"Summary: {summary}")
         print(json.dumps(art["body"], indent=2))
     while True:
-        choice = input(
-            f"\n[{step_name}] approve / changes / quit [a/c/q] > "
-        ).strip().lower()
+        choice = input(f"\n[{step_name}] approve / changes / quit [a/c/q] > ").strip().lower()
         if choice in ("a", "approve"):
             return Decision(approved=True)
         if choice in ("c", "changes"):
@@ -219,12 +217,16 @@ def run_pipeline(
     pipeline: list[Step],
     seed_artifacts: dict,
     approver: Callable[[str, dict], Decision] = console_approver,
+    output_transforms: dict[str, Callable[[dict, dict | None], dict]] | None = None,
 ) -> None:
     """Run the steps in order, pausing for approval after each.
 
     seed_artifacts: artifacts the human supplies up front (e.g. the brief).
                     Saved pre-approved so Step 1 can consume them.
+    output_transforms: injected artifact-specific domain hooks. The engine passes
+                       envelopes through them without inspecting artifact bodies.
     """
+    output_transforms = output_transforms or {}
     for art in seed_artifacts.values():
         save_seed_artifact(art)
 
@@ -254,6 +256,12 @@ def run_pipeline(
         revision = 0
         while True:
             produced = step.run(inputs, feedback)
+            for artifact_type, artifact in list(produced.items()):
+                if transform := output_transforms.get(artifact_type):
+                    produced[artifact_type] = transform(
+                        artifact,
+                        load_artifact(course_id, artifact_type),
+                    )
 
             # orchestrator owns the lifecycle fields, not the step
             for art in produced.values():

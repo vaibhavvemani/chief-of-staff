@@ -1,7 +1,7 @@
 # Course Builder Studio — Frontend Implementation Handoff
 
 > **Status:** Implemented local product prototype
-> **Updated:** 2026-07-17
+> **Updated:** 2026-07-20
 > **Scope:** React frontend, FastAPI adapter, browser workflow, and current UX contracts
 > **Read with:** `Course_Builder_Master_Context.md` and `Course_Builder_Four_Week_Prototype_Completion_Handoff.md`
 
@@ -11,7 +11,7 @@
 > authoritative for current behavior; the next-cycle package defines the target behavior
 > and implementation order.
 
-> **NC-10/NC-20/NC-30 checkpoint update — 2026-07-17:** NC-10 and
+> **NC-10/NC-20/NC-30/NC-40 backend update — 2026-07-20:** NC-10 and
 > NC-20 have passed independent review. The browser and API use explicit
 > backend-projected capabilities, graph-derived invalidation, checksum-protected impact
 > confirmation, server-side approval guards, explicit reopen, scoped Content revision,
@@ -22,8 +22,11 @@
 > now has strict backend reduction and a capability-gated typed editor that saves a
 > canonical draft, survives refresh, protects unsaved work, resolves stale conflicts
 > without silent loss, and leaves approval explicit. NC-303 remains deferred to NC-90
-> behind NC-902, and NC-40 has not started. Unsupported generic revision controls remain
-> removed or disabled.
+> behind NC-902. NC-401 through NC-403 are implemented with deterministic backend
+> evidence but remain pending independent NC-40 backend checkpoint review. NC-40 is not
+> complete. NC-404 through NC-406 and all later packages remain unstarted; Course Model
+> browser editing stays disabled, and independent backend review—not NC-404—is the next
+> action. Unsupported generic revision controls remain removed or disabled.
 
 ## 1. Purpose of this document
 
@@ -285,9 +288,11 @@ The page uses a hierarchy-and-detail workspace. The left side contains modules a
 ordered subtopics; the selected subtopic opens its purpose, metadata, scope contract,
 concepts, coverage requirements, prerequisites, and approved source IDs.
 
-It also exposes referential-integrity context. Inline structural editing and scoped
-Course Model revision are not yet implemented; the visible structural controls remain
-disabled until the NC-40 typed operation contract is available.
+It also exposes referential-integrity context. NC-401 through NC-403 now provide the
+typed deterministic backend operation contract, stable ID allocation, and atomic
+validation evidence, pending independent review. Inline structural editing, diff UI, and
+scoped Course Model revision remain unstarted under NC-404 through NC-406; the visible
+structural controls remain disabled.
 
 ### 6.5 Blueprint
 
@@ -615,9 +620,10 @@ content verification workbench, Lesson Plan review, and Package default selectio
    collaboration, or production deployment configuration.
 2. **One API worker.** The current job runner and locks are not a distributed queue.
 3. **Editing depth is uneven.** Brief and Outcomes typed editing, source decisions,
-   content review, and scoped Content revision are wired. Course Model, Blueprint, and
-   Lesson Plan typed editing remain in NC-40 through NC-60; unsupported generic
-   revisions are not exposed in the meantime.
+   content review, and scoped Content revision are wired. The Course Model backend
+   contract is implemented through NC-403 pending independent review, but its browser
+   editor remains unstarted and disabled under NC-404. Blueprint and Lesson Plan typed
+   editing also remain unstarted; unsupported generic revisions are not exposed.
 4. **Source repair is not closed-loop automation.** Better-evidence repair is not exposed
    until NC-70/NC-80 implement evidence acquisition, approval, rerouting, targeted
    regeneration, and reverification.
@@ -657,11 +663,12 @@ content verification workbench, Lesson Plan review, and Package default selectio
 ## 15. Recommended next frontend-related work
 
 NC-301 and NC-302 have passed independent review. NC-303 remains deferred to NC-90
-behind NC-902, and NC-40 has not started. The next dependency-ordered implementation
-work begins with NC-401 and continues through the typed stage editor sequence in NC-40
-through NC-60. Source
-repair and verifier-driven targeted revision remain the central trust milestone, but
-begin only after those intervening command contracts are stable.
+behind NC-902. NC-401 through NC-403 are implemented with deterministic backend evidence
+but pending independent NC-40 backend checkpoint review. NC-40 is not complete: NC-404
+through NC-406 and all later packages remain unstarted, and Course Model browser editing
+stays disabled. The next action is the independent backend checkpoint review, not NC-404.
+Source repair and verifier-driven targeted revision remain the central trust milestone,
+but begin only after the intervening command contracts are stable.
 
 After that, sensible frontend increments are:
 
@@ -680,7 +687,9 @@ preserves the artifact pipeline and human checkpoint model while making stage ou
 evidence, attention, revisions, progress, and final packaging understandable in the
 browser. Guided Brief intake and typed Outcomes decisions now form the first two
 independently verified, dependency-gated design checkpoints that can be completed
-structurally without terminal or JSON intervention.
+structurally without terminal or JSON intervention. The Course Model backend checkpoint
+has implementation evidence through NC-403 but has not yet passed independent review or
+enabled browser editing.
 
 The implementation should be extended as a thin, truthful product layer over canonical
 artifacts and typed commands. The frontend may improve how decisions are presented, but

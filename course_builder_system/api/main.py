@@ -25,6 +25,8 @@ from api.models import (
     BriefQuestionRoundResponse,
     BriefUpdatesCommand,
     ContentReviewCommand,
+    CourseModelDecisionCommand,
+    CourseModelDecisionPreviewCommand,
     CreateCourseRequest,
     ImpactPreviewCommand,
     ImpactPreviewResponse,
@@ -62,6 +64,10 @@ from api.services.pipeline_catalog import PipelineCatalog
 from api.services.revision_service import AmbiguousRevision, RevisionService
 from api.services.stage_runner import StageRunner
 from api.services.workspace_projector import WorkspaceProjector
+from course_model_operations import (
+    CourseModelValidationError,
+    carry_forward_course_model_allocation,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -111,6 +117,7 @@ def create_app(
         revisions=revisions,
         invalidation=invalidation,
         brief_intake=brief_intake,
+        output_transforms={"course_model": carry_forward_course_model_allocation},
     )
     frontend_dist = repo_root / "frontend" / "dist"
 
@@ -224,6 +231,14 @@ def create_app(
             400,
             str(exc),
             extra={"code": "invalid_outcome_decision", "issues": exc.issues},
+        )
+
+    @app.exception_handler(CourseModelValidationError)
+    async def _invalid_course_model_decision(_request: Request, exc: CourseModelValidationError):
+        return _error_response(
+            400,
+            str(exc),
+            extra={"code": "invalid_course_model_decision", "issues": exc.issues},
         )
 
     @app.exception_handler(ValueError)
@@ -538,6 +553,37 @@ def create_app(
             "checksum": repository.checksum(value),
             "advisories": outcome_advisories(value.get("body", {}).get("outcomes", [])),
         }
+
+    @app.post("/api/courses/{course_id}/course-model/decision/preview")
+    def course_model_decision_preview(
+        course_id: str, command: CourseModelDecisionPreviewCommand
+    ) -> dict[str, Any]:
+        _check_artifact_version(repository, course_id, "course_model", command.expected_checksum)
+        return decisions.preview_course_model_decision(
+            course_id,
+            operations=[
+                operation.model_dump(exclude_none=True) for operation in command.operations
+            ],
+            expected_checksum=command.expected_checksum,
+        )
+
+    @app.put("/api/courses/{course_id}/course-model/decision")
+    def course_model_decision(
+        course_id: str, command: CourseModelDecisionCommand
+    ) -> dict[str, Any]:
+        with jobs.mutate_now(course_id):
+            _check_artifact_version(
+                repository, course_id, "course_model", command.expected_checksum
+            )
+            return decisions.save_course_model_decision(
+                course_id,
+                operations=[
+                    operation.model_dump(exclude_none=True) for operation in command.operations
+                ],
+                expected_checksum=command.expected_checksum,
+                impact_acknowledged=command.impact_acknowledged,
+                expected_impact_checksum=command.expected_impact_checksum,
+            )
 
     @app.put("/api/courses/{course_id}/research/sources/decision")
     def source_decision(course_id: str, command: SourceDecisionCommand) -> dict[str, Any]:

@@ -31,12 +31,18 @@ class StageRunner:
         revisions: RevisionService | None = None,
         invalidation: InvalidationService | None = None,
         brief_intake: BriefIntakeService | None = None,
+        output_transforms: dict[
+            str,
+            Callable[[dict[str, Any], dict[str, Any] | None], dict[str, Any]],
+        ]
+        | None = None,
     ) -> None:
         self.repository = repository
         self.catalog = catalog
         self.revisions = revisions or RevisionService(repository, StageCapabilityService(catalog))
         self.invalidation = invalidation or InvalidationService(repository, catalog)
         self.brief_intake = brief_intake or BriefIntakeService()
+        self.output_transforms = output_transforms or {}
 
     def run(
         self,
@@ -289,6 +295,9 @@ class StageRunner:
     ) -> None:
         for artifact_type, artifact in staged.items():
             existing = previous.get(artifact_type)
+            if transform := self.output_transforms.get(artifact_type):
+                artifact = transform(artifact, existing)
+                staged[artifact_type] = artifact
             artifact["revision"] = (
                 int(existing.get("revision", 0)) + 1 if existing is not None else 0
             )

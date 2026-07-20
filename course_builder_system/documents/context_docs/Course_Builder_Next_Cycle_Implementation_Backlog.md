@@ -1,7 +1,7 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-301 and NC-302 independently verified; NC-40 not started
-> **Updated:** 2026-07-17
+> **Status:** NC-401 through NC-403 implemented; pending independent backend review
+> **Updated:** 2026-07-20
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
 > **Technical contracts:** `Course_Builder_Next_Cycle_Technical_Contract_Plan.md`  
@@ -47,10 +47,13 @@ Unless a task says otherwise, it is complete only when:
 
 ## 4. Dependency overview
 
-Implementation checkpoint (2026-07-17): NC-002, NC-004, NC-005, NC-101 through
+Implementation checkpoint (2026-07-20): NC-002, NC-004, NC-005, NC-101 through
 NC-109, NC-201 through NC-207, NC-301, and NC-302 are independently verified. NC-303
-remains deferred to NC-90 behind NC-902, and NC-40 has not started. The next safe
-implementation action is NC-401. This status note does not mark
+remains deferred to NC-90 behind NC-902. NC-401 through NC-403 are implemented with
+deterministic backend evidence but remain pending independent NC-40 backend checkpoint
+review. NC-40 is not complete. NC-404 through NC-406 and every later package remain
+unstarted, Course Model browser editing stays disabled, and the next action is the
+independent backend checkpoint review rather than NC-404. This status note does not mark
 Milestone 3, NC-40, or any later package complete.
 
 ```text
@@ -354,9 +357,11 @@ complete inputs do not receive unnecessary questions; the contract is ready for 
 
 ## 8. Work package NC-30 — Outcomes decisions
 
-**Implementation status (2026-07-17):** NC-301 and NC-302 have passed independent
+**Implementation status (2026-07-20):** NC-301 and NC-302 have passed independent
 checkpoint review. NC-303 remains deferred to NC-90 behind NC-902 and has not started.
-NC-40 has not started; NC-401 is the next safe implementation action.
+NC-401 through NC-403 are implemented with deterministic backend evidence but remain
+pending independent NC-40 backend checkpoint review. NC-40 is not complete, and NC-404
+through NC-406 and every later package remain unstarted.
 
 ### Tasks
 
@@ -412,8 +417,11 @@ Outcomes and preserve stable IDs where possible.
 
 ## 9. Work package NC-40 — Course Model decisions
 
-**Implementation status (2026-07-17):** Not started. The independent NC-30 checkpoint
-is resolved, so NC-401 is safe to begin.
+**Implementation status (2026-07-20):** NC-401 through NC-403 are implemented with
+deterministic backend evidence but remain pending independent NC-40 backend checkpoint
+review. This does not complete NC-40. NC-404 through NC-406 and every later package
+remain unstarted, Course Model browser editing stays disabled, and the next action is the
+independent backend checkpoint review rather than NC-404.
 
 ### Tasks
 
@@ -421,6 +429,7 @@ is resolved, so NC-401 is safe to begin.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-103, NC-107
+- **Status:** Implemented with deterministic backend evidence; pending independent review.
 - Implement add, update, remove, move, reorder, and assign-source operations.
 - Make operation batches atomic.
 
@@ -428,6 +437,7 @@ is resolved, so NC-401 is safe to begin.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-401
+- **Status:** Implemented with deterministic backend evidence; pending independent review.
 - Generate new module, subtopic, concept, and coverage IDs through domain logic.
 - Never reuse an ID within a course.
 
@@ -435,6 +445,7 @@ is resolved, so NC-401 is safe to begin.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-401, NC-402
+- **Status:** Implemented with deterministic backend evidence; pending independent review.
 - Run Course Model integrity and source-eligibility checks before save.
 - Reject unresolved dependency/outcome/source references.
 
@@ -442,6 +453,7 @@ is resolved, so NC-401 is safe to begin.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-403, NC-105
+- **Status:** Not started; blocked on independent NC-40 backend checkpoint review.
 - Support consequential controls listed in the technical capability matrix.
 - Show impact before commit.
 
@@ -449,12 +461,14 @@ is resolved, so NC-401 is safe to begin.
 
 - **Priority:** P0-P
 - **Dependencies:** NC-404
+- **Status:** Not started.
 - Show added, removed, renamed, moved, scope-changed, and source-changed records.
 
 #### NC-406 — Add scoped live Course Model revision
 
 - **Priority:** P0-L
 - **Dependencies:** NC-403, NC-904
+- **Status:** Not started.
 - Ask the model for structured operations, not a replacement artifact.
 - Validate/reduce through the same batch service.
 

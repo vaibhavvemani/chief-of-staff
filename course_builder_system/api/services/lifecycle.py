@@ -52,12 +52,14 @@ class ImpactPreviewService:
             targeted_assets = sorted(normalized_targets)
             preserved_assets = sorted(set(all_assets) - set(targeted_assets))
         else:
-            if action != "reopen":
+            general_course_model_edit = action == "edit" and stage_slug == "course-model"
+            if action != "reopen" and not general_course_model_edit:
                 raise ValueError(
                     f"impact preview is not registered for {action!r} on {stage_slug!r}"
                 )
-            # Reopen is a general lifecycle operation. Target hints must never make
-            # its impact look bounded when the mutation will stale the full graph.
+            # Reopen and a typed Course Model edit are general lifecycle operations.
+            # Target hints must never make their impact look bounded when the
+            # mutation will stale the full graph.
             downstream = self.catalog.downstream_artifacts(set(stage.artifacts))
             content_is_affected = (
                 "content_package" in stage.artifacts or "content_package" in downstream
@@ -161,6 +163,38 @@ class InvalidationService:
         transaction_outputs: set[str] | None = None,
         bounded_artifacts: set[str] | None = None,
     ) -> list[dict[str, Any]]:
+        plan = self.plan(
+            course_id,
+            changed_artifacts,
+            reason=reason,
+            transaction_outputs=transaction_outputs,
+            bounded_artifacts=bounded_artifacts,
+        )
+        if not plan:
+            return []
+        saved = self.repository.save_batch(plan)
+        for artifact in saved:
+            planned = next(
+                candidate
+                for candidate, _expected in plan
+                if candidate["artifact_type"] == artifact["artifact_type"]
+            )
+            if self.repository.checksum(artifact.get("body")) != self.repository.checksum(
+                planned.get("body")
+            ):
+                raise RuntimeError(f"invalidation changed {artifact['artifact_type']} body")
+        return saved
+
+    def plan(
+        self,
+        course_id: str,
+        changed_artifacts: list[str] | tuple[str, ...] | set[str],
+        *,
+        reason: str,
+        transaction_outputs: set[str] | None = None,
+        bounded_artifacts: set[str] | None = None,
+    ) -> list[tuple[dict[str, Any], str]]:
+        """Build exact-precondition stale writes without changing repository state."""
         graph_affected = set(self.catalog.downstream_artifacts(set(changed_artifacts)))
         if bounded_artifacts is None:
             affected = graph_affected
@@ -175,7 +209,7 @@ class InvalidationService:
         # Outputs produced and validated in the same atomic stage transaction are
         # current by construction; they are not a domain-level bounded override.
         affected -= transaction_outputs or set()
-        saved: list[dict[str, Any]] = []
+        planned: list[tuple[dict[str, Any], str]] = []
         for artifact_type in sorted(affected):
             artifact = self.repository.load(course_id, artifact_type)
             if artifact is None or artifact.get("status") == "stale":
@@ -185,8 +219,7 @@ class InvalidationService:
             stale = deepcopy(artifact)
             stale["status"] = "stale"
             stale["revision_note"] = reason
-            persisted = self.repository.save(stale, expected_checksum=expected)
-            if self.repository.checksum(persisted.get("body")) != before_body:
+            if self.repository.checksum(stale.get("body")) != before_body:
                 raise RuntimeError(f"invalidation changed {artifact_type} body")
-            saved.append(persisted)
-        return saved
+            planned.append((stale, expected))
+        return planned

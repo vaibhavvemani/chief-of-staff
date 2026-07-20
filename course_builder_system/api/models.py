@@ -8,7 +8,15 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal, get_args
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictInt,
+    field_validator,
+    model_validator,
+)
 
 type StageState = Literal[
     "locked",
@@ -50,6 +58,40 @@ OutcomeCognitiveLevel = Literal[
     "create",
 ]
 OutcomePriority = Literal["core", "supporting", "optional"]
+CourseModelId = Annotated[
+    str,
+    Field(strict=True, pattern=r"^[a-z0-9][a-z0-9_-]*$"),
+]
+CourseModelReference = Annotated[
+    str,
+    Field(strict=True, pattern=r"^[a-z0-9][a-z0-9_-]*$"),
+]
+ModuleClientReference = Annotated[
+    str,
+    Field(strict=True, pattern=r"^new_module_[a-z0-9_-]+$"),
+]
+SubtopicClientReference = Annotated[
+    str,
+    Field(strict=True, pattern=r"^new_subtopic_[a-z0-9_-]+$"),
+]
+ConceptClientReference = Annotated[
+    str,
+    Field(strict=True, pattern=r"^new_concept_[a-z0-9_-]+$"),
+]
+CoverageClientReference = Annotated[
+    str,
+    Field(strict=True, pattern=r"^new_coverage_[a-z0-9_-]+$"),
+]
+CourseModelTitle = Annotated[str, Field(strict=True, min_length=1, max_length=200)]
+CourseModelPurpose = Annotated[str, Field(strict=True, min_length=1, max_length=500)]
+CourseModelScopeItem = Annotated[
+    str,
+    Field(strict=True, min_length=1, max_length=180),
+]
+ConceptName = Annotated[str, Field(strict=True, min_length=1, max_length=150)]
+ConceptSummary = Annotated[str, Field(strict=True, min_length=1, max_length=400)]
+CoverageStatement = Annotated[str, Field(strict=True, min_length=1, max_length=300)]
+CourseModelPosition = Annotated[StrictInt, Field(ge=1, le=10_000)]
 
 
 class CreateCourseRequest(StrictCommand):
@@ -255,9 +297,239 @@ class OutcomeDecisionCommand(VersionedCommand):
     priority_order: list[OutcomeId] = Field(default_factory=list)
 
 
+class AddModuleOperation(StrictCommand):
+    op: Literal["add_module"]
+    client_ref: ModuleClientReference
+    position: CourseModelPosition
+    title: CourseModelTitle
+    purpose: CourseModelPurpose
+    in_scope: list[CourseModelScopeItem] = Field(max_length=100)
+    out_of_scope: list[CourseModelScopeItem] = Field(max_length=100)
+    prerequisite_module_ids: list[CourseModelReference] = Field(max_length=100)
+
+
+class UpdateModuleOperation(StrictCommand):
+    op: Literal["update_module"]
+    target_id: CourseModelReference
+    title: CourseModelTitle | None = None
+    purpose: CourseModelPurpose | None = None
+    in_scope: list[CourseModelScopeItem] | None = Field(default=None, max_length=100)
+    out_of_scope: list[CourseModelScopeItem] | None = Field(default=None, max_length=100)
+    prerequisite_module_ids: list[CourseModelReference] | None = Field(default=None, max_length=100)
+
+    @model_validator(mode="after")
+    def at_least_one_module_change(self) -> UpdateModuleOperation:
+        return _require_non_null_update(
+            self,
+            ("title", "purpose", "in_scope", "out_of_scope", "prerequisite_module_ids"),
+            "Module update",
+        )
+
+
+class RemoveModuleOperation(StrictCommand):
+    op: Literal["remove_module"]
+    target_id: CourseModelReference
+
+
+class MoveModuleOperation(StrictCommand):
+    op: Literal["move_module"]
+    target_id: CourseModelReference
+    position: CourseModelPosition
+
+
+class ReorderModulesOperation(StrictCommand):
+    op: Literal["reorder_modules"]
+    module_ids: list[CourseModelReference] = Field(min_length=1, max_length=100)
+
+
+class AddSubtopicOperation(StrictCommand):
+    op: Literal["add_subtopic"]
+    client_ref: SubtopicClientReference
+    parent_id: CourseModelReference
+    position: CourseModelPosition
+    title: CourseModelTitle
+    purpose: CourseModelPurpose
+    in_scope: list[CourseModelScopeItem] = Field(max_length=100)
+    out_of_scope: list[CourseModelScopeItem] = Field(max_length=100)
+    prerequisite_subtopic_ids: list[CourseModelReference] = Field(max_length=100)
+
+
+class UpdateSubtopicOperation(StrictCommand):
+    op: Literal["update_subtopic"]
+    target_id: CourseModelReference
+    title: CourseModelTitle | None = None
+    purpose: CourseModelPurpose | None = None
+    in_scope: list[CourseModelScopeItem] | None = Field(default=None, max_length=100)
+    out_of_scope: list[CourseModelScopeItem] | None = Field(default=None, max_length=100)
+    prerequisite_subtopic_ids: list[CourseModelReference] | None = Field(
+        default=None, max_length=100
+    )
+
+    @model_validator(mode="after")
+    def at_least_one_subtopic_change(self) -> UpdateSubtopicOperation:
+        return _require_non_null_update(
+            self,
+            (
+                "title",
+                "purpose",
+                "in_scope",
+                "out_of_scope",
+                "prerequisite_subtopic_ids",
+            ),
+            "Subtopic update",
+        )
+
+
+class RemoveSubtopicOperation(StrictCommand):
+    op: Literal["remove_subtopic"]
+    target_id: CourseModelReference
+
+
+class MoveSubtopicOperation(StrictCommand):
+    op: Literal["move_subtopic"]
+    target_id: CourseModelReference
+    parent_id: CourseModelReference
+    position: CourseModelPosition
+
+
+class ReorderSubtopicsOperation(StrictCommand):
+    op: Literal["reorder_subtopics"]
+    parent_id: CourseModelReference
+    subtopic_ids: list[CourseModelReference] = Field(min_length=1, max_length=200)
+
+
+class AddConceptOperation(StrictCommand):
+    op: Literal["add_concept"]
+    client_ref: ConceptClientReference
+    parent_id: CourseModelReference
+    position: CourseModelPosition
+    name: ConceptName
+    summary: ConceptSummary
+    depends_on: list[CourseModelReference] = Field(max_length=200)
+
+
+class UpdateConceptOperation(StrictCommand):
+    op: Literal["update_concept"]
+    target_id: CourseModelReference
+    name: ConceptName | None = None
+    summary: ConceptSummary | None = None
+    depends_on: list[CourseModelReference] | None = Field(default=None, max_length=200)
+
+    @model_validator(mode="after")
+    def at_least_one_concept_change(self) -> UpdateConceptOperation:
+        return _require_non_null_update(
+            self,
+            ("name", "summary", "depends_on"),
+            "Concept update",
+        )
+
+
+class RemoveConceptOperation(StrictCommand):
+    op: Literal["remove_concept"]
+    target_id: CourseModelReference
+
+
+class AddCoverageOperation(StrictCommand):
+    op: Literal["add_coverage"]
+    client_ref: CoverageClientReference
+    parent_id: CourseModelReference
+    position: CourseModelPosition
+    statement: CoverageStatement
+    concept_ids: list[CourseModelReference] = Field(max_length=200)
+
+
+class UpdateCoverageOperation(StrictCommand):
+    op: Literal["update_coverage"]
+    target_id: CourseModelReference
+    statement: CoverageStatement | None = None
+    concept_ids: list[CourseModelReference] | None = Field(default=None, max_length=200)
+
+    @model_validator(mode="after")
+    def at_least_one_coverage_change(self) -> UpdateCoverageOperation:
+        return _require_non_null_update(
+            self,
+            ("statement", "concept_ids"),
+            "Coverage update",
+        )
+
+
+class RemoveCoverageOperation(StrictCommand):
+    op: Literal["remove_coverage"]
+    target_id: CourseModelReference
+
+
+class AssignCourseModelSourcesOperation(StrictCommand):
+    op: Literal["assign_sources"]
+    target_type: Literal["subtopic", "concept", "coverage"]
+    target_id: CourseModelReference
+    source_ids: list[CourseModelId] = Field(max_length=200)
+
+
+class SetCourseOutcomeLinksOperation(StrictCommand):
+    op: Literal["set_course_outcome_links"]
+    outcome_ids: list[OutcomeId] = Field(min_length=1, max_length=200)
+
+
+class SetRationaleOutcomeLinksOperation(StrictCommand):
+    op: Literal["set_rationale_outcome_links"]
+    target_id: CourseModelId
+    outcome_ids: list[OutcomeId] = Field(max_length=200)
+
+
+CourseModelOperation = Annotated[
+    AddModuleOperation
+    | UpdateModuleOperation
+    | RemoveModuleOperation
+    | MoveModuleOperation
+    | ReorderModulesOperation
+    | AddSubtopicOperation
+    | UpdateSubtopicOperation
+    | RemoveSubtopicOperation
+    | MoveSubtopicOperation
+    | ReorderSubtopicsOperation
+    | AddConceptOperation
+    | UpdateConceptOperation
+    | RemoveConceptOperation
+    | AddCoverageOperation
+    | UpdateCoverageOperation
+    | RemoveCoverageOperation
+    | AssignCourseModelSourcesOperation
+    | SetCourseOutcomeLinksOperation
+    | SetRationaleOutcomeLinksOperation,
+    Field(discriminator="op"),
+]
+
+
+class CourseModelDecisionPreviewCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
+    operations: list[CourseModelOperation] = Field(min_length=1, max_length=100)
+
+
+class CourseModelDecisionCommand(CourseModelDecisionPreviewCommand):
+    impact_acknowledged: StrictBool = False
+    expected_impact_checksum: str | None = Field(default=None, min_length=6, max_length=128)
+
+
 class SourceDecisionCommand(VersionedCommand):
     expected_checksum: str = Field(min_length=6, max_length=128)
     selected_ids: list[str] = Field(min_length=1, max_length=50)
+
+
+def _require_non_null_update(
+    model: BaseModel,
+    fields: tuple[str, ...],
+    label: str,
+):
+    explicitly_null = [
+        field
+        for field in fields
+        if field in model.model_fields_set and getattr(model, field) is None
+    ]
+    if explicitly_null:
+        raise ValueError(f"{label} fields cannot be null")
+    if not any(getattr(model, field) is not None for field in fields):
+        raise ValueError(f"{label} must include at least one supported field")
+    return model
 
 
 class BlueprintDecisionCommand(VersionedCommand):

@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 from competitor_analysis import normalize_topic_label
+from course_model_operations import normalize_course_model_allocation
 from orchestrator import make_artifact
 from source_selection import approved_source_registry as registry_from_research
 
@@ -61,7 +62,7 @@ def build_course_model_body(
     rationale_topic_ids = [topic_id for topic_id in topic_ids if topic_id in research_topic_ids]
     outcome_ids = [outcome["id"] for outcome in outcomes]
 
-    return {
+    course_model_body = {
         "course_metadata": {
             "course_title": body["course_title"],
             "subject": body["subject"],
@@ -90,6 +91,8 @@ def build_course_model_body(
         "modules": modules,
         "source_registry": sources,
     }
+    course_model_body["id_allocation"] = normalize_course_model_allocation(course_model_body)
+    return course_model_body
 
 
 def _resolve_source_registry(

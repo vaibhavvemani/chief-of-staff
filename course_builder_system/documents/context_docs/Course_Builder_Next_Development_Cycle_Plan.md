@@ -1,7 +1,7 @@
 # Course Builder — Next Development Cycle Plan
 
 > **Status:** Approved planning baseline for the next development cycle  
-> **Updated:** 2026-07-17
+> **Updated:** 2026-07-20
 > **Planning model:** Milestone-gated; no fixed time constraint  
 > **Target user:** One internal, nontechnical course director  
 > **Scope:** Finish the eight-stage browser product, close the content-trust loop,
@@ -10,12 +10,16 @@
 > `Course_Builder_Four_Week_Prototype_Completion_Handoff.md`, and
 > `Course_Builder_Frontend_Implementation_Handoff.md`
 
-> **Implementation update — 2026-07-17:** NC-10 and NC-20 have passed independent
+> **Implementation update — 2026-07-20:** NC-10 and NC-20 have passed independent
 > review. The post-frontend audit below records the gaps that led to those packages;
 > current Guided Brief behavior is documented in the frontend implementation handoff.
 > NC-301 and NC-302 have passed independent NC-30 checkpoint review. NC-303 remains
-> deferred to NC-90 behind NC-902. NC-40 has not started; the next safe implementation
-> action is NC-401. This does not complete Milestone 3 or the cycle.
+> deferred to NC-90 behind NC-902. NC-401 through NC-403 are implemented with
+> deterministic backend evidence but remain pending independent NC-40 backend checkpoint
+> review. NC-40 is not complete: NC-404 through NC-406 and all later packages remain
+> unstarted, Course Model browser editing stays disabled, and the next action is the
+> independent backend checkpoint review rather than NC-404. This does not complete
+> Milestone 3 or the cycle.
 
 ## 1. Purpose of this document
 
@@ -130,7 +134,7 @@ The most important gaps are not cosmetic.
 | Brief questions | Typed question and gap-detection primitives exist in Python, but the browser immediately creates a default Brief. | Expose the question contract through the API and implement bounded question rounds. |
 | Outcomes editing | NC-301 and NC-302 now provide independently verified strict deterministic reduction and a typed React editor. | Preserve the typed contract and keep NC-303 live scoped revision deferred to NC-90 behind NC-902. |
 | Blueprint editing | The backend has a typed decision command, but React is read-only. | Wire asset selection, defaults, exceptions, and depth controls. |
-| Course Model editing | The view is structured, but there is no typed mutation contract. | Add validated structural commands that preserve stable IDs and integrity. |
+| Course Model editing | NC-401 through NC-403 provide a deterministic typed backend mutation contract pending independent review; the browser controls remain disabled. | Complete the independent backend checkpoint before starting NC-404 UI work. |
 | Lesson Plan editing | The view shows constraints, but changes rely on generic feedback. | Add typed constraint and sequence commands. |
 | Generic revision | Several stage steps accept feedback at the API boundary but ignore it in the step implementation. | Show revision actions only when a real scoped handler exists. |
 | Reopening | The API has a reopen command, but React does not expose it consistently. | Add explicit reopen and downstream-impact confirmation. |
@@ -412,9 +416,13 @@ operator-relevant decisions.
 
 ### 9.2 Outcomes
 
-**Implementation status (2026-07-17):** NC-301 and NC-302 have passed independent
+**Implementation status (2026-07-20):** NC-301 and NC-302 have passed independent
 checkpoint review. This does not complete the Milestone 3 exit gate. NC-303 remains
-deferred to NC-90 behind NC-902, and NC-40 has not started.
+deferred to NC-90 behind NC-902. NC-401 through NC-403 are implemented with
+deterministic backend evidence but pending independent NC-40 backend checkpoint review.
+NC-40 is not complete; NC-404 through NC-406 and all later packages remain unstarted,
+and Course Model browser editing remains disabled. The next action is independent backend
+review, not NC-404.
 
 1. Wire the existing typed Outcomes API command into React.
 2. Support add, edit, remove, reorder, evidence, cognitive level, and priority.
