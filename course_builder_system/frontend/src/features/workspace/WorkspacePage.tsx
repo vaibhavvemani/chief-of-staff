@@ -14,6 +14,7 @@ import {
   previewStageImpact,
   previewCourseModelDecision,
   reopenStage,
+  requestContentRepair,
   requestSourceRepair,
   reviseStage,
   reviewContentAsset,
@@ -187,8 +188,8 @@ function DecisionBar({
   busy?: boolean;
   onAction: (action: StageAction) => void;
 }) {
-  const primaryIds: StageActionId[] = ["run", "retry", "edit", "add_source", "source_decision", "source_repair", "review_asset", "revise", "approve", "go_to_blocker", "continue"];
-  const inlineActionIds: StageActionId[] = ["add_source", "source_decision", "source_repair", "review_asset", "revise"];
+  const primaryIds: StageActionId[] = ["run", "retry", "edit", "add_source", "source_decision", "source_repair", "content_repair", "review_asset", "revise", "approve", "go_to_blocker", "continue"];
+  const inlineActionIds: StageActionId[] = ["add_source", "source_decision", "source_repair", "content_repair", "review_asset", "revise"];
   const visibleActions = actions.filter((action) => !inlineActionIds.includes(action.id));
   const statusCopy: Record<UiStatus, [string, string]> = {
     locked: ["Upstream checkpoint required", "This stage is not ready yet"],
@@ -945,6 +946,56 @@ export function WorkspacePage() {
     },
   });
 
+  const contentRepairMutation = useMutation({
+    mutationFn: ({
+      strategy,
+      asset,
+      claim,
+      entry,
+    }: {
+      strategy: "existing_evidence" | "better_evidence";
+      asset: ContentAsset;
+      claim?: Claim;
+      entry?: SourceRepairEntry;
+    }) => {
+      if (!workspace?.content.packageChecksum) {
+        throw new Error("Content repair requires the current Content Package checksum.");
+      }
+      if (strategy === "better_evidence" && !workspace.sourceRepairChecksum) {
+        throw new Error("Better-evidence repair requires the current Source Repair checksum.");
+      }
+      return requestContentRepair(courseId, {
+        expectedContentChecksum: workspace.content.packageChecksum,
+        strategy,
+        targets: [{
+          assetId: asset.id,
+          claimIds: claim ? [claim.id] : [],
+          findingIds: claim ? [claim.id] : [],
+        }],
+        sourceRepairId: entry?.id,
+        expectedSourceRepairChecksum: entry ? workspace.sourceRepairChecksum : undefined,
+        mode: entry?.requestedMode ?? runMode,
+      });
+    },
+    onSuccess: (result) => {
+      setActiveJobId(result.job.job_id);
+      setActiveJobStage("content");
+      setRunProgress({ message: "Targeted regeneration and reverification queued" });
+      setToast({
+        tone: "good",
+        message: `${result.strategy === "better_evidence" ? "Better-evidence" : "Existing-evidence"} repair started for ${result.targetAssetIds.join(", ")}.`,
+      });
+      void refresh();
+    },
+    onError: async (error) => {
+      await refresh();
+      setToast({
+        tone: "attention",
+        message: error instanceof Error ? error.message : "The targeted Content repair could not start.",
+      });
+    },
+  });
+
   const impactMutation = useMutation({
     mutationFn: () => {
       if (!currentSummary?.checksum) throw new Error("Reopen requires the current stage checksum.");
@@ -1046,6 +1097,10 @@ export function WorkspacePage() {
       } else if (action === "revise") {
         if (!currentSummary?.actions.some((candidate) => candidate.id === "revise" && candidate.enabled)) throw new Error("Scoped revision is not available in the current stage state.");
         setRevisionTarget({ asset, claim, expectedChecksum: currentSummary.checksum });
+        return;
+      } else if (action === "repair_existing") {
+        if (!currentSummary?.actions.some((candidate) => candidate.id === "content_repair" && candidate.enabled)) throw new Error("Typed Content repair is not available in the current stage state.");
+        contentRepairMutation.mutate({ strategy: "existing_evidence", asset, claim });
         return;
       } else if (action === "source_repair") {
         if (!currentSummary?.actions.some((candidate) => candidate.id === "source_repair" && candidate.enabled)) throw new Error("Source repair is not available in the current stage state.");
@@ -1190,14 +1245,19 @@ export function WorkspacePage() {
           ) : <StageView
             stage={stage}
             workspace={workspace}
-            contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise"), repair: sourceRepairAvailable, repairUnavailableReason: sourceRepairUnavailableReason }}
-            onContentAction={actionEnabled("review_asset") || actionEnabled("revise") || sourceRepairAvailable ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined}
+            contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise"), contentRepair: actionEnabled("content_repair"), repair: sourceRepairAvailable, repairUnavailableReason: sourceRepairUnavailableReason }}
+            onContentAction={actionEnabled("review_asset") || actionEnabled("revise") || actionEnabled("content_repair") || sourceRepairAvailable ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined}
             onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined}
             onAddKnownSource={actionEnabled("add_source") ? (source) => knownSourceMutation.mutate(source) : undefined}
             sourceMutationBusy={knownSourceMutation.isPending}
-            sourceRepairBusy={sourceRepairRequestMutation.isPending || sourceRepairDecisionMutation.isPending || sourceRepairRouteMutation.isPending || Boolean(activeJobId)}
+            sourceRepairBusy={sourceRepairRequestMutation.isPending || sourceRepairDecisionMutation.isPending || sourceRepairRouteMutation.isPending || contentRepairMutation.isPending || Boolean(activeJobId)}
             onSourceRepairDecision={sourceRepairAvailable ? (entry, candidateId) => sourceRepairDecisionMutation.mutate({ entry, candidateId }) : undefined}
             onSourceRepairRoute={sourceRepairAvailable ? (entry) => sourceRepairRouteMutation.mutate(entry) : undefined}
+            onContentRepair={actionEnabled("content_repair") ? (entry) => {
+              const asset = workspace.content.assets.find((candidate) => candidate.id === entry.origin.assetId);
+              const claim = asset?.claims.find((candidate) => candidate.id === entry.origin.claimId);
+              if (asset) contentRepairMutation.mutate({ strategy: "better_evidence", asset, claim, entry });
+            } : undefined}
             onEditBrief={stage === "brief" && actionEnabled("edit") ? setBriefEditSection : undefined}
             outcomesEditing={outcomesEditing}
             outcomesBusy={outcomesMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)}

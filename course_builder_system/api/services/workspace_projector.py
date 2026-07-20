@@ -239,6 +239,11 @@ class WorkspaceProjector:
                 if not review_summary.get("ready_for_package"):
                     blocking_stage = "content"
         latest_job = self._latest_stage_job(course_id, stage.slug)
+        failed_job_controls_stage = bool(
+            latest_job
+            and latest_job.get("status") == "failed"
+            and latest_job.get("operation", "run") != "content_repair"
+        )
         needs_input = self._needs_input(stage, artifacts)
         requires_reopen = bool(
             stage.slug == "brief"
@@ -248,7 +253,7 @@ class WorkspaceProjector:
         )
         if active_job and active_job.get("stage") == stage.slug:
             state = "running"
-        elif latest_job and latest_job.get("status") == "failed":
+        elif failed_job_controls_stage:
             state = "failed"
         elif any(artifact.get("status") == "failed" for artifact in present):
             state = "failed"

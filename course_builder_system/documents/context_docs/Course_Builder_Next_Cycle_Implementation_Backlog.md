@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-701 through NC-709 independently verified with deterministic browser evidence
+> **Status:** NC-801 through NC-808 independently verified with deterministic browser evidence
 > **Updated:** 2026-07-20
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -59,10 +59,12 @@ NC-504 remain deferred to NC-90. NC-601 through NC-603 are independently verifie
 deterministic browser Scenario A12 evidence after corrective conflict-rebase, stable-ID,
 Course Model-authority, and affected-session hardening. NC-604 remains deferred to NC-90
 behind NC-908. NC-701 through NC-709 are independently verified with deterministic
-browser evidence for Scenario A10's source-decision and route phase. Targeted Content
-regeneration and reverification remain NC-80 work; NC-80 and every later package remain
-unstarted. This status note does not mark Milestone 3, NC-40, or any later package
-complete.
+browser evidence for Scenario A10's source-decision and route phase. NC-801 through
+NC-808 are independently verified with deterministic browser Scenarios A8 through A11
+evidence, including both repair strategies, target-only regeneration, truthful blocker
+and review state, and typed failure/restart recovery. NC-90 and every later package
+remain unstarted. This status note does not mark Milestone 3, NC-40, or any later
+package complete.
 
 ```text
 NC-00 acceptance foundation
@@ -371,8 +373,8 @@ NC-401 through NC-403 are independently verified after the NC-40 backend checkpo
 NC-404 is independently verified with deterministic browser Scenario A6 evidence.
 NC-405 is independently verified with deterministic browser evidence. NC-40 is not
 complete. NC-501 through NC-503 and NC-601 through NC-603 are independently verified.
-NC-406, NC-504, and NC-604 remain deferred. NC-701 through NC-709 are independently
-verified; NC-80 and every later package remain unstarted.
+NC-406, NC-504, and NC-604 remain deferred. NC-701 through NC-709 and NC-801 through
+NC-808 are independently verified; NC-90 and every later package remain unstarted.
 
 ### Tasks
 
@@ -436,8 +438,8 @@ NC-501 through NC-503 are independently verified with deterministic browser Scen
 evidence. NC-40 is not complete because NC-406 remains deferred to NC-90. NC-504 is
 also deferred to NC-90 behind NC-905. NC-601 through NC-603 are independently verified
 with deterministic browser Scenario A12 evidence; NC-604 remains deferred behind
-NC-908. NC-701 through NC-709 are independently verified; NC-80 and every later package
-remain unstarted.
+NC-908. NC-701 through NC-709 and NC-801 through NC-808 are independently verified;
+NC-90 and every later package remain unstarted.
 
 ### Tasks
 
@@ -604,8 +606,8 @@ same Lesson Plan reducer.
 checkpoint review. Deterministic browser evidence covers Scenario A10's source-decision
 and route phase: reviewable source quality, known-source proposal, bounded evidence
 research, human approval, exact atomic routing, and preservation of unrelated state.
-Content remains unchanged at `awaiting_content_repair`; targeted regeneration and
-reverification are NC-80 work.
+At the NC-70 boundary Content remained unchanged at `awaiting_content_repair`; NC-80
+now supplies the targeted regeneration and reverification that closes that boundary.
 
 ### Tasks
 
@@ -687,9 +689,18 @@ reverification are NC-80 work.
 - One evidence gap can produce and approve a bounded candidate.
 - Source routing updates only the confirmed scope.
 - Deterministic browser evidence proves the source-decision and route portion of A10;
-  NC-80 must prove targeted regeneration, reverification, and review closure.
+  NC-80 proves the dependent targeted regeneration, reverification, and review closure.
 
 ## 13. Work package NC-80 — Content repair and review closure
+
+**Implementation status (2026-07-20):** NC-801 through NC-808 passed independent
+checkpoint review. Deterministic browser Scenarios A8 through A11 prove truthful
+source-less and unattributed blocker gating, both repair strategies, exact target-only
+regeneration and reverification, unchanged-asset preservation, Source Repair lifecycle
+closure, fingerprint-synchronized review reset/preservation, visible nonblocking
+partial findings, and Content approval releasing Lesson Plan only after review closure.
+Negative and recovery coverage proves pre-job validation, atomic scope rejection,
+secret-safe typed failure/retry, and process-restart recovery.
 
 ### Tasks
 
@@ -697,6 +708,7 @@ reverification are NC-80 work.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-107
+- **Status:** Independently verified.
 - Require asset IDs and optional finding/claim IDs.
 - Distinguish existing-evidence and better-evidence strategies.
 
@@ -704,6 +716,7 @@ reverification are NC-80 work.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-801
+- **Status:** Independently verified.
 - Classify likely content error, missing attribution, insufficient evidence, or human
   review case.
 - Keep classification advisory.
@@ -712,6 +725,7 @@ reverification are NC-80 work.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-801
+- **Status:** Independently verified.
 - Regenerate and reverify named assets only.
 - Preserve unaffected assets byte-for-byte.
 
@@ -719,6 +733,7 @@ reverification are NC-80 work.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-708, NC-801
+- **Status:** Independently verified.
 - Create/advance Source Repair entries and start targeted content regeneration after the
   approved route transaction.
 
@@ -726,6 +741,7 @@ reverification are NC-80 work.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-803
+- **Status:** Independently verified.
 - Reset decisions only for changed asset fingerprints.
 - Preserve unchanged approvals.
 
@@ -733,6 +749,7 @@ reverification are NC-80 work.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-803, NC-804, NC-805
+- **Status:** Independently verified.
 - Derive current blockers from claim-level results.
 - Keep partial findings visible but nonblocking.
 
@@ -740,6 +757,7 @@ reverification are NC-80 work.
 
 - **Priority:** P0-P
 - **Dependencies:** NC-802, NC-804
+- **Status:** Independently verified.
 - Group findings by likely cause.
 - Show repair state from request to re-review.
 
@@ -747,6 +765,7 @@ reverification are NC-80 work.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-806, NC-807
+- **Status:** Independently verified.
 - Inject one unsupported/unattributed/evidence-gap path.
 - Clear it through the real browser workflow.
 

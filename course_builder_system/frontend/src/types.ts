@@ -26,6 +26,7 @@ export type StageActionId =
   | "add_source"
   | "source_decision"
   | "source_repair"
+  | "content_repair"
   | "review_asset"
   | "revise"
   | "approve"
@@ -311,6 +312,41 @@ export interface SourceRepairEntry {
   affectedAssetIds: string[];
   status: "requested" | "researching" | "awaiting_source_decision" | "awaiting_route_confirmation" | "awaiting_content_repair" | "regenerating" | "awaiting_content_review" | "resolved" | "failed";
   failureReason?: string | null;
+  finalVerifierResult?: {
+    hardBlockerTotal: number;
+    partialTotal: number;
+    reviewStatus: string;
+  } | null;
+}
+
+export type ContentRepairClassification =
+  | "likely_content_error"
+  | "missing_attribution"
+  | "insufficient_evidence"
+  | "human_review";
+
+export interface ContentRepairFinding {
+  id: string;
+  subtopicId: string;
+  assetId: string;
+  claimId?: string | null;
+  findingId: string;
+  text: string;
+  note: string;
+  classification: ContentRepairClassification;
+  classificationReason: string;
+  recommendedStrategy?: "existing_evidence" | "better_evidence" | null;
+  blocking: boolean;
+  state: SourceRepairEntry["status"] | "ready";
+  sourceRepairId?: string | null;
+}
+
+export interface ContentRepairProjection {
+  findings: ContentRepairFinding[];
+  groups: Record<ContentRepairClassification, number>;
+  hardBlockerTotal: number;
+  partialTotal: number;
+  readyForPackage: boolean;
 }
 
 export interface CompetitorFinding {
@@ -582,6 +618,7 @@ export interface Workspace {
   };
   sourceRepairs: SourceRepairEntry[];
   sourceRepairChecksum?: string;
+  contentRepairs: ContentRepairProjection;
   modules: CourseModule[];
   courseModel: CourseModelData;
   courseModelChecksum?: string;
@@ -680,6 +717,19 @@ export interface ScopedRevisionCommand {
   instruction: string;
   expectedChecksum: string;
   impactChecksum: string;
+  mode: "deterministic" | "live";
+}
+
+export interface ContentRepairCommand {
+  strategy: "existing_evidence" | "better_evidence";
+  targets: Array<{
+    assetId: string;
+    claimIds?: string[];
+    findingIds?: string[];
+  }>;
+  expectedContentChecksum: string;
+  sourceRepairId?: string;
+  expectedSourceRepairChecksum?: string;
   mode: "deterministic" | "live";
 }
 

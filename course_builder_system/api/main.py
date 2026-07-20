@@ -25,6 +25,7 @@ from api.models import (
     BriefClarificationCommand,
     BriefQuestionRoundResponse,
     BriefUpdatesCommand,
+    ContentRepairCommand,
     ContentReviewCommand,
     CourseModelDecisionCommand,
     CourseModelDecisionPreviewCommand,
@@ -54,6 +55,7 @@ from api.services.capability_service import (
     StageCapabilityService,
     UnsupportedStageAction,
 )
+from api.services.content_repair_service import ContentRepairService
 from api.services.decision_service import (
     DecisionService,
     PrerequisiteNotApproved,
@@ -127,6 +129,33 @@ def create_app(
         deterministic_provider=deterministic_source_repair_provider,
         live_provider=live_source_repair_provider,
     )
+    for recovered_job in jobs.recovered_interrupted_jobs():
+        if recovered_job.get("operation") != "content_repair":
+            continue
+        recovery_context = recovered_job.get("context")
+        if not isinstance(recovery_context, dict):
+            continue
+        repair_id = recovery_context.get("source_repair_id")
+        if not isinstance(repair_id, str) or not repair_id:
+            continue
+        error = recovered_job.get("error")
+        reason = (
+            error.get("message")
+            if isinstance(error, dict) and isinstance(error.get("message"), str)
+            else "The API process stopped during targeted Content repair; rerun is safe."
+        )
+        source_repairs.recover_interrupted_content_repair(
+            recovered_job["course_id"],
+            repair_id,
+            reason=reason,
+        )
+    content_repairs = ContentRepairService(
+        repository,
+        catalog,
+        revisions,
+        invalidation,
+        source_repairs,
+    )
     stages = StageRunner(
         repository,
         catalog,
@@ -166,6 +195,8 @@ def create_app(
     app.state.impact = impact
     app.state.brief_intake = brief_intake
     app.state.revisions = revisions
+    app.state.source_repairs = source_repairs
+    app.state.content_repairs = content_repairs
 
     @app.exception_handler(ArtifactNotFound)
     async def _not_found(_request: Request, exc: ArtifactNotFound):
@@ -781,6 +812,51 @@ def create_app(
     def content_assets(course_id: str) -> dict[str, Any]:
         return {"assets": projector.list_assets(course_id)}
 
+    @app.get("/api/courses/{course_id}/content/repairs")
+    def content_repair_projection(course_id: str) -> dict[str, Any]:
+        return content_repairs.project(course_id)
+
+    @app.post("/api/courses/{course_id}/content/repairs", status_code=202)
+    def request_content_repair(
+        course_id: str,
+        command: ContentRepairCommand,
+    ) -> dict[str, Any]:
+        values = {
+            "expected_content_checksum": command.expected_content_checksum,
+            "strategy": command.strategy,
+            "targets": [target.model_dump() for target in command.targets],
+            "source_repair_id": command.source_repair_id,
+            "expected_source_repair_checksum": command.expected_source_repair_checksum,
+            "mode": command.mode,
+        }
+        with jobs.mutate_now(course_id):
+            assert_projected_action(course_id, "content", "content_repair")
+            prepared = content_repairs.prepare(course_id, **values)
+        job = jobs.submit(
+            course_id=course_id,
+            stage="content",
+            operation="content_repair",
+            context={
+                "strategy": prepared.strategy,
+                **(
+                    {"source_repair_id": prepared.source_repair_id}
+                    if prepared.source_repair_id is not None
+                    else {}
+                ),
+            },
+            task=lambda emit: content_repairs.execute(
+                course_id,
+                **values,
+                emit=emit,
+            ),
+        )
+        return {
+            **_job_accepted(job),
+            "strategy": prepared.strategy,
+            "target_asset_ids": list(prepared.asset_ids),
+            "source_repair_id": prepared.source_repair_id,
+        }
+
     @app.get("/api/courses/{course_id}/content/assets/{asset_id}")
     def content_asset(course_id: str, asset_id: str) -> dict[str, Any]:
         return projector.asset(course_id, asset_id)
@@ -828,6 +904,7 @@ def create_app(
                 decision=command.decision,
                 note=command.feedback,
             )
+            source_repairs.resolve_after_content_review(course_id)
         return {"artifact": value, "checksum": repository.checksum(value)}
 
     @app.get("/api/courses/{course_id}/outputs/{relative_path:path}")

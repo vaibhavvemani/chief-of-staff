@@ -11,6 +11,7 @@ import uuid
 from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -76,13 +77,15 @@ class LocalJobRunner:
         )
         self._io_lock = threading.Lock()
         self._submit_lock = threading.Lock()
-        self._recover_interrupted_jobs()
+        self._recovered_interrupted_jobs = self._recover_interrupted_jobs()
 
     def submit(
         self,
         *,
         course_id: str,
         stage: str,
+        operation: str = "run",
+        context: dict[str, str] | None = None,
         task: Callable[[Callable[..., dict[str, Any]]], dict[str, Any] | None],
     ) -> dict[str, Any]:
         ArtifactRepository.validate_course_id(course_id)
@@ -94,6 +97,8 @@ class LocalJobRunner:
                 "job_id": job_id,
                 "course_id": course_id,
                 "stage": stage,
+                "operation": operation,
+                "context": dict(context or {}),
                 "status": "queued",
                 "created_at": _now(),
                 "started_at": None,
@@ -105,6 +110,10 @@ class LocalJobRunner:
             self._emit(job, "job.queued", stage=stage, message=f"{stage} queued")
             self._executor.submit(self._execute, job_id, task)
         return job
+
+    def recovered_interrupted_jobs(self) -> list[dict[str, Any]]:
+        """Return jobs this runner changed from active to failed during startup."""
+        return deepcopy(self._recovered_interrupted_jobs)
 
     def get(self, job_id: str) -> dict[str, Any]:
         if not job_id or not job_id.isalnum() or len(job_id) > 64:
@@ -245,7 +254,8 @@ class LocalJobRunner:
     def _events_path(self, course_id: str, job_id: str) -> Path:
         return self.runtime_root / course_id / "events" / f"{job_id}.jsonl"
 
-    def _recover_interrupted_jobs(self) -> None:
+    def _recover_interrupted_jobs(self) -> list[dict[str, Any]]:
+        recovered: list[dict[str, Any]] = []
         for path in self.runtime_root.glob("*/jobs/*.json"):
             try:
                 job = json.loads(path.read_text(encoding="utf-8"))
@@ -266,6 +276,8 @@ class LocalJobRunner:
                 stage=job.get("stage"),
                 message=job["error"]["message"],
             )
+            recovered.append(deepcopy(job))
+        return recovered
 
 
 def _safe_error_message(exc: Exception) -> str:

@@ -1,14 +1,18 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { createHash } from "node:crypto";
 
 const SEEDED_LIFECYCLE_COURSE_ID = "studio-course-model-reopen-fixture";
 const COURSE_MODEL_EDITOR_COURSE_ID = "studio-course-model-editor-fixture";
 const BLUEPRINT_EDITOR_COURSE_ID = "studio-blueprint-editor-fixture";
 const LESSON_PLAN_EDITOR_COURSE_ID = "studio-lesson-plan-editor-fixture";
 const SOURCE_REPAIR_COURSE_ID = "studio-source-repair-fixture";
+const CONTENT_REPAIR_COURSE_ID = "studio-content-repair-fixture";
+const CONTENT_BLOCKER_TRUTH_COURSE_ID = "studio-content-blocker-truth-fixture";
 
 interface StageProjection {
   state: string;
   checksum?: string;
+  prerequisites_ready?: boolean;
 }
 
 interface BriefQuestion {
@@ -160,6 +164,7 @@ interface BlueprintSourceBody {
 interface SourceRepairLedger {
   checksum: string;
   entries: Array<{
+    id: string;
     status: string;
     approved_source_route: {
       source_id: string;
@@ -167,7 +172,47 @@ interface SourceRepairLedger {
       asset_ids: string[];
     } | null;
     affected_asset_ids: string[];
+    final_verifier_result?: {
+      hard_blocker_total: number;
+      review_status: string;
+    } | null;
   }>;
+}
+
+interface ContentAssetRecord extends Record<string, unknown> {
+  id: string;
+  title: string;
+}
+
+interface ContentPackageBody {
+  subtopics: Array<{
+    subtopic_id: string;
+    assets: ContentAssetRecord[];
+  }>;
+}
+
+interface ContentReviewLedger {
+  artifact: {
+    body: {
+      assets: Array<{
+        asset_id: string;
+        decision: string;
+        asset_fingerprint: string;
+      }>;
+      summary: {
+        pending: number;
+        approved: number;
+        ready_for_package: boolean;
+      };
+    };
+  };
+  checksum: string;
+}
+
+interface ContentRepairProjection {
+  hard_blocker_total: number;
+  partial_total: number;
+  ready_for_package: boolean;
 }
 
 async function stage(
@@ -237,6 +282,47 @@ async function canonicalArtifact<TBody>(
   );
   expect(response.ok()).toBe(true);
   return response.json() as Promise<CanonicalArtifact<TBody>>;
+}
+
+async function contentReview(
+  request: APIRequestContext,
+  courseId: string,
+): Promise<ContentReviewLedger> {
+  const response = await request.get(`/api/courses/${courseId}/content/reviews`);
+  expect(response.ok()).toBe(true);
+  return response.json() as Promise<ContentReviewLedger>;
+}
+
+async function contentRepairProjection(
+  request: APIRequestContext,
+  courseId: string,
+): Promise<ContentRepairProjection> {
+  const response = await request.get(`/api/courses/${courseId}/content/repairs`);
+  expect(response.ok()).toBe(true);
+  return response.json() as Promise<ContentRepairProjection>;
+}
+
+function contentAssets(body: ContentPackageBody): Map<string, ContentAssetRecord> {
+  return new Map(
+    body.subtopics.flatMap((subtopic) =>
+      subtopic.assets.map((asset) => [asset.id, asset] as const),
+    ),
+  );
+}
+
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value !== null && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record).sort().map((key) =>
+      `${JSON.stringify(key)}:${canonicalJson(record[key])}`,
+    ).join(",")}}`;
+  }
+  return JSON.stringify(value) ?? "null";
+}
+
+function contentHash(value: unknown): string {
+  return createHash("sha256").update(canonicalJson(value)).digest("hex");
 }
 
 function questionCard(page: Page, questionId: string) {
@@ -1108,7 +1194,9 @@ test("NC-70 adds a known source and commits one bounded repair route", async ({
     `/courses/${SOURCE_REPAIR_COURSE_ID}/content?mode=deterministic`,
   );
   await expect(page.getByText("1 blocking verification finding")).toBeVisible();
-  await page.getByRole("button", { name: /Find better evidence/ }).click();
+  await page.getByRole("button", {
+    name: "Find better evidence for m1_s1_cc, finding m1_s1_cc_c1",
+  }).click();
   const repairQueue = page.getByRole("region", { name: "Source repair queue" });
   await expect(repairQueue).toBeVisible();
   await expect(
@@ -1147,7 +1235,9 @@ test("NC-70 adds a known source and commits one bounded repair route", async ({
   await expect(
     page.getByText("Source approved and route committed atomically"),
   ).toBeVisible();
-  await expect(page.getByText(/has not started yet/)).toBeVisible();
+  await expect(
+    repairQueue.getByRole("button", { name: "Regenerate and reverify" }),
+  ).toBeVisible();
 
   const ledgerResponse = await request.get(
     `/api/courses/${SOURCE_REPAIR_COURSE_ID}/source-repairs`,
@@ -1239,4 +1329,217 @@ test("NC-70 adds a known source and commits one bounded repair route", async ({
       "content_package",
     ),
   ).toEqual(contentBefore);
+});
+
+test("Scenario A8 keeps source-less and unattributed findings blocking in the browser", async ({
+  page,
+  request,
+}) => {
+  await page.goto(
+    `/courses/${CONTENT_BLOCKER_TRUTH_COURSE_ID}/content?mode=deterministic`,
+  );
+
+  await expect(page.getByText("2 blocking verification findings")).toBeVisible();
+  const repairQueue = page.getByRole("region", { name: "Content repair queue" });
+  await expect(repairQueue).toContainText("Missing attribution");
+  await expect(repairQueue).toContainText("2 blocking · 0 review");
+  await expect(
+    repairQueue.locator(".repair-group-missing_attribution article"),
+  ).toHaveCount(2);
+
+  const board = page.getByRole("complementary", { name: "Production board" });
+  await board.getByRole("button", { name: /Grind Size/ }).click();
+  await expect(page.getByText("1 to inspect")).toBeVisible();
+  await expect(page.getByText("No ground").locator("..")).toContainText("2");
+  await expect(page.getByRole("button", { name: "Mark asset reviewed" })).toBeDisabled();
+  await expect(page.getByText("2 blocking findings must be repaired first.")).toBeVisible();
+
+  await repairQueue.getByRole("button", {
+    name: "Revise with approved evidence for m1_s1_cc, finding m1_s1_cc_c1",
+  }).click();
+  await expect.poll(
+    async () => (await contentRepairProjection(request, CONTENT_BLOCKER_TRUTH_COURSE_ID)).hard_blocker_total,
+    { timeout: 30_000 },
+  ).toBe(0);
+  await expect(page.getByText("No blocking verification findings")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark asset reviewed" })).toBeEnabled();
+});
+
+test("Scenarios A9 and A10 repair exact assets and close Content review", async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(60_000);
+  const packageBefore = await canonicalArtifact<ContentPackageBody>(
+    request,
+    CONTENT_REPAIR_COURSE_ID,
+    "content_package",
+  );
+  const assetsBefore = contentAssets(packageBefore.artifact.body);
+  const hashesBefore = new Map(
+    [...assetsBefore].map(([assetId, asset]) => [assetId, contentHash(asset)]),
+  );
+  const reviewBefore = await contentReview(request, CONTENT_REPAIR_COURSE_ID);
+  expect(reviewBefore.artifact.body.summary.pending).toBe(0);
+
+  await page.goto(
+    `/courses/${CONTENT_REPAIR_COURSE_ID}/content?mode=deterministic`,
+  );
+  await expect(page.getByText("2 blocking verification findings")).toBeVisible();
+  const repairQueue = page.getByRole("region", { name: "Content repair queue" });
+  await expect(repairQueue).toContainText("Likely content error");
+  await expect(repairQueue).toContainText("Insufficient evidence");
+  await expect(repairQueue).toContainText("Human review");
+  await expect(repairQueue).toContainText("2 blocking · 1 review");
+
+  const existingEvidenceGroup = repairQueue.locator(
+    ".repair-group-likely_content_error",
+  );
+  await expect(existingEvidenceGroup).toContainText("m1_s2_cc");
+  const existingRepairButton = existingEvidenceGroup.getByRole("button", {
+    name: "Revise with approved evidence",
+  });
+  await expect(existingRepairButton).toHaveAttribute(
+    "aria-label",
+    /m1_s2_cc, finding m1_s2_cc_c1/,
+  );
+  await existingRepairButton.focus();
+  await page.keyboard.press("Enter");
+  await expect.poll(
+    async () => (await contentRepairProjection(request, CONTENT_REPAIR_COURSE_ID)).hard_blocker_total,
+    { timeout: 30_000 },
+  ).toBe(1);
+  await expect(page.getByText("1 blocking verification finding")).toBeVisible();
+
+  const packageAfterExisting = await canonicalArtifact<ContentPackageBody>(
+    request,
+    CONTENT_REPAIR_COURSE_ID,
+    "content_package",
+  );
+  const assetsAfterExisting = contentAssets(packageAfterExisting.artifact.body);
+  expect(contentHash(assetsAfterExisting.get("m1_s2_cc"))).not.toBe(
+    hashesBefore.get("m1_s2_cc"),
+  );
+  for (const [assetId, expectedHash] of hashesBefore) {
+    if (assetId === "m1_s2_cc") continue;
+    expect(contentHash(assetsAfterExisting.get(assetId)), assetId).toBe(expectedHash);
+  }
+  const reviewAfterExisting = await contentReview(request, CONTENT_REPAIR_COURSE_ID);
+  const beforeReviewRecords = new Map(
+    reviewBefore.artifact.body.assets.map((record) => [record.asset_id, record]),
+  );
+  const afterExistingReviewRecords = new Map(
+    reviewAfterExisting.artifact.body.assets.map((record) => [record.asset_id, record]),
+  );
+  expect(afterExistingReviewRecords.get("m1_s2_cc")?.decision).toBe("pending");
+  for (const [assetId, previous] of beforeReviewRecords) {
+    if (assetId === "m1_s2_cc") continue;
+    expect(afterExistingReviewRecords.get(assetId), assetId).toMatchObject({
+      decision: previous.decision,
+      asset_fingerprint: previous.asset_fingerprint,
+    });
+  }
+  expect((await stage(request, CONTENT_REPAIR_COURSE_ID, "package")).prerequisites_ready)
+    .toBe(false);
+
+  const evidenceGapGroup = repairQueue.locator(
+    ".repair-group-insufficient_evidence",
+  );
+  await expect(evidenceGapGroup).toContainText("m1_s1_cc");
+  await evidenceGapGroup.getByRole("button", { name: "Find better evidence" }).click();
+  const sourceQueue = page.getByRole("region", { name: "Source repair queue" });
+  await expect(
+    sourceQueue.getByText(/This deterministic passage exists to prove/),
+  ).toBeVisible({ timeout: 30_000 });
+  await sourceQueue.getByRole("button", { name: "Approve this candidate" }).click();
+  await expect(
+    sourceQueue.getByRole("button", { name: "Confirm exact source route" }),
+  ).toBeVisible();
+  await sourceQueue.getByRole("button", { name: "Confirm exact source route" }).click();
+  await expect(
+    sourceQueue.getByRole("button", { name: "Regenerate and reverify" }),
+  ).toBeVisible();
+
+  const packageAfterRoute = await canonicalArtifact<ContentPackageBody>(
+    request,
+    CONTENT_REPAIR_COURSE_ID,
+    "content_package",
+  );
+  expect(packageAfterRoute).toEqual(packageAfterExisting);
+  await sourceQueue.getByRole("button", { name: "Regenerate and reverify" }).click();
+  await expect.poll(
+    async () => (await contentRepairProjection(request, CONTENT_REPAIR_COURSE_ID)).hard_blocker_total,
+    { timeout: 30_000 },
+  ).toBe(0);
+  await expect(page.getByText("No blocking verification findings")).toBeVisible();
+  await expect(sourceQueue.getByText("Targeted regeneration complete")).toBeVisible();
+  await expect(sourceQueue.getByText("No hard verifier blockers remain.")).toBeVisible();
+
+  const packageAfterBetter = await canonicalArtifact<ContentPackageBody>(
+    request,
+    CONTENT_REPAIR_COURSE_ID,
+    "content_package",
+  );
+  const assetsAfterBetter = contentAssets(packageAfterBetter.artifact.body);
+  expect(contentHash(assetsAfterBetter.get("m1_s1_cc"))).not.toBe(
+    contentHash(assetsAfterExisting.get("m1_s1_cc")),
+  );
+  for (const [assetId, previous] of assetsAfterExisting) {
+    if (assetId === "m1_s1_cc") continue;
+    expect(contentHash(assetsAfterBetter.get(assetId)), assetId).toBe(contentHash(previous));
+  }
+
+  const reviewAfterBetter = await contentReview(request, CONTENT_REPAIR_COURSE_ID);
+  const reviewRecordsAfterBetter = new Map(
+    reviewAfterBetter.artifact.body.assets.map((record) => [record.asset_id, record]),
+  );
+  expect(reviewRecordsAfterBetter.get("m1_s1_cc")?.decision).toBe("pending");
+  expect(reviewRecordsAfterBetter.get("m1_s2_cc")?.decision).toBe("pending");
+  for (const [assetId, previous] of afterExistingReviewRecords) {
+    if (assetId === "m1_s1_cc") continue;
+    expect(reviewRecordsAfterBetter.get(assetId), assetId).toMatchObject({
+      decision: previous.decision,
+      asset_fingerprint: previous.asset_fingerprint,
+    });
+  }
+
+  const board = page.getByRole("complementary", { name: "Production board" });
+  await board.getByRole("button", { name: /Grind Size/ }).click();
+  await page.getByRole("button", { name: "Mark asset reviewed" }).click();
+  await expect.poll(async () => {
+    const ledgerResponse = await request.get(
+      `/api/courses/${CONTENT_REPAIR_COURSE_ID}/source-repairs`,
+    );
+    const ledger = (await ledgerResponse.json()) as SourceRepairLedger;
+    return ledger.entries[0]?.status;
+  }).toBe("resolved");
+  await expect(sourceQueue.getByText("Repair resolved")).toBeVisible();
+
+  await board.getByRole("button", { name: /Core Concepts In Coffee Making/ }).click();
+  await page.getByRole("button", { name: "Mark asset reviewed" }).click();
+  await expect.poll(
+    async () => (await contentReview(request, CONTENT_REPAIR_COURSE_ID)).artifact.body.summary.ready_for_package,
+  ).toBe(true);
+  const finalProjection = await contentRepairProjection(request, CONTENT_REPAIR_COURSE_ID);
+  expect(finalProjection).toMatchObject({
+    hard_blocker_total: 0,
+    partial_total: 1,
+    ready_for_package: true,
+  });
+
+  const approveContent = page.getByRole("button", { name: "Approve Student Content" });
+  await expect(approveContent).toBeEnabled();
+  await approveContent.click();
+  await expect.poll(
+    async () => (await stage(request, CONTENT_REPAIR_COURSE_ID, "content")).state,
+  ).toBe("approved");
+  const lessonPlanStage = await stage(
+    request,
+    CONTENT_REPAIR_COURSE_ID,
+    "lesson-plan",
+  );
+  expect(lessonPlanStage.state).toBe("ready");
+  expect(lessonPlanStage.prerequisites_ready).toBe(true);
+  await page.goto(`/courses/${CONTENT_REPAIR_COURSE_ID}/lesson-plan?mode=deterministic`);
+  await expect(page.getByRole("button", { name: "Run Lesson Plan" })).toBeEnabled();
 });

@@ -49,8 +49,20 @@
 > proposal without premature approval, exact Content-origin repair scope, bounded
 > candidate research, human approval, atomic dossier/registry/Course Model/Blueprint
 > routing, unrelated-record preservation, rollback, and the truthful
-> `awaiting_content_repair` boundary. Targeted Content regeneration, reverification, and
-> review closure remain NC-80 work; this checkpoint does not claim complete A10 evidence.
+> `awaiting_content_repair` boundary. At that checkpoint, targeted Content regeneration,
+> reverification, and review closure remained NC-80 work; the following checkpoint
+> records its completion.
+
+> **NC-80 checkpoint — 2026-07-20:** NC-801 through NC-808 passed independent
+> deterministic review with browser Scenarios A8 through A11 evidence. Evidence covers
+> advisory finding classification, truthful source-less and unattributed hard-blocker
+> gating, existing-evidence and better-evidence repair, exact target-only regeneration
+> and reverification, unchanged-asset preservation, Source Repair lifecycle closure,
+> fingerprint-based review reset/preservation, visible nonblocking partial findings,
+> and Content approval releasing Lesson Plan only after review closure. Negative and
+> recovery evidence covers pre-job validation, atomic scope rejection, secret-safe
+> typed failure/retry, and process-restart recovery. This does not mark Milestone 3 or
+> the whole cycle complete.
 
 ## 1. Purpose
 
@@ -347,6 +359,11 @@ Student Content become ready. NC-504 live revision remains deferred.
 
 ### A8 — Generate content with deliberate findings
 
+**Current checkpoint status:** Passed under independently reviewed NC-801 through
+NC-808. Browser evidence projects source-less and unattributed findings as hard
+blockers, keeps the exact asset review control disabled, exposes a target-specific
+repair action, and refreshes from canonical backend state after repair.
+
 The deterministic verifier should produce at least:
 
 1. one missing-attribution or content-error blocker repairable with existing evidence;
@@ -369,6 +386,11 @@ The deterministic verifier should produce at least:
 
 ### A9 — Repair with existing evidence
 
+**Current checkpoint status:** Passed under independently reviewed NC-801 through
+NC-808. Browser and backend evidence prove exact target-only regeneration and
+reverification, changed-fingerprint review reset, unchanged asset hashes, and truthful
+remaining blocker state.
+
 **Operator action**
 
 - Choose “Revise with approved evidence” for the first blocker.
@@ -384,10 +406,11 @@ The deterministic verifier should produce at least:
 
 ### A10 — Repair with better evidence
 
-**Evidence status (2026-07-20):** NC-70 independently verifies the candidate review,
-human source decision, and exact atomic route through the
-`awaiting_content_repair` boundary. NC-80 must still verify the targeted regeneration,
-reverification, blocker outcome, and unchanged-asset hashes before A10 is complete.
+**Current checkpoint status:** Passed across independently reviewed NC-701 through
+NC-709 and NC-801 through NC-808. NC-70 proves candidate review, human source decision,
+and the exact atomic route through `awaiting_content_repair`; NC-80 proves the dependent
+targeted regeneration, reverification, blocker outcome, review synchronization,
+Source Repair lifecycle closure, and unchanged-asset hashes.
 
 **Operator action**
 
@@ -408,6 +431,11 @@ reverification, blocker outcome, and unchanged-asset hashes before A10 is comple
 - Unaffected asset hashes remain identical.
 
 ### A11 — Complete content review and approval
+
+**Current checkpoint status:** Passed under independently reviewed NC-801 through
+NC-808. Browser evidence keeps partial findings visible but nonblocking, requires every
+blocker-free changed review to become current, approves Content only at zero hard
+blockers with current reviews, and then exposes Lesson Plan as ready.
 
 **Operator action**
 

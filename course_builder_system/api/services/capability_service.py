@@ -218,6 +218,7 @@ class StageCapabilityService:
             "add_source": "Add known source",
             "review_asset": "Review content assets",
             "source_repair": "Find better evidence",
+            "content_repair": "Repair named Content assets",
         }
         return self._action(action_id, labels[action_id])
 

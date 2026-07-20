@@ -44,7 +44,7 @@ describe("truthful lifecycle controls", () => {
       <StageView
         stage="content"
         workspace={demoWorkspace}
-        contentCapabilities={{ review: false, revise: false, repair: false }}
+        contentCapabilities={{ review: false, revise: false, contentRepair: false, repair: false }}
       />,
     );
 
@@ -54,20 +54,20 @@ describe("truthful lifecycle controls", () => {
     expect(screen.getByText(/review decisions are unavailable/i)).toBeInTheDocument();
   });
 
-  it("offers the registered scoped asset revision only when projected", () => {
+  it("routes verifier repair through the typed command while keeping generic revision separate", () => {
     const onContentAction = vi.fn();
     render(
       <StageView
         stage="content"
         workspace={demoWorkspace}
-        contentCapabilities={{ review: true, revise: true, repair: false }}
+        contentCapabilities={{ review: true, revise: true, contentRepair: true, repair: false }}
         onContentAction={onContentAction}
       />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /revise with approved evidence/i }));
     expect(onContentAction).toHaveBeenCalledWith(
-      "revise",
+      "repair_existing",
       expect.objectContaining({ id: "m1_s4_cc" }),
       expect.objectContaining({ id: "cl2" }),
     );
@@ -79,13 +79,13 @@ describe("truthful lifecycle controls", () => {
     expect(screen.queryByRole("button", { name: /find better evidence/i })).not.toBeInTheDocument();
   });
 
-  it("offers the registered bounded source repair independently of scoped revision", () => {
+  it("offers both bounded repair strategies independently of generic scoped revision", () => {
     const onContentAction = vi.fn();
     render(
       <StageView
         stage="content"
         workspace={demoWorkspace}
-        contentCapabilities={{ review: true, revise: false, repair: true }}
+        contentCapabilities={{ review: true, revise: false, contentRepair: true, repair: true }}
         onContentAction={onContentAction}
       />,
     );
@@ -96,7 +96,162 @@ describe("truthful lifecycle controls", () => {
       expect.objectContaining({ id: "m1_s4_cc" }),
       expect.objectContaining({ id: "cl2" }),
     );
-    expect(screen.queryByRole("button", { name: /revise with approved evidence/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /revise with approved evidence/i }));
+    expect(onContentAction).toHaveBeenLastCalledWith(
+      "repair_existing",
+      expect.objectContaining({ id: "m1_s4_cc" }),
+      expect.objectContaining({ id: "cl2" }),
+    );
+    expect(screen.queryByRole("button", { name: /request scoped revision/i })).not.toBeInTheDocument();
+  });
+
+  it("groups advisory repair findings and shows their current state", () => {
+    const workspace: Workspace = {
+      ...demoWorkspace,
+      contentRepairs: {
+        findings: [
+          {
+            id: "m1_s4_cc:cl2",
+            subtopicId: "m1_s4",
+            assetId: "m1_s4_cc",
+            claimId: "cl2",
+            findingId: "cl2",
+            text: "The extraction claim lacks supporting evidence.",
+            note: "No relevant passage was found.",
+            classification: "insufficient_evidence",
+            classificationReason: "The assigned source does not cover the claim.",
+            recommendedStrategy: "better_evidence",
+            blocking: true,
+            state: "awaiting_content_repair",
+            sourceRepairId: "repair_1",
+          },
+          {
+            id: "m1_s4_cc:cl1",
+            subtopicId: "m1_s4",
+            assetId: "m1_s4_cc",
+            claimId: "cl1",
+            findingId: "cl1",
+            text: "The passage only partially supports the wording.",
+            note: "Human judgment is required.",
+            classification: "human_review",
+            classificationReason: "Partial support is advisory and nonblocking.",
+            recommendedStrategy: null,
+            blocking: false,
+            state: "ready",
+            sourceRepairId: null,
+          },
+        ],
+        groups: {
+          likely_content_error: 0,
+          missing_attribution: 0,
+          insufficient_evidence: 1,
+          human_review: 1,
+        },
+        hardBlockerTotal: 1,
+        partialTotal: 1,
+        readyForPackage: false,
+      },
+    };
+
+    render(
+      <StageView
+        stage="content"
+        workspace={workspace}
+        contentCapabilities={{ review: true, revise: false, contentRepair: true, repair: true }}
+      />,
+    );
+
+    const queue = screen.getByRole("region", { name: "Content repair queue" });
+    expect(queue).toHaveTextContent("Insufficient evidence");
+    expect(queue).toHaveTextContent("Human review");
+    expect(queue).toHaveTextContent("Awaiting content repair");
+    expect(queue).toHaveTextContent("1 blocking · 1 review");
+    expect(screen.getByRole("button", {
+      name: "Revise with approved evidence for m1_s4_cc, finding cl2",
+    })).toBeInTheDocument();
+    expect(screen.getByRole("button", {
+      name: "Find better evidence for m1_s4_cc, finding cl2",
+    })).toBeInTheDocument();
+  });
+
+  it("keeps source-less claims and unattributed findings blocking in the review UI", () => {
+    const baseAsset = demoWorkspace.content.assets[0];
+    const asset = {
+      ...baseAsset,
+      reviewStatus: "pending" as const,
+      claims: [{
+        ...baseAsset.claims[0],
+        sourceId: null,
+        support: "supported" as const,
+      }],
+      verification: {
+        supported: 0,
+        partial: 0,
+        unsupported: 0,
+        ungrounded: 1,
+        unattributed: 1,
+      },
+    };
+    const workspace: Workspace = {
+      ...demoWorkspace,
+      content: { ...demoWorkspace.content, assets: [asset], completed: 1, expected: 1 },
+      contentRepairs: {
+        findings: [
+          {
+            id: `${asset.id}:${asset.claims[0].id}`,
+            subtopicId: asset.subtopicId,
+            assetId: asset.id,
+            claimId: asset.claims[0].id,
+            findingId: asset.claims[0].id,
+            text: asset.claims[0].text,
+            note: "No approved source attribution.",
+            classification: "missing_attribution",
+            classificationReason: "The claim has no approved source.",
+            recommendedStrategy: "existing_evidence",
+            blocking: true,
+            state: "ready",
+          },
+          {
+            id: `${asset.id}:unattributed_1`,
+            subtopicId: asset.subtopicId,
+            assetId: asset.id,
+            claimId: null,
+            findingId: "unattributed_1",
+            text: "A second factual statement is not attributed.",
+            note: "The verifier found an unattributed statement.",
+            classification: "missing_attribution",
+            classificationReason: "No approved source attribution is attached.",
+            recommendedStrategy: "existing_evidence",
+            blocking: true,
+            state: "ready",
+          },
+        ],
+        groups: {
+          likely_content_error: 0,
+          missing_attribution: 2,
+          insufficient_evidence: 0,
+          human_review: 0,
+        },
+        hardBlockerTotal: 2,
+        partialTotal: 0,
+        readyForPackage: false,
+      },
+    };
+
+    render(
+      <StageView
+        stage="content"
+        workspace={workspace}
+        contentCapabilities={{ review: true, revise: false, contentRepair: true, repair: true }}
+        onContentAction={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("2 blocking verification findings")).toBeInTheDocument();
+    expect(screen.getByText("No ground").parentElement).toHaveTextContent("2");
+    expect(screen.getByText("1 to inspect")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mark asset reviewed" })).toBeDisabled();
+    expect(screen.getByText("2 blocking findings must be repaired first.")).toBeInTheDocument();
   });
 
   it("keeps source mutation controls disabled without a projected source decision", () => {

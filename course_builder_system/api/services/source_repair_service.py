@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from agents import content_review
 from agents.source_repair import (
     DeterministicSourceRepairProvider,
     RepairResearchScope,
@@ -15,7 +16,9 @@ from agents.source_repair import (
     build_source_repair_artifact,
     candidate_record,
 )
+from api.services.approval_guard import hard_verifier_blocker_count
 from api.services.artifact_repository import (
+    ArtifactNotFound,
     ArtifactRepository,
     ReadOnlyCourse,
     VersionConflict,
@@ -28,6 +31,15 @@ from source_store import SourceStore
 
 def _now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
+
+
+def _claim_is_supported_and_attributed(claim: dict[str, Any]) -> bool:
+    source_id = claim.get("source_id")
+    return (
+        claim.get("support") == "supported"
+        and isinstance(source_id, str)
+        and bool(source_id.strip())
+    )
 
 
 class SourceRepairOriginChanged(ValueError):
@@ -65,6 +77,235 @@ class SourceRepairService:
             "entries": ledger.get("body", {}).get("entries", []),
         }
 
+    def begin_content_repair(
+        self,
+        course_id: str,
+        repair_id: str,
+        *,
+        expected_checksum: str,
+        expected_content_checksum: str,
+        asset_ids: list[str],
+    ) -> dict[str, Any]:
+        """Move one routed entry into regeneration under an exact precondition."""
+        ledger = self.repository.require(course_id, "source_repair")
+        actual = self.repository.checksum(ledger)
+        if actual != expected_checksum:
+            raise VersionConflict(actual)
+        entry = self._entry(ledger, repair_id)
+        if entry.get("status") != "awaiting_content_repair":
+            raise ValueError("source repair is not awaiting targeted Content repair")
+        content_package = self.repository.require(course_id, "content_package")
+        content_checksum = self.repository.checksum(content_package)
+        if (
+            content_package.get("status") == "stale"
+            or content_checksum != expected_content_checksum
+        ):
+            raise VersionConflict(content_checksum)
+        if entry.get("origin", {}).get("content_checksum") != content_checksum:
+            raise SourceRepairOriginChanged(
+                "the Content Package changed after this source route was confirmed"
+            )
+        routed = entry.get("approved_source_route")
+        if not isinstance(routed, dict):
+            raise ValueError("source repair has no approved route")
+        routed_assets = routed.get("asset_ids")
+        if asset_ids != routed_assets or asset_ids != entry.get("affected_asset_ids"):
+            raise ValueError("better-evidence Content repair must use the exact approved route")
+        started = deepcopy(ledger)
+        started_entry = self._entry(started, repair_id)
+        started_entry["status"] = "regenerating"
+        started_entry["failure_reason"] = None
+        started_entry["updated_at"] = _now()
+        self._prepare_ledger_revision(
+            started,
+            ledger,
+            note=f"Started targeted Content repair for {repair_id}.",
+        )
+        self._validate_ledger(started)
+        return self.repository.save(started, expected_checksum=actual)
+
+    def content_repair_completion(
+        self,
+        ledger: dict[str, Any],
+        repair_id: str,
+        *,
+        content_package: dict[str, Any],
+        changed_asset_ids: list[str],
+    ) -> dict[str, Any]:
+        """Build, but do not save, the Source Repair completion sidecar."""
+        entry = self._entry(ledger, repair_id)
+        if entry.get("status") != "regenerating":
+            raise ValueError("source repair is not regenerating Content")
+        if changed_asset_ids != entry.get("affected_asset_ids"):
+            raise ValueError("Content repair changed assets outside the approved source route")
+        assets = {
+            str(asset.get("id")): asset
+            for subtopic in content_package.get("body", {}).get("subtopics", [])
+            if isinstance(subtopic, dict)
+            for asset in subtopic.get("assets", [])
+            if isinstance(asset, dict) and asset.get("id")
+        }
+        results = []
+        for asset_id in changed_asset_ids:
+            asset = assets.get(asset_id)
+            if asset is None:
+                raise ValueError(f"repaired Content Package is missing {asset_id!r}")
+            verification = asset.get("verification", {})
+            partial = (
+                verification.get("partial", 0)
+                if isinstance(verification, dict) and type(verification.get("partial", 0)) is int
+                else 0
+            )
+            results.append(
+                {
+                    "asset_id": asset_id,
+                    "hard_blockers": hard_verifier_blocker_count(asset),
+                    "partial": partial,
+                    "asset_fingerprint": content_review.asset_fingerprint(asset),
+                }
+            )
+        completed = deepcopy(ledger)
+        completed_entry = self._entry(completed, repair_id)
+        completed_entry["status"] = "awaiting_content_review"
+        completed_entry["final_verifier_result"] = {
+            # The repository owns the envelope timestamp at commit time. Hash the
+            # canonical learner-content body so this audit value remains identical
+            # before and after the atomic batch write.
+            "content_body_checksum": self.repository.checksum(content_package.get("body", {})),
+            "changed_asset_ids": changed_asset_ids,
+            "assets": results,
+            "hard_blocker_total": sum(item["hard_blockers"] for item in results),
+            "partial_total": sum(item["partial"] for item in results),
+            "review_status": "pending",
+        }
+        completed_entry["failure_reason"] = None
+        completed_entry["updated_at"] = _now()
+        self._prepare_ledger_revision(
+            completed,
+            ledger,
+            note=f"Regenerated and reverified Content for {repair_id}.",
+        )
+        self._validate_ledger(completed)
+        return completed
+
+    def fail_content_repair(
+        self,
+        course_id: str,
+        repair_id: str,
+        *,
+        expected_checksum: str,
+        reason: str,
+    ) -> dict[str, Any]:
+        """Return a failed regeneration to its retryable routed boundary."""
+        ledger = self.repository.require(course_id, "source_repair")
+        actual = self.repository.checksum(ledger)
+        if actual != expected_checksum:
+            raise VersionConflict(actual)
+        entry = self._entry(ledger, repair_id)
+        if entry.get("status") != "regenerating":
+            return ledger
+        failed = deepcopy(ledger)
+        failed_entry = self._entry(failed, repair_id)
+        failed_entry["status"] = "awaiting_content_repair"
+        failed_entry["failure_reason"] = _safe_error_message(ValueError(reason))
+        failed_entry["updated_at"] = _now()
+        self._prepare_ledger_revision(
+            failed,
+            ledger,
+            note=f"Targeted Content repair failed for {repair_id}; retry remains available.",
+        )
+        self._validate_ledger(failed)
+        return self.repository.save(failed, expected_checksum=actual)
+
+    def recover_interrupted_content_repair(
+        self,
+        course_id: str,
+        repair_id: str,
+        *,
+        reason: str,
+    ) -> dict[str, Any] | None:
+        """Return an interrupted persisted regeneration to its routed retry boundary."""
+        try:
+            ledger = self.repository.load(course_id, "source_repair")
+        except ArtifactNotFound:
+            return None
+        if ledger is None:
+            return None
+        self._validate_ledger(ledger)
+        try:
+            entry = self._entry(ledger, repair_id)
+        except ValueError:
+            return None
+        if entry.get("status") != "regenerating":
+            return None
+        try:
+            return self.fail_content_repair(
+                course_id,
+                repair_id,
+                expected_checksum=self.repository.checksum(ledger),
+                reason=reason,
+            )
+        except ReadOnlyCourse:
+            return None
+
+    def resolve_after_content_review(self, course_id: str) -> dict[str, Any] | None:
+        """Resolve completed entries only after current affected assets are approved."""
+        ledger = self.repository.load(course_id, "source_repair")
+        review = self.repository.load(course_id, "content_review")
+        package = self.repository.load(course_id, "content_package")
+        if ledger is None or review is None or package is None:
+            return None
+        records = {
+            str(record.get("asset_id")): record
+            for record in review.get("body", {}).get("assets", [])
+            if isinstance(record, dict) and record.get("asset_id")
+        }
+        assets = {
+            str(asset.get("id")): asset
+            for subtopic in package.get("body", {}).get("subtopics", [])
+            if isinstance(subtopic, dict)
+            for asset in subtopic.get("assets", [])
+            if isinstance(asset, dict) and asset.get("id")
+        }
+        updated = deepcopy(ledger)
+        changed = False
+        for entry in updated.get("body", {}).get("entries", []):
+            if entry.get("status") != "awaiting_content_review":
+                continue
+            affected = entry.get("affected_asset_ids", [])
+            current = [assets.get(asset_id) for asset_id in affected]
+            if any(asset is None for asset in current):
+                continue
+            current_assets = [asset for asset in current if asset is not None]
+            if any(hard_verifier_blocker_count(asset) for asset in current_assets):
+                continue
+            if not all(
+                (record := records.get(asset_id)) is not None
+                and record.get("decision") == "approved"
+                and record.get("asset_fingerprint")
+                == content_review.asset_fingerprint(assets[asset_id])
+                for asset_id in affected
+            ):
+                continue
+            entry["status"] = "resolved"
+            result = entry.get("final_verifier_result")
+            if isinstance(result, dict):
+                result["review_status"] = "approved"
+            entry["updated_at"] = _now()
+            changed = True
+        if not changed:
+            return None
+        self._prepare_ledger_revision(
+            updated,
+            ledger,
+            note="Resolved Source Repair entries after current Content review.",
+        )
+        self._validate_ledger(updated)
+        return self.repository.save(
+            updated,
+            expected_checksum=self.repository.checksum(ledger),
+        )
+
     def request(
         self,
         course_id: str,
@@ -92,8 +333,8 @@ class SourceRepairService:
             claim_id=claim_id,
             finding_id=finding_id,
         )
-        if claim.get("support") == "supported":
-            raise ValueError("source repair requires a current non-supported finding")
+        if _claim_is_supported_and_attributed(claim):
+            raise ValueError("source repair requires a current repairable verifier finding")
         gap = evidence_gap.strip()
         if not gap:
             raise ValueError("source repair requires an evidence-gap description")
@@ -555,7 +796,7 @@ class SourceRepairService:
             claim_id=entry["origin"]["claim_id"],
             finding_id=entry["origin"]["finding_id"],
         )
-        if claim.get("support") == "supported":
+        if _claim_is_supported_and_attributed(claim):
             raise SourceRepairOriginChanged(
                 "the originating verifier finding is no longer repairable"
             )

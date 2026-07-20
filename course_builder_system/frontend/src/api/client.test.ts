@@ -14,6 +14,7 @@ import {
   previewCourseModelDecision,
   previewStageImpact,
   reopenStage,
+  requestContentRepair,
   requestSourceRepair,
   reviseStage,
   reviewContentAsset,
@@ -856,7 +857,7 @@ describe("typed API commands", () => {
     });
   });
 
-  it("serializes known-source and bounded Source Repair commands", async () => {
+  it("serializes known-source, Source Repair, and both typed Content Repair strategies", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse({ artifact: {}, checksum: "dossier-next" }, 201))
       .mockResolvedValueOnce(jsonResponse({
@@ -869,7 +870,19 @@ describe("typed API commands", () => {
         source_id: "repair_src_1",
         affected_asset_ids: ["m1_s1_cc"],
         checksum: "repair-routed",
-      }));
+      }))
+      .mockResolvedValueOnce(jsonResponse({
+        strategy: "existing_evidence",
+        target_asset_ids: ["m1_s2_cc"],
+        job: { job_id: "job-2", status: "queued" },
+      }, 202))
+      .mockResolvedValueOnce(jsonResponse({
+        strategy: "better_evidence",
+        target_asset_ids: ["m1_s1_cc"],
+        source_repair_id: "repair_1",
+        job: { job_id: "job-3", status: "queued" },
+        events_url: "/api/jobs/job-3/events",
+      }, 202));
     vi.stubGlobal("fetch", fetchMock);
 
     await addKnownSource("course-1", {
@@ -898,6 +911,20 @@ describe("typed API commands", () => {
       subtopicIds: ["m1_s1"],
       assetIds: ["m1_s1_cc"],
     });
+    const existingRepair = await requestContentRepair("course-1", {
+      expectedContentChecksum: "content-before",
+      strategy: "existing_evidence",
+      targets: [{ assetId: "m1_s2_cc", claimIds: ["cl2"], findingIds: ["cl2"] }],
+      mode: "deterministic",
+    });
+    const betterEvidenceRepair = await requestContentRepair("course-1", {
+      expectedContentChecksum: "content-after-existing",
+      strategy: "better_evidence",
+      targets: [{ assetId: "m1_s1_cc", claimIds: ["cl1"], findingIds: ["cl1"] }],
+      sourceRepairId: "repair_1",
+      expectedSourceRepairChecksum: "repair-routed",
+      mode: "deterministic",
+    });
 
     expect(requestBody(fetchMock, 0)).toMatchObject({
       expected_checksum: "dossier-before",
@@ -924,11 +951,36 @@ describe("typed API commands", () => {
       subtopic_ids: ["m1_s1"],
       asset_ids: ["m1_s1_cc"],
     });
+    expect(requestBody(fetchMock, 4)).toEqual({
+      expected_content_checksum: "content-before",
+      strategy: "existing_evidence",
+      targets: [{ asset_id: "m1_s2_cc", claim_ids: ["cl2"], finding_ids: ["cl2"] }],
+      mode: "deterministic",
+    });
+    expect(requestBody(fetchMock, 5)).toEqual({
+      expected_content_checksum: "content-after-existing",
+      strategy: "better_evidence",
+      targets: [{ asset_id: "m1_s1_cc", claim_ids: ["cl1"], finding_ids: ["cl1"] }],
+      source_repair_id: "repair_1",
+      expected_source_repair_checksum: "repair-routed",
+      mode: "deterministic",
+    });
     expect(requested.repairId).toBe("repair_1");
     expect(routed).toEqual({
       sourceId: "repair_src_1",
       affectedAssetIds: ["m1_s1_cc"],
       checksum: "repair-routed",
+    });
+    expect(existingRepair).toMatchObject({
+      strategy: "existing_evidence",
+      targetAssetIds: ["m1_s2_cc"],
+      events_url: "/api/jobs/job-2/events",
+    });
+    expect(betterEvidenceRepair).toMatchObject({
+      strategy: "better_evidence",
+      targetAssetIds: ["m1_s1_cc"],
+      sourceRepairId: "repair_1",
+      events_url: "/api/jobs/job-3/events",
     });
   });
 

@@ -477,6 +477,18 @@ export const demoWorkspace: Workspace = {
     ],
   },
   sourceRepairs: [],
+  contentRepairs: {
+    findings: [],
+    groups: {
+      likely_content_error: 0,
+      missing_attribution: 0,
+      insufficient_evidence: 0,
+      human_review: 0,
+    },
+    hardBlockerTotal: 0,
+    partialTotal: 0,
+    readyForPackage: false,
+  },
   modules: [
     {
       id: "m1",

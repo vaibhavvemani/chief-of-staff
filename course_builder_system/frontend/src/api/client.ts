@@ -11,6 +11,9 @@ import type {
   BriefQuestionSpec,
   BriefUpdates,
   ContentAsset,
+  ContentRepairCommand,
+  ContentRepairFinding,
+  ContentRepairProjection,
   CourseModelData,
   CourseModelChangeRecord,
   CourseModelOperation,
@@ -393,6 +396,7 @@ const stageActionIds: StageActionId[] = [
   "add_source",
   "source_decision",
   "source_repair",
+  "content_repair",
   "review_asset",
   "revise",
   "approve",
@@ -626,6 +630,7 @@ function normalizeSourceRepairs(value: unknown): SourceRepairEntry[] {
     if (!isRecord(entry) || !isRecord(entry.origin)) return [];
     const decision = isRecord(entry.human_source_decision) ? entry.human_source_decision : null;
     const route = isRecord(entry.approved_source_route) ? entry.approved_source_route : null;
+    const verifier = isRecord(entry.final_verifier_result) ? entry.final_verifier_result : null;
     return [{
       id: asString(entry.id),
       origin: {
@@ -671,8 +676,77 @@ function normalizeSourceRepairs(value: unknown): SourceRepairEntry[] {
       affectedAssetIds: asStringArray(entry.affected_asset_ids),
       status: asString(entry.status) as SourceRepairEntry["status"],
       failureReason: typeof entry.failure_reason === "string" ? entry.failure_reason : null,
+      finalVerifierResult: verifier
+        ? {
+            hardBlockerTotal: asNumber(verifier.hard_blocker_total),
+            partialTotal: asNumber(verifier.partial_total),
+            reviewStatus: asString(verifier.review_status),
+          }
+        : null,
     }];
   });
+}
+
+const contentRepairClassifications = [
+  "likely_content_error",
+  "missing_attribution",
+  "insufficient_evidence",
+  "human_review",
+] as const;
+
+function normalizeContentRepairs(value: unknown): ContentRepairProjection {
+  const emptyGroups = {
+    likely_content_error: 0,
+    missing_attribution: 0,
+    insufficient_evidence: 0,
+    human_review: 0,
+  };
+  if (!isRecord(value)) {
+    return {
+      findings: [],
+      groups: emptyGroups,
+      hardBlockerTotal: 0,
+      partialTotal: 0,
+      readyForPackage: false,
+    };
+  }
+  const findings: ContentRepairFinding[] = asArray(value.findings).flatMap((finding) => {
+    if (!isRecord(finding)) return [];
+    const classification = asString(finding.classification);
+    if (!contentRepairClassifications.includes(
+      classification as (typeof contentRepairClassifications)[number],
+    )) return [];
+    const strategy = asString(finding.recommended_strategy);
+    return [{
+      id: asString(finding.id),
+      subtopicId: asString(finding.subtopic_id),
+      assetId: asString(finding.asset_id),
+      claimId: typeof finding.claim_id === "string" ? finding.claim_id : null,
+      findingId: asString(finding.finding_id),
+      text: asString(finding.text),
+      note: asString(finding.note),
+      classification: classification as ContentRepairFinding["classification"],
+      classificationReason: asString(finding.classification_reason),
+      recommendedStrategy: strategy === "existing_evidence" || strategy === "better_evidence"
+        ? strategy
+        : null,
+      blocking: finding.blocking === true,
+      state: asString(finding.state, "ready") as ContentRepairFinding["state"],
+      sourceRepairId: typeof finding.source_repair_id === "string"
+        ? finding.source_repair_id
+        : null,
+    }];
+  });
+  const groups = isRecord(value.groups) ? value.groups : {};
+  return {
+    findings,
+    groups: Object.fromEntries(
+      contentRepairClassifications.map((name) => [name, asNumber(groups[name])]),
+    ) as ContentRepairProjection["groups"],
+    hardBlockerTotal: asNumber(value.hard_blocker_total),
+    partialTotal: asNumber(value.partial_total),
+    readyForPackage: value.ready_for_package === true,
+  };
 }
 
 function normalizeCompetitors(value: unknown, fallback: Workspace["research"]["competitors"]): Workspace["research"]["competitors"] {
@@ -1074,6 +1148,16 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
     } catch (error) {
       if (!(error instanceof ApiError && error.status === 404)) throw error;
     }
+    let contentRepairProjection: Record<string, unknown> | undefined;
+    if (artifacts.has("content_package")) {
+      try {
+        contentRepairProjection = await apiFetch<Record<string, unknown>>(
+          `/api/courses/${encodeURIComponent(courseId)}/content/repairs`,
+        );
+      } catch (error) {
+        if (!(error instanceof ApiError && error.status === 404)) throw error;
+      }
+    }
     const outcomeStage = backendStages.find((candidate) => candidate.slug === "outcomes")
       ?? projection.stages?.find((candidate) => candidate.slug === "outcomes");
     const demoShape = demoWorkspaceFor(courseId);
@@ -1241,6 +1325,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       },
       sourceRepairs: normalizeSourceRepairs(repairProjection),
       sourceRepairChecksum: asString(repairProjection?.checksum) || undefined,
+      contentRepairs: normalizeContentRepairs(contentRepairProjection),
       courseModel: normalizeCourseModel(artifacts.get("course_model")?.body, base.courseModel),
       courseModelChecksum: artifacts.get("course_model")?.checksum,
       modules: normalizeCourseModel(artifacts.get("course_model")?.body, base.courseModel).modules,
@@ -1889,6 +1974,43 @@ export async function confirmSourceRepairRoute(
     sourceId: asString(response.source_id),
     affectedAssetIds: asStringArray(response.affected_asset_ids),
     checksum: asString(response.checksum),
+  };
+}
+
+export async function requestContentRepair(
+  courseId: string,
+  command: ContentRepairCommand,
+): Promise<JobResponse & {
+  strategy: ContentRepairCommand["strategy"];
+  targetAssetIds: string[];
+  sourceRepairId?: string;
+}> {
+  const response = await apiFetch<Partial<JobResponse> & {
+    job: JobResponse["job"];
+    strategy: ContentRepairCommand["strategy"];
+    target_asset_ids: string[];
+    source_repair_id?: string;
+  }>(`/api/courses/${encodeURIComponent(courseId)}/content/repairs`, {
+    method: "POST",
+    body: JSON.stringify({
+      expected_content_checksum: command.expectedContentChecksum,
+      strategy: command.strategy,
+      targets: command.targets.map((target) => ({
+        asset_id: target.assetId,
+        claim_ids: target.claimIds ?? [],
+        finding_ids: target.findingIds ?? [],
+      })),
+      source_repair_id: command.sourceRepairId,
+      expected_source_repair_checksum: command.expectedSourceRepairChecksum,
+      mode: command.mode,
+    }),
+  });
+  return {
+    ...response,
+    strategy: response.strategy,
+    targetAssetIds: response.target_asset_ids,
+    sourceRepairId: response.source_repair_id,
+    events_url: response.events_url ?? `/api/jobs/${response.job.job_id}/events`,
   };
 }
 

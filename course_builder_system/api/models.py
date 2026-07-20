@@ -573,6 +573,48 @@ class SourceRepairRouteCommand(VersionedCommand):
         return values
 
 
+class ContentRepairTarget(StrictCommand):
+    asset_id: SourceRepairId
+    claim_ids: list[SourceRepairId] = Field(default_factory=list, max_length=50)
+    finding_ids: list[SourceRepairId] = Field(default_factory=list, max_length=50)
+
+    @field_validator("claim_ids", "finding_ids")
+    @classmethod
+    def unique_finding_ids(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)):
+            raise ValueError("content repair claim and finding IDs must be unique")
+        return values
+
+
+class ContentRepairCommand(StrictCommand):
+    expected_content_checksum: str = Field(min_length=6, max_length=128)
+    strategy: Literal["existing_evidence", "better_evidence"]
+    targets: list[ContentRepairTarget] = Field(min_length=1, max_length=20)
+    source_repair_id: SourceRepairId | None = None
+    expected_source_repair_checksum: str | None = Field(
+        default=None,
+        min_length=6,
+        max_length=128,
+    )
+    mode: Literal["deterministic", "live"] = "deterministic"
+
+    @model_validator(mode="after")
+    def validate_strategy_contract(self) -> ContentRepairCommand:
+        asset_ids = [target.asset_id for target in self.targets]
+        if len(asset_ids) != len(set(asset_ids)):
+            raise ValueError("content repair target asset IDs must be unique")
+        if self.strategy == "better_evidence":
+            if self.source_repair_id is None or self.expected_source_repair_checksum is None:
+                raise ValueError(
+                    "better-evidence repair requires a Source Repair ID and checksum"
+                )
+        elif self.source_repair_id is not None or self.expected_source_repair_checksum is not None:
+            raise ValueError(
+                "existing-evidence repair cannot name a Source Repair entry"
+            )
+        return self
+
+
 def _require_non_null_update(
     model: BaseModel,
     fields: tuple[str, ...],

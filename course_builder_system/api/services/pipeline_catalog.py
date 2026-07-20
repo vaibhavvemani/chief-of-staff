@@ -102,7 +102,7 @@ STAGE_CAPABILITIES: dict[str, StageCapabilities] = {
     "course-model": StageCapabilities(direct_actions=("edit",)),
     "blueprint": StageCapabilities(direct_actions=("edit",)),
     "content": StageCapabilities(
-        direct_actions=("review_asset", "source_repair"),
+        direct_actions=("review_asset", "source_repair", "content_repair"),
         revisions=(
             RevisionCapability(
                 target_type="asset",
