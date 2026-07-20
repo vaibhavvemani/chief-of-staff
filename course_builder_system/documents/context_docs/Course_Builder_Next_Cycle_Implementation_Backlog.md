@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-801 through NC-808 independently verified with deterministic browser evidence
+> **Status:** NC-003 resolved; NC-801 through NC-808 independently verified
 > **Updated:** 2026-07-20
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -47,7 +47,7 @@ Unless a task says otherwise, it is complete only when:
 
 ## 4. Dependency overview
 
-Implementation checkpoint (2026-07-20): NC-002, NC-004, NC-005, NC-101 through
+Implementation checkpoint (2026-07-20): NC-002 through NC-005, NC-101 through
 NC-109, NC-201 through NC-207, NC-301, and NC-302 are independently verified. NC-303
 remains deferred to NC-90 behind NC-902. NC-401 through NC-403 passed independent NC-40
 backend checkpoint review on 2026-07-20 after corrective hardening. NC-40 is not
@@ -119,10 +119,32 @@ blocker.
 
 - **Priority:** P0-L
 - **Dependencies:** NC-001
+- **Status:** Resolved on 2026-07-20 with the documented fallback subject.
 - The internal director selects a non-high-stakes subject before live parity validation.
 - The fallback subject is indoor herb gardening for apartment beginners.
 - Keep the live pilot to approximately four to six subtopics and a representative asset
   set so quality and repair remain reviewable.
+
+Recorded boundary:
+
+- **Course ID:** `studio-live-pilot`.
+- **Audience:** apartment beginners with no outdoor growing space assumed.
+- **Practical result:** set up and maintain three container-grown culinary herbs, use a
+  simple care/troubleshooting log, and make a first routine harvest.
+- **Five subtopics:** assess the indoor site; select herbs/containers/growing medium;
+  plant starters or seeds; manage light/water/feeding/rotation; harvest and troubleshoot
+  common problems.
+- **Ten-asset review envelope:** five `course_content` assets, two `activities`, one
+  `case_study`, one `assessment`, and one `resources` asset.
+- **Exclusions:** medicinal or therapeutic use, commercial production, pesticide
+  prescriptions, electrical grow-light installation, and any claim requiring legal,
+  medical, financial, or other expert sign-off.
+- **Public grounding examples:** Penn State Extension's [Growing Herbs
+  Indoors](https://extension.psu.edu/growing-herbs-indoors), University of Minnesota
+  Extension's [Growing herbs in home
+  gardens](https://extension.umn.edu/gardening-minnesota/growing-herbs), and the Royal
+  Horticultural Society's [Growing herbs in
+  containers](https://www.rhs.org.uk/herbs/containers).
 
 **Acceptance:** The subject has accessible public sources, no mandatory high-stakes
 expert sign-off, and a clearly bounded practical result.

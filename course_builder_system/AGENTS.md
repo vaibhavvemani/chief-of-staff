@@ -30,7 +30,9 @@ passed independent NC-80 review on 2026-07-20 with deterministic browser Scenari
 A8 through A11 evidence after corrective hardening of typed retry/restart recovery,
 source-less and unattributed blocker truth, target-only regeneration, source-repair
 lifecycle closure, and review fingerprint synchronization. NC-90 and later packages
-remain unstarted.
+remain unstarted. NC-003 is resolved with the documented fallback live subject,
+`Indoor herb gardening for apartment beginners`, course ID `studio-live-pilot`, a
+five-subtopic boundary, and a representative ten-asset review envelope.
 
 The system turns a sparse subject request into a rendered course folder through:
 
@@ -64,10 +66,10 @@ NC-405 are independently verified; this does not complete NC-40 because NC-406 r
 deferred to NC-90. NC-501 through NC-503 are independently verified; NC-504 remains
 deferred to NC-90 behind NC-905. NC-601 through NC-603 are independently verified;
 NC-604 remains deferred to NC-90 behind NC-908. NC-701 through NC-709 are independently
-verified. NC-801 through NC-808 are independently verified. The next safe action is to
-resolve NC-003 with its documented fallback subject before beginning NC-90. Do not
-start NC-406, NC-504, or NC-604 before their NC-90 dependencies or skip ahead within
-live-agent parity.
+verified. NC-801 through NC-808 are independently verified, and NC-003 is resolved with
+the documented fallback subject. The next safe action is NC-901, followed by the rest
+of NC-90 in dependency order. Do not start NC-406, NC-504, or NC-604 before their NC-90
+dependencies or skip ahead within live-agent parity.
 Source repair plus verifier-driven targeted revision remains the central trust milestone
 after the intervening stage contracts.
 

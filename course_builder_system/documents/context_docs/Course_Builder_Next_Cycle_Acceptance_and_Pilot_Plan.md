@@ -64,6 +64,13 @@
 > typed failure/retry, and process-restart recovery. This does not mark Milestone 3 or
 > the whole cycle complete.
 
+> **NC-003 live-subject checkpoint — 2026-07-20:** The documented fallback is selected
+> for live validation: `Indoor herb gardening for apartment beginners`, course ID
+> `studio-live-pilot`. The boundary is five subtopics and ten representative learner
+> assets, with a practical three-container setup/care/harvest outcome, accessible public
+> horticultural sources, and no medicinal, commercial, pesticide-prescription,
+> electrical-installation, or other expert-sign-off scope.
+
 ## 1. Purpose
 
 This document defines how the next development cycle will be proven complete.
@@ -114,7 +121,7 @@ Why:
 The acceptance course must be created under temporary artifact/runtime/render roots. Do
 not mutate the committed `coffee-acceptance` or `coffee-live-main` snapshots.
 
-### 3.2 Live acceptance subject
+### 3.2 Live acceptance subject — selected
 
 The internal director should select the final live subject before Milestone 6 closes.
 Selection criteria:
@@ -135,6 +142,27 @@ Fallback subject:
 Recommended fallback course ID:
 
 `studio-live-pilot`
+
+**Recorded selection (2026-07-20):** use the fallback subject and course ID above for
+NC-90 and NC-110 live validation.
+
+- Audience: apartment beginners with no outdoor growing space assumed.
+- Practical result: set up and maintain three container-grown culinary herbs, use a
+  simple care/troubleshooting log, and make a first routine harvest.
+- Five subtopics: indoor site assessment; herb/container/growing-medium selection;
+  planting starters or seeds; light/water/feeding/rotation; harvest and common-problem
+  troubleshooting.
+- Ten-asset envelope: five `course_content` assets, two `activities`, one `case_study`,
+  one `assessment`, and one `resources` asset.
+- Excluded: medicinal or therapeutic use, commercial cultivation, pesticide
+  prescriptions, electrical grow-light installation, and claims requiring expert
+  sign-off.
+- Verified public grounding examples: Penn State Extension's [Growing Herbs
+  Indoors](https://extension.psu.edu/growing-herbs-indoors), University of Minnesota
+  Extension's [Growing herbs in home
+  gardens](https://extension.umn.edu/gardening-minnesota/growing-herbs), and the Royal
+  Horticultural Society's [Growing herbs in
+  containers](https://www.rhs.org.uk/herbs/containers).
 
 ### 3.3 Pilot course boundary
 
