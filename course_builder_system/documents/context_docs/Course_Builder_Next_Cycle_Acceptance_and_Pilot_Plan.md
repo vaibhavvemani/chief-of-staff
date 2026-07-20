@@ -25,8 +25,16 @@
 > references, source provenance, shared schema enforcement, and rollback cleanup.
 > NC-404 and NC-405 passed independent review with deterministic browser Scenario A6
 > evidence, including the exact-preview structural diff. NC-40 is not complete because
-> NC-406 remains deferred to NC-90. NC-406 and all later packages
-> remain unstarted. This does not mark Milestone 3 or the whole cycle complete.
+> NC-406 remains deferred to NC-90. This does not mark Milestone 3 or the whole cycle
+> complete.
+
+> **NC-50 checkpoint — 2026-07-20:** NC-501 through NC-503 passed independent
+> deterministic review with browser Scenario A7 evidence. Evidence covers typed
+> defaults and per-subtopic exceptions, exact asset/depth contracts, word/time/example/
+> case/assessment controls, explicit anchor waivers, reconciliation and stale-content
+> preview, refresh and checksum-conflict recovery, approved-source-only routing, and
+> rejection without mutation for noncurrent Course Models or rejected/contentless
+> sources. NC-504 remains deferred to NC-90 behind NC-905. NC-60 is next.
 
 ## 1. Purpose
 
@@ -299,6 +307,11 @@ remains deferred to NC-90.
 - Blueprint becomes ready.
 
 ### A7 — Generate and edit Blueprint
+
+**Current checkpoint status:** Passed under independently reviewed NC-501 through
+NC-503. The deterministic browser scenario persists and refreshes the exact 17-unit
+selection, verifies authoritative source routes, approves Blueprint, and observes
+Student Content become ready. NC-504 live revision remains deferred.
 
 **Operator action**
 

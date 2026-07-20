@@ -1,5 +1,7 @@
 import { demoCourses, demoWorkspaceFor } from "../data/demo";
 import type {
+  BlueprintAssetType,
+  BlueprintDecisionDraft,
   BlueprintPlan,
   BriefData,
   BriefGap,
@@ -367,6 +369,20 @@ const allStageSlugs: StageSlug[] = [
   "package",
 ];
 
+const blueprintAssetTypes: BlueprintAssetType[] = [
+  "learning_objectives",
+  "course_content",
+  "summary",
+  "case_study",
+  "assessment",
+  "activities",
+  "resources",
+];
+
+function isBlueprintAssetType(value: string): value is BlueprintAssetType {
+  return blueprintAssetTypes.includes(value as BlueprintAssetType);
+}
+
 const stageActionIds: StageActionId[] = [
   "run",
   "retry",
@@ -661,45 +677,60 @@ function normalizeBlueprint(value: unknown, fallback: Workspace["blueprint"]): W
   const defaultsValue = isRecord(value.course_defaults) ? value.course_defaults : {};
   const depth = isRecord(defaultsValue.depth_budget) ? defaultsValue.depth_budget : {};
   const wordRange = isRecord(depth.target_word_range) ? depth.target_word_range : {};
+  const defaults = {
+    depth: asString(depth.level, fallback.defaults.depth),
+    minutes: asNumber(depth.target_learning_minutes, fallback.defaults.minutes),
+    wordMinimum: asNumber(wordRange.minimum, fallback.defaults.wordMinimum),
+    wordTarget: asNumber(wordRange.target, fallback.defaults.wordTarget),
+    wordMaximum: asNumber(wordRange.maximum, fallback.defaults.wordMaximum),
+    examples: asNumber(depth.required_example_count, fallback.defaults.examples),
+    caseDepth: asString(depth.case_depth, fallback.defaults.caseDepth),
+    assessmentComplexity: asString(depth.assessment_complexity, fallback.defaults.assessmentComplexity),
+    assetTypes: asStringArray(defaultsValue.default_asset_types).filter(isBlueprintAssetType),
+  };
   const plans: BlueprintPlan[] = asArray(value.subtopic_plans).flatMap((planValue) => {
     if (!isRecord(planValue)) return [];
     const budget = isRecord(planValue.depth_budget) ? planValue.depth_budget : {};
     const range = isRecord(budget.target_word_range) ? budget.target_word_range : {};
+    const assets = asArray(planValue.asset_plan).flatMap((asset) => {
+      if (!isRecord(asset)) return [];
+      const assetType = asString(asset.asset_type);
+      if (!isBlueprintAssetType(assetType)) return [];
+      return [{
+        id: asString(asset.id),
+        assetType,
+        title: asString(asset.title),
+        selectionStatus: asString(asset.selection_status),
+        sourceIds: asStringArray(asset.source_ids),
+      }];
+    });
+    const selected = assets.filter((asset) => asset.selectionStatus === "selected").map((asset) => asset.assetType);
+    const sameAssets = selected.length === defaults.assetTypes.length
+      && selected.every((assetType) => defaults.assetTypes.includes(assetType));
+    const planValues = {
+      depth: asString(budget.level),
+      minutes: asNumber(budget.target_learning_minutes),
+      wordMinimum: asNumber(range.minimum),
+      wordTarget: asNumber(range.target),
+      wordMaximum: asNumber(range.maximum),
+      examples: asNumber(budget.required_example_count),
+      caseDepth: asString(budget.case_depth),
+      assessmentComplexity: asString(budget.assessment_complexity),
+    };
     return [
       {
         subtopicId: asString(planValue.subtopic_id),
-        depth: asString(budget.level),
-        minutes: asNumber(budget.target_learning_minutes),
-        wordTarget: asNumber(range.target),
-        examples: asNumber(budget.required_example_count),
-        caseDepth: asString(budget.case_depth),
-        assessmentComplexity: asString(budget.assessment_complexity),
-        exception: asString(budget.case_depth) !== asString(depth.case_depth),
-        assets: asArray(planValue.asset_plan).flatMap((asset) =>
-          isRecord(asset)
-            ? [
-                {
-                  id: asString(asset.id),
-                  assetType: asString(asset.asset_type),
-                  title: asString(asset.title),
-                  selectionStatus: asString(asset.selection_status),
-                  sourceIds: asStringArray(asset.source_ids),
-                },
-              ]
-            : [],
+        ...planValues,
+        exception: !sameAssets || Object.entries(planValues).some(
+          ([field, fieldValue]) => fieldValue !== defaults[field as keyof typeof planValues],
         ),
+        anchorWaiverConfirmed: Boolean(planValue.anchor_asset_waiver_confirmed),
+        assets,
       },
     ];
   });
   return {
-    defaults: {
-      depth: asString(depth.level, fallback.defaults.depth),
-      minutes: asNumber(depth.target_learning_minutes, fallback.defaults.minutes),
-      wordTarget: asNumber(wordRange.target, fallback.defaults.wordTarget),
-      examples: asNumber(depth.required_example_count, fallback.defaults.examples),
-      caseDepth: asString(depth.case_depth, fallback.defaults.caseDepth),
-      assessmentComplexity: asString(depth.assessment_complexity, fallback.defaults.assessmentComplexity),
-    },
+    defaults,
     plans: plans.length ? plans : fallback.plans,
   };
 }
@@ -958,9 +989,10 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       courseModel: { modules: [], courseOutcomeIds: [], rationales: [], eligibleSources: [] },
       courseModelChecksum: artifacts.get("course_model")?.checksum,
       blueprint: {
-        defaults: { depth: "", minutes: 0, wordTarget: 0, examples: 0, caseDepth: "", assessmentComplexity: "" },
+        defaults: { depth: "", minutes: 0, wordMinimum: 0, wordTarget: 0, wordMaximum: 0, examples: 0, caseDepth: "", assessmentComplexity: "", assetTypes: [] },
         plans: [],
       },
+      blueprintChecksum: artifacts.get("blueprint")?.checksum,
       content: { assets: [], completed: 0, expected: 0 },
       lessonPlan: { sessions: [], totalDurationMinutes: 0, expectedSubtopicIds: [], coveredSubtopicIds: [] },
       package: {
@@ -1060,6 +1092,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       courseModelChecksum: artifacts.get("course_model")?.checksum,
       modules: normalizeCourseModel(artifacts.get("course_model")?.body, base.courseModel).modules,
       blueprint: normalizeBlueprint(artifacts.get("blueprint")?.body, base.blueprint),
+      blueprintChecksum: artifacts.get("blueprint")?.checksum,
       content,
       lessonPlan: normalizeLessonPlan(artifacts.get("lesson_plan")?.body, base.lessonPlan),
       package: {
@@ -1348,6 +1381,56 @@ export async function saveCourseModelDecision(
       ? Object.fromEntries(Object.entries(response.allocated_ids).filter((entry): entry is [string, string] => typeof entry[1] === "string"))
       : {},
     impact: normalizeImpactResponse(isRecord(response.impact) ? response.impact : {}, "course-model", "edit"),
+  };
+}
+
+export async function saveBlueprintDecision(
+  courseId: string,
+  decision: BlueprintDecisionDraft,
+  expectedChecksum: string,
+): Promise<{ blueprint: Workspace["blueprint"]; checksum: string }> {
+  const depthPayload = (depth: Partial<BlueprintDecisionDraft["defaultDepth"]>) => ({
+    level: depth.depth,
+    target_learning_minutes: depth.minutes,
+    target_word_range: depth.wordMinimum === undefined && depth.wordTarget === undefined && depth.wordMaximum === undefined
+      ? undefined
+      : {
+          minimum: depth.wordMinimum,
+          target: depth.wordTarget,
+          maximum: depth.wordMaximum,
+        },
+    required_example_count: depth.examples,
+    case_depth: depth.caseDepth,
+    assessment_complexity: depth.assessmentComplexity,
+  });
+  const response = await apiFetch<Record<string, unknown>>(
+    `/api/courses/${encodeURIComponent(courseId)}/blueprint/decision`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        expected_checksum: expectedChecksum,
+        default_asset_types: decision.defaultAssetTypes,
+        default_depth: compactPayload(depthPayload(decision.defaultDepth)),
+        selected_asset_types: decision.selectedAssetTypes,
+        depth_overrides: Object.fromEntries(
+          Object.entries(decision.depthOverrides).map(([subtopicId, depth]) => [
+            subtopicId,
+            compactPayload(depthPayload(depth)),
+          ]),
+        ),
+        anchor_waivers: decision.anchorWaivers,
+        rationale: decision.rationale,
+      }),
+    },
+  );
+  const artifact = isRecord(response.artifact) ? response.artifact : {};
+  const fallback: Workspace["blueprint"] = {
+    defaults: { depth: "", minutes: 0, wordMinimum: 0, wordTarget: 0, wordMaximum: 0, examples: 0, caseDepth: "", assessmentComplexity: "", assetTypes: [] },
+    plans: [],
+  };
+  return {
+    blueprint: normalizeBlueprint(artifact.body, fallback),
+    checksum: asString(response.checksum),
   };
 }
 

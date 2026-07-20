@@ -12,6 +12,9 @@ STAGE_VIEWS_SOURCE = (
 COURSE_MODEL_EDITOR_SOURCE = (
     ROOT / "frontend" / "src" / "features" / "workspace" / "CourseModelEditor.tsx"
 )
+BLUEPRINT_EDITOR_SOURCE = (
+    ROOT / "frontend" / "src" / "features" / "workspace" / "BlueprintEditor.tsx"
+)
 NEW_COURSE_SOURCE = (
     ROOT / "frontend" / "src" / "features" / "courses" / "NewCoursePage.tsx"
 )
@@ -127,6 +130,20 @@ def test_blueprint_uses_readable_asset_plans_and_explicit_override_context() -> 
     assert 'className="asset-plan-grid"' in stage_views
     assert "Required anchor" in stage_views
     assert "Not selected" in stage_views
+
+
+def test_blueprint_editor_exposes_typed_defaults_exceptions_and_reconciliation() -> None:
+    editor = BLUEPRINT_EDITOR_SOURCE.read_text(encoding="utf-8")
+
+    assert 'aria-label="Course default assets"' in editor
+    assert 'aria-label="Blueprint subtopic exceptions"' in editor
+    assert "Course Content anchor waiver" in editor
+    assert "minimum ≤ target ≤ maximum" in editor
+    assert "Added assets" in editor
+    assert "Removed assets" in editor
+    assert "Existing content that becomes stale" in editor
+    assert "Save Blueprint draft" in editor
+    assert 'role="dialog"' in editor
 
 
 def test_student_content_has_pre_generation_and_structured_review_states() -> None:

@@ -21,7 +21,12 @@ from api.services.lifecycle import (
     StaleImpactPreview,
 )
 from api.services.pipeline_catalog import PipelineCatalog
-from course_model_operations import CourseModelReduction, reduce_course_model_operations
+from course_model_integrity import validate_course_model_semantics
+from course_model_operations import (
+    CourseModelReduction,
+    reduce_course_model_operations,
+    validate_course_model_candidate,
+)
 
 
 class StageNotReopened(RuntimeError):
@@ -401,24 +406,62 @@ class DecisionService:
         self,
         course_id: str,
         *,
+        default_asset_types: list[str] | None,
+        default_depth: dict[str, Any] | None,
         selected_asset_types: dict[str, list[str]],
         depth_overrides: dict[str, dict[str, Any]],
         anchor_waivers: set[str],
         rationale: str,
     ) -> dict[str, Any]:
         self._writable(course_id)
-        self._require_ready_brief(course_id, "blueprint")
+        prerequisites = self._require_current_stage_prerequisites(course_id, "blueprint")
         blueprint = self.repository.require(course_id, "blueprint")
         self._ensure_editable(blueprint, "blueprint")
+        course_model = prerequisites["course_model"]
+        course_outcomes = self.repository.require(course_id, "course_outcomes")
+        research_dossier = self.repository.require(course_id, "research_dossier")
+        approved_source_registry = self.repository.require(
+            course_id,
+            "approved_source_registry",
+        )
+        # Revalidate the approved Course Model against the explicit, content-bearing
+        # source decision before copying any routes into Blueprint. This rejects
+        # corrupted or legacy snapshots that merely retain a registry record after
+        # its source has been rejected.
+        validate_course_model_candidate(
+            course_model,
+            course_outcomes=course_outcomes,
+            research_dossier=research_dossier,
+            approved_source_registry=approved_source_registry,
+        )
+        approved_source_ids_by_subtopic = {
+            str(subtopic["id"]): list(subtopic.get("approved_source_ids", []))
+            for module in course_model.get("body", {}).get("modules", [])
+            for subtopic in module.get("subtopics", [])
+        }
         decided = blueprint_agent.apply_blueprint_decision(
             blueprint,
+            default_asset_types=default_asset_types,
+            default_depth=default_depth,
             selected_asset_types=selected_asset_types,
             depth_overrides=depth_overrides,
             anchor_waivers=anchor_waivers,
+            approved_source_ids_by_subtopic=approved_source_ids_by_subtopic,
             rationale=rationale,
         )
+        integrity_errors = validate_course_model_semantics(
+            course_model,
+            course_outcomes=course_outcomes,
+            research_dossier=research_dossier,
+            approved_source_registry=approved_source_registry,
+            blueprint=decided,
+        )
+        if integrity_errors:
+            raise ValueError("; ".join(integrity_errors))
         decided["revision"] = int(blueprint.get("revision", 0)) + 1
         decided["status"] = "draft"
+        decided["produced_by_step"] = "human"
+        decided["revision_note"] = "Applied typed Blueprint defaults and exceptions."
         saved = self.repository.save(decided, expected_checksum=self.repository.checksum(blueprint))
         self._invalidate_if_changed(course_id, blueprint, saved, {"blueprint"})
         return saved

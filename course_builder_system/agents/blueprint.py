@@ -66,67 +66,127 @@ def build_blueprint_body(course_model: dict) -> dict:
 def apply_blueprint_decision(
     blueprint: dict,
     *,
+    default_asset_types: list[str] | tuple[str, ...] | None = None,
+    default_depth: dict[str, Any] | None = None,
     selected_asset_types: dict[str, list[str] | tuple[str, ...]] | None = None,
     depth_overrides: dict[str, dict[str, Any]] | None = None,
     anchor_waivers: set[str] | None = None,
+    approved_source_ids_by_subtopic: dict[str, list[str] | tuple[str, ...]] | None = None,
     rationale: str = "Human Blueprint checkpoint.",
 ) -> dict:
-    """Apply per-subtopic exceptions to a generated Blueprint."""
+    """Apply course defaults and per-subtopic exceptions to a Blueprint."""
     selected_asset_types = selected_asset_types or {}
     depth_overrides = depth_overrides or {}
     anchor_waivers = anchor_waivers or set()
+    approved_source_ids_by_subtopic = approved_source_ids_by_subtopic or {}
+    rationale = str(rationale).strip()
+    if not rationale:
+        raise ValueError("Blueprint decision rationale cannot be blank")
+    if len(rationale) > 500:
+        raise ValueError("Blueprint decision rationale cannot exceed 500 characters")
     decided = deepcopy(blueprint)
-    plan_ids = {plan["subtopic_id"] for plan in decided.get("body", {}).get("subtopic_plans", [])}
-    unknown = (set(selected_asset_types) | set(depth_overrides) | set(anchor_waivers)) - plan_ids
+    body = decided.get("body", {})
+    plans = body.get("subtopic_plans", [])
+    plan_ids = {plan["subtopic_id"] for plan in plans}
+    unknown = (
+        set(selected_asset_types)
+        | set(depth_overrides)
+        | set(anchor_waivers)
+        | set(approved_source_ids_by_subtopic)
+    ) - plan_ids
     if unknown:
         raise ValueError(f"Blueprint decision references unknown subtopics: {sorted(unknown)}")
 
-    log_index = len(decided["body"].get("decision_log", [])) + 1
-    for plan in decided["body"]["subtopic_plans"]:
+    if default_asset_types is not None:
+        _validate_asset_selection("course defaults", default_asset_types)
+        body["course_defaults"]["default_asset_types"] = list(default_asset_types)
+    if default_depth is not None:
+        _apply_depth_override(body["course_defaults"]["depth_budget"], default_depth)
+
+    original_contract = {
+        "course_defaults": deepcopy(blueprint.get("body", {}).get("course_defaults", {})),
+        "subtopic_plans": deepcopy(blueprint.get("body", {}).get("subtopic_plans", [])),
+    }
+    log_entries: list[tuple[str, str]] = []
+    if default_asset_types is not None:
+        log_entries.append(("course_defaults", "asset_defaults"))
+    if default_depth is not None:
+        log_entries.append(("course_defaults", "depth_defaults"))
+
+    for plan in plans:
         subtopic_id = plan["subtopic_id"]
-        if subtopic_id in selected_asset_types:
-            selected = set(selected_asset_types[subtopic_id])
-            available = {asset["asset_type"] for asset in plan["asset_plan"]}
-            missing = selected - available
-            if missing:
-                raise ValueError(
-                    f"Blueprint decision for {subtopic_id} references unknown asset types: "
-                    f"{sorted(missing)}"
-                )
-            if not selected:
-                raise ValueError(f"Blueprint decision for {subtopic_id} selects no assets")
-            if "course_content" not in selected and subtopic_id not in anchor_waivers:
-                raise ValueError(
-                    f"Blueprint decision for {subtopic_id} omits course_content "
-                    "without an explicit anchor waiver"
-                )
-            for asset in plan["asset_plan"]:
-                asset["selection_status"] = (
-                    "selected" if asset["asset_type"] in selected else "rejected"
-                )
-            plan["anchor_asset_waiver_confirmed"] = subtopic_id in anchor_waivers
-            decided["body"]["decision_log"].append(
-                {
-                    "id": f"bd{log_index}",
-                    "scope": subtopic_id,
-                    "decision": "asset_exception",
-                    "rationale": rationale,
-                }
+        existing_selected = [
+            asset["asset_type"]
+            for asset in plan["asset_plan"]
+            if asset.get("selection_status") == "selected"
+        ]
+        requested = selected_asset_types.get(subtopic_id)
+        has_asset_decision = requested is not None or default_asset_types is not None
+        selected_values = (
+            requested
+            if requested is not None
+            else default_asset_types
+            if default_asset_types is not None
+            else existing_selected
+        )
+        _validate_asset_selection(subtopic_id, selected_values)
+        selected = set(selected_values)
+        waiver = (
+            subtopic_id in anchor_waivers
+            if has_asset_decision
+            else subtopic_id in anchor_waivers
+            or bool(plan.get("anchor_asset_waiver_confirmed"))
+        )
+        if "course_content" not in selected and not waiver:
+            raise ValueError(
+                f"Blueprint decision for {subtopic_id} omits course_content "
+                "without an explicit anchor waiver"
             )
-            log_index += 1
+        if "course_content" in selected and waiver:
+            raise ValueError(
+                f"Blueprint decision for {subtopic_id} confirms an anchor waiver "
+                "while course_content remains selected"
+            )
+        if has_asset_decision:
+            routed_sources = list(
+                approved_source_ids_by_subtopic.get(
+                    subtopic_id,
+                    _existing_routed_sources(plan),
+                )
+            )
+            for asset in plan["asset_plan"]:
+                included = asset["asset_type"] in selected
+                asset["selection_status"] = "selected" if included else "rejected"
+                asset["source_ids"] = list(routed_sources) if included else []
+        if has_asset_decision or subtopic_id in anchor_waivers:
+            plan["anchor_asset_waiver_confirmed"] = waiver
+        if requested is not None:
+            log_entries.append((subtopic_id, "asset_exception"))
+
+        if default_depth is not None:
+            _apply_depth_override(plan["depth_budget"], default_depth)
         if subtopic_id in depth_overrides:
             _apply_depth_override(plan["depth_budget"], depth_overrides[subtopic_id])
-            decided["body"]["decision_log"].append(
-                {
-                    "id": f"bd{log_index}",
-                    "scope": subtopic_id,
-                    "decision": "depth_exception",
-                    "rationale": rationale,
-                }
-            )
-            log_index += 1
-        if subtopic_id in anchor_waivers:
-            plan["anchor_asset_waiver_confirmed"] = True
+            log_entries.append((subtopic_id, "depth_exception"))
+
+    final_contract = {
+        "course_defaults": body.get("course_defaults", {}),
+        "subtopic_plans": plans,
+    }
+    if final_contract == original_contract:
+        raise ValueError("Blueprint decision does not change the current artifact")
+
+    log_index = len(body.get("decision_log", [])) + 1
+    for scope, decision in log_entries:
+        body["decision_log"].append(
+            {
+                "id": f"bd{log_index}",
+                "scope": scope,
+                "decision": decision,
+                "rationale": rationale,
+            }
+        )
+        log_index += 1
     return decided
 
 
@@ -228,8 +288,82 @@ def _apply_depth_override(depth_budget: dict, override: dict[str, Any]) -> None:
     unknown = sorted(set(override) - allowed)
     if unknown:
         raise ValueError(f"unknown Blueprint depth override fields: {unknown}")
+    if not override:
+        raise ValueError("Blueprint depth override must include at least one field")
+    if "level" in override and override["level"] not in {
+        "introductory",
+        "intermediate",
+        "advanced",
+        "custom",
+    }:
+        raise ValueError("Blueprint depth level is invalid")
+    if "target_learning_minutes" in override:
+        value = override["target_learning_minutes"]
+        if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+            raise ValueError("Blueprint target learning minutes must be a positive integer")
+    if "target_word_range" in override:
+        word_range = override["target_word_range"]
+        if not isinstance(word_range, dict) or set(word_range) != {
+            "minimum",
+            "target",
+            "maximum",
+        }:
+            raise ValueError(
+                "Blueprint target word range requires minimum, target, and maximum"
+            )
+        values = [word_range[key] for key in ("minimum", "target", "maximum")]
+        if any(not isinstance(value, int) or isinstance(value, bool) for value in values):
+            raise ValueError("Blueprint target word range values must be integers")
+        invalid_bounds = values[0] < 0 or values[1] < 1 or values[2] < 1
+        if invalid_bounds or not values[0] <= values[1] <= values[2]:
+            raise ValueError(
+                "Blueprint target word range must satisfy minimum <= target <= maximum"
+            )
+    if "required_example_count" in override:
+        value = override["required_example_count"]
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise ValueError("Blueprint example count must be a non-negative integer")
+    if "case_depth" in override and override["case_depth"] not in {
+        "none",
+        "brief",
+        "detailed",
+    }:
+        raise ValueError("Blueprint case depth is invalid")
+    if "assessment_complexity" in override and override["assessment_complexity"] not in {
+        "none",
+        "recall",
+        "application",
+        "analysis",
+    }:
+        raise ValueError("Blueprint assessment complexity is invalid")
     for key, value in override.items():
-        depth_budget[key] = value
+        depth_budget[key] = deepcopy(value)
+
+
+def _validate_asset_selection(scope: str, asset_types: list[str] | tuple[str, ...]) -> None:
+    if not asset_types:
+        raise ValueError(f"Blueprint decision for {scope} selects no assets")
+    duplicates = sorted(
+        {asset_type for asset_type in asset_types if asset_types.count(asset_type) > 1}
+    )
+    if duplicates:
+        raise ValueError(
+            f"Blueprint decision for {scope} contains duplicate asset types: {duplicates}"
+        )
+    unknown = sorted(set(asset_types) - set(ASSET_CATALOG))
+    if unknown:
+        raise ValueError(
+            f"Blueprint decision for {scope} references unknown asset types: {unknown}"
+        )
+
+
+def _existing_routed_sources(plan: dict[str, Any]) -> list[str]:
+    routed: list[str] = []
+    for asset in plan.get("asset_plan", []):
+        for source_id in asset.get("source_ids", []):
+            if source_id not in routed:
+                routed.append(source_id)
+    return routed
 
 
 def _iter_subtopics(course_model: dict) -> list[dict]:

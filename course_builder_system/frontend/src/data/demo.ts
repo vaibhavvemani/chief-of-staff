@@ -210,11 +210,14 @@ const blueprintPlans: BlueprintPlan[] = subtopics.map((subtopic, index) => ({
   subtopicId: subtopic.id,
   depth: "Introductory",
   minutes: 20,
+  wordMinimum: 750,
   wordTarget: 1100,
+  wordMaximum: 1550,
   examples: index === 1 || index === 3 ? 2 : 1,
   caseDepth: index === 3 ? "Detailed" : "None",
   assessmentComplexity: index === 1 || index === 3 ? "Analysis" : "Application",
   exception: index === 3,
+  anchorWaiverConfirmed: false,
   assets: planFor(subtopic),
 }));
 
@@ -512,13 +515,17 @@ export const demoWorkspace: Workspace = {
     defaults: {
       depth: "Introductory",
       minutes: 20,
+      wordMinimum: 750,
       wordTarget: 1100,
+      wordMaximum: 1550,
       examples: 2,
       caseDepth: "Brief",
       assessmentComplexity: "Application",
+      assetTypes: ["learning_objectives", "course_content", "summary", "assessment"],
     },
     plans: blueprintPlans,
   },
+  blueprintChecksum: "demo-blueprint-checksum",
   content: {
     assets: contentAssets,
     completed: contentAssets.length,

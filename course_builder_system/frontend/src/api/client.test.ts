@@ -16,6 +16,7 @@ import {
   runStage,
   saveBriefAnswers,
   saveBriefUpdates,
+  saveBlueprintDecision,
   saveCourseModelDecision,
   saveOutcomeDecision,
   saveSourceDecision,
@@ -494,6 +495,121 @@ describe("typed API commands", () => {
     expect(requestBody(fetchMock)).toEqual({
       selected_ids: ["source-1", "source-3"],
       expected_checksum: "checksum-5",
+    });
+  });
+
+  it("serializes Blueprint defaults, explicit exceptions, and anchor waivers", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
+      artifact: {
+        body: {
+          course_defaults: {
+            default_asset_types: ["course_content", "summary"],
+            depth_budget: {
+              level: "standard",
+              target_learning_minutes: 20,
+              target_word_range: { minimum: 600, target: 800, maximum: 1000 },
+              required_example_count: 2,
+              case_depth: "brief",
+              assessment_complexity: "application",
+            },
+          },
+          subtopic_plans: [{
+            subtopic_id: "s1",
+            anchor_asset_waiver_confirmed: true,
+            depth_budget: {
+              level: "deep",
+              target_learning_minutes: 35,
+              target_word_range: { minimum: 900, target: 1200, maximum: 1500 },
+              required_example_count: 3,
+              case_depth: "detailed",
+              assessment_complexity: "analysis",
+            },
+            asset_plan: [{
+              id: "s1-summary",
+              asset_type: "summary",
+              title: "Troubleshooting summary",
+              selection_status: "selected",
+              source_ids: ["source-1"],
+            }],
+          }],
+        },
+      },
+      checksum: "blueprint-next",
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await saveBlueprintDecision("herb-course", {
+      defaultAssetTypes: ["course_content", "summary"],
+      defaultDepth: {
+        depth: "standard",
+        minutes: 20,
+        wordMinimum: 600,
+        wordTarget: 800,
+        wordMaximum: 1000,
+        examples: 2,
+        caseDepth: "brief",
+        assessmentComplexity: "application",
+      },
+      selectedAssetTypes: { s1: ["summary"] },
+      depthOverrides: {
+        s1: {
+          depth: "deep",
+          minutes: 35,
+          wordMinimum: 900,
+          wordTarget: 1200,
+          wordMaximum: 1500,
+          examples: 3,
+          caseDepth: "detailed",
+          assessmentComplexity: "analysis",
+        },
+      },
+      anchorWaivers: ["s1"],
+      rationale: "The troubleshooting topic needs a deeper applied treatment.",
+    }, "blueprint-before");
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/courses/herb-course/blueprint/decision");
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe("PUT");
+    expect(requestBody(fetchMock)).toEqual({
+      expected_checksum: "blueprint-before",
+      default_asset_types: ["course_content", "summary"],
+      default_depth: {
+        level: "standard",
+        target_learning_minutes: 20,
+        target_word_range: { minimum: 600, target: 800, maximum: 1000 },
+        required_example_count: 2,
+        case_depth: "brief",
+        assessment_complexity: "application",
+      },
+      selected_asset_types: { s1: ["summary"] },
+      depth_overrides: {
+        s1: {
+          level: "deep",
+          target_learning_minutes: 35,
+          target_word_range: { minimum: 900, target: 1200, maximum: 1500 },
+          required_example_count: 3,
+          case_depth: "detailed",
+          assessment_complexity: "analysis",
+        },
+      },
+      anchor_waivers: ["s1"],
+      rationale: "The troubleshooting topic needs a deeper applied treatment.",
+    });
+    expect(result).toMatchObject({
+      checksum: "blueprint-next",
+      blueprint: {
+        defaults: {
+          assetTypes: ["course_content", "summary"],
+          wordMinimum: 600,
+          wordTarget: 800,
+          wordMaximum: 1000,
+        },
+        plans: [{
+          subtopicId: "s1",
+          anchorWaiverConfirmed: true,
+          exception: true,
+          assets: [{ assetType: "summary", sourceIds: ["source-1"] }],
+        }],
+      },
     });
   });
 

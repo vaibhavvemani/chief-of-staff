@@ -374,22 +374,54 @@ export interface CourseModelPreview {
 
 export interface AssetPlan {
   id: string;
-  assetType: string;
+  assetType: BlueprintAssetType;
   title: string;
   selectionStatus: "selected" | "proposed" | "rejected" | string;
   sourceIds: string[];
+}
+
+export type BlueprintAssetType =
+  | "learning_objectives"
+  | "course_content"
+  | "summary"
+  | "case_study"
+  | "assessment"
+  | "activities"
+  | "resources";
+
+export interface BlueprintDepthValues {
+  depth: string;
+  minutes: number;
+  wordMinimum: number;
+  wordTarget: number;
+  wordMaximum: number;
+  examples: number;
+  caseDepth: string;
+  assessmentComplexity: string;
 }
 
 export interface BlueprintPlan {
   subtopicId: string;
   depth: string;
   minutes: number;
+  wordMinimum: number;
   wordTarget: number;
+  wordMaximum: number;
   examples: number;
   caseDepth: string;
   assessmentComplexity: string;
   exception: boolean;
+  anchorWaiverConfirmed: boolean;
   assets: AssetPlan[];
+}
+
+export interface BlueprintDecisionDraft {
+  defaultAssetTypes: BlueprintAssetType[];
+  defaultDepth: BlueprintDepthValues;
+  selectedAssetTypes: Record<string, BlueprintAssetType[]>;
+  depthOverrides: Record<string, Partial<BlueprintDepthValues>>;
+  anchorWaivers: string[];
+  rationale: string;
 }
 
 export interface Claim {
@@ -472,16 +504,10 @@ export interface Workspace {
   courseModel: CourseModelData;
   courseModelChecksum?: string;
   blueprint: {
-    defaults: {
-      depth: string;
-      minutes: number;
-      wordTarget: number;
-      examples: number;
-      caseDepth: string;
-      assessmentComplexity: string;
-    };
+    defaults: BlueprintDepthValues & { assetTypes: BlueprintAssetType[] };
     plans: BlueprintPlan[];
   };
+  blueprintChecksum?: string;
   content: {
     assets: ContentAsset[];
     completed: number;

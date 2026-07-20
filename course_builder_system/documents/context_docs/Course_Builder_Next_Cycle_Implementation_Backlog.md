@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-405 independently verified with deterministic browser evidence
+> **Status:** NC-501 through NC-503 independently verified with deterministic browser evidence
 > **Updated:** 2026-07-20
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -53,7 +53,9 @@ remains deferred to NC-90 behind NC-902. NC-401 through NC-403 passed independen
 backend checkpoint review on 2026-07-20 after corrective hardening. NC-40 is not
 complete. NC-404 is independently verified with deterministic browser Scenario A6
 evidence. NC-405 is independently verified with deterministic browser Scenario A6 diff
-evidence. NC-406 and every later package remain unstarted.
+evidence. NC-501 through NC-503 are independently verified with deterministic browser
+Scenario A7 evidence after corrective lifecycle/source-authority hardening. NC-406 and
+NC-504 remain deferred to NC-90; NC-60 and every later package remain unstarted.
 This status note does not mark Milestone 3, NC-40,
 or any later package complete.
 
@@ -363,7 +365,8 @@ checkpoint review. NC-303 remains deferred to NC-90 behind NC-902 and has not st
 NC-401 through NC-403 are independently verified after the NC-40 backend checkpoint.
 NC-404 is independently verified with deterministic browser Scenario A6 evidence.
 NC-405 is independently verified with deterministic browser evidence. NC-40 is not
-complete. NC-406 and every later package remain unstarted.
+complete. NC-501 through NC-503 are independently verified. NC-406 and NC-504 remain
+deferred; NC-60 and every later package remain unstarted.
 
 ### Tasks
 
@@ -423,8 +426,9 @@ Outcomes and preserve stable IDs where possible.
 backend checkpoint review after corrective hardening. This does not complete NC-40.
 NC-404 is independently verified with deterministic browser Scenario A6 evidence.
 NC-405 is independently verified with deterministic browser Scenario A6 diff evidence.
-NC-406 and every later package remain unstarted. NC-40 is not complete because NC-406
-remains deferred to NC-90.
+NC-501 through NC-503 are independently verified with deterministic browser Scenario A7
+evidence. NC-40 is not complete because NC-406 remains deferred to NC-90. NC-504 is
+also deferred to NC-90 behind NC-905; NC-60 and every later package remain unstarted.
 
 ### Tasks
 
@@ -492,12 +496,18 @@ through the same typed operations.
 
 ## 10. Work package NC-50 — Blueprint decisions
 
+**Implementation status (2026-07-20):** NC-501 through NC-503 passed independent
+checkpoint review with deterministic browser Scenario A7 evidence. Corrective review
+closed draft/stale Course Model mutation and rejected/contentless source-route leaks
+with exact no-mutation regressions. NC-504 remains deferred to NC-90 behind NC-905.
+
 ### Tasks
 
 #### NC-501 — Finalize Blueprint decision contract tests
 
 - **Priority:** P0-D
 - **Dependencies:** NC-104
+- **Status:** Independently verified.
 - Cover defaults, selected assets, overrides, unknown IDs, empty selections, and anchor
   waivers.
 
@@ -505,6 +515,7 @@ through the same typed operations.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-501, NC-105
+- **Status:** Independently verified.
 - Add course default editing and per-subtopic exceptions.
 - Make asset cells interactive.
 - Confirm anchor waivers explicitly.
@@ -513,12 +524,14 @@ through the same typed operations.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-502
+- **Status:** Independently verified.
 - Show added/removed assets and which existing content will become stale.
 
 #### NC-504 — Add scoped live Blueprint revision
 
 - **Priority:** P0-L
 - **Dependencies:** NC-107, NC-905
+- **Status:** Deferred to NC-90 behind NC-905; unstarted.
 - Request structured selected-asset/depth changes.
 - Validate through the deterministic reducer.
 

@@ -92,6 +92,18 @@ ConceptName = Annotated[str, Field(strict=True, min_length=1, max_length=150)]
 ConceptSummary = Annotated[str, Field(strict=True, min_length=1, max_length=400)]
 CoverageStatement = Annotated[str, Field(strict=True, min_length=1, max_length=300)]
 CourseModelPosition = Annotated[StrictInt, Field(ge=1, le=10_000)]
+BlueprintAssetType = Literal[
+    "learning_objectives",
+    "course_content",
+    "summary",
+    "case_study",
+    "assessment",
+    "activities",
+    "resources",
+]
+BlueprintDepthLevel = Literal["introductory", "intermediate", "advanced", "custom"]
+BlueprintCaseDepth = Literal["none", "brief", "detailed"]
+BlueprintAssessmentComplexity = Literal["none", "recall", "application", "analysis"]
 
 
 class CreateCourseRequest(StrictCommand):
@@ -532,12 +544,86 @@ def _require_non_null_update(
     return model
 
 
+class BlueprintWordRange(StrictCommand):
+    minimum: Annotated[StrictInt, Field(ge=0)]
+    target: Annotated[StrictInt, Field(ge=1)]
+    maximum: Annotated[StrictInt, Field(ge=1)]
+
+    @model_validator(mode="after")
+    def ordered_range(self) -> BlueprintWordRange:
+        if not self.minimum <= self.target <= self.maximum:
+            raise ValueError("word range must satisfy minimum <= target <= maximum")
+        return self
+
+
+class BlueprintDepthChanges(StrictCommand):
+    level: BlueprintDepthLevel | None = None
+    target_learning_minutes: Annotated[StrictInt, Field(ge=1)] | None = None
+    target_word_range: BlueprintWordRange | None = None
+    required_example_count: Annotated[StrictInt, Field(ge=0)] | None = None
+    case_depth: BlueprintCaseDepth | None = None
+    assessment_complexity: BlueprintAssessmentComplexity | None = None
+
+    @model_validator(mode="after")
+    def at_least_one_depth_change(self) -> BlueprintDepthChanges:
+        if not any(getattr(self, field) is not None for field in type(self).model_fields):
+            raise ValueError("Blueprint depth changes must include at least one field")
+        return self
+
+
 class BlueprintDecisionCommand(VersionedCommand):
     expected_checksum: str = Field(min_length=6, max_length=128)
-    selected_asset_types: dict[str, list[str]] = Field(default_factory=dict)
-    depth_overrides: dict[str, dict[str, Any]] = Field(default_factory=dict)
-    anchor_waivers: set[str] = Field(default_factory=set)
-    rationale: str = Field(default="Human Blueprint checkpoint.", max_length=4000)
+    default_asset_types: list[BlueprintAssetType] | None = Field(
+        default=None,
+        min_length=1,
+        max_length=7,
+    )
+    default_depth: BlueprintDepthChanges | None = None
+    selected_asset_types: dict[CourseModelId, list[BlueprintAssetType]] = Field(
+        default_factory=dict,
+        max_length=100,
+    )
+    depth_overrides: dict[CourseModelId, BlueprintDepthChanges] = Field(
+        default_factory=dict,
+        max_length=100,
+    )
+    anchor_waivers: set[CourseModelId] = Field(default_factory=set, max_length=100)
+    rationale: str = Field(
+        default="Human Blueprint checkpoint.",
+        min_length=1,
+        max_length=500,
+    )
+
+    @field_validator("default_asset_types")
+    @classmethod
+    def unique_default_assets(
+        cls,
+        values: list[BlueprintAssetType] | None,
+    ) -> list[BlueprintAssetType] | None:
+        if values is not None and len(values) != len(set(values)):
+            raise ValueError("default asset types must be unique")
+        return values
+
+    @field_validator("selected_asset_types")
+    @classmethod
+    def valid_selected_assets(
+        cls,
+        values: dict[str, list[BlueprintAssetType]],
+    ) -> dict[str, list[BlueprintAssetType]]:
+        for subtopic_id, asset_types in values.items():
+            if not asset_types:
+                raise ValueError(f"{subtopic_id} must select at least one asset")
+            if len(asset_types) != len(set(asset_types)):
+                raise ValueError(f"{subtopic_id} asset types must be unique")
+        return values
+
+    @field_validator("rationale")
+    @classmethod
+    def nonblank_rationale(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("rationale cannot be blank")
+        return normalized
 
 
 class ContentReviewCommand(VersionedCommand):

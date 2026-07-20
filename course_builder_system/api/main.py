@@ -602,8 +602,17 @@ def create_app(
             _check_artifact_version(repository, course_id, "blueprint", command.expected_checksum)
             value = decisions.save_blueprint_decision(
                 course_id,
+                default_asset_types=command.default_asset_types,
+                default_depth=(
+                    command.default_depth.model_dump(exclude_none=True)
+                    if command.default_depth is not None
+                    else None
+                ),
                 selected_asset_types=command.selected_asset_types,
-                depth_overrides=command.depth_overrides,
+                depth_overrides={
+                    subtopic_id: override.model_dump(exclude_none=True)
+                    for subtopic_id, override in command.depth_overrides.items()
+                },
                 anchor_waivers=command.anchor_waivers,
                 rationale=command.rationale,
             )

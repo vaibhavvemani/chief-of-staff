@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 
 const SEEDED_LIFECYCLE_COURSE_ID = "studio-course-model-reopen-fixture";
 const COURSE_MODEL_EDITOR_COURSE_ID = "studio-course-model-editor-fixture";
+const BLUEPRINT_EDITOR_COURSE_ID = "studio-blueprint-editor-fixture";
 
 interface StageProjection {
   state: string;
@@ -57,6 +58,31 @@ interface OutcomesArtifact {
   checksum: string;
 }
 
+interface BlueprintArtifact {
+  artifact: {
+    body: {
+      course_defaults: {
+        default_asset_types: string[];
+      };
+      subtopic_plans: Array<{
+        subtopic_id: string;
+        anchor_asset_waiver_confirmed: boolean;
+        depth_budget: {
+          target_learning_minutes: number;
+          required_example_count: number;
+        };
+        asset_plan: Array<{
+          id: string;
+          asset_type: string;
+          selection_status: string;
+          source_ids: string[];
+        }>;
+      }>;
+    };
+  };
+  checksum: string;
+}
+
 async function stage(
   request: APIRequestContext,
   courseId: string,
@@ -94,6 +120,15 @@ async function outcomesArtifact(
   );
   expect(response.ok()).toBe(true);
   return response.json() as Promise<OutcomesArtifact>;
+}
+
+async function blueprintArtifact(
+  request: APIRequestContext,
+  courseId: string,
+): Promise<BlueprintArtifact> {
+  const response = await request.get(`/api/courses/${courseId}/artifacts/blueprint`);
+  expect(response.ok()).toBe(true);
+  return response.json() as Promise<BlueprintArtifact>;
 }
 
 function questionCard(page: Page, questionId: string) {
@@ -719,5 +754,102 @@ test("Scenario A6 edits, previews, persists, and approves the typed Course Model
   ).toBe("approved");
   await expect.poll(
     async () => (await stage(request, COURSE_MODEL_EDITOR_COURSE_ID, "blueprint")).state,
+  ).toBe("ready");
+});
+
+test("Scenario A7 reconciles and approves an exact typed Blueprint", async ({
+  page,
+  request,
+}) => {
+  await page.goto(
+    `/courses/${BLUEPRINT_EDITOR_COURSE_ID}/blueprint?mode=deterministic`,
+  );
+  await expect(page.getByRole("button", { name: "Run Blueprint" })).toBeVisible();
+  await page.getByRole("button", { name: "Run Blueprint" }).click();
+  await expect.poll(
+    async () => (await stage(request, BLUEPRINT_EDITOR_COURSE_ID, "blueprint")).state,
+    { timeout: 30_000 },
+  ).toBe("awaiting_review");
+  await expect(page.getByRole("heading", { name: "Blueprint" })).toBeVisible();
+
+  await page.locator(".decision-bar").getByRole("button", { name: "Edit Blueprint" }).click();
+  await expect(page.getByRole("heading", { name: "Edit Blueprint" })).toBeVisible();
+
+  const grindAssets = page.getByLabel("Assets for Grind Size");
+  await grindAssets.getByRole("button", { name: /Activity/ }).click();
+  await expect(grindAssets.getByRole("button", { name: /Activity/ })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+
+  const conceptsAssets = page.getByLabel("Assets for Core Concepts In Coffee Making");
+  await conceptsAssets.getByRole("button", { name: /Activity/ }).click();
+  await expect(conceptsAssets.getByRole("button", { name: /Activity/ })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+
+  await page.getByLabel("Coffee Making Troubleshooting learning time").fill("35");
+  await page.getByLabel("Coffee Making Troubleshooting required examples").fill("4");
+  await expect(
+    page.getByLabel("Assets for Coffee Making Troubleshooting")
+      .getByRole("button", { name: /Course Content/ }),
+  ).toHaveAttribute("aria-pressed", "true");
+
+  const reconciliation = page.getByRole("region", { name: "What generation will change" });
+  await expect(reconciliation.getByText("m1_s1_activities")).toBeVisible();
+  await expect(reconciliation.getByText("m1_s2_activities")).toBeVisible();
+  await page.getByRole("checkbox", { name: /reviewed the exact asset additions/i }).check();
+  await page.getByRole("button", { name: "Save Blueprint draft" }).click();
+
+  await expect(page.getByRole("heading", { name: "Blueprint" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Blueprint" })).toBeVisible();
+
+  const saved = await blueprintArtifact(request, BLUEPRINT_EDITOR_COURSE_ID);
+  const plans = Object.fromEntries(
+    saved.artifact.body.subtopic_plans.map((plan) => [plan.subtopic_id, plan]),
+  );
+  expect(
+    plans.m1_s1.asset_plan.find((asset) => asset.asset_type === "activities")
+      ?.selection_status,
+  ).toBe("selected");
+  expect(
+    plans.m1_s2.asset_plan.find((asset) => asset.asset_type === "activities")
+      ?.selection_status,
+  ).toBe("rejected");
+  expect(plans.m1_s4.depth_budget).toMatchObject({
+    target_learning_minutes: 35,
+    required_example_count: 4,
+  });
+  expect(
+    plans.m1_s4.asset_plan.find((asset) => asset.asset_type === "course_content")
+      ?.selection_status,
+  ).toBe("selected");
+  expect(plans.m1_s4.anchor_asset_waiver_confirmed).toBe(false);
+
+  const selectedAssets = saved.artifact.body.subtopic_plans.flatMap((plan) =>
+    plan.asset_plan.filter((asset) => asset.selection_status === "selected"),
+  );
+  expect(selectedAssets).toHaveLength(17);
+  for (const plan of saved.artifact.body.subtopic_plans) {
+    const authoritativeIds = plan.subtopic_id === "m1_s2" || plan.subtopic_id === "m1_s4"
+      ? ["coffee_g1", "coffee_g2"]
+      : ["coffee_g1"];
+    for (const asset of plan.asset_plan) {
+      if (asset.selection_status === "selected") {
+        expect(asset.source_ids).toEqual(authoritativeIds);
+      } else {
+        expect(asset.source_ids).toEqual([]);
+      }
+    }
+  }
+
+  await page.getByRole("button", { name: "Approve Blueprint" }).click();
+  await expect.poll(
+    async () => (await stage(request, BLUEPRINT_EDITOR_COURSE_ID, "blueprint")).state,
+  ).toBe("approved");
+  await expect.poll(
+    async () => (await stage(request, BLUEPRINT_EDITOR_COURSE_ID, "content")).state,
   ).toBe("ready");
 });

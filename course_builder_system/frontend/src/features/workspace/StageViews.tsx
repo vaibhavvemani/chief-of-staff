@@ -4,6 +4,7 @@ import { SourceStatus, VerificationBadge } from "../../components/StatusBadge";
 import type {
   BriefQuestionAnswer,
   BriefQuestionRound as BriefQuestionRoundData,
+  BlueprintDecisionDraft,
   Claim,
   ContentAsset,
   CourseModelOperation,
@@ -19,6 +20,7 @@ import type {
 import { BriefQuestionRound } from "./BriefQuestionRound";
 import { OutcomesEditor } from "./OutcomesEditor";
 import { CourseModelEditor } from "./CourseModelEditor";
+import { BlueprintEditor } from "./BlueprintEditor";
 
 function stageIntro(title: string, kicker: string, description: string, aside?: React.ReactNode) {
   return (
@@ -394,15 +396,39 @@ function blueprintOverrides(plan: Workspace["blueprint"]["plans"][number], defau
   return overrides;
 }
 
-function BlueprintView({ workspace }: { workspace: Workspace }) {
+function BlueprintView({
+  workspace,
+  editing = false,
+  busy = false,
+  conflict = false,
+  serverError,
+  onStartEdit,
+  onCancel,
+  onSave,
+  onRecoverConflict,
+  onDirtyChange,
+}: {
+  workspace: Workspace;
+  editing?: boolean;
+  busy?: boolean;
+  conflict?: boolean;
+  serverError?: string;
+  onStartEdit?: () => void;
+  onCancel?: () => void;
+  onSave?: (decision: BlueprintDecisionDraft) => void;
+  onRecoverConflict?: (choice: "reapply" | "discard") => void;
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const [exceptionsOnly, setExceptionsOnly] = useState(false);
   const plans = exceptionsOnly ? workspace.blueprint.plans.filter((plan) => plan.exception) : workspace.blueprint.plans;
   const names = new Map(workspace.modules.flatMap((module) => module.subtopics.map((subtopic) => [subtopic.id, subtopic.title])));
+  const nameRecord = Object.fromEntries(names);
   const selectedAssets = workspace.blueprint.plans.flatMap((plan) => plan.assets).filter((asset) => asset.selectionStatus === "selected").length;
   const exceptionCount = workspace.blueprint.plans.filter((plan) => plan.exception).length;
+  if (editing) return <BlueprintEditor blueprint={workspace.blueprint} contentAssets={workspace.content.assets} subtopicNames={nameRecord} canEdit={Boolean(onStartEdit)} editing busy={busy} conflict={conflict} serverError={serverError} onStartEdit={onStartEdit ?? (() => undefined)} onCancel={onCancel ?? (() => undefined)} onSave={onSave ?? (() => undefined)} onResolveConflict={onRecoverConflict ?? (() => undefined)} onDirtyChange={onDirtyChange} />;
   return (
     <div className="stage-view blueprint-view">
-      {stageIntro("Blueprint", "05 · Generation control", "Review the exact learner assets the agent will generate for each subtopic, along with its depth and effort budget.", <div className="blueprint-total"><span className="blueprint-total-icon" aria-hidden="true">✓</span><div><strong>{selectedAssets}</strong><span>assets included across {workspace.blueprint.plans.length} subtopics</span></div></div>)}
+      {stageIntro("Blueprint", "05 · Generation control", "Review the exact learner assets the agent will generate for each subtopic, along with its depth and effort budget.", <><div className="blueprint-total"><span className="blueprint-total-icon" aria-hidden="true">✓</span><div><strong>{selectedAssets}</strong><span>assets included across {workspace.blueprint.plans.length} subtopics</span></div></div>{onStartEdit ? <button className="button button-secondary" disabled={busy} onClick={onStartEdit}>Edit Blueprint</button> : null}</>)}
       <section className="defaults-panel">
         <div className="defaults-heading"><div><span className="eyebrow">Course-wide baseline</span><h3>Starting budget for every subtopic</h3><p>Rows marked with an override show exactly what changes from this baseline.</p></div><span className="defaults-review-note"><span aria-hidden="true">◇</span> Review before approval</span></div>
         <dl><DefinitionItem label="Depth" value={workspace.blueprint.defaults.depth} /><DefinitionItem label="Learning time" value={`${workspace.blueprint.defaults.minutes} min`} /><DefinitionItem label="Word target" value={workspace.blueprint.defaults.wordTarget.toLocaleString()} /><DefinitionItem label="Examples" value={workspace.blueprint.defaults.examples} /><DefinitionItem label="Case depth" value={workspace.blueprint.defaults.caseDepth} /><DefinitionItem label="Assessment" value={workspace.blueprint.defaults.assessmentComplexity} /></dl>
@@ -638,13 +664,13 @@ function PackageView({ workspace }: { workspace: Workspace }) {
   );
 }
 
-export function StageView({ stage, workspace, contentCapabilities, onContentAction, onSourceDecision, onEditBrief, outcomesEditing, outcomesBusy, outcomesConflict, outcomesServerError, outcomesServerIssues, onStartOutcomesEdit, onCancelOutcomesEdit, onSaveOutcomes, onResolveOutcomesConflict, onOutcomesDirtyChange, courseModelEditing, courseModelBusy, courseModelConflict, courseModelServerError, courseModelServerIssues, courseModelPreview, onStartCourseModelEdit, onCancelCourseModelEdit, onPreviewCourseModel, onSaveCourseModel, onInvalidateCourseModelPreview, onRecoverCourseModelConflict, onCourseModelDirtyChange, briefQuestionRound, briefQuestionsLoading, briefQuestionsBusy, briefQuestionsError, onRetryBriefQuestions, onSubmitBriefQuestions }: { stage: StageSlug; workspace: Workspace; contentCapabilities?: { review: boolean; revise: boolean }; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onEditBrief?: (section: BriefEditSection) => void; outcomesEditing?: boolean; outcomesBusy?: boolean; outcomesConflict?: boolean; outcomesServerError?: string; outcomesServerIssues?: OutcomeValidationIssue[]; onStartOutcomesEdit?: () => void; onCancelOutcomesEdit?: () => void; onSaveOutcomes?: (decision: OutcomeDecisionDraft) => void; onResolveOutcomesConflict?: (choice: "latest" | "keep") => void; onOutcomesDirtyChange?: (dirty: boolean) => void; courseModelEditing?: boolean; courseModelBusy?: boolean; courseModelConflict?: boolean; courseModelServerError?: string; courseModelServerIssues?: CourseModelValidationIssue[]; courseModelPreview?: CourseModelPreview | null; onStartCourseModelEdit?: () => void; onCancelCourseModelEdit?: () => void; onPreviewCourseModel?: (operations: CourseModelOperation[]) => void; onSaveCourseModel?: (operations: CourseModelOperation[], impactChecksum: string) => void; onInvalidateCourseModelPreview?: () => void; onRecoverCourseModelConflict?: (choice: "reapply" | "discard") => void; onCourseModelDirtyChange?: (dirty: boolean) => void; briefQuestionRound?: BriefQuestionRoundData; briefQuestionsLoading?: boolean; briefQuestionsBusy?: boolean; briefQuestionsError?: string; onRetryBriefQuestions?: () => void; onSubmitBriefQuestions?: (answers: BriefQuestionAnswer[]) => void }) {
+export function StageView({ stage, workspace, contentCapabilities, onContentAction, onSourceDecision, onEditBrief, outcomesEditing, outcomesBusy, outcomesConflict, outcomesServerError, outcomesServerIssues, onStartOutcomesEdit, onCancelOutcomesEdit, onSaveOutcomes, onResolveOutcomesConflict, onOutcomesDirtyChange, courseModelEditing, courseModelBusy, courseModelConflict, courseModelServerError, courseModelServerIssues, courseModelPreview, onStartCourseModelEdit, onCancelCourseModelEdit, onPreviewCourseModel, onSaveCourseModel, onInvalidateCourseModelPreview, onRecoverCourseModelConflict, onCourseModelDirtyChange, blueprintEditing, blueprintBusy, blueprintConflict, blueprintServerError, onStartBlueprintEdit, onCancelBlueprintEdit, onSaveBlueprint, onRecoverBlueprintConflict, onBlueprintDirtyChange, briefQuestionRound, briefQuestionsLoading, briefQuestionsBusy, briefQuestionsError, onRetryBriefQuestions, onSubmitBriefQuestions }: { stage: StageSlug; workspace: Workspace; contentCapabilities?: { review: boolean; revise: boolean }; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onEditBrief?: (section: BriefEditSection) => void; outcomesEditing?: boolean; outcomesBusy?: boolean; outcomesConflict?: boolean; outcomesServerError?: string; outcomesServerIssues?: OutcomeValidationIssue[]; onStartOutcomesEdit?: () => void; onCancelOutcomesEdit?: () => void; onSaveOutcomes?: (decision: OutcomeDecisionDraft) => void; onResolveOutcomesConflict?: (choice: "latest" | "keep") => void; onOutcomesDirtyChange?: (dirty: boolean) => void; courseModelEditing?: boolean; courseModelBusy?: boolean; courseModelConflict?: boolean; courseModelServerError?: string; courseModelServerIssues?: CourseModelValidationIssue[]; courseModelPreview?: CourseModelPreview | null; onStartCourseModelEdit?: () => void; onCancelCourseModelEdit?: () => void; onPreviewCourseModel?: (operations: CourseModelOperation[]) => void; onSaveCourseModel?: (operations: CourseModelOperation[], impactChecksum: string) => void; onInvalidateCourseModelPreview?: () => void; onRecoverCourseModelConflict?: (choice: "reapply" | "discard") => void; onCourseModelDirtyChange?: (dirty: boolean) => void; blueprintEditing?: boolean; blueprintBusy?: boolean; blueprintConflict?: boolean; blueprintServerError?: string; onStartBlueprintEdit?: () => void; onCancelBlueprintEdit?: () => void; onSaveBlueprint?: (decision: BlueprintDecisionDraft) => void; onRecoverBlueprintConflict?: (choice: "reapply" | "discard") => void; onBlueprintDirtyChange?: (dirty: boolean) => void; briefQuestionRound?: BriefQuestionRoundData; briefQuestionsLoading?: boolean; briefQuestionsBusy?: boolean; briefQuestionsError?: string; onRetryBriefQuestions?: () => void; onSubmitBriefQuestions?: (answers: BriefQuestionAnswer[]) => void }) {
   switch (stage) {
     case "brief": return <BriefView workspace={workspace} onEdit={onEditBrief} questionRound={briefQuestionRound} questionsLoading={briefQuestionsLoading} questionsBusy={briefQuestionsBusy} questionsError={briefQuestionsError} onRetryQuestions={onRetryBriefQuestions} onSubmitQuestions={onSubmitBriefQuestions} />;
     case "outcomes": return <OutcomesView workspace={workspace} editing={outcomesEditing} busy={outcomesBusy} conflict={outcomesConflict} serverError={outcomesServerError} serverIssues={outcomesServerIssues} onStartEdit={onStartOutcomesEdit} onCancel={onCancelOutcomesEdit} onSave={onSaveOutcomes} onResolveConflict={onResolveOutcomesConflict} onDirtyChange={onOutcomesDirtyChange} />;
     case "research": return <ResearchView workspace={workspace} onSourceDecision={onSourceDecision} />;
     case "course-model": return <CourseModelView workspace={workspace} editing={courseModelEditing} busy={courseModelBusy} conflict={courseModelConflict} serverError={courseModelServerError} serverIssues={courseModelServerIssues} preview={courseModelPreview} onStartEdit={onStartCourseModelEdit} onCancel={onCancelCourseModelEdit} onPreview={onPreviewCourseModel} onSave={onSaveCourseModel} onInvalidatePreview={onInvalidateCourseModelPreview} onRecoverConflict={onRecoverCourseModelConflict} onDirtyChange={onCourseModelDirtyChange} />;
-    case "blueprint": return <BlueprintView workspace={workspace} />;
+    case "blueprint": return <BlueprintView workspace={workspace} editing={blueprintEditing} busy={blueprintBusy} conflict={blueprintConflict} serverError={blueprintServerError} onStartEdit={onStartBlueprintEdit} onCancel={onCancelBlueprintEdit} onSave={onSaveBlueprint} onRecoverConflict={onRecoverBlueprintConflict} onDirtyChange={onBlueprintDirtyChange} />;
     case "content": return <ContentView workspace={workspace} canReview={contentCapabilities?.review ?? false} canRevise={contentCapabilities?.revise ?? false} onContentAction={onContentAction} />;
     case "lesson-plan": return <LessonPlanView workspace={workspace} />;
     case "package": return <PackageView workspace={workspace} />;

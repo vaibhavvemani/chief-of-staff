@@ -43,6 +43,20 @@ function renderCourseModelWorkspace() {
   return { ...view, queryClient };
 }
 
+function renderBlueprintWorkspace() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const view = render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={["/courses/herb-course/blueprint?mode=deterministic"]}>
+        <Routes>
+          <Route path="/courses/:courseId/:stage" element={<WorkspacePage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+  return { ...view, queryClient };
+}
+
 const courseModelBody = {
   course_metadata: { course_title: "Indoor herbs", course_outcome_ids: ["co1"] },
   structural_rationale: [{ id: "sr1", statement: "Start with conditions.", related_outcome_ids: ["co1"] }],
@@ -113,6 +127,85 @@ function courseModelFetch(options: { previewConflict?: boolean; saveConflict?: b
     return jsonResponse({ slug: path.split("/").at(-1), artifacts: [] });
   });
   return { fetchMock, requests, getBody: () => body, getChecksum: () => checksum };
+}
+
+function blueprintBody(minutes = 20) {
+  return {
+    course_defaults: {
+      default_asset_types: ["course_content", "summary"],
+      depth_budget: {
+        level: "introductory",
+        target_learning_minutes: minutes,
+        target_word_range: { minimum: 700, target: 1000, maximum: 1400 },
+        required_concept_ids: [],
+        required_example_count: 2,
+        case_depth: "brief",
+        assessment_complexity: "application",
+        expansion_policy: "targeted_by_coverage_gap",
+      },
+      source_routing_policy: "Use approved sources only.",
+    },
+    subtopic_plans: [{
+      subtopic_id: "s1",
+      anchor_asset_waiver_confirmed: false,
+      depth_budget: {
+        level: "introductory",
+        target_learning_minutes: minutes,
+        target_word_range: { minimum: 700, target: 1000, maximum: 1400 },
+        required_concept_ids: ["c1"],
+        required_example_count: 2,
+        case_depth: "brief",
+        assessment_complexity: "application",
+        expansion_policy: "targeted_by_coverage_gap",
+      },
+      asset_plan: [
+        { id: "s1_cc", asset_type: "course_content", title: "Light and placement", format: "pptx", selection_status: "selected", purpose: "Teach.", source_ids: ["src1"] },
+        { id: "s1_summary", asset_type: "summary", title: "Summary", format: "docx", selection_status: "selected", purpose: "Reinforce.", source_ids: ["src1"] },
+        { id: "s1_activities", asset_type: "activities", title: "Activities", format: "docx", selection_status: "proposed", purpose: "Practice.", source_ids: [] },
+      ],
+    }],
+    decision_log: [],
+  };
+}
+
+function blueprintFetch() {
+  let checksum = "blueprint-artifact-1";
+  let body = blueprintBody();
+  let conflictReturned = false;
+  const requests: Array<{ path: string; body?: Record<string, unknown> }> = [];
+  const stagePayload = () => ({
+    slug: "blueprint",
+    label: "Blueprint",
+    state: "awaiting_review",
+    checksum: "blueprint-stage-checksum",
+    dependencies: ["course-model"],
+    downstream_stages: ["content"],
+    prerequisites_ready: true,
+    approval_failures: [],
+    actions: [
+      { id: "edit", label: "Edit Blueprint", enabled: true, requires_impact_confirmation: false },
+      { id: "approve", label: "Approve Blueprint", enabled: true, requires_impact_confirmation: false },
+    ],
+  });
+  const fetchMock = vi.fn(async (pathValue: string | URL | Request, init?: RequestInit) => {
+    const path = String(pathValue);
+    const requestBody = init?.body ? JSON.parse(String(init.body)) as Record<string, unknown> : undefined;
+    requests.push({ path, body: requestBody });
+    if (path.endsWith("/workspace")) return jsonResponse({ course_id: "herb-course", title: "Indoor herbs", current_stage: "blueprint", operator_status: "pending_review", stages: [stagePayload()] });
+    if (path.endsWith("/stages/blueprint")) return jsonResponse({ ...stagePayload(), artifacts: [{ artifact_type: "blueprint", checksum, envelope: { status: "draft" }, body }] });
+    if (path.endsWith("/stages/course-model")) return jsonResponse({ slug: "course-model", artifacts: [{ artifact_type: "course_model", checksum: "course-model-1", envelope: { status: "approved" }, body: courseModelBody }] });
+    if (path.endsWith("/blueprint/decision") && init?.method === "PUT") {
+      if (!conflictReturned) {
+        conflictReturned = true;
+        checksum = "blueprint-artifact-2";
+        body = blueprintBody(25);
+        return jsonResponse({ error: { code: "version_conflict", message: "changed", actual_checksum: checksum } }, 409);
+      }
+      return jsonResponse({ artifact: { body }, checksum });
+    }
+    return jsonResponse({ slug: path.split("/").at(-1), artifacts: [] });
+  });
+  return { fetchMock, requests };
 }
 
 const initialOutcomes = [{
@@ -429,5 +522,52 @@ describe("Workspace Course Model decisions", () => {
     renderCourseModelWorkspace();
     expect(await screen.findByRole("heading", { name: "The agent is building Course Model" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Edit Course Model" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Workspace Blueprint decisions", () => {
+  it("retains the exact local contract across a checksum conflict and can discard it for the latest Blueprint", async () => {
+    const user = userEvent.setup();
+    const backend = blueprintFetch();
+    vi.stubGlobal("fetch", backend.fetchMock);
+    const view = renderBlueprintWorkspace();
+
+    await screen.findByRole("heading", { name: "Blueprint" });
+    await user.click(
+      within(view.container.querySelector(".decision-bar")!).getByRole("button", {
+        name: "Edit Blueprint",
+      }),
+    );
+    const assets = screen.getByLabelText("Assets for Light and placement");
+    await user.click(within(assets).getByRole("button", { name: /Activity/ }));
+    await user.clear(screen.getByLabelText("Light and placement learning time"));
+    await user.type(screen.getByLabelText("Light and placement learning time"), "45");
+    await user.click(screen.getByRole("checkbox", { name: /reviewed the exact asset additions/i }));
+    await user.click(screen.getByRole("button", { name: "Save Blueprint draft" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "The Blueprint changed elsewhere" });
+    expect(within(assets).getByRole("button", { name: /Activity/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Light and placement learning time")).toHaveValue(45);
+    expect(within(dialog).getByRole("button", { name: "Review local decision again" })).toHaveFocus();
+    const saveRequest = backend.requests.find((request) => request.path.endsWith("/blueprint/decision"));
+    expect(saveRequest?.body).toMatchObject({
+      expected_checksum: "blueprint-artifact-1",
+      selected_asset_types: { s1: ["course_content", "summary", "activities"] },
+      depth_overrides: { s1: { target_learning_minutes: 45 } },
+    });
+
+    await user.click(within(dialog).getByRole("button", { name: "Use latest Blueprint" }));
+    await screen.findByRole("heading", { name: "Blueprint" });
+    await user.click(
+      within(view.container.querySelector(".decision-bar")!).getByRole("button", {
+        name: "Edit Blueprint",
+      }),
+    );
+    expect(screen.getByLabelText("Course default learning time")).toHaveValue(25);
+    expect(screen.getByLabelText("Light and placement learning time")).toHaveValue(25);
+    expect(
+      within(screen.getByLabelText("Assets for Light and placement"))
+        .getByRole("button", { name: /Activity/ }),
+    ).toHaveAttribute("aria-pressed", "false");
   });
 });

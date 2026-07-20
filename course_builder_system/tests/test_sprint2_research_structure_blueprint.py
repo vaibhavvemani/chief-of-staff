@@ -294,6 +294,135 @@ def test_blueprint_decision_flow_supports_exceptions_and_requires_anchor_waiver(
     assert len(decided["body"]["decision_log"]) >= 3
 
 
+def test_blueprint_decision_applies_defaults_exceptions_and_authoritative_source_routes(
+    tmp_path,
+) -> None:
+    brief = _load_json(MODEL_DIR / "coffee_demo.brief.json")
+    outcomes = _load_json(MODEL_DIR / "coffee_demo.course_outcomes.json")
+    dossier = _coffee_research_artifact()
+    registry_artifact = _approved_registry_artifact(dossier, tmp_path)
+    course_model = course_model_agent.build_course_model_artifact(
+        brief,
+        outcomes,
+        dossier,
+        approved_source_registry=registry_artifact,
+    )
+    blueprint = blueprint_agent.build_blueprint_artifact(course_model)
+    plans = blueprint["body"]["subtopic_plans"]
+    first_id = plans[0]["subtopic_id"]
+    second_id = plans[1]["subtopic_id"]
+    source_ids = {
+        subtopic["id"]: subtopic["approved_source_ids"]
+        for module in course_model["body"]["modules"]
+        for subtopic in module["subtopics"]
+    }
+
+    decided = blueprint_agent.apply_blueprint_decision(
+        blueprint,
+        default_asset_types=["course_content", "activities"],
+        default_depth={"target_learning_minutes": 35, "required_example_count": 3},
+        selected_asset_types={first_id: ["course_content", "assessment"]},
+        depth_overrides={first_id: {"required_example_count": 5}},
+        approved_source_ids_by_subtopic=source_ids,
+        rationale="Use a practice-led course baseline.",
+    )
+
+    assert decided["body"]["course_defaults"]["default_asset_types"] == [
+        "course_content",
+        "activities",
+    ]
+    assert decided["body"]["course_defaults"]["depth_budget"][
+        "target_learning_minutes"
+    ] == 35
+    first = next(
+        plan for plan in decided["body"]["subtopic_plans"] if plan["subtopic_id"] == first_id
+    )
+    second = next(
+        plan for plan in decided["body"]["subtopic_plans"] if plan["subtopic_id"] == second_id
+    )
+    assert {
+        asset["asset_type"]
+        for asset in first["asset_plan"]
+        if asset["selection_status"] == "selected"
+    } == {"course_content", "assessment"}
+    assert {
+        asset["asset_type"]
+        for asset in second["asset_plan"]
+        if asset["selection_status"] == "selected"
+    } == {"course_content", "activities"}
+    assert first["depth_budget"]["required_example_count"] == 5
+    assert second["depth_budget"]["required_example_count"] == 3
+    for plan in decided["body"]["subtopic_plans"]:
+        for asset in plan["asset_plan"]:
+            expected = (
+                source_ids[plan["subtopic_id"]]
+                if asset["selection_status"] == "selected"
+                else []
+            )
+            assert asset["source_ids"] == expected
+
+
+def test_blueprint_decision_rejects_invalid_ids_assets_depth_and_waivers(tmp_path) -> None:
+    brief = _load_json(MODEL_DIR / "coffee_demo.brief.json")
+    outcomes = _load_json(MODEL_DIR / "coffee_demo.course_outcomes.json")
+    dossier = _coffee_research_artifact()
+    registry_artifact = _approved_registry_artifact(dossier, tmp_path)
+    course_model = course_model_agent.build_course_model_artifact(
+        brief,
+        outcomes,
+        dossier,
+        approved_source_registry=registry_artifact,
+    )
+    blueprint = blueprint_agent.build_blueprint_artifact(course_model)
+    subtopic_id = blueprint["body"]["subtopic_plans"][0]["subtopic_id"]
+
+    with pytest.raises(ValueError, match="unknown subtopics"):
+        blueprint_agent.apply_blueprint_decision(
+            blueprint,
+            selected_asset_types={"missing": ["course_content"]},
+        )
+    with pytest.raises(ValueError, match="unknown asset types"):
+        blueprint_agent.apply_blueprint_decision(
+            blueprint,
+            selected_asset_types={subtopic_id: ["course_content", "video"]},
+        )
+    with pytest.raises(ValueError, match="selects no assets"):
+        blueprint_agent.apply_blueprint_decision(
+            blueprint,
+            selected_asset_types={subtopic_id: []},
+        )
+    with pytest.raises(ValueError, match="minimum <= target <= maximum"):
+        blueprint_agent.apply_blueprint_decision(
+            blueprint,
+            depth_overrides={
+                subtopic_id: {
+                    "target_word_range": {"minimum": 900, "target": 700, "maximum": 800}
+                }
+            },
+        )
+    with pytest.raises(ValueError, match="without an explicit anchor waiver"):
+        blueprint_agent.apply_blueprint_decision(
+            blueprint,
+            selected_asset_types={subtopic_id: ["assessment"]},
+        )
+    with pytest.raises(ValueError, match="while course_content remains selected"):
+        blueprint_agent.apply_blueprint_decision(
+            blueprint,
+            selected_asset_types={subtopic_id: ["course_content", "assessment"]},
+            anchor_waivers={subtopic_id},
+        )
+
+    waived = blueprint_agent.apply_blueprint_decision(
+        blueprint,
+        selected_asset_types={subtopic_id: ["assessment"]},
+        anchor_waivers={subtopic_id},
+    )
+    plan = next(
+        item for item in waived["body"]["subtopic_plans"] if item["subtopic_id"] == subtopic_id
+    )
+    assert plan["anchor_asset_waiver_confirmed"] is True
+
+
 def test_integrity_rejects_rejected_source_leakage_and_unknown_outcome(tmp_path) -> None:
     brief = _load_json(MODEL_DIR / "coffee_demo.brief.json")
     outcomes = _load_json(MODEL_DIR / "coffee_demo.course_outcomes.json")
