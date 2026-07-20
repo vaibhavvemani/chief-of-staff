@@ -44,7 +44,7 @@ describe("truthful lifecycle controls", () => {
       <StageView
         stage="content"
         workspace={demoWorkspace}
-        contentCapabilities={{ review: false, revise: false }}
+        contentCapabilities={{ review: false, revise: false, repair: false }}
       />,
     );
 
@@ -60,7 +60,7 @@ describe("truthful lifecycle controls", () => {
       <StageView
         stage="content"
         workspace={demoWorkspace}
-        contentCapabilities={{ review: true, revise: true }}
+        contentCapabilities={{ review: true, revise: true, repair: false }}
         onContentAction={onContentAction}
       />,
     );
@@ -77,6 +77,26 @@ describe("truthful lifecycle controls", () => {
       expect.objectContaining({ id: "m1_s4_cc" }),
     );
     expect(screen.queryByRole("button", { name: /find better evidence/i })).not.toBeInTheDocument();
+  });
+
+  it("offers the registered bounded source repair independently of scoped revision", () => {
+    const onContentAction = vi.fn();
+    render(
+      <StageView
+        stage="content"
+        workspace={demoWorkspace}
+        contentCapabilities={{ review: true, revise: false, repair: true }}
+        onContentAction={onContentAction}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /find better evidence/i }));
+    expect(onContentAction).toHaveBeenCalledWith(
+      "source_repair",
+      expect.objectContaining({ id: "m1_s4_cc" }),
+      expect.objectContaining({ id: "cl2" }),
+    );
+    expect(screen.queryByRole("button", { name: /revise with approved evidence/i })).not.toBeInTheDocument();
   });
 
   it("keeps source mutation controls disabled without a projected source decision", () => {

@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
+  addKnownSource,
   approveStage,
+  confirmSourceRepairRoute,
   createCourse,
   courseModelValidationIssues,
+  decideSourceRepair,
   getBriefQuestions,
   getWorkspace,
   normalizeStatus,
@@ -11,6 +14,7 @@ import {
   previewCourseModelDecision,
   previewStageImpact,
   reopenStage,
+  requestSourceRepair,
   reviseStage,
   reviewContentAsset,
   runStage,
@@ -849,6 +853,82 @@ describe("typed API commands", () => {
         { id: "co3", cognitiveLevel: "evaluate" },
       ],
       advisories: [],
+    });
+  });
+
+  it("serializes known-source and bounded Source Repair commands", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ artifact: {}, checksum: "dossier-next" }, 201))
+      .mockResolvedValueOnce(jsonResponse({
+        repair_id: "repair_1",
+        job: { job_id: "job-1", status: "queued" },
+        events_url: "/api/jobs/job-1/events",
+      }, 202))
+      .mockResolvedValueOnce(jsonResponse({ checksum: "repair-decision" }))
+      .mockResolvedValueOnce(jsonResponse({
+        source_id: "repair_src_1",
+        affected_asset_ids: ["m1_s1_cc"],
+        checksum: "repair-routed",
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await addKnownSource("course-1", {
+      expectedChecksum: "dossier-before",
+      locator: "https://example.edu/guide",
+      title: "Focused guide",
+      relevance: "Supports the named gap.",
+    });
+    const requested = await requestSourceRepair("course-1", {
+      expectedContentChecksum: "content-before",
+      subtopicId: "m1_s1",
+      assetId: "m1_s1_cc",
+      claimId: "cl1",
+      findingId: "cl1",
+      evidenceGap: "Unsupported claim needs a focused source.",
+      mode: "deterministic",
+    });
+    await decideSourceRepair("course-1", "repair_1", {
+      expectedChecksum: "repair-before",
+      candidateId: "repair_src_1",
+      decision: "approved",
+      rationale: "The bounded preview covers the gap.",
+    });
+    const routed = await confirmSourceRepairRoute("course-1", "repair_1", {
+      expectedChecksum: "repair-decision",
+      subtopicIds: ["m1_s1"],
+      assetIds: ["m1_s1_cc"],
+    });
+
+    expect(requestBody(fetchMock, 0)).toMatchObject({
+      expected_checksum: "dossier-before",
+      locator: "https://example.edu/guide",
+      title: "Focused guide",
+    });
+    expect(requestBody(fetchMock, 1)).toEqual({
+      expected_content_checksum: "content-before",
+      subtopic_id: "m1_s1",
+      asset_id: "m1_s1_cc",
+      claim_id: "cl1",
+      finding_id: "cl1",
+      evidence_gap: "Unsupported claim needs a focused source.",
+      mode: "deterministic",
+    });
+    expect(requestBody(fetchMock, 2)).toEqual({
+      expected_checksum: "repair-before",
+      candidate_id: "repair_src_1",
+      decision: "approved",
+      rationale: "The bounded preview covers the gap.",
+    });
+    expect(requestBody(fetchMock, 3)).toEqual({
+      expected_checksum: "repair-decision",
+      subtopic_ids: ["m1_s1"],
+      asset_ids: ["m1_s1_cc"],
+    });
+    expect(requested.repairId).toBe("repair_1");
+    expect(routed).toEqual({
+      sourceId: "repair_src_1",
+      affectedAssetIds: ["m1_s1_cc"],
+      checksum: "repair-routed",
     });
   });
 

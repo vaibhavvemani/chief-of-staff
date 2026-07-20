@@ -32,6 +32,8 @@ import type {
   OutcomeValidationIssue,
   OutputFile,
   SourceCandidate,
+  SourceQuality,
+  SourceRepairEntry,
   ScopedRevisionCommand,
   StageAction,
   StageActionId,
@@ -388,7 +390,9 @@ const stageActionIds: StageActionId[] = [
   "run",
   "retry",
   "edit",
+  "add_source",
   "source_decision",
+  "source_repair",
   "review_asset",
   "revise",
   "approve",
@@ -532,8 +536,55 @@ function normalizeOutcomeAdvisories(value: unknown): OutcomeAdvisory[] {
   });
 }
 
-function normalizeSources(value: unknown, registry: unknown, registryStatus: string | undefined, fallback: SourceCandidate[]): SourceCandidate[] {
+function normalizeSourceQuality(value: unknown): SourceQuality | undefined {
+  if (!isRecord(value)) return undefined;
+  const dimensions = isRecord(value.dimensions)
+    ? Object.fromEntries(Object.entries(value.dimensions).flatMap(([key, item]) =>
+        isRecord(item)
+          ? [[key, { score: asNumber(item.score), reason: asString(item.reason) }]]
+          : [],
+      ))
+    : {};
+  return {
+    overall: asNumber(value.overall),
+    recommendation: asString(value.recommendation),
+    advisoryOnly: value.advisory_only === true,
+    dimensions,
+    previewSections: asArray(value.preview_sections).flatMap((section) =>
+      isRecord(section)
+        ? [{
+            order: asNumber(section.order),
+            text: asString(section.text),
+            matchedTerms: asStringArray(section.matched_terms),
+            relevanceScore: asNumber(section.relevance_score),
+          }]
+        : [],
+    ),
+    coverage: asArray(value.coverage).flatMap((row) =>
+      isRecord(row)
+        ? [{ need: asString(row.need), score: asNumber(row.score), matchedTerms: asStringArray(row.matched_terms) }]
+        : [],
+    ),
+    fetchReason: typeof value.fetch_reason === "string" ? value.fetch_reason : null,
+  };
+}
+
+function normalizeSources(
+  value: unknown,
+  registry: unknown,
+  registryStatus: string | undefined,
+  fallback: SourceCandidate[],
+  qualityProjection?: unknown,
+): SourceCandidate[] {
   if (!isRecord(value)) return fallback;
+  const qualityById = new Map<string, SourceQuality>();
+  if (isRecord(qualityProjection)) {
+    asArray(qualityProjection.sources).forEach((record) => {
+      if (!isRecord(record)) return;
+      const quality = normalizeSourceQuality(record.quality);
+      if (quality) qualityById.set(asString(record.id), quality);
+    });
+  }
   const approvedIds = new Set<string>();
   const rejectedIds = new Set<string>();
   if (isRecord(registry)) {
@@ -561,11 +612,67 @@ function normalizeSources(value: unknown, registry: unknown, registryStatus: str
             trustNotes: asString(item.trust_notes),
             relevance: asString(item.relevance),
             assignedNodeIds: asStringArray(item.assigned_node_ids),
+            quality: qualityById.get(asString(item.id)),
           },
         ]
       : [],
   );
   return sources.length ? sources : fallback;
+}
+
+function normalizeSourceRepairs(value: unknown): SourceRepairEntry[] {
+  if (!isRecord(value)) return [];
+  return asArray(value.entries).flatMap((entry) => {
+    if (!isRecord(entry) || !isRecord(entry.origin)) return [];
+    const decision = isRecord(entry.human_source_decision) ? entry.human_source_decision : null;
+    const route = isRecord(entry.approved_source_route) ? entry.approved_source_route : null;
+    return [{
+      id: asString(entry.id),
+      origin: {
+        subtopicId: asString(entry.origin.subtopic_id),
+        assetId: asString(entry.origin.asset_id),
+        claimId: asString(entry.origin.claim_id),
+        findingId: asString(entry.origin.finding_id),
+        contentChecksum: asString(entry.origin.content_checksum),
+      },
+      evidenceGap: asString(entry.evidence_gap),
+      requestedMode: asString(entry.requested_mode) === "live" ? "live" as const : "deterministic" as const,
+      proposedCandidates: asArray(entry.proposed_candidates).flatMap((candidate) => {
+        if (!isRecord(candidate)) return [];
+        const quality = normalizeSourceQuality(candidate.quality);
+        if (!quality) return [];
+        return [{
+          id: asString(candidate.id),
+          title: asString(candidate.title),
+          publisher: asString(candidate.publisher),
+          sourceType: asString(candidate.source_type),
+          locator: asString(candidate.locator),
+          trustNotes: asString(candidate.trust_notes),
+          relevance: asString(candidate.relevance),
+          fetchStatus: asString(candidate.fetch_status),
+          fetchReason: typeof candidate.fetch_reason === "string" ? candidate.fetch_reason : null,
+          quality,
+        }];
+      }),
+      humanSourceDecision: decision
+        ? {
+            candidateId: asString(decision.candidate_id),
+            decision: asString(decision.decision) === "rejected" ? "rejected" as const : "approved" as const,
+            rationale: asString(decision.rationale),
+          }
+        : null,
+      approvedSourceRoute: route
+        ? {
+            sourceId: asString(route.source_id),
+            subtopicIds: asStringArray(route.subtopic_ids),
+            assetIds: asStringArray(route.asset_ids),
+          }
+        : null,
+      affectedAssetIds: asStringArray(entry.affected_asset_ids),
+      status: asString(entry.status) as SourceRepairEntry["status"],
+      failureReason: typeof entry.failure_reason === "string" ? entry.failure_reason : null,
+    }];
+  });
 }
 
 function normalizeCompetitors(value: unknown, fallback: Workspace["research"]["competitors"]): Workspace["research"]["competitors"] {
@@ -949,6 +1056,24 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
     const stageResults = await Promise.allSettled(allStageSlugs.map((slug) => getStage(courseId, slug)));
     const backendStages = stageResults.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
     const artifacts = artifactMap(backendStages);
+    let qualityProjection: unknown;
+    if (artifacts.has("research_dossier")) {
+      try {
+        qualityProjection = await apiFetch(
+          `/api/courses/${encodeURIComponent(courseId)}/research/sources/quality`,
+        );
+      } catch (error) {
+        if (!(error instanceof ApiError && error.status === 404)) throw error;
+      }
+    }
+    let repairProjection: Record<string, unknown> | undefined;
+    try {
+      repairProjection = await apiFetch<Record<string, unknown>>(
+        `/api/courses/${encodeURIComponent(courseId)}/source-repairs`,
+      );
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === 404)) throw error;
+    }
     const outcomeStage = backendStages.find((candidate) => candidate.slug === "outcomes")
       ?? projection.stages?.find((candidate) => candidate.slug === "outcomes");
     const demoShape = demoWorkspaceFor(courseId);
@@ -1055,6 +1180,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       reviewArtifact,
       reviewChecksum,
     );
+    content.packageChecksum = artifacts.get("content_package")?.checksum;
     const blockingTotal = projection.attention?.blocking_total ?? 0;
     const normalizedCourse = normalizeCourse({
       course_id: projection.course_id ?? courseId,
@@ -1100,6 +1226,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
           artifacts.get("approved_source_registry")?.body,
           artifacts.get("approved_source_registry")?.status,
           base.research.sources,
+          qualityProjection,
         ),
         competitors: normalizeCompetitors(artifacts.get("research_dossier")?.body, base.research.competitors),
         observations: isRecord(artifacts.get("research_dossier")?.body)
@@ -1110,7 +1237,10 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
           : base.research.observations,
         registrySaved: artifacts.has("approved_source_registry"),
         registryApproved: artifacts.get("approved_source_registry")?.status === "approved",
+        dossierChecksum: artifacts.get("research_dossier")?.checksum,
       },
+      sourceRepairs: normalizeSourceRepairs(repairProjection),
+      sourceRepairChecksum: asString(repairProjection?.checksum) || undefined,
       courseModel: normalizeCourseModel(artifacts.get("course_model")?.body, base.courseModel),
       courseModelChecksum: artifacts.get("course_model")?.checksum,
       modules: normalizeCourseModel(artifacts.get("course_model")?.body, base.courseModel).modules,
@@ -1650,6 +1780,116 @@ export async function saveSourceDecision(
       expected_checksum: expectedChecksum,
     }),
   });
+}
+
+export async function addKnownSource(
+  courseId: string,
+  command: {
+    expectedChecksum: string;
+    locator: string;
+    title?: string;
+    publisher?: string;
+    trustNotes?: string;
+    relevance?: string;
+  },
+): Promise<void> {
+  await apiFetch(`/api/courses/${encodeURIComponent(courseId)}/research/sources`, {
+    method: "POST",
+    body: JSON.stringify({
+      expected_checksum: command.expectedChecksum,
+      locator: command.locator,
+      title: command.title,
+      publisher: command.publisher,
+      trust_notes: command.trustNotes,
+      relevance: command.relevance,
+    }),
+  });
+}
+
+export async function requestSourceRepair(
+  courseId: string,
+  command: {
+    expectedContentChecksum: string;
+    subtopicId: string;
+    assetId: string;
+    claimId: string;
+    findingId: string;
+    evidenceGap: string;
+    mode: "deterministic" | "live";
+  },
+): Promise<JobResponse & { repairId: string }> {
+  const response = await apiFetch<Partial<JobResponse> & { job: JobResponse["job"]; repair_id: string }>(
+    `/api/courses/${encodeURIComponent(courseId)}/source-repairs`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        expected_content_checksum: command.expectedContentChecksum,
+        subtopic_id: command.subtopicId,
+        asset_id: command.assetId,
+        claim_id: command.claimId,
+        finding_id: command.findingId,
+        evidence_gap: command.evidenceGap,
+        mode: command.mode,
+      }),
+    },
+  );
+  return {
+    ...response,
+    repairId: response.repair_id,
+    events_url: response.events_url ?? `/api/jobs/${response.job.job_id}/events`,
+  };
+}
+
+export async function decideSourceRepair(
+  courseId: string,
+  repairId: string,
+  command: {
+    expectedChecksum: string;
+    candidateId: string;
+    decision: "approved" | "rejected";
+    rationale: string;
+  },
+): Promise<{ checksum: string }> {
+  const response = await apiFetch<Record<string, unknown>>(
+    `/api/courses/${encodeURIComponent(courseId)}/source-repairs/${encodeURIComponent(repairId)}/decision`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        expected_checksum: command.expectedChecksum,
+        candidate_id: command.candidateId,
+        decision: command.decision,
+        rationale: command.rationale,
+      }),
+    },
+  );
+  return { checksum: asString(response.checksum) };
+}
+
+export async function confirmSourceRepairRoute(
+  courseId: string,
+  repairId: string,
+  command: {
+    expectedChecksum: string;
+    subtopicIds: string[];
+    assetIds: string[];
+  },
+): Promise<{ sourceId: string; affectedAssetIds: string[]; checksum: string }> {
+  const response = await apiFetch<Record<string, unknown>>(
+    `/api/courses/${encodeURIComponent(courseId)}/source-repairs/${encodeURIComponent(repairId)}/route`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        expected_checksum: command.expectedChecksum,
+        subtopic_ids: command.subtopicIds,
+        asset_ids: command.assetIds,
+      }),
+    },
+  );
+  return {
+    sourceId: asString(response.source_id),
+    affectedAssetIds: asStringArray(response.affected_asset_ids),
+    checksum: asString(response.checksum),
+  };
 }
 
 export interface JobEvent {

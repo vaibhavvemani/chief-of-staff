@@ -215,11 +215,14 @@ def test_workspace_actions_and_reopen_are_backend_projected() -> None:
     assert "/request-changes" not in api_client
 
 
-def test_affected_workflow_has_no_enabled_placeholder_mutations() -> None:
+def test_affected_workflow_has_only_registered_mutations() -> None:
     workspace = WORKSPACE_SOURCE.read_text(encoding="utf-8")
     stage_views = STAGE_VIEWS_SOURCE.read_text(encoding="utf-8")
 
-    assert "Find better evidence" not in stage_views
+    assert "Find better evidence" in stage_views
+    assert 'candidate.id === "source_repair" && candidate.enabled' in workspace
+    assert "requestSourceRepair" in workspace
+    assert "confirmSourceRepairRoute" in workspace
     assert "requestStageChanges" not in workspace
     assert "Model-call diagnostics unavailable" in workspace
     assert (

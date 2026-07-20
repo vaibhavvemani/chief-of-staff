@@ -28,6 +28,7 @@ CANONICAL_ARTIFACT_TYPES = frozenset(
         "content_package",
         "content_progress",
         "content_review",
+        "source_repair",
         "lesson_plan",
         "render_manifest",
         "run_summary",

@@ -3,14 +3,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
+  addKnownSource,
   approveStage,
+  confirmSourceRepairRoute,
   courseModelValidationIssues,
+  decideSourceRepair,
   getBriefQuestions,
   getWorkspace,
   outcomeValidationIssues,
   previewStageImpact,
   previewCourseModelDecision,
   reopenStage,
+  requestSourceRepair,
   reviseStage,
   reviewContentAsset,
   runStage,
@@ -27,10 +31,21 @@ import {
 import { AppBrand } from "../../components/AppBrand";
 import { ErrorState, LoadingState } from "../../components/States";
 import { StatusBadge } from "../../components/StatusBadge";
-import type { BlueprintDecisionDraft, BriefData, BriefQuestionAnswer, BriefUpdates, Claim, ContentAsset, CourseModelOperation, CourseModelPreview, CourseModelValidationIssue, ImpactPreview, LessonPlanDecisionDraft, OutcomeDecisionDraft, OutcomeValidationIssue, StageAction, StageActionId, StageSlug, UiStatus, Workspace } from "../../types";
+import type { BlueprintDecisionDraft, BriefData, BriefQuestionAnswer, BriefUpdates, Claim, ContentAsset, CourseModelOperation, CourseModelPreview, CourseModelValidationIssue, ImpactPreview, LessonPlanDecisionDraft, OutcomeDecisionDraft, OutcomeValidationIssue, SourceRepairEntry, StageAction, StageActionId, StageSlug, UiStatus, Workspace } from "../../types";
 import { StageView, stageData, type BriefEditSection } from "./StageViews";
 
 const stageSlugs: StageSlug[] = ["brief", "outcomes", "research", "course-model", "blueprint", "content", "lesson-plan", "package"];
+const LIVE_SOURCE_REPAIR_UNAVAILABLE = "Live better-evidence repair is not configured until NC-912. No deterministic candidate will be substituted in Live agent mode.";
+
+export function sourceRepairModeAvailability(
+  runMode: "deterministic" | "live",
+  backendEnabled: boolean,
+): { available: boolean; reason?: string } {
+  if (!backendEnabled) return { available: false };
+  return runMode === "deterministic"
+    ? { available: true }
+    : { available: false, reason: LIVE_SOURCE_REPAIR_UNAVAILABLE };
+}
 
 function stageName(stage: StageSlug): string {
   return stage === "course-model"
@@ -172,8 +187,8 @@ function DecisionBar({
   busy?: boolean;
   onAction: (action: StageAction) => void;
 }) {
-  const primaryIds: StageActionId[] = ["run", "retry", "edit", "source_decision", "review_asset", "revise", "approve", "go_to_blocker", "continue"];
-  const inlineActionIds: StageActionId[] = ["source_decision", "review_asset", "revise"];
+  const primaryIds: StageActionId[] = ["run", "retry", "edit", "add_source", "source_decision", "source_repair", "review_asset", "revise", "approve", "go_to_blocker", "continue"];
+  const inlineActionIds: StageActionId[] = ["add_source", "source_decision", "source_repair", "review_asset", "revise"];
   const visibleActions = actions.filter((action) => !inlineActionIds.includes(action.id));
   const statusCopy: Record<UiStatus, [string, string]> = {
     locked: ["Upstream checkpoint required", "This stage is not ready yet"],
@@ -845,6 +860,91 @@ export function WorkspacePage() {
     },
   });
 
+  const knownSourceMutation = useMutation({
+    mutationFn: (source: { locator: string; title?: string; publisher?: string; trustNotes?: string; relevance?: string }) => {
+      if (!workspace?.research.dossierChecksum) throw new Error("Adding a known source requires the current Research Dossier checksum.");
+      return addKnownSource(courseId, {
+        expectedChecksum: workspace.research.dossierChecksum,
+        ...source,
+      });
+    },
+    onSuccess: async () => {
+      await refresh();
+      setToast({ tone: "good", message: "Known URL added as a proposed candidate. It still requires the normal human source decision." });
+    },
+    onError: async (error) => {
+      const stale = Boolean(versionConflictChecksum(error));
+      if (stale) await refresh();
+      setToast({ tone: "attention", message: stale ? "The Research Dossier changed elsewhere. Review the latest candidates before adding this URL again." : error instanceof Error ? error.message : "The known source could not be added." });
+    },
+  });
+
+  const sourceRepairRequestMutation = useMutation({
+    mutationFn: ({ asset, claim }: { asset: ContentAsset; claim: Claim }) => {
+      if (!workspace?.content.packageChecksum) throw new Error("Source repair requires the current Content Package checksum.");
+      if (runMode !== "deterministic") throw new Error(LIVE_SOURCE_REPAIR_UNAVAILABLE);
+      return requestSourceRepair(courseId, {
+        expectedContentChecksum: workspace.content.packageChecksum,
+        subtopicId: asset.subtopicId,
+        assetId: asset.id,
+        claimId: claim.id,
+        findingId: claim.id,
+        evidenceGap: claim.note || claim.text,
+        mode: runMode,
+      });
+    },
+    onSuccess: (result) => {
+      setActiveJobId(result.job.job_id);
+      setActiveJobStage("content");
+      setRunProgress({ message: "Bounded evidence research queued" });
+      setToast({ tone: "good", message: `Source Repair ${result.repairId} started for one finding. Approved routes remain unchanged.` });
+      void refresh();
+    },
+    onError: (error) => {
+      setToast({ tone: "attention", message: error instanceof Error ? error.message : "The source repair could not start." });
+      void refresh();
+    },
+  });
+
+  const sourceRepairDecisionMutation = useMutation({
+    mutationFn: ({ entry, candidateId }: { entry: SourceRepairEntry; candidateId: string }) => {
+      if (!workspace?.sourceRepairChecksum) throw new Error("Source repair decision requires the current ledger checksum.");
+      return decideSourceRepair(courseId, entry.id, {
+        expectedChecksum: workspace.sourceRepairChecksum,
+        candidateId,
+        decision: "approved",
+        rationale: "Approved after reviewing the advisory score, bounded preview, and stated evidence-gap coverage.",
+      });
+    },
+    onSuccess: async () => {
+      await refresh();
+      setToast({ tone: "good", message: "Source candidate approved. Confirm the exact subtopic and asset route before any canonical source mapping changes." });
+    },
+    onError: async (error) => {
+      await refresh();
+      setToast({ tone: "attention", message: error instanceof Error ? error.message : "The source decision could not be saved." });
+    },
+  });
+
+  const sourceRepairRouteMutation = useMutation({
+    mutationFn: (entry: SourceRepairEntry) => {
+      if (!workspace?.sourceRepairChecksum) throw new Error("Route confirmation requires the current source-repair ledger checksum.");
+      return confirmSourceRepairRoute(courseId, entry.id, {
+        expectedChecksum: workspace.sourceRepairChecksum,
+        subtopicIds: [entry.origin.subtopicId],
+        assetIds: [entry.origin.assetId],
+      });
+    },
+    onSuccess: async (result) => {
+      await refresh();
+      setToast({ tone: "good", message: `Source ${result.sourceId} was committed to the confirmed route only. Affected asset: ${result.affectedAssetIds.join(", ")}.` });
+    },
+    onError: async (error) => {
+      await refresh();
+      setToast({ tone: "attention", message: error instanceof Error ? error.message : "The source route could not be committed." });
+    },
+  });
+
   const impactMutation = useMutation({
     mutationFn: () => {
       if (!currentSummary?.checksum) throw new Error("Reopen requires the current stage checksum.");
@@ -947,6 +1047,11 @@ export function WorkspacePage() {
         if (!currentSummary?.actions.some((candidate) => candidate.id === "revise" && candidate.enabled)) throw new Error("Scoped revision is not available in the current stage state.");
         setRevisionTarget({ asset, claim, expectedChecksum: currentSummary.checksum });
         return;
+      } else if (action === "source_repair") {
+        if (!currentSummary?.actions.some((candidate) => candidate.id === "source_repair" && candidate.enabled)) throw new Error("Source repair is not available in the current stage state.");
+        if (!claim) throw new Error("Source repair requires one named verifier finding.");
+        sourceRepairRequestMutation.mutate({ asset, claim });
+        return;
       } else {
         throw new Error("This content action is not implemented.");
       }
@@ -980,6 +1085,9 @@ export function WorkspacePage() {
   const demoMode = query.data?.demoMode ?? false;
   const readOnly = query.data?.readOnly ?? false;
   const actionEnabled = (id: StageActionId) => Boolean(currentSummary?.actions.some((action) => action.id === id && action.enabled));
+  const sourceRepairMode = sourceRepairModeAvailability(runMode, actionEnabled("source_repair"));
+  const sourceRepairAvailable = sourceRepairMode.available;
+  const sourceRepairUnavailableReason = sourceRepairMode.reason;
   const briefQuestionsError = briefAnswersMutation.error instanceof Error
     ? briefAnswersMutation.error.message
     : briefQuestionsQuery.error instanceof Error
@@ -1079,14 +1187,73 @@ export function WorkspacePage() {
             <AgentRunScreen stage={stage} mode={runMode} progress={runProgress} />
           ) : currentSummary?.status === "locked" && !demoMode ? (
             <div className="locked-stage-state"><span className="locked-glyph" aria-hidden="true">·</span><span className="eyebrow">{currentSummary.label}</span><h1>This stage is waiting on an upstream decision.</h1><p>{currentSummary.dependencies.length ? `${currentSummary.dependencies.map((item) => item.replaceAll("_", " ")).join(", ")} must be approved and current before this stage can run.` : "A backend prerequisite must be completed before this stage can run."}</p></div>
-          ) : <StageView stage={stage} workspace={workspace} contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise") }} onContentAction={actionEnabled("review_asset") || actionEnabled("revise") ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined} onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined} onEditBrief={stage === "brief" && actionEnabled("edit") ? setBriefEditSection : undefined} outcomesEditing={outcomesEditing} outcomesBusy={outcomesMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)} outcomesConflict={outcomesConflict} outcomesServerError={outcomesServerError} outcomesServerIssues={outcomesServerIssues} onStartOutcomesEdit={outcomesEditCapability ? () => { setOutcomesServerError(undefined); setOutcomesServerIssues([]); setOutcomesConflict(false); setOutcomesDirty(false); setOutcomesEditing(true); } : undefined} onCancelOutcomesEdit={() => { setOutcomesEditing(false); setOutcomesDirty(false); setOutcomesConflict(false); setOutcomesServerError(undefined); setOutcomesServerIssues([]); }} onSaveOutcomes={(decision) => { setOutcomesServerError(undefined); setOutcomesServerIssues([]); outcomesMutation.mutate(decision); }} onResolveOutcomesConflict={() => { setOutcomesConflict(false); setOutcomesServerError(undefined); setOutcomesServerIssues([]); }} onOutcomesDirtyChange={setOutcomesDirty} courseModelEditing={courseModelEditing} courseModelBusy={courseModelPreviewMutation.isPending || courseModelSaveMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || Boolean(activeJobId)} courseModelConflict={courseModelConflict} courseModelServerError={courseModelServerError} courseModelServerIssues={courseModelServerIssues} courseModelPreview={courseModelPreview} onStartCourseModelEdit={courseModelEditCapability ? () => { setCourseModelServerError(undefined); setCourseModelServerIssues([]); setCourseModelConflict(false); setCourseModelPreview(null); setCourseModelDirty(false); setCourseModelEditing(true); } : undefined} onCancelCourseModelEdit={() => { setCourseModelEditing(false); setCourseModelDirty(false); setCourseModelConflict(false); setCourseModelServerError(undefined); setCourseModelServerIssues([]); setCourseModelPreview(null); }} onPreviewCourseModel={(operations) => { setCourseModelServerError(undefined); setCourseModelServerIssues([]); courseModelPreviewMutation.mutate(operations); }} onSaveCourseModel={(operations, impactChecksum) => courseModelSaveMutation.mutate({ operations, impactChecksum })} onInvalidateCourseModelPreview={() => setCourseModelPreview(null)} onRecoverCourseModelConflict={(choice) => { setCourseModelConflict(false); setCourseModelServerError(undefined); setCourseModelServerIssues([]); setCourseModelPreview(null); if (choice === "discard") { setCourseModelEditing(false); setCourseModelDirty(false); } }} onCourseModelDirtyChange={setCourseModelDirty} blueprintEditing={blueprintEditing} blueprintBusy={blueprintMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || Boolean(activeJobId)} blueprintConflict={blueprintConflict} blueprintServerError={blueprintServerError} onStartBlueprintEdit={blueprintEditCapability ? () => { setBlueprintServerError(undefined); setBlueprintConflict(false); setBlueprintDirty(false); setBlueprintEditing(true); } : undefined} onCancelBlueprintEdit={() => { setBlueprintEditing(false); setBlueprintDirty(false); setBlueprintConflict(false); setBlueprintServerError(undefined); }} onSaveBlueprint={(decision) => { setBlueprintServerError(undefined); blueprintMutation.mutate(decision); }} onRecoverBlueprintConflict={(choice) => { setBlueprintConflict(false); setBlueprintServerError(undefined); if (choice === "discard") { setBlueprintEditing(false); setBlueprintDirty(false); } }} onBlueprintDirtyChange={setBlueprintDirty} lessonPlanEditing={lessonPlanEditing} lessonPlanBusy={lessonPlanMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || Boolean(activeJobId)} lessonPlanConflict={lessonPlanConflict} lessonPlanServerError={lessonPlanServerError} onStartLessonPlanEdit={lessonPlanEditCapability ? () => { setLessonPlanServerError(undefined); setLessonPlanConflict(false); setLessonPlanDirty(false); setLessonPlanEditing(true); } : undefined} onCancelLessonPlanEdit={() => { setLessonPlanEditing(false); setLessonPlanDirty(false); setLessonPlanConflict(false); setLessonPlanServerError(undefined); }} onSaveLessonPlan={(decision) => { setLessonPlanServerError(undefined); lessonPlanMutation.mutate(decision); }} onRecoverLessonPlanConflict={(choice) => { setLessonPlanConflict(false); setLessonPlanServerError(undefined); if (choice === "discard") { setLessonPlanEditing(false); setLessonPlanDirty(false); } }} onLessonPlanDirtyChange={setLessonPlanDirty} briefQuestionRound={briefQuestionsQuery.data} briefQuestionsLoading={briefQuestionsQuery.isLoading || briefQuestionsQuery.isFetching && !briefQuestionsQuery.data} briefQuestionsBusy={briefAnswersMutation.isPending} briefQuestionsError={briefQuestionsError} onRetryBriefQuestions={() => void briefQuestionsQuery.refetch()} onSubmitBriefQuestions={(answers) => briefAnswersMutation.mutate(answers)} />}
+          ) : <StageView
+            stage={stage}
+            workspace={workspace}
+            contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise"), repair: sourceRepairAvailable, repairUnavailableReason: sourceRepairUnavailableReason }}
+            onContentAction={actionEnabled("review_asset") || actionEnabled("revise") || sourceRepairAvailable ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined}
+            onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined}
+            onAddKnownSource={actionEnabled("add_source") ? (source) => knownSourceMutation.mutate(source) : undefined}
+            sourceMutationBusy={knownSourceMutation.isPending}
+            sourceRepairBusy={sourceRepairRequestMutation.isPending || sourceRepairDecisionMutation.isPending || sourceRepairRouteMutation.isPending || Boolean(activeJobId)}
+            onSourceRepairDecision={sourceRepairAvailable ? (entry, candidateId) => sourceRepairDecisionMutation.mutate({ entry, candidateId }) : undefined}
+            onSourceRepairRoute={sourceRepairAvailable ? (entry) => sourceRepairRouteMutation.mutate(entry) : undefined}
+            onEditBrief={stage === "brief" && actionEnabled("edit") ? setBriefEditSection : undefined}
+            outcomesEditing={outcomesEditing}
+            outcomesBusy={outcomesMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)}
+            outcomesConflict={outcomesConflict}
+            outcomesServerError={outcomesServerError}
+            outcomesServerIssues={outcomesServerIssues}
+            onStartOutcomesEdit={outcomesEditCapability ? () => { setOutcomesServerError(undefined); setOutcomesServerIssues([]); setOutcomesConflict(false); setOutcomesDirty(false); setOutcomesEditing(true); } : undefined}
+            onCancelOutcomesEdit={() => { setOutcomesEditing(false); setOutcomesDirty(false); setOutcomesConflict(false); setOutcomesServerError(undefined); setOutcomesServerIssues([]); }}
+            onSaveOutcomes={(decision) => { setOutcomesServerError(undefined); setOutcomesServerIssues([]); outcomesMutation.mutate(decision); }}
+            onResolveOutcomesConflict={() => { setOutcomesConflict(false); setOutcomesServerError(undefined); setOutcomesServerIssues([]); }}
+            onOutcomesDirtyChange={setOutcomesDirty}
+            courseModelEditing={courseModelEditing}
+            courseModelBusy={courseModelPreviewMutation.isPending || courseModelSaveMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || Boolean(activeJobId)}
+            courseModelConflict={courseModelConflict}
+            courseModelServerError={courseModelServerError}
+            courseModelServerIssues={courseModelServerIssues}
+            courseModelPreview={courseModelPreview}
+            onStartCourseModelEdit={courseModelEditCapability ? () => { setCourseModelServerError(undefined); setCourseModelServerIssues([]); setCourseModelConflict(false); setCourseModelPreview(null); setCourseModelDirty(false); setCourseModelEditing(true); } : undefined}
+            onCancelCourseModelEdit={() => { setCourseModelEditing(false); setCourseModelDirty(false); setCourseModelConflict(false); setCourseModelServerError(undefined); setCourseModelServerIssues([]); setCourseModelPreview(null); }}
+            onPreviewCourseModel={(operations) => { setCourseModelServerError(undefined); setCourseModelServerIssues([]); courseModelPreviewMutation.mutate(operations); }}
+            onSaveCourseModel={(operations, impactChecksum) => courseModelSaveMutation.mutate({ operations, impactChecksum })}
+            onInvalidateCourseModelPreview={() => setCourseModelPreview(null)}
+            onRecoverCourseModelConflict={(choice) => { setCourseModelConflict(false); setCourseModelServerError(undefined); setCourseModelServerIssues([]); setCourseModelPreview(null); if (choice === "discard") { setCourseModelEditing(false); setCourseModelDirty(false); } }}
+            onCourseModelDirtyChange={setCourseModelDirty}
+            blueprintEditing={blueprintEditing}
+            blueprintBusy={blueprintMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || Boolean(activeJobId)}
+            blueprintConflict={blueprintConflict}
+            blueprintServerError={blueprintServerError}
+            onStartBlueprintEdit={blueprintEditCapability ? () => { setBlueprintServerError(undefined); setBlueprintConflict(false); setBlueprintDirty(false); setBlueprintEditing(true); } : undefined}
+            onCancelBlueprintEdit={() => { setBlueprintEditing(false); setBlueprintDirty(false); setBlueprintConflict(false); setBlueprintServerError(undefined); }}
+            onSaveBlueprint={(decision) => { setBlueprintServerError(undefined); blueprintMutation.mutate(decision); }}
+            onRecoverBlueprintConflict={(choice) => { setBlueprintConflict(false); setBlueprintServerError(undefined); if (choice === "discard") { setBlueprintEditing(false); setBlueprintDirty(false); } }}
+            onBlueprintDirtyChange={setBlueprintDirty}
+            lessonPlanEditing={lessonPlanEditing}
+            lessonPlanBusy={lessonPlanMutation.isPending || mutation.isPending || impactMutation.isPending || reopenMutation.isPending || Boolean(activeJobId)}
+            lessonPlanConflict={lessonPlanConflict}
+            lessonPlanServerError={lessonPlanServerError}
+            onStartLessonPlanEdit={lessonPlanEditCapability ? () => { setLessonPlanServerError(undefined); setLessonPlanConflict(false); setLessonPlanDirty(false); setLessonPlanEditing(true); } : undefined}
+            onCancelLessonPlanEdit={() => { setLessonPlanEditing(false); setLessonPlanDirty(false); setLessonPlanConflict(false); setLessonPlanServerError(undefined); }}
+            onSaveLessonPlan={(decision) => { setLessonPlanServerError(undefined); lessonPlanMutation.mutate(decision); }}
+            onRecoverLessonPlanConflict={(choice) => { setLessonPlanConflict(false); setLessonPlanServerError(undefined); if (choice === "discard") { setLessonPlanEditing(false); setLessonPlanDirty(false); } }}
+            onLessonPlanDirtyChange={setLessonPlanDirty}
+            briefQuestionRound={briefQuestionsQuery.data}
+            briefQuestionsLoading={briefQuestionsQuery.isLoading || briefQuestionsQuery.isFetching && !briefQuestionsQuery.data}
+            briefQuestionsBusy={briefAnswersMutation.isPending}
+            briefQuestionsError={briefQuestionsError}
+            onRetryBriefQuestions={() => void briefQuestionsQuery.refetch()}
+            onSubmitBriefQuestions={(answers) => briefAnswersMutation.mutate(answers)}
+          />}
         </main>
         {inspectorOpen ? <ContextInspector workspace={workspace} stage={stage} onClose={() => setInspectorOpen(false)} /> : null}
         <DecisionBar
           stage={stage}
           status={currentSummary?.status ?? "ready"}
           actions={currentSummary?.actions ?? []}
-          busy={mutation.isPending || outcomesMutation.isPending || outcomesEditing || courseModelPreviewMutation.isPending || courseModelSaveMutation.isPending || courseModelEditing || blueprintMutation.isPending || blueprintEditing || lessonPlanMutation.isPending || lessonPlanEditing || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || Boolean(activeJobId)}
+          busy={mutation.isPending || outcomesMutation.isPending || outcomesEditing || courseModelPreviewMutation.isPending || courseModelSaveMutation.isPending || courseModelEditing || blueprintMutation.isPending || blueprintEditing || lessonPlanMutation.isPending || lessonPlanEditing || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || knownSourceMutation.isPending || sourceRepairRequestMutation.isPending || sourceRepairDecisionMutation.isPending || sourceRepairRouteMutation.isPending || Boolean(activeJobId)}
           onAction={handleStageAction}
         />
       </div>

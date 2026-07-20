@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from agents.outcomes import OutcomeDecisionValidationError, outcome_advisories
+from agents.source_repair import SourceRepairProvider
 from api.models import (
     ApproveStageCommand,
     BlueprintDecisionCommand,
@@ -30,12 +31,16 @@ from api.models import (
     CreateCourseRequest,
     ImpactPreviewCommand,
     ImpactPreviewResponse,
+    KnownSourceCommand,
     LessonPlanDecisionCommand,
     OutcomeDecisionCommand,
     ReopenStageCommand,
     RunStageCommand,
     ScopedRevisionCommand,
     SourceDecisionCommand,
+    SourceRepairDecisionCommand,
+    SourceRepairRequestCommand,
+    SourceRepairRouteCommand,
 )
 from api.services.approval_guard import ApprovalGuardFailed, ApprovalGuardService
 from api.services.artifact_repository import (
@@ -63,6 +68,8 @@ from api.services.lifecycle import (
 from api.services.local_job_runner import CourseBusy, JobNotFound, LocalJobRunner
 from api.services.pipeline_catalog import PipelineCatalog
 from api.services.revision_service import AmbiguousRevision, RevisionService
+from api.services.source_quality_service import SourceQualityService
+from api.services.source_repair_service import SourceRepairService
 from api.services.stage_runner import StageRunner
 from api.services.workspace_projector import WorkspaceProjector
 from course_model_operations import (
@@ -80,6 +87,8 @@ def create_app(
     rendered_root: Path | None = None,
     runtime_root: Path | None = None,
     include_examples: bool = True,
+    deterministic_source_repair_provider: SourceRepairProvider | None = None,
+    live_source_repair_provider: SourceRepairProvider | None = None,
 ) -> FastAPI:
     repo_root = repo_root.resolve()
     repository = ArtifactRepository(
@@ -111,6 +120,12 @@ def create_app(
         invalidation=invalidation,
         impact=impact,
         brief_intake=brief_intake,
+    )
+    source_quality = SourceQualityService(repository)
+    source_repairs = SourceRepairService(
+        repository,
+        deterministic_provider=deterministic_source_repair_provider,
+        live_provider=live_source_repair_provider,
     )
     stages = StageRunner(
         repository,
@@ -225,9 +240,7 @@ def create_app(
         return _error_response(400, str(exc), extra={"code": "ambiguous_revision"})
 
     @app.exception_handler(OutcomeDecisionValidationError)
-    async def _invalid_outcome_decision(
-        _request: Request, exc: OutcomeDecisionValidationError
-    ):
+    async def _invalid_outcome_decision(_request: Request, exc: OutcomeDecisionValidationError):
         return _error_response(
             400,
             str(exc),
@@ -597,6 +610,125 @@ def create_app(
             "stage": projector.stage(course_id, "research"),
         }
 
+    def assert_projected_action(course_id: str, stage_slug: str, action_id: str) -> None:
+        projected = projector.stage(course_id, stage_slug)
+        capabilities.assert_action_available(
+            stage_slug,
+            projected["state"],
+            action_id,
+            read_only=repository.locate(course_id).read_only,
+            approval_failures=projected.get("approval_failures"),
+            prerequisites_ready=projected.get("prerequisites_ready", False),
+            blocking_stage=projected.get("blocking_stage"),
+            requires_reopen=projected.get("requires_reopen", False),
+        )
+
+    @app.get("/api/courses/{course_id}/research/sources/quality")
+    def source_quality_projection(course_id: str) -> dict[str, Any]:
+        return source_quality.project(course_id)
+
+    @app.post("/api/courses/{course_id}/research/sources", status_code=201)
+    def add_known_source(course_id: str, command: KnownSourceCommand) -> dict[str, Any]:
+        with jobs.mutate_now(course_id):
+            assert_projected_action(course_id, "research", "add_source")
+            value = source_quality.add_known_source(
+                course_id,
+                expected_checksum=command.expected_checksum,
+                locator=command.locator,
+                title=command.title,
+                publisher=command.publisher,
+                trust_notes=command.trust_notes,
+                relevance=command.relevance,
+            )
+        return {
+            "artifact": value,
+            "checksum": repository.checksum(value),
+            "quality": source_quality.project(course_id),
+        }
+
+    @app.get("/api/courses/{course_id}/source-repairs")
+    def source_repair_ledger(course_id: str) -> dict[str, Any]:
+        return source_repairs.view(course_id)
+
+    @app.post("/api/courses/{course_id}/source-repairs", status_code=202)
+    def request_source_repair(
+        course_id: str,
+        command: SourceRepairRequestCommand,
+    ) -> dict[str, Any]:
+        with jobs.mutate_now(course_id):
+            assert_projected_action(course_id, "content", "source_repair")
+            requested = source_repairs.request(
+                course_id,
+                expected_content_checksum=command.expected_content_checksum,
+                subtopic_id=command.subtopic_id,
+                asset_id=command.asset_id,
+                claim_id=command.claim_id,
+                finding_id=command.finding_id,
+                evidence_gap=command.evidence_gap,
+                mode=command.mode,
+            )
+        repair_id = requested["repair_id"]
+        job = jobs.submit(
+            course_id=course_id,
+            stage="content",
+            task=lambda emit: source_repairs.research(
+                course_id,
+                repair_id,
+                emit=emit,
+            ),
+        )
+        return {**_job_accepted(job), "repair_id": repair_id}
+
+    @app.post(
+        "/api/courses/{course_id}/source-repairs/{repair_id}/research",
+        status_code=202,
+    )
+    def restart_source_repair_research(course_id: str, repair_id: str) -> dict[str, Any]:
+        assert_projected_action(course_id, "content", "source_repair")
+        job = jobs.submit(
+            course_id=course_id,
+            stage="content",
+            task=lambda emit: source_repairs.research(
+                course_id,
+                repair_id,
+                emit=emit,
+            ),
+        )
+        return {**_job_accepted(job), "repair_id": repair_id}
+
+    @app.put("/api/courses/{course_id}/source-repairs/{repair_id}/decision")
+    def decide_source_repair(
+        course_id: str,
+        repair_id: str,
+        command: SourceRepairDecisionCommand,
+    ) -> dict[str, Any]:
+        with jobs.mutate_now(course_id):
+            assert_projected_action(course_id, "content", "source_repair")
+            return source_repairs.decide_candidate(
+                course_id,
+                repair_id,
+                expected_checksum=command.expected_checksum,
+                candidate_id=command.candidate_id,
+                decision=command.decision,
+                rationale=command.rationale,
+            )
+
+    @app.put("/api/courses/{course_id}/source-repairs/{repair_id}/route")
+    def confirm_source_repair_route(
+        course_id: str,
+        repair_id: str,
+        command: SourceRepairRouteCommand,
+    ) -> dict[str, Any]:
+        with jobs.mutate_now(course_id):
+            assert_projected_action(course_id, "content", "source_repair")
+            return source_repairs.confirm_route(
+                course_id,
+                repair_id,
+                expected_checksum=command.expected_checksum,
+                subtopic_ids=command.subtopic_ids,
+                asset_ids=command.asset_ids,
+            )
+
     @app.put("/api/courses/{course_id}/blueprint/decision")
     def blueprint_decision(course_id: str, command: BlueprintDecisionCommand) -> dict[str, Any]:
         with jobs.mutate_now(course_id):
@@ -639,8 +771,7 @@ def create_app(
                     else None
                 ),
                 operations=[
-                    operation.model_dump(exclude_none=True)
-                    for operation in command.operations
+                    operation.model_dump(exclude_none=True) for operation in command.operations
                 ],
                 rationale=command.rationale,
             )

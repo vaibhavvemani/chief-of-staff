@@ -23,7 +23,9 @@ export type StageActionId =
   | "run"
   | "retry"
   | "edit"
+  | "add_source"
   | "source_decision"
+  | "source_repair"
   | "review_asset"
   | "revise"
   | "approve"
@@ -253,6 +255,62 @@ export interface SourceCandidate {
   trustNotes: string;
   relevance: string;
   assignedNodeIds: string[];
+  quality?: SourceQuality;
+}
+
+export interface SourceQuality {
+  overall: number;
+  recommendation: "strong_candidate" | "review_candidate" | "weak_candidate" | string;
+  advisoryOnly: boolean;
+  dimensions: Record<string, { score: number; reason: string }>;
+  previewSections: Array<{
+    order: number;
+    text: string;
+    matchedTerms: string[];
+    relevanceScore: number;
+  }>;
+  coverage: Array<{ need: string; score: number; matchedTerms: string[] }>;
+  fetchReason?: string | null;
+}
+
+export interface SourceRepairCandidate {
+  id: string;
+  title: string;
+  publisher: string;
+  sourceType: string;
+  locator: string;
+  trustNotes: string;
+  relevance: string;
+  fetchStatus: "available" | "unavailable" | string;
+  fetchReason?: string | null;
+  quality: SourceQuality;
+}
+
+export interface SourceRepairEntry {
+  id: string;
+  origin: {
+    subtopicId: string;
+    assetId: string;
+    claimId: string;
+    findingId: string;
+    contentChecksum: string;
+  };
+  evidenceGap: string;
+  requestedMode: "deterministic" | "live";
+  proposedCandidates: SourceRepairCandidate[];
+  humanSourceDecision?: {
+    candidateId: string;
+    decision: "approved" | "rejected";
+    rationale: string;
+  } | null;
+  approvedSourceRoute?: {
+    sourceId: string;
+    subtopicIds: string[];
+    assetIds: string[];
+  } | null;
+  affectedAssetIds: string[];
+  status: "requested" | "researching" | "awaiting_source_decision" | "awaiting_route_confirmation" | "awaiting_content_repair" | "regenerating" | "awaiting_content_review" | "resolved" | "failed";
+  failureReason?: string | null;
 }
 
 export interface CompetitorFinding {
@@ -520,7 +578,10 @@ export interface Workspace {
     observations: string[];
     registrySaved?: boolean;
     registryApproved?: boolean;
+    dossierChecksum?: string;
   };
+  sourceRepairs: SourceRepairEntry[];
+  sourceRepairChecksum?: string;
   modules: CourseModule[];
   courseModel: CourseModelData;
   courseModelChecksum?: string;
@@ -534,6 +595,7 @@ export interface Workspace {
     completed: number;
     expected: number;
     reviewChecksum?: string;
+    packageChecksum?: string;
   };
   lessonPlan: {
     sessions: LessonSession[];

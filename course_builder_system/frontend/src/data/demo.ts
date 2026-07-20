@@ -476,6 +476,7 @@ export const demoWorkspace: Workspace = {
       "A guided one-variable practice loop is a useful differentiation opportunity.",
     ],
   },
+  sourceRepairs: [],
   modules: [
     {
       id: "m1",

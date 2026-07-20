@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-601 through NC-603 independently verified with deterministic browser evidence
+> **Status:** NC-701 through NC-709 independently verified with deterministic browser evidence
 > **Updated:** 2026-07-20
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -58,9 +58,11 @@ Scenario A7 evidence after corrective lifecycle/source-authority hardening. NC-4
 NC-504 remain deferred to NC-90. NC-601 through NC-603 are independently verified with
 deterministic browser Scenario A12 evidence after corrective conflict-rebase, stable-ID,
 Course Model-authority, and affected-session hardening. NC-604 remains deferred to NC-90
-behind NC-908; NC-70 and every later package remain unstarted.
-This status note does not mark Milestone 3, NC-40,
-or any later package complete.
+behind NC-908. NC-701 through NC-709 are independently verified with deterministic
+browser evidence for Scenario A10's source-decision and route phase. Targeted Content
+regeneration and reverification remain NC-80 work; NC-80 and every later package remain
+unstarted. This status note does not mark Milestone 3, NC-40, or any later package
+complete.
 
 ```text
 NC-00 acceptance foundation
@@ -369,7 +371,8 @@ NC-401 through NC-403 are independently verified after the NC-40 backend checkpo
 NC-404 is independently verified with deterministic browser Scenario A6 evidence.
 NC-405 is independently verified with deterministic browser evidence. NC-40 is not
 complete. NC-501 through NC-503 and NC-601 through NC-603 are independently verified.
-NC-406, NC-504, and NC-604 remain deferred; NC-70 and every later package remain unstarted.
+NC-406, NC-504, and NC-604 remain deferred. NC-701 through NC-709 are independently
+verified; NC-80 and every later package remain unstarted.
 
 ### Tasks
 
@@ -433,7 +436,8 @@ NC-501 through NC-503 are independently verified with deterministic browser Scen
 evidence. NC-40 is not complete because NC-406 remains deferred to NC-90. NC-504 is
 also deferred to NC-90 behind NC-905. NC-601 through NC-603 are independently verified
 with deterministic browser Scenario A12 evidence; NC-604 remains deferred behind
-NC-908. NC-70 and every later package remain unstarted.
+NC-908. NC-701 through NC-709 are independently verified; NC-80 and every later package
+remain unstarted.
 
 ### Tasks
 
@@ -596,12 +600,20 @@ same Lesson Plan reducer.
 
 ## 12. Work package NC-70 — Research quality and source repair
 
+**Implementation status (2026-07-20):** NC-701 through NC-709 passed independent
+checkpoint review. Deterministic browser evidence covers Scenario A10's source-decision
+and route phase: reviewable source quality, known-source proposal, bounded evidence
+research, human approval, exact atomic routing, and preservation of unrelated state.
+Content remains unchanged at `awaiting_content_repair`; targeted regeneration and
+reverification are NC-80 work.
+
 ### Tasks
 
 #### NC-701 — Add source candidate scoring
 
 - **Priority:** P0-D
 - **Dependencies:** NC-106
+- **Status:** Independently verified.
 - Score authority, fit, specificity, freshness, fetch status, and content availability.
 - Keep scoring transparent and advisory.
 
@@ -609,6 +621,7 @@ same Lesson Plan reducer.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-701
+- **Status:** Independently verified.
 - Extract bounded sections relevant to candidate topics/evidence gaps.
 - Preserve existing excerpt-size guardrails.
 
@@ -616,12 +629,14 @@ same Lesson Plan reducer.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-702
+- **Status:** Independently verified.
 - Return safe preview, trust/relevance notes, and topic/gap coverage.
 
 #### NC-704 — Add known-source command and UI
 
 - **Priority:** P0-D
 - **Dependencies:** NC-106
+- **Status:** Independently verified.
 - Create proposed candidates from user-provided URLs.
 - Require normal source approval.
 
@@ -629,6 +644,7 @@ same Lesson Plan reducer.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-102
+- **Status:** Independently verified.
 - Add schema/validation/repository support for the repair ledger.
 - Synchronize entry state under course mutation locks.
 
@@ -636,6 +652,7 @@ same Lesson Plan reducer.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-705
+- **Status:** Independently verified.
 - Consume subtopic/asset/claim/finding scope.
 - Produce proposed candidates without changing the approved registry.
 - Use an injected research provider so deterministic repair works before live parity.
@@ -644,12 +661,14 @@ same Lesson Plan reducer.
 
 - **Priority:** P0-P
 - **Dependencies:** NC-703, NC-706
+- **Status:** Independently verified.
 - Show the originating finding, candidate previews, coverage, and approval decision.
 
 #### NC-708 — Implement source approval and route transaction
 
 - **Priority:** P0-D
 - **Dependencies:** NC-403, NC-501, NC-705
+- **Status:** Independently verified.
 - Atomically update source store, dossier, registry, named Course Model source mappings,
   Blueprint routes, and repair ledger.
 - Stop and require normal reopen when scope/structure/asset selection would change.
@@ -658,6 +677,7 @@ same Lesson Plan reducer.
 
 - **Priority:** P0-D
 - **Dependencies:** NC-708
+- **Status:** Independently verified.
 - Assert unrelated Course Model/Blueprint records and content assets remain unchanged.
 
 ### Package exit gate
@@ -666,6 +686,8 @@ same Lesson Plan reducer.
 - A known source can be added after creation.
 - One evidence gap can produce and approve a bounded candidate.
 - Source routing updates only the confirmed scope.
+- Deterministic browser evidence proves the source-decision and route portion of A10;
+  NC-80 must prove targeted regeneration, reverification, and review closure.
 
 ## 13. Work package NC-80 — Content repair and review closure
 

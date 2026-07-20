@@ -4,6 +4,7 @@ const SEEDED_LIFECYCLE_COURSE_ID = "studio-course-model-reopen-fixture";
 const COURSE_MODEL_EDITOR_COURSE_ID = "studio-course-model-editor-fixture";
 const BLUEPRINT_EDITOR_COURSE_ID = "studio-blueprint-editor-fixture";
 const LESSON_PLAN_EDITOR_COURSE_ID = "studio-lesson-plan-editor-fixture";
+const SOURCE_REPAIR_COURSE_ID = "studio-source-repair-fixture";
 
 interface StageProjection {
   state: string;
@@ -112,6 +113,63 @@ interface LessonPlanArtifact {
   checksum: string;
 }
 
+interface CanonicalArtifact<TBody> {
+  artifact: {
+    body: TBody;
+  };
+  checksum: string;
+}
+
+interface SourceRecord {
+  id: string;
+  status?: string;
+}
+
+interface SourceDossierBody {
+  source_candidates: SourceRecord[];
+}
+
+interface SourceRegistryBody {
+  source_registry: SourceRecord[];
+  decision: {
+    approved_ids: string[];
+  };
+}
+
+interface CourseModelSourceBody {
+  source_registry: SourceRecord[];
+  modules: Array<{
+    subtopics: Array<{
+      id: string;
+      approved_source_ids: string[];
+    }>;
+  }>;
+}
+
+interface BlueprintSourceBody {
+  subtopic_plans: Array<{
+    subtopic_id: string;
+    asset_plan: Array<{
+      id: string;
+      selection_status: string;
+      source_ids: string[];
+    }>;
+  }>;
+}
+
+interface SourceRepairLedger {
+  checksum: string;
+  entries: Array<{
+    status: string;
+    approved_source_route: {
+      source_id: string;
+      subtopic_ids: string[];
+      asset_ids: string[];
+    } | null;
+    affected_asset_ids: string[];
+  }>;
+}
+
 async function stage(
   request: APIRequestContext,
   courseId: string,
@@ -167,6 +225,18 @@ async function lessonPlanArtifact(
   const response = await request.get(`/api/courses/${courseId}/artifacts/lesson_plan`);
   expect(response.ok()).toBe(true);
   return response.json() as Promise<LessonPlanArtifact>;
+}
+
+async function canonicalArtifact<TBody>(
+  request: APIRequestContext,
+  courseId: string,
+  artifactType: string,
+): Promise<CanonicalArtifact<TBody>> {
+  const response = await request.get(
+    `/api/courses/${courseId}/artifacts/${artifactType}`,
+  );
+  expect(response.ok()).toBe(true);
+  return response.json() as Promise<CanonicalArtifact<TBody>>;
 }
 
 function questionCard(page: Page, questionId: string) {
@@ -958,4 +1028,215 @@ test("Scenario A12 reconciles and approves a typed Lesson Plan", async ({
   await expect.poll(
     async () => (await stage(request, LESSON_PLAN_EDITOR_COURSE_ID, "package")).state,
   ).toBe("ready");
+});
+
+test("NC-70 adds a known source and commits one bounded repair route", async ({
+  page,
+  request,
+}) => {
+  const dossierBefore = await canonicalArtifact<SourceDossierBody>(
+    request,
+    SOURCE_REPAIR_COURSE_ID,
+    "research_dossier",
+  );
+  const registryBefore = await canonicalArtifact<SourceRegistryBody>(
+    request,
+    SOURCE_REPAIR_COURSE_ID,
+    "approved_source_registry",
+  );
+  const modelBefore = await canonicalArtifact<CourseModelSourceBody>(
+    request,
+    SOURCE_REPAIR_COURSE_ID,
+    "course_model",
+  );
+  const blueprintBefore = await canonicalArtifact<BlueprintSourceBody>(
+    request,
+    SOURCE_REPAIR_COURSE_ID,
+    "blueprint",
+  );
+  const contentBefore = await canonicalArtifact<Record<string, unknown>>(
+    request,
+    SOURCE_REPAIR_COURSE_ID,
+    "content_package",
+  );
+
+  await page.goto(
+    `/courses/${SOURCE_REPAIR_COURSE_ID}/research?mode=deterministic`,
+  );
+  await expect(page.getByRole("button", { name: "+ Add source" })).toBeVisible();
+  await expect(
+    page.getByText("Recommendation is separate from your decision.").first(),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "+ Add source" }).click();
+  await page.getByLabel("Source URL").fill(
+    "https://example.edu/focused-coffee-evidence",
+  );
+  await page.getByLabel(/Title/).fill("Known focused coffee evidence");
+  await page.getByLabel(/Publisher/).fill("Example University");
+  await page.getByLabel(/Why it may help/).fill(
+    "May address the unsupported coffee claim.",
+  );
+  await page.getByLabel(/Trust note/).fill(
+    "Human-provided URL; authority still requires source review.",
+  );
+  await page.getByRole("button", { name: "Add proposed source" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Known focused coffee evidence" }),
+  ).toBeVisible();
+
+  const dossierWithKnown = await canonicalArtifact<SourceDossierBody>(
+    request,
+    SOURCE_REPAIR_COURSE_ID,
+    "research_dossier",
+  );
+  const knownCandidate = dossierWithKnown.artifact.body.source_candidates.find(
+    (source) => source.id.startsWith("known_"),
+  );
+  expect(knownCandidate).toMatchObject({ status: "proposed" });
+  expect(dossierWithKnown.artifact.body.source_candidates).toHaveLength(
+    dossierBefore.artifact.body.source_candidates.length + 1,
+  );
+  expect(
+    await canonicalArtifact<SourceRegistryBody>(
+      request,
+      SOURCE_REPAIR_COURSE_ID,
+      "approved_source_registry",
+    ),
+  ).toEqual(registryBefore);
+
+  await page.goto(
+    `/courses/${SOURCE_REPAIR_COURSE_ID}/content?mode=deterministic`,
+  );
+  await expect(page.getByText("1 blocking verification finding")).toBeVisible();
+  await page.getByRole("button", { name: /Find better evidence/ }).click();
+  const repairQueue = page.getByRole("region", { name: "Source repair queue" });
+  await expect(repairQueue).toBeVisible();
+  await expect(
+    repairQueue.getByText(/Recommendations are advisory/),
+  ).toBeVisible();
+  await expect(
+    repairQueue.getByText(/This deterministic passage exists to prove/),
+  ).toBeVisible({ timeout: 30_000 });
+  await expect(
+    repairQueue.getByRole("button", { name: "Approve this candidate" }),
+  ).toBeVisible();
+
+  expect(
+    await canonicalArtifact<SourceRegistryBody>(
+      request,
+      SOURCE_REPAIR_COURSE_ID,
+      "approved_source_registry",
+    ),
+  ).toEqual(registryBefore);
+  await repairQueue.getByRole("button", { name: "Approve this candidate" }).click();
+  await expect(
+    repairQueue.getByRole("button", { name: "Confirm exact source route" }),
+  ).toBeVisible();
+  await expect(
+    repairQueue.locator("dl").getByText("m1_s1_cc", { exact: true }),
+  ).toBeVisible();
+  expect(
+    await canonicalArtifact<SourceRegistryBody>(
+      request,
+      SOURCE_REPAIR_COURSE_ID,
+      "approved_source_registry",
+    ),
+  ).toEqual(registryBefore);
+  await repairQueue.getByRole("button", { name: "Confirm exact source route" }).click();
+
+  await expect(
+    page.getByText("Source approved and route committed atomically"),
+  ).toBeVisible();
+  await expect(page.getByText(/has not started yet/)).toBeVisible();
+
+  const ledgerResponse = await request.get(
+    `/api/courses/${SOURCE_REPAIR_COURSE_ID}/source-repairs`,
+  );
+  expect(ledgerResponse.ok()).toBe(true);
+  const ledger = (await ledgerResponse.json()) as SourceRepairLedger;
+  expect(ledger.entries).toHaveLength(1);
+  const repair = ledger.entries[0];
+  expect(repair.status).toBe("awaiting_content_repair");
+  expect(repair.affected_asset_ids).toEqual(["m1_s1_cc"]);
+  expect(repair.approved_source_route).toMatchObject({
+    subtopic_ids: ["m1_s1"],
+    asset_ids: ["m1_s1_cc"],
+  });
+  const sourceId = repair.approved_source_route?.source_id;
+  expect(sourceId).toBeTruthy();
+
+  const dossierAfter = await canonicalArtifact<SourceDossierBody>(
+    request,
+    SOURCE_REPAIR_COURSE_ID,
+    "research_dossier",
+  );
+  expect(
+    dossierAfter.artifact.body.source_candidates.find(
+      (source) => source.id === knownCandidate?.id,
+    ),
+  ).toMatchObject({ status: "proposed" });
+  expect(
+    dossierAfter.artifact.body.source_candidates.find(
+      (source) => source.id === sourceId,
+    ),
+  ).toMatchObject({ status: "approved" });
+
+  const registryAfter = await canonicalArtifact<SourceRegistryBody>(
+    request,
+    SOURCE_REPAIR_COURSE_ID,
+    "approved_source_registry",
+  );
+  expect(registryAfter.artifact.body.decision.approved_ids).toContain(sourceId);
+  expect(registryAfter.artifact.body.source_registry.map((source) => source.id)).toContain(
+    sourceId,
+  );
+
+  const modelAfter = await canonicalArtifact<CourseModelSourceBody>(
+    request,
+    SOURCE_REPAIR_COURSE_ID,
+    "course_model",
+  );
+  expect(modelAfter.artifact.body.source_registry.map((source) => source.id)).toContain(
+    sourceId,
+  );
+  expect(
+    modelAfter.artifact.body.modules[0].subtopics[0].approved_source_ids,
+  ).toContain(sourceId);
+  expect(modelAfter.artifact.body.modules[0].subtopics.slice(1)).toEqual(
+    modelBefore.artifact.body.modules[0].subtopics.slice(1),
+  );
+
+  const blueprintAfter = await canonicalArtifact<BlueprintSourceBody>(
+    request,
+    SOURCE_REPAIR_COURSE_ID,
+    "blueprint",
+  );
+  const planBefore = blueprintBefore.artifact.body.subtopic_plans[0];
+  const planAfter = blueprintAfter.artifact.body.subtopic_plans[0];
+  expect(
+    planAfter.asset_plan.find((asset) => asset.id === "m1_s1_cc")?.source_ids,
+  ).toContain(sourceId);
+  expect(planAfter.asset_plan.filter((asset) => asset.id !== "m1_s1_cc")).toEqual(
+    planBefore.asset_plan.filter((asset) => asset.id !== "m1_s1_cc"),
+  );
+  expect(blueprintAfter.artifact.body.subtopic_plans.slice(1)).toEqual(
+    blueprintBefore.artifact.body.subtopic_plans.slice(1),
+  );
+  expect(
+    blueprintAfter.artifact.body.subtopic_plans.flatMap((plan) =>
+      plan.asset_plan.map((asset) => [asset.id, asset.selection_status]),
+    ),
+  ).toEqual(
+    blueprintBefore.artifact.body.subtopic_plans.flatMap((plan) =>
+      plan.asset_plan.map((asset) => [asset.id, asset.selection_status]),
+    ),
+  );
+
+  expect(
+    await canonicalArtifact<Record<string, unknown>>(
+      request,
+      SOURCE_REPAIR_COURSE_ID,
+      "content_package",
+    ),
+  ).toEqual(contentBefore);
 });

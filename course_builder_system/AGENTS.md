@@ -23,8 +23,11 @@ of upstream lifecycle and authoritative source-route gates. NC-504 remains defer
 NC-90 behind NC-905. NC-601 through NC-603 passed independent NC-60 review on
 2026-07-20 with deterministic browser Scenario A12 evidence after corrective hardening
 of conflict rebasing, monotonic session IDs, Course Model authority, and exact affected-
-session reporting. NC-604 remains deferred to NC-90 behind NC-908. NC-70 and all later
-packages remain unstarted.
+session reporting. NC-604 remains deferred to NC-90 behind NC-908. NC-701 through
+NC-709 passed independent NC-70 review on 2026-07-20 with deterministic browser
+evidence for Scenario A10's source-decision and route phase. Targeted Content
+regeneration and reverification remain NC-80 work; NC-80 and later packages remain
+unstarted.
 
 The system turns a sparse subject request into a rendered course folder through:
 
@@ -57,9 +60,10 @@ NC-301 and NC-302. NC-303 remains deferred to NC-90 behind NC-902. NC-401 throug
 NC-405 are independently verified; this does not complete NC-40 because NC-406 remains
 deferred to NC-90. NC-501 through NC-503 are independently verified; NC-504 remains
 deferred to NC-90 behind NC-905. NC-601 through NC-603 are independently verified;
-NC-604 remains deferred to NC-90 behind NC-908. The next safe action is NC-70, beginning
-with NC-701 under its dependency and exit gates. Do not start NC-406, NC-504, or NC-604
-before their dependencies or skip ahead to NC-80 repair or live-agent parity.
+NC-604 remains deferred to NC-90 behind NC-908. NC-701 through NC-709 are independently
+verified. The next safe action is NC-80, beginning with NC-801 under its dependency and
+exit gates. Do not start NC-406, NC-504, or NC-604 before their dependencies or skip
+ahead to live-agent parity.
 Source repair plus verifier-driven targeted revision remains the central trust milestone
 after the intervening stage contracts.
 

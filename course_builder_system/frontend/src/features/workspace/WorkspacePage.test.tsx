@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { demoWorkspace } from "../../data/demo";
-import { briefSectionUpdates, WorkspacePage } from "./WorkspacePage";
+import { briefSectionUpdates, sourceRepairModeAvailability, WorkspacePage } from "./WorkspacePage";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -378,6 +378,21 @@ function outcomesFetch(options: { conflict?: boolean } = {}) {
 }
 
 afterEach(() => vi.unstubAllGlobals());
+
+describe("Source Repair execution mode", () => {
+  it("never substitutes deterministic evidence in Live agent mode", () => {
+    expect(sourceRepairModeAvailability("live", true)).toEqual({
+      available: false,
+      reason: expect.stringContaining("No deterministic candidate will be substituted"),
+    });
+    expect(sourceRepairModeAvailability("deterministic", true)).toEqual({
+      available: true,
+    });
+    expect(sourceRepairModeAvailability("deterministic", false)).toEqual({
+      available: false,
+    });
+  });
+});
 
 describe("Brief direct-edit merge payloads", () => {
   it("sends only changed fields from the edited section", () => {

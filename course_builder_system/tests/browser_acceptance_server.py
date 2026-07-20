@@ -24,6 +24,7 @@ SEEDED_LIFECYCLE_COURSE_ID = "studio-course-model-reopen-fixture"
 COURSE_MODEL_EDITOR_COURSE_ID = "studio-course-model-editor-fixture"
 BLUEPRINT_EDITOR_COURSE_ID = "studio-blueprint-editor-fixture"
 LESSON_PLAN_EDITOR_COURSE_ID = "studio-lesson-plan-editor-fixture"
+SOURCE_REPAIR_COURSE_ID = "studio-source-repair-fixture"
 _fixture_root = (
     Path(__file__).resolve().parents[1]
     / "examples"
@@ -56,6 +57,27 @@ for _artifact_type in (
     _artifact = json.loads(_fixture_path.read_text(encoding="utf-8"))
     _artifact["course_id"] = COURSE_MODEL_EDITOR_COURSE_ID
     (_editor_seed_root / _fixture_path.name).write_text(
+        json.dumps(_artifact, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+# A fifth isolated fixture carries one deterministic verifier blocker so NC-70
+# exercises known-source addition, bounded evidence research, human source review,
+# and the exact route transaction without starting NC-80 content regeneration.
+_source_repair_seed_root = _acceptance_root / "courses" / SOURCE_REPAIR_COURSE_ID
+_source_repair_seed_root.mkdir(parents=True)
+for _fixture_path in _fixture_root.glob("*.json"):
+    _artifact = json.loads(_fixture_path.read_text(encoding="utf-8"))
+    _artifact["course_id"] = SOURCE_REPAIR_COURSE_ID
+    if _artifact.get("artifact_type") == "content_package":
+        _asset = _artifact["body"]["subtopics"][0]["assets"][0]
+        _claim = _asset["claims"][0]
+        _claim["support"] = "unsupported"
+        _claim["supporting_excerpt"] = None
+        _claim["note"] = "The approved route does not support this deterministic claim."
+        _asset["verification"]["supported"] -= 1
+        _asset["verification"]["unsupported"] += 1
+    (_source_repair_seed_root / _fixture_path.name).write_text(
         json.dumps(_artifact, indent=2) + "\n",
         encoding="utf-8",
     )

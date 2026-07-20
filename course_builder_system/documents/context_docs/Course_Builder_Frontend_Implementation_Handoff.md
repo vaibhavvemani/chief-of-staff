@@ -31,7 +31,11 @@
 > deferred to NC-90 behind NC-905. NC-601 through NC-603 passed independent NC-60
 > review with deterministic browser Scenario A12 evidence after corrective hardening of
 > conflict rebasing, monotonic session IDs, Course Model authority, and exact affected-
-> session reporting. NC-604 remains deferred to NC-90 behind NC-908; NC-70 is next.
+> session reporting. NC-604 remains deferred to NC-90 behind NC-908. NC-701 through
+> NC-709 passed independent NC-70 review with deterministic browser evidence for
+> Scenario A10's source-decision and route phase. Content remains unchanged at the
+> truthful `awaiting_content_repair` boundary; targeted regeneration and reverification
+> remain NC-80 work.
 > Unsupported generic revision controls remain removed or disabled.
 
 ## 1. Purpose of this document
@@ -347,8 +351,12 @@ an asset reviewed cannot clear hard verifier blockers.
 The implemented repair entry point revises only a named asset using currently approved
 evidence. It is checksum protected, rejects unsupported or ambiguous targets before job
 creation, rejects no-op or scope-escaping output without overwriting the prior artifact,
-and resets human review only for changed content. The “find better evidence” action is
-absent until the dedicated NC-70/NC-80 source-repair contract exists.
+and resets human review only for changed content. NC-701 through NC-709 add the
+independently verified “Find better evidence” source phase: reviewable advisory quality,
+bounded previews and candidates, human approval, and exact atomic routing. Live mode
+truthfully leaves this action unavailable until NC-912; deterministic routing ends at
+`awaiting_content_repair` and does not substitute synthetic evidence in a live course.
+NC-80 must connect that approved route to targeted regeneration and reverification.
 
 ### 6.7 Lesson Plan
 
@@ -669,9 +677,10 @@ content verification workbench, Lesson Plan review, and Package default selectio
    editing, source decisions, content review, and scoped Content revision are wired and
    independently verified at their deterministic gates. Their scoped live proposal
    packages remain deferred; unsupported generic revisions are not exposed.
-4. **Source repair is not closed-loop automation.** Better-evidence repair is not exposed
-   until NC-70/NC-80 implement evidence acquisition, approval, rerouting, targeted
-   regeneration, and reverification.
+4. **Source repair is not yet closed-loop automation.** NC-70 exposes deterministic
+   evidence acquisition, review, approval, and exact routing, ending truthfully at
+   `awaiting_content_repair`. NC-80 still must implement targeted regeneration,
+   reverification, and review closure; live repair remains deferred to NC-912.
 5. **Package preview is representative.** The selected raw Markdown is served correctly,
    but the inline pane does not yet fetch and render the complete selected file.
 6. **Settings and full diagnostics are deferred.** Their navigation/actions are visibly
@@ -714,13 +723,14 @@ evidence. NC-405 passed independent review with deterministic browser Scenario A
 evidence. NC-501 through NC-503 passed independent review with deterministic browser
 Scenario A7 evidence. NC-40 is not complete; NC-406 and NC-504 remain deferred to
 NC-90. NC-601 through NC-603 passed independent review with deterministic browser
-Scenario A12 evidence; NC-604 remains deferred behind NC-908. NC-70 is next. Source
-repair and verifier-driven targeted revision remain the central trust milestone after
-the source-quality checkpoint.
+Scenario A12 evidence; NC-604 remains deferred behind NC-908. NC-701 through NC-709
+passed independent review with deterministic browser evidence for Scenario A10's
+source-decision and route phase. NC-80 is next. Verifier-driven targeted revision and
+review closure remain the central trust milestone after the source-quality checkpoint.
 
 After that, sensible frontend increments are:
 
-1. implement NC-701 source candidate scoring under the NC-70 dependency gate;
+1. implement NC-801 typed Content repair under the NC-80 dependency gate;
 2. keep NC-406 live Course Model revision unstarted until its dependencies are complete;
 3. render the actual selected Markdown file inside the Package preview;
 4. preserve the reviewed Blueprint contract while keeping NC-504 live revision deferred;
@@ -745,6 +755,14 @@ Scenario A7. NC-40 remains incomplete; NC-406 is deferred to NC-90 and unstarted
 NC-504 behind NC-905. NC-601 through NC-603 now add the independently verified typed
 Lesson Plan editor, exact affected-session reconciliation, and browser Scenario A12;
 NC-604 remains deferred behind NC-908.
+
+NC-701 through NC-709 now add the independently verified Research quality and bounded
+source-repair workflow. The browser can add a known proposed source, inspect safe
+previews and candidate coverage, approve one candidate, and confirm its exact route.
+The backend atomically updates only the authorized source and route records while
+preserving Content and unrelated Course Model/Blueprint state. The resulting
+`awaiting_content_repair` state is the explicit handoff to NC-80, not a completed
+regeneration claim.
 
 The implementation should be extended as a thin, truthful product layer over canonical
 artifacts and typed commands. The frontend may improve how decisions are presented, but

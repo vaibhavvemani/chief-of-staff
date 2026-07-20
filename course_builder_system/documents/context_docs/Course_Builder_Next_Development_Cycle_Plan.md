@@ -23,7 +23,10 @@
 > hardening. NC-504 remains deferred to NC-90 behind NC-905. NC-601 through NC-603
 > passed independent NC-60 review with deterministic browser Scenario A12 evidence after corrective
 > conflict-rebase, monotonic session-ID, Course Model-authority, and exact affected-
-> session hardening. NC-604 remains deferred to NC-90 behind NC-908; NC-70 is next.
+> session hardening. NC-604 remains deferred to NC-90 behind NC-908. NC-701 through
+> NC-709 passed independent NC-70 review with deterministic browser evidence for
+> Scenario A10's source-decision and route phase. Targeted Content regeneration and
+> reverification remain NC-80 work; NC-80 is next.
 > This does not complete Milestone 3 or the cycle.
 
 ## 1. Purpose of this document
@@ -140,10 +143,10 @@ The most important gaps are not cosmetic.
 | Outcomes editing | NC-301 and NC-302 now provide independently verified strict deterministic reduction and a typed React editor. | Preserve the typed contract and keep NC-303 live scoped revision deferred to NC-90 behind NC-902. |
 | Blueprint editing | NC-501 through NC-503 provide an independently verified typed reducer/API, browser defaults and exceptions editor, reconciliation preview, and deterministic Scenario A7 evidence. | Keep NC-504 live revision deferred to NC-90 behind NC-905. |
 | Course Model editing | NC-401 through NC-405 provide an independently verified typed backend mutation contract, browser editor, and exact-preview detailed diff with deterministic Scenario A6 evidence. | Keep NC-406 live revision unstarted until its NC-90 dependencies are complete. |
-| Lesson Plan editing | NC-601 through NC-603 provide independently verified typed constraints/operations, conflict-safe browser controls, exact Course Model coverage, stable session IDs, bounded preservation, and Scenario A12 evidence. | Keep NC-604 live revision deferred to NC-90 behind NC-908; proceed to NC-70. |
+| Lesson Plan editing | NC-601 through NC-603 provide independently verified typed constraints/operations, conflict-safe browser controls, exact Course Model coverage, stable session IDs, bounded preservation, and Scenario A12 evidence. | Keep NC-604 live revision deferred to NC-90 behind NC-908. |
 | Generic revision | Several stage steps accept feedback at the API boundary but ignore it in the step implementation. | Show revision actions only when a real scoped handler exists. |
 | Reopening | The API has a reopen command, but React does not expose it consistently. | Add explicit reopen and downstream-impact confirmation. |
-| Source repair | “Find better evidence” targets an approved Research stage that the API requires to be reopened first. | Build a dedicated bounded repair workflow rather than a generic stage rerun. |
+| Source repair | NC-701 through NC-709 provide an independently verified bounded workflow for reviewable quality, proposed candidates, human approval, and exact atomic routing. Content remains unchanged at `awaiting_content_repair`. | Complete targeted regeneration, reverification, and review closure in NC-80 without weakening the NC-70 source contract. |
 | Live mode | Research and Student Content/verification are live; several upstream proposal stages remain deterministic. | Add live implementations behind the same stage contracts. |
 | Progress | The browser receives stage events, but content unit events are not emitted continuously during generation. | Connect generation callbacks to persisted progress events. |
 | Activity | The visual surface exists, but activity, diagnostics, and cost data are incomplete or placeholder-like. | Project real safe events and stage-level call summaries. |
@@ -430,8 +433,10 @@ A6 evidence, including the exact-preview structural diff. NC-40 is not complete;
 remains deferred to NC-90. NC-501 through NC-503 are independently verified with
 deterministic browser Scenario A7 evidence. NC-504 remains deferred behind NC-905;
 NC-601 through NC-603 are independently verified with deterministic browser Scenario
-A12 evidence. NC-604 remains deferred behind NC-908; NC-70 and later packages remain
-unstarted.
+A12 evidence. NC-604 remains deferred behind NC-908. NC-701 through NC-709 are
+independently verified with deterministic browser evidence for Scenario A10's source-
+decision and route phase. Targeted Content regeneration and reverification remain
+NC-80 work; NC-80 and later packages remain unstarted.
 
 1. Wire the existing typed Outcomes API command into React.
 2. Support add, edit, remove, reorder, evidence, cognitive level, and priority.

@@ -116,6 +116,8 @@ class StageCapabilityService:
                 )
             )
         elif state == "approved":
+            if "add_source" in registered.direct_actions:
+                actions.append(self._direct_action(stage_slug, "add_source"))
             actions.append(
                 self._action(
                     "reopen",
@@ -213,7 +215,9 @@ class StageCapabilityService:
                 )
             ),
             "source_decision": "Save source decision",
+            "add_source": "Add known source",
             "review_asset": "Review content assets",
+            "source_repair": "Find better evidence",
         }
         return self._action(action_id, labels[action_id])
 

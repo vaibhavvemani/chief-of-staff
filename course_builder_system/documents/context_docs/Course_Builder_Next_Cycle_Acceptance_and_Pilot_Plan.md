@@ -41,7 +41,16 @@
 > constraints, modes, moves, and ordering; exact ordered Course Model coverage across
 > Blueprint and Content; monotonic session IDs; intent-aware checksum-conflict rebasing;
 > bounded preservation and exact affected-session reporting; refresh; explicit approval;
-> and Package readiness. NC-604 remains deferred to NC-90 behind NC-908. NC-70 is next.
+> and Package readiness. NC-604 remains deferred to NC-90 behind NC-908.
+
+> **NC-70 checkpoint — 2026-07-20:** NC-701 through NC-709 passed independent
+> deterministic review with browser evidence for Scenario A10's source-decision and
+> route phase. Evidence covers advisory source quality, bounded previews, known-source
+> proposal without premature approval, exact Content-origin repair scope, bounded
+> candidate research, human approval, atomic dossier/registry/Course Model/Blueprint
+> routing, unrelated-record preservation, rollback, and the truthful
+> `awaiting_content_repair` boundary. Targeted Content regeneration, reverification, and
+> review closure remain NC-80 work; this checkpoint does not claim complete A10 evidence.
 
 ## 1. Purpose
 
@@ -374,6 +383,11 @@ The deterministic verifier should produce at least:
 - Remaining blockers continue to hold `requires_attention`.
 
 ### A10 — Repair with better evidence
+
+**Evidence status (2026-07-20):** NC-70 independently verifies the candidate review,
+human source decision, and exact atomic route through the
+`awaiting_content_repair` boundary. NC-80 must still verify the targeted regeneration,
+reverification, blocker outcome, and unchanged-asset hashes before A10 is complete.
 
 **Operator action**
 

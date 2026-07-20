@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://course-builder.local/schemas/source_repair.v0.1.schema.json",
+  "title": "Course Builder Source Repair Ledger v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "course_id",
+    "artifact_type",
+    "produced_by_step",
+    "schema_version",
+    "status",
+    "revision",
+    "revision_note",
+    "inputs",
+    "updated_at",
+    "body"
+  ],
+  "properties": {
+    "course_id": { "$ref": "#/$defs/id" },
+    "artifact_type": { "const": "source_repair" },
+    "produced_by_step": { "enum": ["source_repair", "human"] },
+    "schema_version": { "const": "0.1" },
+    "status": { "enum": ["draft", "approved"] },
+    "revision": { "type": "integer", "minimum": 0 },
+    "revision_note": { "type": ["string", "null"], "maxLength": 500 },
+    "inputs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "contains": { "const": "content_package" },
+      "uniqueItems": true
+    },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "body": { "$ref": "#/$defs/body" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "nullable_string": {
+      "type": ["string", "null"],
+      "maxLength": 2000
+    },
+    "id_list": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/id" },
+      "uniqueItems": true
+    },
+    "score_dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "reason"],
+      "properties": {
+        "score": { "type": "number", "minimum": 0 },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "preview_section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order", "text", "matched_terms", "relevance_score"],
+      "properties": {
+        "order": { "type": "integer", "minimum": 1 },
+        "text": { "type": "string", "minLength": 1, "maxLength": 1200 },
+        "matched_terms": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "relevance_score": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "coverage_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["need", "score", "matched_terms"],
+      "properties": {
+        "need": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "score": { "type": "integer", "minimum": 0 },
+        "matched_terms": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "overall",
+        "recommendation",
+        "advisory_only",
+        "dimensions",
+        "preview_sections",
+        "coverage",
+        "fetch_reason"
+      ],
+      "properties": {
+        "overall": { "type": "number", "minimum": 0 },
+        "recommendation": {
+          "enum": ["strong_candidate", "review_candidate", "weak_candidate"]
+        },
+        "advisory_only": { "const": true },
+        "dimensions": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/score_dimension" },
+          "required": [
+            "authority",
+            "fit",
+            "specificity",
+            "freshness",
+            "fetch_status",
+            "content_availability"
+          ]
+        },
+        "preview_sections": {
+          "type": "array",
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/preview_section" }
+        },
+        "coverage": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/coverage_row" }
+        },
+        "fetch_reason": { "$ref": "#/$defs/nullable_string" }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "publisher",
+        "source_type",
+        "locator",
+        "trust_notes",
+        "relevance",
+        "staged_content_ref",
+        "fetch_status",
+        "fetch_reason",
+        "quality"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "publisher": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "source_type": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "locator": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "trust_notes": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "relevance": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "staged_content_ref": { "$ref": "#/$defs/nullable_string" },
+        "fetch_status": { "enum": ["available", "unavailable"] },
+        "fetch_reason": { "$ref": "#/$defs/nullable_string" },
+        "quality": { "$ref": "#/$defs/quality" }
+      }
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subtopic_id",
+        "asset_id",
+        "claim_id",
+        "finding_id",
+        "content_checksum"
+      ],
+      "properties": {
+        "subtopic_id": { "$ref": "#/$defs/id" },
+        "asset_id": { "$ref": "#/$defs/id" },
+        "claim_id": { "$ref": "#/$defs/id" },
+        "finding_id": { "$ref": "#/$defs/id" },
+        "content_checksum": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "source_decision": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidate_id", "decision", "rationale"],
+          "properties": {
+            "candidate_id": { "$ref": "#/$defs/id" },
+            "decision": { "enum": ["approved", "rejected"] },
+            "rationale": { "type": "string", "minLength": 1, "maxLength": 1000 }
+          }
+        }
+      ]
+    },
+    "source_route": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_id", "subtopic_ids", "asset_ids"],
+          "properties": {
+            "source_id": { "$ref": "#/$defs/id" },
+            "subtopic_ids": { "$ref": "#/$defs/id_list" },
+            "asset_ids": { "$ref": "#/$defs/id_list" }
+          }
+        }
+      ]
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "origin",
+        "evidence_gap",
+        "requested_mode",
+        "proposed_candidates",
+        "human_source_decision",
+        "approved_source_route",
+        "affected_asset_ids",
+        "status",
+        "final_verifier_result",
+        "failure_reason",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "origin": { "$ref": "#/$defs/origin" },
+        "evidence_gap": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "requested_mode": { "enum": ["deterministic", "live"] },
+        "proposed_candidates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/candidate" }
+        },
+        "human_source_decision": { "$ref": "#/$defs/source_decision" },
+        "approved_source_route": { "$ref": "#/$defs/source_route" },
+        "affected_asset_ids": { "$ref": "#/$defs/id_list" },
+        "status": {
+          "enum": [
+            "requested",
+            "researching",
+            "awaiting_source_decision",
+            "awaiting_route_confirmation",
+            "awaiting_content_repair",
+            "regenerating",
+            "awaiting_content_review",
+            "resolved",
+            "failed"
+          ]
+        },
+        "final_verifier_result": {
+          "anyOf": [
+            { "type": "null" },
+            { "type": "object" }
+          ]
+        },
+        "failure_reason": { "$ref": "#/$defs/nullable_string" },
+        "created_at": { "type": "string", "minLength": 1 },
+        "updated_at": { "type": "string", "minLength": 1 }
+      }
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["next_repair_id", "entries"],
+      "properties": {
+        "next_repair_id": { "type": "integer", "minimum": 1 },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/entry" }
+        }
+      }
+    }
+  }
+}

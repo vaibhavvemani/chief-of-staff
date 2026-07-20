@@ -528,6 +528,51 @@ class SourceDecisionCommand(VersionedCommand):
     selected_ids: list[str] = Field(min_length=1, max_length=50)
 
 
+class KnownSourceCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
+    locator: KnownSourceLocator
+    title: Annotated[str, Field(strict=True, min_length=1, max_length=300)] | None = None
+    publisher: Annotated[str, Field(strict=True, min_length=1, max_length=200)] | None = None
+    trust_notes: Annotated[str, Field(strict=True, min_length=1, max_length=500)] | None = None
+    relevance: Annotated[str, Field(strict=True, min_length=1, max_length=500)] | None = None
+
+
+SourceRepairId = Annotated[
+    str,
+    Field(strict=True, pattern=r"^[a-z0-9][a-z0-9_-]*$"),
+]
+
+
+class SourceRepairRequestCommand(StrictCommand):
+    expected_content_checksum: str = Field(min_length=6, max_length=128)
+    subtopic_id: SourceRepairId
+    asset_id: SourceRepairId
+    claim_id: SourceRepairId
+    finding_id: SourceRepairId
+    evidence_gap: Annotated[str, Field(strict=True, min_length=1, max_length=2000)]
+    mode: Literal["deterministic", "live"] = "deterministic"
+
+
+class SourceRepairDecisionCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
+    candidate_id: SourceRepairId
+    decision: Literal["approved", "rejected"]
+    rationale: Annotated[str, Field(strict=True, min_length=1, max_length=1000)]
+
+
+class SourceRepairRouteCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
+    subtopic_ids: list[SourceRepairId] = Field(min_length=1, max_length=50)
+    asset_ids: list[SourceRepairId] = Field(min_length=1, max_length=50)
+
+    @field_validator("subtopic_ids", "asset_ids")
+    @classmethod
+    def unique_route_ids(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)):
+            raise ValueError("source repair route IDs must be unique")
+        return values
+
+
 def _require_non_null_update(
     model: BaseModel,
     fields: tuple[str, ...],

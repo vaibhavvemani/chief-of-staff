@@ -14,6 +14,7 @@ SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
         "course_model.v0.2.schema.json",
         "course_outcomes.v0.2.schema.json",
         "research_dossier.v0.2.schema.json",
+        "source_repair.v0.1.schema.json",
     ],
 )
 def test_current_contract_schema_keywords_are_supported(schema_name: str) -> None:
