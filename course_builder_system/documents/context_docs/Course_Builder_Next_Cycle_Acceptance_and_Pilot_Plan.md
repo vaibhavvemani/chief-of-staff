@@ -34,7 +34,14 @@
 > case/assessment controls, explicit anchor waivers, reconciliation and stale-content
 > preview, refresh and checksum-conflict recovery, approved-source-only routing, and
 > rejection without mutation for noncurrent Course Models or rejected/contentless
-> sources. NC-504 remains deferred to NC-90 behind NC-905. NC-60 is next.
+> sources. NC-504 remains deferred to NC-90 behind NC-905.
+
+> **NC-60 checkpoint — 2026-07-20:** NC-601 through NC-603 passed independent
+> deterministic review with browser Scenario A12 evidence. Evidence covers typed
+> constraints, modes, moves, and ordering; exact ordered Course Model coverage across
+> Blueprint and Content; monotonic session IDs; intent-aware checksum-conflict rebasing;
+> bounded preservation and exact affected-session reporting; refresh; explicit approval;
+> and Package readiness. NC-604 remains deferred to NC-90 behind NC-908. NC-70 is next.
 
 ## 1. Purpose
 
@@ -402,6 +409,12 @@ The deterministic verifier should produce at least:
 - Lesson Plan becomes ready.
 
 ### A12 — Generate and edit Lesson Plan
+
+**Current checkpoint status:** Passed under independently reviewed NC-601 through
+NC-603. The deterministic browser scenario runs the real Lesson Plan stage, changes the
+duration and one delivery mode, persists delivery details, refreshes, verifies exact
+Course Model coverage and exact affected-session IDs, approves, and observes Package
+become ready. NC-604 live revision remains deferred.
 
 **Operator action**
 

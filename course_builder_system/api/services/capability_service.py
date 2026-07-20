@@ -207,6 +207,8 @@ class StageCapabilityService:
                     if stage_slug == "course-model"
                     else "Edit Blueprint"
                     if stage_slug == "blueprint"
+                    else "Edit Lesson Plan"
+                    if stage_slug == "lesson-plan"
                     else "Edit stage"
                 )
             ),

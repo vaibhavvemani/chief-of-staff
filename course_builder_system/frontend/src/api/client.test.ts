@@ -18,6 +18,7 @@ import {
   saveBriefUpdates,
   saveBlueprintDecision,
   saveCourseModelDecision,
+  saveLessonPlanDecision,
   saveOutcomeDecision,
   saveSourceDecision,
   versionConflictChecksum,
@@ -608,6 +609,94 @@ describe("typed API commands", () => {
           anchorWaiverConfirmed: true,
           exception: true,
           assets: [{ assetType: "summary", sourceIds: ["source-1"] }],
+        }],
+      },
+    });
+  });
+
+  it("serializes typed Lesson Plan constraints and operations", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
+      artifact: {
+        body: {
+          session_constraints: {
+            max_session_hours: 0.5,
+            default_mode: "live",
+            calendar_dates: ["2026-08-03"],
+            instructor_count: 1,
+            delivery_platform: "Studio classroom",
+          },
+          unresolved_session_constraints: [],
+          coverage_summary: {
+            expected_subtopic_ids: ["s1", "s2"],
+            covered_subtopic_ids: ["s1", "s2"],
+            total_duration_minutes: 40,
+          },
+          sessions: [{
+            id: "sess1",
+            order: 1,
+            title: "Foundations",
+            duration_minutes: 40,
+            covers: [
+              { subtopic_id: "s1", mode: "live", talking_points: ["Teach first."] },
+              { subtopic_id: "s2", mode: "self_study", talking_points: ["Study second."] },
+            ],
+          }],
+          decision_log: [{ affected_session_ids: ["sess1", "sess2"] }],
+        },
+      },
+      checksum: "lesson-plan-next",
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await saveLessonPlanDecision("herb-course", {
+      constraints: {
+        maxSessionHours: 0.5,
+        defaultMode: "live",
+        calendarDates: ["2026-08-03"],
+        instructorCount: 1,
+        deliveryPlatform: "Studio classroom",
+      },
+      operations: [
+        { op: "set_mode", targetId: "s2", value: "self_study" },
+        { op: "move_segment", targetId: "s2", value: "sess2", position: 1 },
+        { op: "reorder_session", sessionIds: ["sess2", "sess1"] },
+      ],
+      rationale: "Use a shorter blended delivery sequence.",
+    }, "lesson-plan-before");
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/courses/herb-course/lesson-plan/decision");
+    expect(requestBody(fetchMock)).toEqual({
+      expected_checksum: "lesson-plan-before",
+      constraints: {
+        max_session_hours: 0.5,
+        default_mode: "live",
+        calendar_dates: ["2026-08-03"],
+        instructor_count: 1,
+        delivery_platform: "Studio classroom",
+      },
+      operations: [
+        { op: "set_mode", target_id: "s2", value: "self_study" },
+        { op: "move_segment", target_id: "s2", value: "sess2", position: 1 },
+        { op: "reorder_session", session_ids: ["sess2", "sess1"] },
+      ],
+      rationale: "Use a shorter blended delivery sequence.",
+    });
+    expect(result).toMatchObject({
+      checksum: "lesson-plan-next",
+      lessonPlan: {
+        totalDurationMinutes: 40,
+        constraints: {
+          maxSessionHours: 0.5,
+          deliveryPlatform: "Studio classroom",
+        },
+        unresolvedConstraints: [],
+        affectedSessionIds: ["sess1", "sess2"],
+        sessions: [{
+          id: "sess1",
+          covers: [
+            { subtopicId: "s1", mode: "live" },
+            { subtopicId: "s2", mode: "self_study" },
+          ],
         }],
       },
     });

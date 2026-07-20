@@ -20,8 +20,10 @@
 > the exact-preview structural diff. NC-40 is not complete because NC-406 remains
 > deferred to NC-90. NC-501 through NC-503 passed independent NC-50 review with
 > deterministic browser Scenario A7 evidence after corrective lifecycle and source-route
-> hardening. NC-504 remains deferred to NC-90 behind NC-905. NC-60 and all later
-> packages remain unstarted.
+> hardening. NC-504 remains deferred to NC-90 behind NC-905. NC-601 through NC-603
+> passed independent NC-60 review with deterministic browser Scenario A12 evidence after corrective
+> conflict-rebase, monotonic session-ID, Course Model-authority, and exact affected-
+> session hardening. NC-604 remains deferred to NC-90 behind NC-908; NC-70 is next.
 > This does not complete Milestone 3 or the cycle.
 
 ## 1. Purpose of this document
@@ -136,9 +138,9 @@ The most important gaps are not cosmetic.
 |---|---|---|
 | Brief questions | Typed question and gap-detection primitives exist in Python, but the browser immediately creates a default Brief. | Expose the question contract through the API and implement bounded question rounds. |
 | Outcomes editing | NC-301 and NC-302 now provide independently verified strict deterministic reduction and a typed React editor. | Preserve the typed contract and keep NC-303 live scoped revision deferred to NC-90 behind NC-902. |
-| Blueprint editing | NC-501 through NC-503 provide an independently verified typed reducer/API, browser defaults and exceptions editor, reconciliation preview, and deterministic Scenario A7 evidence. | Keep NC-504 live revision deferred to NC-90 behind NC-905; proceed to NC-60. |
+| Blueprint editing | NC-501 through NC-503 provide an independently verified typed reducer/API, browser defaults and exceptions editor, reconciliation preview, and deterministic Scenario A7 evidence. | Keep NC-504 live revision deferred to NC-90 behind NC-905. |
 | Course Model editing | NC-401 through NC-405 provide an independently verified typed backend mutation contract, browser editor, and exact-preview detailed diff with deterministic Scenario A6 evidence. | Keep NC-406 live revision unstarted until its NC-90 dependencies are complete. |
-| Lesson Plan editing | The view shows constraints, but changes rely on generic feedback. | Add typed constraint and sequence commands. |
+| Lesson Plan editing | NC-601 through NC-603 provide independently verified typed constraints/operations, conflict-safe browser controls, exact Course Model coverage, stable session IDs, bounded preservation, and Scenario A12 evidence. | Keep NC-604 live revision deferred to NC-90 behind NC-908; proceed to NC-70. |
 | Generic revision | Several stage steps accept feedback at the API boundary but ignore it in the step implementation. | Show revision actions only when a real scoped handler exists. |
 | Reopening | The API has a reopen command, but React does not expose it consistently. | Add explicit reopen and downstream-impact confirmation. |
 | Source repair | “Find better evidence” targets an approved Research stage that the API requires to be reopened first. | Build a dedicated bounded repair workflow rather than a generic stage rerun. |
@@ -427,7 +429,9 @@ review. NC-404 and NC-405 are independently verified with deterministic browser 
 A6 evidence, including the exact-preview structural diff. NC-40 is not complete; NC-406
 remains deferred to NC-90. NC-501 through NC-503 are independently verified with
 deterministic browser Scenario A7 evidence. NC-504 remains deferred behind NC-905;
-NC-60 and all later packages remain unstarted.
+NC-601 through NC-603 are independently verified with deterministic browser Scenario
+A12 evidence. NC-604 remains deferred behind NC-908; NC-70 and later packages remain
+unstarted.
 
 1. Wire the existing typed Outcomes API command into React.
 2. Support add, edit, remove, reorder, evidence, cognitive level, and priority.
@@ -468,6 +472,12 @@ remains deferred to NC-90 behind NC-905.
 7. Reconcile selected assets before approval.
 
 ### 9.5 Lesson Plan
+
+**Implementation status (2026-07-20):** NC-601 through NC-603 are independently
+verified, including typed constraints and operations, Course Model-authoritative exact
+coverage, monotonic session identity, intent-aware conflict rebasing, exact affected-
+session reporting, bounded preservation, and deterministic browser Scenario A12.
+NC-604 remains deferred to NC-90 behind NC-908.
 
 1. Add a typed Lesson Plan constraints command.
 2. Support maximum session length, default delivery mode, and relevant live constraints.

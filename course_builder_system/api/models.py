@@ -13,6 +13,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StrictBool,
+    StrictFloat,
     StrictInt,
     field_validator,
     model_validator,
@@ -624,6 +625,82 @@ class BlueprintDecisionCommand(VersionedCommand):
         if not normalized:
             raise ValueError("rationale cannot be blank")
         return normalized
+
+
+LessonMode = Literal["live", "self_study"]
+LessonPlanTargetId = Annotated[str, Field(strict=True, min_length=1, max_length=100)]
+
+
+class LessonPlanConstraintChanges(StrictCommand):
+    max_session_hours: Annotated[StrictInt | StrictFloat, Field(gt=0, le=24)] | None = None
+    default_mode: LessonMode | None = None
+    calendar_dates: list[
+        Annotated[str, Field(strict=True, min_length=1, max_length=40)]
+    ] | None = Field(default=None, max_length=20)
+    instructor_count: Annotated[StrictInt, Field(ge=1, le=100)] | None = None
+    delivery_platform: Annotated[
+        str,
+        Field(strict=True, min_length=1, max_length=120),
+    ] | None = None
+
+    @model_validator(mode="after")
+    def at_least_one_constraint_change(self) -> LessonPlanConstraintChanges:
+        if not self.model_fields_set:
+            raise ValueError("Lesson Plan constraints must include at least one field")
+        return self
+
+
+class LessonPlanSetModeOperation(StrictCommand):
+    op: Literal["set_mode"]
+    target_id: CourseModelId
+    value: LessonMode
+
+
+class LessonPlanMoveSegmentOperation(StrictCommand):
+    op: Literal["move_segment"]
+    target_id: CourseModelId
+    value: LessonPlanTargetId
+    position: Annotated[StrictInt, Field(ge=1, le=10_000)]
+
+
+class LessonPlanReorderSessionOperation(StrictCommand):
+    op: Literal["reorder_session"]
+    session_ids: list[LessonPlanTargetId] = Field(min_length=1, max_length=500)
+
+    @field_validator("session_ids")
+    @classmethod
+    def unique_session_ids(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)):
+            raise ValueError("session_ids must be unique")
+        return values
+
+
+LessonPlanOperation = Annotated[
+    LessonPlanSetModeOperation
+    | LessonPlanMoveSegmentOperation
+    | LessonPlanReorderSessionOperation,
+    Field(discriminator="op"),
+]
+
+
+class LessonPlanDecisionCommand(VersionedCommand):
+    expected_checksum: str = Field(min_length=6, max_length=128)
+    constraints: LessonPlanConstraintChanges | None = None
+    operations: list[LessonPlanOperation] = Field(default_factory=list, max_length=500)
+    rationale: str = Field(
+        default="Human Lesson Plan checkpoint.",
+        min_length=1,
+        max_length=500,
+    )
+
+    @model_validator(mode="after")
+    def nonempty_decision(self) -> LessonPlanDecisionCommand:
+        if self.constraints is None and not self.operations:
+            raise ValueError("Lesson Plan decision must change constraints or sessions")
+        self.rationale = self.rationale.strip()
+        if not self.rationale:
+            raise ValueError("rationale cannot be blank")
+        return self
 
 
 class ContentReviewCommand(VersionedCommand):

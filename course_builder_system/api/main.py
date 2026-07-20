@@ -30,6 +30,7 @@ from api.models import (
     CreateCourseRequest,
     ImpactPreviewCommand,
     ImpactPreviewResponse,
+    LessonPlanDecisionCommand,
     OutcomeDecisionCommand,
     ReopenStageCommand,
     RunStageCommand,
@@ -614,6 +615,33 @@ def create_app(
                     for subtopic_id, override in command.depth_overrides.items()
                 },
                 anchor_waivers=command.anchor_waivers,
+                rationale=command.rationale,
+            )
+        return {"artifact": value, "checksum": repository.checksum(value)}
+
+    @app.put("/api/courses/{course_id}/lesson-plan/decision")
+    def lesson_plan_decision(
+        course_id: str,
+        command: LessonPlanDecisionCommand,
+    ) -> dict[str, Any]:
+        with jobs.mutate_now(course_id):
+            _check_artifact_version(
+                repository,
+                course_id,
+                "lesson_plan",
+                command.expected_checksum,
+            )
+            value = decisions.save_lesson_plan_decision(
+                course_id,
+                constraints=(
+                    command.constraints.model_dump(exclude_unset=True)
+                    if command.constraints is not None
+                    else None
+                ),
+                operations=[
+                    operation.model_dump(exclude_none=True)
+                    for operation in command.operations
+                ],
                 rationale=command.rationale,
             )
         return {"artifact": value, "checksum": repository.checksum(value)}

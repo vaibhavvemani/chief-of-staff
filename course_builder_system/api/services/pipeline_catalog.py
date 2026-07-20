@@ -107,7 +107,7 @@ STAGE_CAPABILITIES: dict[str, StageCapabilities] = {
             ),
         ),
     ),
-    "lesson-plan": StageCapabilities(),
+    "lesson-plan": StageCapabilities(direct_actions=("edit",)),
     "package": StageCapabilities(),
 }
 

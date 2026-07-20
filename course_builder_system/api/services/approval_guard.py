@@ -65,12 +65,7 @@ def hard_verifier_blocker_count(asset: dict[str, Any]) -> int:
             "ungrounded": ungrounded,
         }.items()
     )
-    return (
-        unsupported
-        + ungrounded
-        + len(unattributed)
-        + (0 if summary_reconciles else 1)
-    )
+    return unsupported + ungrounded + len(unattributed) + (0 if summary_reconciles else 1)
 
 
 @dataclass(frozen=True)
@@ -152,8 +147,7 @@ class ApprovalGuardService:
                 and self.brief_intake.is_approved_and_resolved(subject, brief)
             )
             if not brief_ready and not any(
-                failure.code == "prerequisite_not_approved"
-                and failure.artifact_type == "brief"
+                failure.code == "prerequisite_not_approved" and failure.artifact_type == "brief"
                 for failure in failures
             ):
                 failures.append(
@@ -197,18 +191,12 @@ class ApprovalGuardService:
         missing = [field for field in required if not self._present(body.get(field))]
         intake = body.get("intake_state", {})
         raw_unresolved = (
-            intake.get("unresolved_required_fields", [])
-            if isinstance(intake, dict)
-            else []
+            intake.get("unresolved_required_fields", []) if isinstance(intake, dict) else []
         )
         unresolved = (
-            raw_unresolved
-            if isinstance(raw_unresolved, list)
-            else ["invalid_intake_state"]
+            raw_unresolved if isinstance(raw_unresolved, list) else ["invalid_intake_state"]
         )
-        conflicts = (
-            intake.get("last_gap_analysis", []) if isinstance(intake, dict) else []
-        )
+        conflicts = intake.get("last_gap_analysis", []) if isinstance(intake, dict) else []
         high_conflicts = [
             str(item.get("id") or item.get("field") or "brief_conflict")
             for item in conflicts
@@ -219,9 +207,7 @@ class ApprovalGuardService:
             raw_explicit = intake.get("explicit_fields", [])
             raw_defaults = intake.get("accepted_default_fields", [])
             explicit = set(raw_explicit) if isinstance(raw_explicit, list) else set()
-            accepted_defaults = (
-                set(raw_defaults) if isinstance(raw_defaults, list) else set()
-            )
+            accepted_defaults = set(raw_defaults) if isinstance(raw_defaults, list) else set()
             if "language" not in explicit | accepted_defaults:
                 unresolved = [*unresolved, "language_default_acceptance"]
         if missing or unresolved:
@@ -255,11 +241,7 @@ class ApprovalGuardService:
         except outcomes_agent.OutcomeDecisionValidationError as exc:
             record_ids = tuple(
                 sorted(
-                    {
-                        str(issue["outcome_id"])
-                        for issue in exc.issues
-                        if issue.get("outcome_id")
-                    }
+                    {str(issue["outcome_id"]) for issue in exc.issues if issue.get("outcome_id")}
                 )
             )
             if any(issue["code"] == "outcomes_empty" for issue in exc.issues):
@@ -285,8 +267,7 @@ class ApprovalGuardService:
             ]
         cursor = body.get("next_outcome_id")
         if cursor is not None and (
-            type(cursor) is not int
-            or cursor < outcomes_agent.next_outcome_id(collection)
+            type(cursor) is not int or cursor < outcomes_agent.next_outcome_id(collection)
         ):
             return [
                 GuardFailure(
@@ -299,9 +280,7 @@ class ApprovalGuardService:
         return []
 
     def _guard_research(self, course_id: str) -> list[GuardFailure]:
-        registry = self.repository.require(course_id, "approved_source_registry").get(
-            "body", {}
-        )
+        registry = self.repository.require(course_id, "approved_source_registry").get("body", {})
         decision = registry.get("decision", {})
         selected = set(decision.get("selected_ids", [])) if isinstance(decision, dict) else set()
         approved = set(decision.get("approved_ids", [])) if isinstance(decision, dict) else set()
@@ -358,9 +337,7 @@ class ApprovalGuardService:
             course_model,
             course_outcomes=self.repository.load(course_id, "course_outcomes"),
             research_dossier=self.repository.load(course_id, "research_dossier"),
-            approved_source_registry=self.repository.load(
-                course_id, "approved_source_registry"
-            ),
+            approved_source_registry=self.repository.load(course_id, "approved_source_registry"),
             blueprint=blueprint,
         )
         expected = {
@@ -375,9 +352,7 @@ class ApprovalGuardService:
             if isinstance(plan, dict) and plan.get("subtopic_id")
         }
         if expected != actual:
-            errors.append(
-                "Blueprint must contain exactly one plan for every Course Model subtopic"
-            )
+            errors.append("Blueprint must contain exactly one plan for every Course Model subtopic")
         failures = self._integrity_failures("blueprint", "blueprint", errors)
         failures.extend(self._course_model_source_failures(course_id, "blueprint"))
         return failures
@@ -485,8 +460,7 @@ class ApprovalGuardService:
             record = review_records.get(asset_id)
             if (
                 record is None
-                or record.get("asset_fingerprint")
-                != content_review.asset_fingerprint(asset)
+                or record.get("asset_fingerprint") != content_review.asset_fingerprint(asset)
                 or record.get("decision") != "approved"
             ):
                 pending.append(str(asset_id))
@@ -507,21 +481,31 @@ class ApprovalGuardService:
 
     def _guard_lesson_plan(self, course_id: str) -> list[GuardFailure]:
         package = self.repository.require(course_id, "content_package")
-        expected = [
-            str(item.get("subtopic_id"))
-            for item in package.get("body", {}).get("subtopics", [])
-            if isinstance(item, dict) and item.get("subtopic_id")
-        ]
+        blueprint = self.repository.require(course_id, "blueprint")
+        course_model = self.repository.require(course_id, "course_model")
+        expected = lesson_plan.course_model_subtopic_ids(course_model)
         body = self.repository.require(course_id, "lesson_plan").get("body", {})
-        errors = lesson_plan.validate_lesson_plan_body(
-            body, expected_subtopic_ids=expected
+        errors = lesson_plan.validate_lesson_plan_inputs(
+            course_model=course_model,
+            blueprint=blueprint,
+            content_package=package,
+        )
+        errors.extend(
+            lesson_plan.validate_lesson_plan_body(
+                body,
+                expected_subtopic_ids=expected,
+            )
         )
         constraints = body.get("session_constraints", {})
         if not isinstance(constraints, dict):
             errors.append("Lesson Plan session constraints must be an object")
         else:
             max_hours = constraints.get("max_session_hours")
-            if not isinstance(max_hours, int | float) or max_hours <= 0:
+            if (
+                not isinstance(max_hours, int | float)
+                or isinstance(max_hours, bool)
+                or max_hours <= 0
+            ):
                 errors.append("Lesson Plan max_session_hours must be positive")
             if constraints.get("default_mode") not in lesson_plan.VALID_MODES:
                 errors.append("Lesson Plan default_mode must be live or self_study")
@@ -564,9 +548,7 @@ class ApprovalGuardService:
         registry = self.repository.require(course_id, "approved_source_registry")
         decision = registry.get("body", {}).get("decision", {})
         explicitly_approved = (
-            set(decision.get("approved_ids", []))
-            if isinstance(decision, dict)
-            else set()
+            set(decision.get("approved_ids", [])) if isinstance(decision, dict) else set()
         )
         content_bearing = {
             source.get("id")
@@ -607,15 +589,11 @@ class ApprovalGuardService:
         )
         return failures
 
-    def _course_model_source_failures(
-        self, course_id: str, stage: str
-    ) -> list[GuardFailure]:
+    def _course_model_source_failures(self, course_id: str, stage: str) -> list[GuardFailure]:
         registry = self.repository.require(course_id, "approved_source_registry")
         decision = registry.get("body", {}).get("decision", {})
         approved_ids = (
-            set(decision.get("approved_ids", []))
-            if isinstance(decision, dict)
-            else set()
+            set(decision.get("approved_ids", [])) if isinstance(decision, dict) else set()
         )
         content_bearing = {
             source.get("id")

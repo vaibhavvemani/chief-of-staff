@@ -3,6 +3,7 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 const SEEDED_LIFECYCLE_COURSE_ID = "studio-course-model-reopen-fixture";
 const COURSE_MODEL_EDITOR_COURSE_ID = "studio-course-model-editor-fixture";
 const BLUEPRINT_EDITOR_COURSE_ID = "studio-blueprint-editor-fixture";
+const LESSON_PLAN_EDITOR_COURSE_ID = "studio-lesson-plan-editor-fixture";
 
 interface StageProjection {
   state: string;
@@ -83,6 +84,34 @@ interface BlueprintArtifact {
   checksum: string;
 }
 
+interface LessonPlanArtifact {
+  artifact: {
+    body: {
+      session_constraints: {
+        max_session_hours: number;
+        default_mode: string;
+        calendar_dates?: string[];
+        instructor_count?: number | null;
+        delivery_platform?: string | null;
+      };
+      unresolved_session_constraints: string[];
+      sessions: Array<{
+        id: string;
+        order: number;
+        duration_minutes: number;
+        covers: Array<{ subtopic_id: string; mode: string }>;
+      }>;
+      coverage_summary: {
+        expected_subtopic_ids: string[];
+        covered_subtopic_ids: string[];
+        total_duration_minutes: number;
+      };
+      decision_log: Array<{ affected_session_ids: string[] }>;
+    };
+  };
+  checksum: string;
+}
+
 async function stage(
   request: APIRequestContext,
   courseId: string,
@@ -129,6 +158,15 @@ async function blueprintArtifact(
   const response = await request.get(`/api/courses/${courseId}/artifacts/blueprint`);
   expect(response.ok()).toBe(true);
   return response.json() as Promise<BlueprintArtifact>;
+}
+
+async function lessonPlanArtifact(
+  request: APIRequestContext,
+  courseId: string,
+): Promise<LessonPlanArtifact> {
+  const response = await request.get(`/api/courses/${courseId}/artifacts/lesson_plan`);
+  expect(response.ok()).toBe(true);
+  return response.json() as Promise<LessonPlanArtifact>;
 }
 
 function questionCard(page: Page, questionId: string) {
@@ -851,5 +889,73 @@ test("Scenario A7 reconciles and approves an exact typed Blueprint", async ({
   ).toBe("approved");
   await expect.poll(
     async () => (await stage(request, BLUEPRINT_EDITOR_COURSE_ID, "content")).state,
+  ).toBe("ready");
+});
+
+test("Scenario A12 reconciles and approves a typed Lesson Plan", async ({
+  page,
+  request,
+}) => {
+  await page.goto(
+    `/courses/${LESSON_PLAN_EDITOR_COURSE_ID}/lesson-plan?mode=deterministic`,
+  );
+  await expect(page.getByRole("button", { name: "Run Lesson Plan" })).toBeVisible();
+  await page.getByRole("button", { name: "Run Lesson Plan" }).click();
+  await expect.poll(
+    async () => (await stage(request, LESSON_PLAN_EDITOR_COURSE_ID, "lesson-plan")).state,
+    { timeout: 30_000 },
+  ).toBe("awaiting_review");
+
+  await page.locator(".decision-bar").getByRole("button", { name: "Edit Lesson Plan" }).click();
+  await expect(page.getByRole("heading", { name: "Edit Lesson Plan" })).toBeVisible();
+  await page.getByLabel("Maximum session hours").fill("0.5");
+  await page.getByLabel("Delivery mode for Coffee Making Troubleshooting").selectOption("self_study");
+  await page.getByLabel("Instructor count").fill("1");
+  await page.getByLabel("Delivery platform").fill("Studio classroom");
+  await page.getByLabel("Calendar dates").fill("2026-08-03\n2026-08-10");
+
+  await expect(page.getByText("4 subtopics, each exactly once.")).toBeVisible();
+  const reconciliation = page.getByRole("region", { name: "What delivery planning will change" });
+  await expect(reconciliation.getByText("sess1")).toBeVisible();
+  await page.getByRole("checkbox", { name: /reviewed the changed constraints/i }).check();
+  await page.getByRole("button", { name: "Save Lesson Plan draft" }).click();
+
+  await expect(page.getByRole("heading", { name: "Lesson Plan" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Last decision changed exact sessions:", { exact: false })).toBeVisible();
+  const saved = await lessonPlanArtifact(request, LESSON_PLAN_EDITOR_COURSE_ID);
+  const covered = saved.artifact.body.sessions.flatMap((session) =>
+    session.covers.map((cover) => cover.subtopic_id),
+  );
+  expect(covered).toEqual(saved.artifact.body.coverage_summary.expected_subtopic_ids);
+  expect(new Set(covered).size).toBe(covered.length);
+  expect(saved.artifact.body.sessions).toHaveLength(4);
+  expect(saved.artifact.body.sessions.every((session) => session.duration_minutes <= 30)).toBe(true);
+  expect(
+    saved.artifact.body.sessions.flatMap((session) => session.covers)
+      .find((cover) => cover.subtopic_id === "m1_s4")?.mode,
+  ).toBe("self_study");
+  expect(saved.artifact.body.session_constraints).toMatchObject({
+    max_session_hours: 0.5,
+    default_mode: "live",
+    calendar_dates: ["2026-08-03", "2026-08-10"],
+    instructor_count: 1,
+    delivery_platform: "Studio classroom",
+  });
+  expect(saved.artifact.body.unresolved_session_constraints).toEqual([]);
+  expect(saved.artifact.body.decision_log.at(-1)?.affected_session_ids).toEqual([
+    "sess1",
+    "sess2",
+    "sess3",
+    "sess4",
+    "sess5",
+  ]);
+
+  await page.getByRole("button", { name: "Approve Lesson Plan" }).click();
+  await expect.poll(
+    async () => (await stage(request, LESSON_PLAN_EDITOR_COURSE_ID, "lesson-plan")).state,
+  ).toBe("approved");
+  await expect.poll(
+    async () => (await stage(request, LESSON_PLAN_EDITOR_COURSE_ID, "package")).state,
   ).toBe("ready");
 });

@@ -464,6 +464,27 @@ export interface LessonSession {
   }>;
 }
 
+export type LessonMode = "live" | "self_study";
+
+export interface LessonPlanConstraints {
+  maxSessionHours: number;
+  defaultMode: LessonMode;
+  calendarDates: string[];
+  instructorCount: number | null;
+  deliveryPlatform: string | null;
+}
+
+export type LessonPlanOperation =
+  | { op: "set_mode"; targetId: string; value: LessonMode }
+  | { op: "move_segment"; targetId: string; value: string; position: number }
+  | { op: "reorder_session"; sessionIds: string[] };
+
+export interface LessonPlanDecisionDraft {
+  constraints: LessonPlanConstraints;
+  operations: LessonPlanOperation[];
+  rationale: string;
+}
+
 export interface OutputFile {
   path: string;
   label: string;
@@ -519,7 +540,11 @@ export interface Workspace {
     totalDurationMinutes: number;
     expectedSubtopicIds: string[];
     coveredSubtopicIds: string[];
+    constraints: LessonPlanConstraints;
+    unresolvedConstraints: string[];
+    affectedSessionIds: string[];
   };
+  lessonPlanChecksum?: string;
   package: {
     format: string;
     operatorStatus: string;

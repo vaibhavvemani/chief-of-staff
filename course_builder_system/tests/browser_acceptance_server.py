@@ -23,6 +23,7 @@ os.environ["COURSE_BUILDER_INCLUDE_EXAMPLES"] = "false"
 SEEDED_LIFECYCLE_COURSE_ID = "studio-course-model-reopen-fixture"
 COURSE_MODEL_EDITOR_COURSE_ID = "studio-course-model-editor-fixture"
 BLUEPRINT_EDITOR_COURSE_ID = "studio-blueprint-editor-fixture"
+LESSON_PLAN_EDITOR_COURSE_ID = "studio-lesson-plan-editor-fixture"
 _fixture_root = (
     Path(__file__).resolve().parents[1]
     / "examples"
@@ -75,6 +76,29 @@ for _artifact_type in (
     _artifact = json.loads(_fixture_path.read_text(encoding="utf-8"))
     _artifact["course_id"] = BLUEPRINT_EDITOR_COURSE_ID
     (_blueprint_seed_root / _fixture_path.name).write_text(
+        json.dumps(_artifact, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+# A fourth bounded fixture stops at approved Student Content so A12 exercises
+# the real deterministic Lesson Plan run before the typed delivery decision.
+_lesson_plan_seed_root = _acceptance_root / "courses" / LESSON_PLAN_EDITOR_COURSE_ID
+_lesson_plan_seed_root.mkdir(parents=True)
+for _artifact_type in (
+    "subject_request",
+    "brief",
+    "course_outcomes",
+    "research_dossier",
+    "approved_source_registry",
+    "course_model",
+    "blueprint",
+    "content_package",
+    "content_progress",
+):
+    _fixture_path = _fixture_root / f"{_artifact_type}.json"
+    _artifact = json.loads(_fixture_path.read_text(encoding="utf-8"))
+    _artifact["course_id"] = LESSON_PLAN_EDITOR_COURSE_ID
+    (_lesson_plan_seed_root / _fixture_path.name).write_text(
         json.dumps(_artifact, indent=2) + "\n",
         encoding="utf-8",
     )

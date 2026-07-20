@@ -10,6 +10,7 @@ import type {
   CourseModelOperation,
   CourseModelPreview,
   CourseModelValidationIssue,
+  LessonPlanDecisionDraft,
   OutcomeDecisionDraft,
   OutcomeValidationIssue,
   OutputFile,
@@ -21,6 +22,7 @@ import { BriefQuestionRound } from "./BriefQuestionRound";
 import { OutcomesEditor } from "./OutcomesEditor";
 import { CourseModelEditor } from "./CourseModelEditor";
 import { BlueprintEditor } from "./BlueprintEditor";
+import { LessonPlanEditor } from "./LessonPlanEditor";
 
 function stageIntro(title: string, kicker: string, description: string, aside?: React.ReactNode) {
   return (
@@ -581,8 +583,31 @@ function ContentView({ workspace, canReview, canRevise, onContentAction }: { wor
   );
 }
 
-function LessonPlanView({ workspace }: { workspace: Workspace }) {
+function LessonPlanView({
+  workspace,
+  editing = false,
+  busy = false,
+  conflict = false,
+  serverError,
+  onStartEdit,
+  onCancel,
+  onSave,
+  onRecoverConflict,
+  onDirtyChange,
+}: {
+  workspace: Workspace;
+  editing?: boolean;
+  busy?: boolean;
+  conflict?: boolean;
+  serverError?: string;
+  onStartEdit?: () => void;
+  onCancel?: () => void;
+  onSave?: (decision: LessonPlanDecisionDraft) => void;
+  onRecoverConflict?: (choice: "reapply" | "discard") => void;
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const names = new Map(workspace.modules.flatMap((module) => module.subtopics.map((subtopic) => [subtopic.id, subtopic.title])));
+  const nameRecord = Object.fromEntries(names);
   const expected = workspace.lessonPlan.expectedSubtopicIds.length;
   const sessionCount = workspace.lessonPlan.sessions.length;
   const allCovers = workspace.lessonPlan.sessions.flatMap((session) => session.covers);
@@ -591,9 +616,10 @@ function LessonPlanView({ workspace }: { workspace: Workspace }) {
   const exactCoverage = expected > 0 && workspace.lessonPlan.expectedSubtopicIds.every((id) => coverCounts.get(id) === 1) && allCovers.every((cover) => workspace.lessonPlan.expectedSubtopicIds.includes(cover.subtopicId));
   const coveragePercent = Math.min(100, Math.round((covered / Math.max(expected, 1)) * 100));
   const modeLabels = [...new Set(allCovers.map((cover) => cover.mode.replace("_", " ")))].map((mode) => mode.replace(/\b\w/g, (letter) => letter.toUpperCase()));
+  if (editing) return <LessonPlanEditor lessonPlan={workspace.lessonPlan} subtopicNames={nameRecord} canEdit={Boolean(onStartEdit)} editing busy={busy} conflict={conflict} serverError={serverError} onStartEdit={onStartEdit ?? (() => undefined)} onCancel={onCancel ?? (() => undefined)} onSave={onSave ?? (() => undefined)} onResolveConflict={onRecoverConflict ?? (() => undefined)} onDirtyChange={onDirtyChange} />;
   return (
     <div className="stage-view lesson-plan-view">
-      {stageIntro("Lesson Plan", "07 · Delivery sequence", "Turn approved content into a teachable sequence with explicit duration, mode, coverage, and facilitation cues.", <div className="lesson-total"><strong>{workspace.lessonPlan.totalDurationMinutes}<small>min</small></strong><span>across {sessionCount} {sessionCount === 1 ? "session" : "sessions"}</span></div>)}
+      {stageIntro("Lesson Plan", "07 · Delivery sequence", "Turn approved content into a teachable sequence with explicit duration, mode, coverage, and facilitation cues.", <><div className="lesson-total"><strong>{workspace.lessonPlan.totalDurationMinutes}<small>min</small></strong><span>across {sessionCount} {sessionCount === 1 ? "session" : "sessions"}</span></div>{onStartEdit ? <button className="button button-secondary" disabled={busy} onClick={onStartEdit}>Edit Lesson Plan</button> : null}</>)}
       <div className="lesson-layout">
         <section className="session-timeline">
           <div className="timeline-heading"><div><span className="eyebrow">Session timeline</span><h2>{sessionCount} connected {sessionCount === 1 ? "session" : "sessions"}</h2><p>Review the teaching order, delivery mode, and facilitation cues before approval.</p></div><div className="timeline-status"><span aria-hidden="true">✓</span><div><strong>Sequence connected</strong><small>{allCovers.length} planned {allCovers.length === 1 ? "segment" : "segments"}</small></div></div></div>
@@ -613,7 +639,8 @@ function LessonPlanView({ workspace }: { workspace: Workspace }) {
           <dl><DefinitionItem label="Sessions" value={sessionCount} /><DefinitionItem label="Total time" value={`${workspace.lessonPlan.totalDurationMinutes} minutes`} /><DefinitionItem label="Delivery" value={modeLabels.join(" + ") || "Not specified"} /><DefinitionItem label="Breaks" value="As needed" /></dl>
           <div className="coverage-summary"><div className="coverage-summary-head"><div className={exactCoverage ? "coverage-count complete" : "coverage-count"}><strong>{covered}</strong><span>/ {expected}</span></div><div><span className="micro-label">Course Model coverage</span><strong>{exactCoverage ? "Complete coverage" : "Coverage needs review"}</strong></div></div><div className="coverage-track" role="progressbar" aria-label="Course Model coverage" aria-valuemin={0} aria-valuemax={expected} aria-valuenow={covered}><span style={{ width: `${coveragePercent}%` }} /></div></div>
           <div className={`coverage-check ${exactCoverage ? "" : "coverage-warning"}`}><span aria-hidden="true">{exactCoverage ? "✓" : "!"}</span><p>{exactCoverage ? "Every Course Model subtopic appears exactly once in the delivery sequence." : "At least one Course Model subtopic is missing, duplicated, or outside the approved model."}</p></div>
-          <div className="constraint-revision-note"><span aria-hidden="true">↳</span><p>Structured timing, mode, and sequence changes are not implemented in this release.</p></div>
+          {workspace.lessonPlan.affectedSessionIds.length ? <div className="constraint-revision-note"><span aria-hidden="true">↳</span><p>Last decision changed exact sessions: {workspace.lessonPlan.affectedSessionIds.map((sessionId, index) => <span key={sessionId}>{index ? ", " : ""}<code>{sessionId}</code></span>)}</p></div> : null}
+          <div className="constraint-revision-note"><span aria-hidden="true">↳</span><p>{onStartEdit ? "Use the typed editor to change timing, delivery mode, placement, or sequence." : "Editing is unavailable in the current lifecycle state."}</p></div>
         </aside>
       </div>
     </div>
@@ -664,7 +691,7 @@ function PackageView({ workspace }: { workspace: Workspace }) {
   );
 }
 
-export function StageView({ stage, workspace, contentCapabilities, onContentAction, onSourceDecision, onEditBrief, outcomesEditing, outcomesBusy, outcomesConflict, outcomesServerError, outcomesServerIssues, onStartOutcomesEdit, onCancelOutcomesEdit, onSaveOutcomes, onResolveOutcomesConflict, onOutcomesDirtyChange, courseModelEditing, courseModelBusy, courseModelConflict, courseModelServerError, courseModelServerIssues, courseModelPreview, onStartCourseModelEdit, onCancelCourseModelEdit, onPreviewCourseModel, onSaveCourseModel, onInvalidateCourseModelPreview, onRecoverCourseModelConflict, onCourseModelDirtyChange, blueprintEditing, blueprintBusy, blueprintConflict, blueprintServerError, onStartBlueprintEdit, onCancelBlueprintEdit, onSaveBlueprint, onRecoverBlueprintConflict, onBlueprintDirtyChange, briefQuestionRound, briefQuestionsLoading, briefQuestionsBusy, briefQuestionsError, onRetryBriefQuestions, onSubmitBriefQuestions }: { stage: StageSlug; workspace: Workspace; contentCapabilities?: { review: boolean; revise: boolean }; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onEditBrief?: (section: BriefEditSection) => void; outcomesEditing?: boolean; outcomesBusy?: boolean; outcomesConflict?: boolean; outcomesServerError?: string; outcomesServerIssues?: OutcomeValidationIssue[]; onStartOutcomesEdit?: () => void; onCancelOutcomesEdit?: () => void; onSaveOutcomes?: (decision: OutcomeDecisionDraft) => void; onResolveOutcomesConflict?: (choice: "latest" | "keep") => void; onOutcomesDirtyChange?: (dirty: boolean) => void; courseModelEditing?: boolean; courseModelBusy?: boolean; courseModelConflict?: boolean; courseModelServerError?: string; courseModelServerIssues?: CourseModelValidationIssue[]; courseModelPreview?: CourseModelPreview | null; onStartCourseModelEdit?: () => void; onCancelCourseModelEdit?: () => void; onPreviewCourseModel?: (operations: CourseModelOperation[]) => void; onSaveCourseModel?: (operations: CourseModelOperation[], impactChecksum: string) => void; onInvalidateCourseModelPreview?: () => void; onRecoverCourseModelConflict?: (choice: "reapply" | "discard") => void; onCourseModelDirtyChange?: (dirty: boolean) => void; blueprintEditing?: boolean; blueprintBusy?: boolean; blueprintConflict?: boolean; blueprintServerError?: string; onStartBlueprintEdit?: () => void; onCancelBlueprintEdit?: () => void; onSaveBlueprint?: (decision: BlueprintDecisionDraft) => void; onRecoverBlueprintConflict?: (choice: "reapply" | "discard") => void; onBlueprintDirtyChange?: (dirty: boolean) => void; briefQuestionRound?: BriefQuestionRoundData; briefQuestionsLoading?: boolean; briefQuestionsBusy?: boolean; briefQuestionsError?: string; onRetryBriefQuestions?: () => void; onSubmitBriefQuestions?: (answers: BriefQuestionAnswer[]) => void }) {
+export function StageView({ stage, workspace, contentCapabilities, onContentAction, onSourceDecision, onEditBrief, outcomesEditing, outcomesBusy, outcomesConflict, outcomesServerError, outcomesServerIssues, onStartOutcomesEdit, onCancelOutcomesEdit, onSaveOutcomes, onResolveOutcomesConflict, onOutcomesDirtyChange, courseModelEditing, courseModelBusy, courseModelConflict, courseModelServerError, courseModelServerIssues, courseModelPreview, onStartCourseModelEdit, onCancelCourseModelEdit, onPreviewCourseModel, onSaveCourseModel, onInvalidateCourseModelPreview, onRecoverCourseModelConflict, onCourseModelDirtyChange, blueprintEditing, blueprintBusy, blueprintConflict, blueprintServerError, onStartBlueprintEdit, onCancelBlueprintEdit, onSaveBlueprint, onRecoverBlueprintConflict, onBlueprintDirtyChange, lessonPlanEditing, lessonPlanBusy, lessonPlanConflict, lessonPlanServerError, onStartLessonPlanEdit, onCancelLessonPlanEdit, onSaveLessonPlan, onRecoverLessonPlanConflict, onLessonPlanDirtyChange, briefQuestionRound, briefQuestionsLoading, briefQuestionsBusy, briefQuestionsError, onRetryBriefQuestions, onSubmitBriefQuestions }: { stage: StageSlug; workspace: Workspace; contentCapabilities?: { review: boolean; revise: boolean }; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onEditBrief?: (section: BriefEditSection) => void; outcomesEditing?: boolean; outcomesBusy?: boolean; outcomesConflict?: boolean; outcomesServerError?: string; outcomesServerIssues?: OutcomeValidationIssue[]; onStartOutcomesEdit?: () => void; onCancelOutcomesEdit?: () => void; onSaveOutcomes?: (decision: OutcomeDecisionDraft) => void; onResolveOutcomesConflict?: (choice: "latest" | "keep") => void; onOutcomesDirtyChange?: (dirty: boolean) => void; courseModelEditing?: boolean; courseModelBusy?: boolean; courseModelConflict?: boolean; courseModelServerError?: string; courseModelServerIssues?: CourseModelValidationIssue[]; courseModelPreview?: CourseModelPreview | null; onStartCourseModelEdit?: () => void; onCancelCourseModelEdit?: () => void; onPreviewCourseModel?: (operations: CourseModelOperation[]) => void; onSaveCourseModel?: (operations: CourseModelOperation[], impactChecksum: string) => void; onInvalidateCourseModelPreview?: () => void; onRecoverCourseModelConflict?: (choice: "reapply" | "discard") => void; onCourseModelDirtyChange?: (dirty: boolean) => void; blueprintEditing?: boolean; blueprintBusy?: boolean; blueprintConflict?: boolean; blueprintServerError?: string; onStartBlueprintEdit?: () => void; onCancelBlueprintEdit?: () => void; onSaveBlueprint?: (decision: BlueprintDecisionDraft) => void; onRecoverBlueprintConflict?: (choice: "reapply" | "discard") => void; onBlueprintDirtyChange?: (dirty: boolean) => void; lessonPlanEditing?: boolean; lessonPlanBusy?: boolean; lessonPlanConflict?: boolean; lessonPlanServerError?: string; onStartLessonPlanEdit?: () => void; onCancelLessonPlanEdit?: () => void; onSaveLessonPlan?: (decision: LessonPlanDecisionDraft) => void; onRecoverLessonPlanConflict?: (choice: "reapply" | "discard") => void; onLessonPlanDirtyChange?: (dirty: boolean) => void; briefQuestionRound?: BriefQuestionRoundData; briefQuestionsLoading?: boolean; briefQuestionsBusy?: boolean; briefQuestionsError?: string; onRetryBriefQuestions?: () => void; onSubmitBriefQuestions?: (answers: BriefQuestionAnswer[]) => void }) {
   switch (stage) {
     case "brief": return <BriefView workspace={workspace} onEdit={onEditBrief} questionRound={briefQuestionRound} questionsLoading={briefQuestionsLoading} questionsBusy={briefQuestionsBusy} questionsError={briefQuestionsError} onRetryQuestions={onRetryBriefQuestions} onSubmitQuestions={onSubmitBriefQuestions} />;
     case "outcomes": return <OutcomesView workspace={workspace} editing={outcomesEditing} busy={outcomesBusy} conflict={outcomesConflict} serverError={outcomesServerError} serverIssues={outcomesServerIssues} onStartEdit={onStartOutcomesEdit} onCancel={onCancelOutcomesEdit} onSave={onSaveOutcomes} onResolveConflict={onResolveOutcomesConflict} onDirtyChange={onOutcomesDirtyChange} />;
@@ -672,7 +699,7 @@ export function StageView({ stage, workspace, contentCapabilities, onContentActi
     case "course-model": return <CourseModelView workspace={workspace} editing={courseModelEditing} busy={courseModelBusy} conflict={courseModelConflict} serverError={courseModelServerError} serverIssues={courseModelServerIssues} preview={courseModelPreview} onStartEdit={onStartCourseModelEdit} onCancel={onCancelCourseModelEdit} onPreview={onPreviewCourseModel} onSave={onSaveCourseModel} onInvalidatePreview={onInvalidateCourseModelPreview} onRecoverConflict={onRecoverCourseModelConflict} onDirtyChange={onCourseModelDirtyChange} />;
     case "blueprint": return <BlueprintView workspace={workspace} editing={blueprintEditing} busy={blueprintBusy} conflict={blueprintConflict} serverError={blueprintServerError} onStartEdit={onStartBlueprintEdit} onCancel={onCancelBlueprintEdit} onSave={onSaveBlueprint} onRecoverConflict={onRecoverBlueprintConflict} onDirtyChange={onBlueprintDirtyChange} />;
     case "content": return <ContentView workspace={workspace} canReview={contentCapabilities?.review ?? false} canRevise={contentCapabilities?.revise ?? false} onContentAction={onContentAction} />;
-    case "lesson-plan": return <LessonPlanView workspace={workspace} />;
+    case "lesson-plan": return <LessonPlanView workspace={workspace} editing={lessonPlanEditing} busy={lessonPlanBusy} conflict={lessonPlanConflict} serverError={lessonPlanServerError} onStartEdit={onStartLessonPlanEdit} onCancel={onCancelLessonPlanEdit} onSave={onSaveLessonPlan} onRecoverConflict={onRecoverLessonPlanConflict} onDirtyChange={onLessonPlanDirtyChange} />;
     case "package": return <PackageView workspace={workspace} />;
   }
 }

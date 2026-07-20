@@ -15,6 +15,9 @@ COURSE_MODEL_EDITOR_SOURCE = (
 BLUEPRINT_EDITOR_SOURCE = (
     ROOT / "frontend" / "src" / "features" / "workspace" / "BlueprintEditor.tsx"
 )
+LESSON_PLAN_EDITOR_SOURCE = (
+    ROOT / "frontend" / "src" / "features" / "workspace" / "LessonPlanEditor.tsx"
+)
 NEW_COURSE_SOURCE = (
     ROOT / "frontend" / "src" / "features" / "courses" / "NewCoursePage.tsx"
 )
@@ -161,13 +164,23 @@ def test_student_content_has_pre_generation_and_structured_review_states() -> No
 
 def test_lesson_plan_uses_reviewable_sequence_and_real_coverage_state() -> None:
     stage_views = STAGE_VIEWS_SOURCE.read_text(encoding="utf-8")
+    editor = LESSON_PLAN_EDITOR_SOURCE.read_text(encoding="utf-8")
 
     assert "lesson-plan-view" in stage_views
     assert "connected {sessionCount === 1 ? \"session\" : \"sessions\"}" in stage_views
     assert "teaching-sequence" in stage_views
     assert "const exactCoverage" in stage_views
     assert "Coverage needs review" in stage_views
-    assert "Structured timing, mode, and sequence changes are not implemented" in stage_views
+    assert "Edit Lesson Plan" in stage_views
+    assert 'aria-label="Maximum session hours"' in editor
+    assert 'aria-label="Default delivery mode"' in editor
+    assert "Session placement" in editor
+    assert "move_segment" in editor
+    assert "reorder_session" in editor
+    assert "Affected-session preview" in editor
+    assert "each exactly once" in editor
+    assert "Save Lesson Plan draft" in editor
+    assert 'role="dialog"' in editor
     assert "Use <strong>Request changes</strong> below" not in stage_views
 
 

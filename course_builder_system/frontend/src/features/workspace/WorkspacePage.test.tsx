@@ -57,6 +57,20 @@ function renderBlueprintWorkspace() {
   return { ...view, queryClient };
 }
 
+function renderLessonPlanWorkspace() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const view = render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={["/courses/herb-course/lesson-plan?mode=deterministic"]}>
+        <Routes>
+          <Route path="/courses/:courseId/:stage" element={<WorkspacePage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+  return { ...view, queryClient };
+}
+
 const courseModelBody = {
   course_metadata: { course_title: "Indoor herbs", course_outcome_ids: ["co1"] },
   structural_rationale: [{ id: "sr1", statement: "Start with conditions.", related_outcome_ids: ["co1"] }],
@@ -201,6 +215,84 @@ function blueprintFetch() {
         body = blueprintBody(25);
         return jsonResponse({ error: { code: "version_conflict", message: "changed", actual_checksum: checksum } }, 409);
       }
+      return jsonResponse({ artifact: { body }, checksum });
+    }
+    return jsonResponse({ slug: path.split("/").at(-1), artifacts: [] });
+  });
+  return { fetchMock, requests };
+}
+
+function lessonPlanBody(maxSessionHours = 2, firstMode: "live" | "self_study" = "live") {
+  return {
+    session_constraints: {
+      max_session_hours: maxSessionHours,
+      default_mode: "live",
+      calendar_dates: [],
+      instructor_count: null,
+      delivery_platform: null,
+    },
+    unresolved_session_constraints: ["calendar_dates", "instructor_count", "delivery_platform"],
+    sessions: [
+      { id: "sess1", order: 1, title: "Light", duration_minutes: 20, covers: [{ subtopic_id: "s1", mode: firstMode, talking_points: ["Choose a location."] }] },
+      { id: "sess2", order: 2, title: "Drainage", duration_minutes: 20, covers: [{ subtopic_id: "s2", mode: "live", talking_points: ["Check drainage."] }] },
+    ],
+    coverage_summary: {
+      expected_subtopic_ids: ["s1", "s2"],
+      covered_subtopic_ids: ["s1", "s2"],
+      total_duration_minutes: 40,
+    },
+  };
+}
+
+function lessonPlanFetch() {
+  let checksum = "lesson-plan-artifact-1";
+  let body = lessonPlanBody();
+  let conflictReturned = false;
+  const requests: Array<{ path: string; body?: Record<string, unknown> }> = [];
+  const stagePayload = () => ({
+    slug: "lesson-plan",
+    label: "Lesson Plan",
+    state: "awaiting_review",
+    checksum: "lesson-plan-stage-checksum",
+    dependencies: ["content"],
+    downstream_stages: ["package"],
+    prerequisites_ready: true,
+    approval_failures: [],
+    actions: [
+      { id: "edit", label: "Edit Lesson Plan", enabled: true, requires_impact_confirmation: false },
+      { id: "approve", label: "Approve Lesson Plan", enabled: true, requires_impact_confirmation: false },
+    ],
+  });
+  const fetchMock = vi.fn(async (pathValue: string | URL | Request, init?: RequestInit) => {
+    const path = String(pathValue);
+    const requestBody = init?.body ? JSON.parse(String(init.body)) as Record<string, unknown> : undefined;
+    requests.push({ path, body: requestBody });
+    if (path.endsWith("/workspace")) return jsonResponse({ course_id: "herb-course", title: "Indoor herbs", current_stage: "lesson-plan", operator_status: "pending_review", stages: [stagePayload()] });
+    if (path.endsWith("/stages/lesson-plan")) return jsonResponse({ ...stagePayload(), artifacts: [{ artifact_type: "lesson_plan", checksum, envelope: { status: "draft" }, body }] });
+    if (path.endsWith("/stages/course-model")) return jsonResponse({ slug: "course-model", artifacts: [{ artifact_type: "course_model", checksum: "course-model-1", envelope: { status: "approved" }, body: courseModelBody }] });
+    if (path.endsWith("/lesson-plan/decision") && init?.method === "PUT") {
+      if (!conflictReturned) {
+        conflictReturned = true;
+        checksum = "lesson-plan-artifact-2";
+        body = lessonPlanBody(1.5, "self_study");
+        return jsonResponse({ error: { code: "version_conflict", message: "changed", actual_checksum: checksum } }, 409);
+      }
+      const constraints = requestBody?.constraints as Record<string, unknown>;
+      body.session_constraints = { ...body.session_constraints, ...constraints };
+      if (constraints.default_mode === "live" || constraints.default_mode === "self_study") {
+        for (const session of body.sessions) {
+          for (const cover of session.covers) cover.mode = constraints.default_mode;
+        }
+      }
+      const operations = requestBody?.operations as Array<Record<string, unknown>>;
+      for (const operation of operations) {
+        if (operation.op !== "set_mode") continue;
+        for (const session of body.sessions) {
+          const cover = session.covers.find((item) => item.subtopic_id === operation.target_id);
+          if (cover) cover.mode = String(operation.value);
+        }
+      }
+      checksum = "lesson-plan-artifact-3";
       return jsonResponse({ artifact: { body }, checksum });
     }
     return jsonResponse({ slug: path.split("/").at(-1), artifacts: [] });
@@ -569,5 +661,87 @@ describe("Workspace Blueprint decisions", () => {
       within(screen.getByLabelText("Assets for Light and placement"))
         .getByRole("button", { name: /Activity/ }),
     ).toHaveAttribute("aria-pressed", "false");
+  });
+});
+
+describe("Workspace Lesson Plan decisions", () => {
+  it("retains a typed delivery decision across a checksum conflict and can load the latest Lesson Plan", async () => {
+    const user = userEvent.setup();
+    const backend = lessonPlanFetch();
+    vi.stubGlobal("fetch", backend.fetchMock);
+    const view = renderLessonPlanWorkspace();
+
+    await screen.findByRole("heading", { name: "Lesson Plan" });
+    await user.click(
+      within(view.container.querySelector(".decision-bar")!).getByRole("button", {
+        name: "Edit Lesson Plan",
+      }),
+    );
+    const maximum = screen.getByLabelText("Maximum session hours");
+    await user.clear(maximum);
+    await user.type(maximum, "0.5");
+    await user.selectOptions(screen.getByLabelText("Delivery mode for Water and drainage"), "self_study");
+    await user.click(screen.getByRole("checkbox", { name: /reviewed the changed constraints/i }));
+    await user.click(screen.getByRole("button", { name: "Save Lesson Plan draft" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "The Lesson Plan changed elsewhere" });
+    expect(maximum).toHaveValue(0.5);
+    expect(screen.getByLabelText("Delivery mode for Water and drainage")).toHaveValue("self_study");
+    expect(within(dialog).getByRole("button", { name: "Review local decision again" })).toHaveFocus();
+    const saveRequest = backend.requests.find((request) => request.path.endsWith("/lesson-plan/decision"));
+    expect(saveRequest?.body).toMatchObject({
+      expected_checksum: "lesson-plan-artifact-1",
+      constraints: { max_session_hours: 0.5, default_mode: "live" },
+      operations: [{ op: "set_mode", target_id: "s2", value: "self_study" }],
+    });
+    expect(saveRequest?.body).not.toHaveProperty("body");
+
+    await user.click(within(dialog).getByRole("button", { name: "Use latest Lesson Plan" }));
+    await screen.findByRole("heading", { name: "Lesson Plan" });
+    await user.click(
+      within(view.container.querySelector(".decision-bar")!).getByRole("button", {
+        name: "Edit Lesson Plan",
+      }),
+    );
+    expect(screen.getByLabelText("Maximum session hours")).toHaveValue(1.5);
+    expect(screen.getByLabelText("Delivery mode for Water and drainage")).toHaveValue("live");
+    expect(screen.getByLabelText("Delivery mode for Light and placement")).toHaveValue("self_study");
+  });
+
+  it("rebases explicit local intent onto the latest Lesson Plan before reapply", async () => {
+    const user = userEvent.setup();
+    const backend = lessonPlanFetch();
+    vi.stubGlobal("fetch", backend.fetchMock);
+    const view = renderLessonPlanWorkspace();
+
+    await screen.findByRole("heading", { name: "Lesson Plan" });
+    await user.click(within(view.container.querySelector(".decision-bar")!).getByRole("button", { name: "Edit Lesson Plan" }));
+    await user.selectOptions(screen.getByLabelText("Default delivery mode"), "self_study");
+    await user.selectOptions(screen.getByLabelText("Delivery mode for Water and drainage"), "live");
+    await user.click(screen.getByRole("checkbox", { name: /reviewed the changed constraints/i }));
+    await user.click(screen.getByRole("button", { name: "Save Lesson Plan draft" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "The Lesson Plan changed elsewhere" });
+    expect(screen.getByLabelText("Default delivery mode")).toHaveValue("self_study");
+    expect(screen.getByLabelText("Delivery mode for Water and drainage")).toHaveValue("live");
+    expect(screen.getByLabelText("Delivery mode for Light and placement")).toHaveValue("self_study");
+    await user.click(within(dialog).getByRole("button", { name: "Review local decision again" }));
+    expect(screen.getByRole("button", { name: "Save Lesson Plan draft" })).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", { name: /reviewed the changed constraints/i }));
+    await user.click(screen.getByRole("button", { name: "Save Lesson Plan draft" }));
+
+    await screen.findByRole("heading", { name: "Lesson Plan" });
+    const saves = backend.requests.filter((request) => request.path.endsWith("/lesson-plan/decision"));
+    expect(saves).toHaveLength(2);
+    expect(saves[1].body).toMatchObject({
+      expected_checksum: "lesson-plan-artifact-2",
+      constraints: { max_session_hours: 1.5, default_mode: "self_study" },
+      operations: [{ op: "set_mode", target_id: "s2", value: "live" }],
+    });
+    await user.click(within(view.container.querySelector(".decision-bar")!).getByRole("button", { name: "Edit Lesson Plan" }));
+    expect(screen.getByLabelText("Maximum session hours")).toHaveValue(1.5);
+    expect(screen.getByLabelText("Default delivery mode")).toHaveValue("self_study");
+    expect(screen.getByLabelText("Delivery mode for Light and placement")).toHaveValue("self_study");
+    expect(screen.getByLabelText("Delivery mode for Water and drainage")).toHaveValue("live");
   });
 });

@@ -21,6 +21,7 @@ import type {
   CreateCourseRequest,
   ImpactPreview,
   JobResponse,
+  LessonPlanDecisionDraft,
   LessonSession,
   Outcome,
   OutcomeAdvisory,
@@ -808,6 +809,7 @@ function normalizeContent(
 function normalizeLessonPlan(value: unknown, fallback: Workspace["lessonPlan"]): Workspace["lessonPlan"] {
   if (!isRecord(value)) return fallback;
   const coverage = isRecord(value.coverage_summary) ? value.coverage_summary : {};
+  const constraints = isRecord(value.session_constraints) ? value.session_constraints : {};
   const sessions: LessonSession[] = asArray(value.sessions).flatMap((session) =>
     isRecord(session)
       ? [
@@ -831,12 +833,24 @@ function normalizeLessonPlan(value: unknown, fallback: Workspace["lessonPlan"]):
         ]
       : [],
   );
+  const latestDecision = asArray(value.decision_log).filter(isRecord).at(-1);
   return sessions.length
     ? {
         sessions,
         totalDurationMinutes: asNumber(coverage.total_duration_minutes),
         expectedSubtopicIds: asStringArray(coverage.expected_subtopic_ids),
         coveredSubtopicIds: asStringArray(coverage.covered_subtopic_ids),
+        constraints: {
+          maxSessionHours: asNumber(constraints.max_session_hours, fallback.constraints.maxSessionHours),
+          defaultMode: asString(constraints.default_mode, fallback.constraints.defaultMode) === "self_study" ? "self_study" : "live",
+          calendarDates: asStringArray(constraints.calendar_dates),
+          instructorCount: typeof constraints.instructor_count === "number" ? constraints.instructor_count : null,
+          deliveryPlatform: typeof constraints.delivery_platform === "string" ? constraints.delivery_platform : null,
+        },
+        unresolvedConstraints: asStringArray(value.unresolved_session_constraints),
+        affectedSessionIds: isRecord(latestDecision)
+          ? asStringArray(latestDecision.affected_session_ids)
+          : [],
       }
     : fallback;
 }
@@ -994,7 +1008,16 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       },
       blueprintChecksum: artifacts.get("blueprint")?.checksum,
       content: { assets: [], completed: 0, expected: 0 },
-      lessonPlan: { sessions: [], totalDurationMinutes: 0, expectedSubtopicIds: [], coveredSubtopicIds: [] },
+      lessonPlan: {
+        sessions: [],
+        totalDurationMinutes: 0,
+        expectedSubtopicIds: [],
+        coveredSubtopicIds: [],
+        constraints: { maxSessionHours: 2, defaultMode: "live", calendarDates: [], instructorCount: null, deliveryPlatform: null },
+        unresolvedConstraints: [],
+        affectedSessionIds: [],
+      },
+      lessonPlanChecksum: artifacts.get("lesson_plan")?.checksum,
       package: {
         format: "Markdown folder",
         operatorStatus: projection.operator_status ?? "pending",
@@ -1095,6 +1118,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       blueprintChecksum: artifacts.get("blueprint")?.checksum,
       content,
       lessonPlan: normalizeLessonPlan(artifacts.get("lesson_plan")?.body, base.lessonPlan),
+      lessonPlanChecksum: artifacts.get("lesson_plan")?.checksum,
       package: {
         ...base.package,
         operatorStatus: asString(summaryRecord.operator_status, projection.operator_status ?? base.package.operatorStatus),
@@ -1430,6 +1454,60 @@ export async function saveBlueprintDecision(
   };
   return {
     blueprint: normalizeBlueprint(artifact.body, fallback),
+    checksum: asString(response.checksum),
+  };
+}
+
+export async function saveLessonPlanDecision(
+  courseId: string,
+  decision: LessonPlanDecisionDraft,
+  expectedChecksum: string,
+): Promise<{ lessonPlan: Workspace["lessonPlan"]; checksum: string }> {
+  const response = await apiFetch<Record<string, unknown>>(
+    `/api/courses/${encodeURIComponent(courseId)}/lesson-plan/decision`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        expected_checksum: expectedChecksum,
+        constraints: {
+          max_session_hours: decision.constraints.maxSessionHours,
+          default_mode: decision.constraints.defaultMode,
+          calendar_dates: decision.constraints.calendarDates,
+          instructor_count: decision.constraints.instructorCount,
+          delivery_platform: decision.constraints.deliveryPlatform,
+        },
+        operations: decision.operations.map((operation) => operation.op === "reorder_session"
+          ? { op: operation.op, session_ids: operation.sessionIds }
+          : operation.op === "move_segment"
+            ? {
+                op: operation.op,
+                target_id: operation.targetId,
+                value: operation.value,
+                position: operation.position,
+              }
+            : { op: operation.op, target_id: operation.targetId, value: operation.value }),
+        rationale: decision.rationale,
+      }),
+    },
+  );
+  const artifact = isRecord(response.artifact) ? response.artifact : {};
+  const fallback: Workspace["lessonPlan"] = {
+    sessions: [],
+    totalDurationMinutes: 0,
+    expectedSubtopicIds: [],
+    coveredSubtopicIds: [],
+    constraints: {
+      maxSessionHours: 2,
+      defaultMode: "live",
+      calendarDates: [],
+      instructorCount: null,
+      deliveryPlatform: null,
+    },
+    unresolvedConstraints: [],
+    affectedSessionIds: [],
+  };
+  return {
+    lessonPlan: normalizeLessonPlan(artifact.body, fallback),
     checksum: asString(response.checksum),
   };
 }

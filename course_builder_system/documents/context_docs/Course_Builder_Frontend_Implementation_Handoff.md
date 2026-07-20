@@ -11,7 +11,7 @@
 > authoritative for current behavior; the next-cycle package defines the target behavior
 > and implementation order.
 
-> **NC-10 through NC-50 implementation update — 2026-07-20:** NC-10 and
+> **NC-10 through NC-60 implementation update — 2026-07-20:** NC-10 and
 > NC-20 have passed independent review. The browser and API use explicit
 > backend-projected capabilities, graph-derived invalidation, checksum-protected impact
 > confirmation, server-side approval guards, explicit reopen, scoped Content revision,
@@ -28,7 +28,10 @@
 > structural diff. NC-40 is not complete because NC-406 remains deferred to NC-90.
 > NC-501 through NC-503 passed independent NC-50 review with deterministic browser
 > Scenario A7 evidence after lifecycle/source-authority corrections. NC-504 remains
-> deferred to NC-90 behind NC-905; NC-60 and later packages remain unstarted.
+> deferred to NC-90 behind NC-905. NC-601 through NC-603 passed independent NC-60
+> review with deterministic browser Scenario A12 evidence after corrective hardening of
+> conflict rebasing, monotonic session IDs, Course Model authority, and exact affected-
+> session reporting. NC-604 remains deferred to NC-90 behind NC-908; NC-70 is next.
 > Unsupported generic revision controls remain removed or disabled.
 
 ## 1. Purpose of this document
@@ -356,8 +359,15 @@ session count, total time, delivery modes, and break policy.
 Coverage is calculated from the actual session mapping. Missing, duplicated, or unexpected
 subtopics produce a warning rather than a misleading complete state.
 
-Timing, mode, and order are not fake inline controls. The page states that structured
-Lesson Plan changes are unavailable until the NC-60 command contract is implemented.
+NC-601 through NC-603 now provide an independently verified typed reducer/API and
+capability-gated editor for maximum duration, default and per-segment delivery modes,
+calendar/instructor/platform details, segment placement, and session order. Decisions
+are checksum protected, rebase explicit local intent after a conflict, preserve ordered
+Course Model coverage exactly once across Blueprint and Content, keep session IDs
+monotonic across retirement, preserve unaffected session bodies for bounded changes,
+and report exact affected sessions after save. Deterministic browser Scenario A12 proves
+run, edit, refresh, approval, and Package readiness. NC-604 live revision remains
+deferred behind NC-908.
 
 ### 6.8 Package
 
@@ -639,6 +649,13 @@ rejected/contentless source routing. The final gate passed 381 Python tests, 75 
 tests, lint, build, and the post-fix Chromium A7 scenario. No NC-504 live revision
 surface was added.
 
+NC-60 validation adds `tests/test_lesson_plan_decisions.py`,
+`frontend/src/features/workspace/LessonPlanEditor.test.tsx`, Lesson Plan API/workspace
+integration cases, and deterministic browser Scenario A12. Independent review first
+found and then verified corrections for true conflict rebasing, retired session-ID
+reuse, Course Model authority, and exact affected-session reporting. No NC-604 live
+revision surface was added.
+
 The UI contract tests intentionally protect the artifact-first layout, pre-generation
 states, source checkpoint, stage progression, structured Course Model/Blueprint views,
 content verification workbench, Lesson Plan review, and Package default selection.
@@ -648,10 +665,10 @@ content verification workbench, Lesson Plan review, and Package default selectio
 1. **Local single-director system.** There is no authentication, authorization,
    collaboration, or production deployment configuration.
 2. **One API worker.** The current job runner and locks are not a distributed queue.
-3. **Editing depth is uneven.** Brief, Outcomes, Course Model, and Blueprint typed
+3. **Editing depth is uneven.** Brief, Outcomes, Course Model, Blueprint, and Lesson Plan typed
    editing, source decisions, content review, and scoped Content revision are wired and
-   independently verified at their deterministic gates. Lesson Plan typed editing
-   remains unstarted; unsupported generic revisions are not exposed.
+   independently verified at their deterministic gates. Their scoped live proposal
+   packages remain deferred; unsupported generic revisions are not exposed.
 4. **Source repair is not closed-loop automation.** Better-evidence repair is not exposed
    until NC-70/NC-80 implement evidence acquisition, approval, rerouting, targeted
    regeneration, and reverification.
@@ -696,17 +713,18 @@ review. NC-404 is independently verified with deterministic browser Scenario A6
 evidence. NC-405 passed independent review with deterministic browser Scenario A6 diff
 evidence. NC-501 through NC-503 passed independent review with deterministic browser
 Scenario A7 evidence. NC-40 is not complete; NC-406 and NC-504 remain deferred to
-NC-90, and NC-60 and later packages remain unstarted. Source repair and verifier-driven targeted
-revision remain the central trust milestone, but begin only after the intervening
-command contracts are stable.
+NC-90. NC-601 through NC-603 passed independent review with deterministic browser
+Scenario A12 evidence; NC-604 remains deferred behind NC-908. NC-70 is next. Source
+repair and verifier-driven targeted revision remain the central trust milestone after
+the source-quality checkpoint.
 
 After that, sensible frontend increments are:
 
-1. implement NC-601 through NC-603 Lesson Plan decisions and keep NC-604 deferred;
+1. implement NC-701 source candidate scoring under the NC-70 dependency gate;
 2. keep NC-406 live Course Model revision unstarted until its dependencies are complete;
 3. render the actual selected Markdown file inside the Package preview;
 4. preserve the reviewed Blueprint contract while keeping NC-504 live revision deferred;
-5. add Lesson Plan constraint editing and bounded affected-session regeneration;
+5. preserve the reviewed Lesson Plan contract while keeping NC-604 live revision deferred;
 6. improve activity/model-call diagnostics without exposing private reasoning;
 7. add focused browser acceptance and accessibility coverage;
 8. split large routes/components if bundle growth continues.
@@ -724,7 +742,9 @@ Scenario A6 evidence. NC-405's exact-preview detailed structural diff passed ind
 review with deterministic browser evidence. NC-501 through NC-503 now add the
 independently verified typed Blueprint editor/reconciliation contract and browser
 Scenario A7. NC-40 remains incomplete; NC-406 is deferred to NC-90 and unstarted, as is
-NC-504 behind NC-905.
+NC-504 behind NC-905. NC-601 through NC-603 now add the independently verified typed
+Lesson Plan editor, exact affected-session reconciliation, and browser Scenario A12;
+NC-604 remains deferred behind NC-908.
 
 The implementation should be extended as a thin, truthful product layer over canonical
 artifacts and typed commands. The frontend may improve how decisions are presented, but

@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-501 through NC-503 independently verified with deterministic browser evidence
+> **Status:** NC-601 through NC-603 independently verified with deterministic browser evidence
 > **Updated:** 2026-07-20
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -55,7 +55,10 @@ complete. NC-404 is independently verified with deterministic browser Scenario A
 evidence. NC-405 is independently verified with deterministic browser Scenario A6 diff
 evidence. NC-501 through NC-503 are independently verified with deterministic browser
 Scenario A7 evidence after corrective lifecycle/source-authority hardening. NC-406 and
-NC-504 remain deferred to NC-90; NC-60 and every later package remain unstarted.
+NC-504 remain deferred to NC-90. NC-601 through NC-603 are independently verified with
+deterministic browser Scenario A12 evidence after corrective conflict-rebase, stable-ID,
+Course Model-authority, and affected-session hardening. NC-604 remains deferred to NC-90
+behind NC-908; NC-70 and every later package remain unstarted.
 This status note does not mark Milestone 3, NC-40,
 or any later package complete.
 
@@ -365,8 +368,8 @@ checkpoint review. NC-303 remains deferred to NC-90 behind NC-902 and has not st
 NC-401 through NC-403 are independently verified after the NC-40 backend checkpoint.
 NC-404 is independently verified with deterministic browser Scenario A6 evidence.
 NC-405 is independently verified with deterministic browser evidence. NC-40 is not
-complete. NC-501 through NC-503 are independently verified. NC-406 and NC-504 remain
-deferred; NC-60 and every later package remain unstarted.
+complete. NC-501 through NC-503 and NC-601 through NC-603 are independently verified.
+NC-406, NC-504, and NC-604 remain deferred; NC-70 and every later package remain unstarted.
 
 ### Tasks
 
@@ -428,7 +431,9 @@ NC-404 is independently verified with deterministic browser Scenario A6 evidence
 NC-405 is independently verified with deterministic browser Scenario A6 diff evidence.
 NC-501 through NC-503 are independently verified with deterministic browser Scenario A7
 evidence. NC-40 is not complete because NC-406 remains deferred to NC-90. NC-504 is
-also deferred to NC-90 behind NC-905; NC-60 and every later package remain unstarted.
+also deferred to NC-90 behind NC-905. NC-601 through NC-603 are independently verified
+with deterministic browser Scenario A12 evidence; NC-604 remains deferred behind
+NC-908. NC-70 and every later package remain unstarted.
 
 ### Tasks
 
@@ -544,6 +549,12 @@ The live proposal/revision requirement closes with NC-504 during NC-90 and canno
 anchor or source rules.
 
 ## 11. Work package NC-60 — Lesson Plan decisions
+
+**Implementation status (2026-07-20):** NC-601 through NC-603 passed independent
+review with deterministic browser Scenario A12 evidence. The reviewed contract covers
+typed constraints and session operations, ordered Course Model-authoritative coverage,
+monotonic session IDs, intent-aware checksum-conflict rebasing, bounded preservation,
+and exact affected-session reporting. NC-604 remains deferred to NC-90 behind NC-908.
 
 ### Tasks
 

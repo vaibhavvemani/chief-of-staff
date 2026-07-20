@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from agents import blueprint as blueprint_agent
-from agents import content_review, intake, outcomes
+from agents import content_review, intake, lesson_plan, outcomes
 from api.services.approval_guard import ApprovalGuardService
 from api.services.artifact_repository import (
     ArtifactNotFound,
@@ -464,6 +464,42 @@ class DecisionService:
         decided["revision_note"] = "Applied typed Blueprint defaults and exceptions."
         saved = self.repository.save(decided, expected_checksum=self.repository.checksum(blueprint))
         self._invalidate_if_changed(course_id, blueprint, saved, {"blueprint"})
+        return saved
+
+    def save_lesson_plan_decision(
+        self,
+        course_id: str,
+        *,
+        constraints: dict[str, Any] | None,
+        operations: list[dict[str, Any]],
+        rationale: str,
+    ) -> dict[str, Any]:
+        """Persist one typed delivery decision and invalidate only Package outputs."""
+        self._writable(course_id)
+        prerequisites = self._require_current_stage_prerequisites(
+            course_id,
+            "lesson-plan",
+        )
+        existing = self.repository.require(course_id, "lesson_plan")
+        self._ensure_editable(existing, "lesson_plan")
+        decided = lesson_plan.apply_lesson_plan_decision(
+            existing,
+            constraints=constraints,
+            operations=operations,
+            content_package=prerequisites["content_package"],
+            blueprint=prerequisites["blueprint"],
+            course_model=prerequisites["course_model"],
+            rationale=rationale,
+        )
+        decided["revision"] = int(existing.get("revision", 0)) + 1
+        decided["status"] = "draft"
+        decided["produced_by_step"] = "human"
+        decided["revision_note"] = "Applied typed Lesson Plan constraints and operations."
+        saved = self.repository.save(
+            decided,
+            expected_checksum=self.repository.checksum(existing),
+        )
+        self._invalidate_if_changed(course_id, existing, saved, {"lesson_plan"})
         return saved
 
     def save_content_review(

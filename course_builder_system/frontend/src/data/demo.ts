@@ -565,7 +565,17 @@ export const demoWorkspace: Workspace = {
     totalDurationMinutes: 80,
     expectedSubtopicIds: subtopics.map((subtopic) => subtopic.id),
     coveredSubtopicIds: subtopics.map((subtopic) => subtopic.id),
+    constraints: {
+      maxSessionHours: 2,
+      defaultMode: "live",
+      calendarDates: [],
+      instructorCount: null,
+      deliveryPlatform: null,
+    },
+    unresolvedConstraints: ["calendar_dates", "instructor_count", "delivery_platform"],
+    affectedSessionIds: [],
   },
+  lessonPlanChecksum: "demo-lesson-plan-checksum",
   package: {
     format: "Markdown folder",
     operatorStatus: "requires_attention",
