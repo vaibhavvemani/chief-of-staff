@@ -354,10 +354,20 @@ export interface CourseModelValidationIssue {
   path?: string;
 }
 
+export interface CourseModelChangeRecord {
+  operationIndex: number;
+  op: string;
+  action: string;
+  recordType: string;
+  recordId?: string;
+  recordIds: string[];
+  parentId?: string;
+}
+
 export interface CourseModelPreview {
   candidate: CourseModelData;
   allocatedIds: Record<string, string>;
-  changeRecords: Array<Record<string, unknown>>;
+  changeRecords: CourseModelChangeRecord[];
   affectedRecords: Record<string, { changedIds: string[]; removedIds: string[] }>;
   impact: ImpactPreview;
 }

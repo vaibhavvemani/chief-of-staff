@@ -9,9 +9,10 @@
 > **NC-40 backend contract update — 2026-07-20:** NC-301 and NC-302 have passed
 > independent checkpoint review, and NC-303 remains deferred to NC-90 behind NC-902.
 > NC-401 through NC-403 passed independent NC-40 backend checkpoint review on
-> 2026-07-20 after corrective hardening. NC-404 passed independent review with
-> deterministic browser Scenario A6 evidence. NC-40 is not complete. NC-405, NC-406,
-> and all later packages remain unstarted. This does not complete
+> 2026-07-20 after corrective hardening. NC-404 and NC-405 passed independent review with
+> deterministic browser Scenario A6 evidence, including the exact-preview structural
+> diff. NC-40 is not complete because NC-406 remains deferred to NC-90. NC-406 and all
+> later packages remain unstarted. This does not complete
 > Milestone 3 or the cycle.
 
 ## 1. How to use this document
@@ -585,7 +586,11 @@ applicable, record type/ID, and field/path when applicable. Successful preview/s
 responses return ordered change records, changed/removed/preserved IDs by record family,
 and the resolved request-local ID map for NC-404/NC-405. Independently verified NC-404
 projects the Course Model edit capability only when the complete typed React workflow is
-available. NC-405's polished detailed diff remains unstarted.
+available. NC-405 now presents the exact-preview structural diff from the canonical
+starting model, validated candidate, allocated-ID map, ordered change records, and
+affected-record data. It passed independent review with deterministic browser evidence;
+the backend operation, persistence, and lifecycle contracts were not changed for
+presentation.
 
 ### 9.4 Blueprint decision
 

@@ -10,6 +10,7 @@ import type {
   BriefUpdates,
   ContentAsset,
   CourseModelData,
+  CourseModelChangeRecord,
   CourseModelOperation,
   CourseModelPreview,
   CourseModelValidationIssue,
@@ -1269,6 +1270,26 @@ function normalizeAffectedRecords(value: unknown): CourseModelPreview["affectedR
   ));
 }
 
+function normalizeCourseModelChangeRecords(value: unknown): CourseModelChangeRecord[] {
+  return asArray(value).flatMap((record) => {
+    if (!isRecord(record)) return [];
+    const operationIndex = asNumber(record.operation_index, -1);
+    const op = asString(record.op);
+    const action = asString(record.action);
+    const recordType = asString(record.record_type);
+    if (operationIndex < 0 || !op || !action || !recordType) return [];
+    return [{
+      operationIndex,
+      op,
+      action,
+      recordType,
+      recordId: asString(record.record_id) || undefined,
+      recordIds: asStringArray(record.record_ids),
+      parentId: asString(record.parent_id) || undefined,
+    }];
+  });
+}
+
 function normalizeCourseModelPreview(response: Record<string, unknown>): CourseModelPreview {
   const candidateArtifact = isRecord(response.candidate_artifact) ? response.candidate_artifact : {};
   const impact = isRecord(response.impact) ? response.impact : {};
@@ -1277,7 +1298,7 @@ function normalizeCourseModelPreview(response: Record<string, unknown>): CourseM
     allocatedIds: isRecord(response.allocated_ids)
       ? Object.fromEntries(Object.entries(response.allocated_ids).filter((entry): entry is [string, string] => typeof entry[1] === "string"))
       : {},
-    changeRecords: asArray(response.change_records).filter(isRecord),
+    changeRecords: normalizeCourseModelChangeRecords(response.change_records),
     affectedRecords: normalizeAffectedRecords(response.affected_records),
     impact: normalizeImpactResponse(impact, "course-model", "edit"),
   };

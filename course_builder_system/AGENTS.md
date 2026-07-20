@@ -14,9 +14,10 @@ package have passed independent review. NC-301 and NC-302 have now also passed t
 independent NC-30 checkpoint review. NC-303 remains deferred to NC-90 behind NC-902,
 and NC-401 through NC-403 passed independent NC-40 backend checkpoint review on
 2026-07-20 after corrective hardening of stable IDs, ordered references, source
-authority, shared schema validation, and rollback cleanup. NC-404 passed independent
-review on 2026-07-20 with deterministic browser Scenario A6 evidence. NC-40 is not
-complete. NC-405, NC-406, and all later packages remain unstarted.
+authority, shared schema validation, and rollback cleanup. NC-404 and NC-405 passed
+independent review on 2026-07-20 with deterministic browser Scenario A6 evidence,
+including the exact-preview structural diff. NC-40 is not complete because NC-406
+remains deferred to NC-90. NC-406 and all later packages remain unstarted.
 
 The system turns a sparse subject request into a rendered course folder through:
 
@@ -46,8 +47,9 @@ stages. NC-002, NC-004, NC-005, and NC-101 through NC-109 are implemented and
 independently verified. NC-201 through NC-207 are also independently verified. NC-30
 Outcomes reducer validation and browser editing are independently verified through
 NC-301 and NC-302. NC-303 remains deferred to NC-90 behind NC-902. NC-401 through
-NC-404 are independently verified; this does not complete NC-40. NC-405, NC-406, and all
-later packages remain unstarted. The next safe action is NC-405; do not start NC-406
+NC-405 are independently verified; this does not complete NC-40 because NC-406 remains
+deferred to NC-90. NC-406 and all later packages remain unstarted. The next safe action
+is NC-50: implement NC-501 through NC-503 and keep NC-504 deferred. Do not start NC-406
 before its dependencies or skip ahead to live revision, source repair, or live-agent
 parity.
 Source repair plus verifier-driven targeted revision remains the central trust milestone

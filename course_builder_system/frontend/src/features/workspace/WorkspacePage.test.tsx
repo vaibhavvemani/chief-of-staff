@@ -325,7 +325,10 @@ describe("Workspace Course Model decisions", () => {
     expect(screen.queryByRole("button", { name: "Save Course Model draft" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Preview impact" }));
     await screen.findByText("Backend validation passed");
-    await user.click(screen.getByRole("checkbox", { name: /reviewed the allocated ids/i }));
+    expect(screen.getByRole("region", { name: "Renamed records: 1" })).toBeVisible();
+    expect(screen.getByText("Light and placement", { exact: true })).toBeVisible();
+    expect(screen.getAllByText("Light, placement, and rotation", { exact: true })).not.toHaveLength(0);
+    await user.click(screen.getByRole("checkbox", { name: /reviewed the detailed structural diff/i }));
     await user.click(screen.getByRole("button", { name: "Save Course Model draft" }));
 
     expect(await screen.findByRole("heading", { name: "Light, placement, and rotation" })).toBeVisible();
@@ -373,7 +376,7 @@ describe("Workspace Course Model decisions", () => {
     await user.type(screen.getByLabelText("Subtopic title for s1"), " locally revised");
     await user.click(screen.getByRole("button", { name: "Preview impact" }));
     await screen.findByText("Backend validation passed");
-    await user.click(screen.getByRole("checkbox", { name: /reviewed the allocated ids/i }));
+    await user.click(screen.getByRole("checkbox", { name: /reviewed the detailed structural diff/i }));
     await user.click(screen.getByRole("button", { name: "Save Course Model draft" }));
     const dialog = await screen.findByRole("dialog", { name: "The Course Model changed elsewhere" });
     expect(screen.queryByText("Backend validation passed")).not.toBeInTheDocument();

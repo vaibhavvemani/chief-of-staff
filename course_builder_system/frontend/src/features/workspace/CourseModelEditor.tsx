@@ -9,6 +9,7 @@ import type {
   Outcome,
   Subtopic,
 } from "../../types";
+import { CourseModelDiff } from "./CourseModelDiff";
 
 type RemovalTarget = { type: "module" | "subtopic" | "concept" | "coverage"; id: string; label: string };
 
@@ -512,6 +513,7 @@ export function CourseModelEditor(props: CourseModelEditorProps) {
   const outcomeOptions = outcomes.map((outcome) => ({ id: outcome.id, label: `${outcome.id}: ${outcome.statement}` }));
   const operationErrors = new Map<number, CourseModelValidationIssue[]>();
   const previewMatchesOperations = Boolean(preview) && previewedBatchSignature === JSON.stringify(operations);
+  const currentPreview = previewMatchesOperations ? preview : null;
   serverIssues.forEach((issue) => {
     if (issue.operationIndex === undefined) return;
     operationErrors.set(issue.operationIndex, [...(operationErrors.get(issue.operationIndex) ?? []), issue]);
@@ -553,14 +555,23 @@ export function CourseModelEditor(props: CourseModelEditorProps) {
         <aside className="course-model-preview-panel" aria-label="Course Model operation preview">
           <div className="editor-section-heading"><div><span className="micro-label">Ordered operation batch</span><h2>Review and validate</h2></div></div>
           {operations.length ? <ol className="operation-ledger">{operations.map((operation, index) => <li key={`${operation.op}:${index}`} className={operationErrors.has(index) ? "invalid" : ""}><strong>{operation.op.replaceAll("_", " ")}</strong><code>{"targetId" in operation ? operation.targetId : "clientRef" in operation ? operation.clientRef : "batch"}</code>{operationErrors.get(index)?.map((issue) => <span key={issue.code}>{issue.message}</span>)}</li>)}</ol> : <p className="muted">Use the typed controls to build a decision batch.</p>}
-          <button className="button button-primary full-width" disabled={!operations.length || busy || conflict} onClick={() => onPreview(operations)}>{busy ? "Validating…" : preview ? "Preview again" : "Preview impact"}</button>
-          {preview ? <section className="course-model-preview-result" aria-live="polite"><div className="preview-ready"><span aria-hidden="true">✓</span><div><strong>Backend validation passed</strong><small>This preview is bound to the current artifact and operation batch.</small></div></div><dl><div><dt>Allocated IDs</dt><dd>{Object.keys(preview.allocatedIds).length || "None"}</dd></div><div><dt>Affected families</dt><dd>{Object.keys(preview.affectedRecords).length}</dd></div><div><dt>Downstream stages</dt><dd>{preview.impact.requiresRerunStages.length}</dd></div></dl>{Object.keys(preview.allocatedIds).length ? <ul>{Object.entries(preview.allocatedIds).map(([local, canonical]) => <li key={local}><code>{local}</code> → <code>{canonical}</code></li>)}</ul> : null}<p><strong>Affected records:</strong> {Object.entries(preview.affectedRecords).flatMap(([family, records]) => [...records.changedIds, ...records.removedIds].map((id) => `${family} ${id}`)).join(", ") || "Validated batch only"}</p><p><strong>Downstream impact:</strong> {preview.impact.staleArtifacts.map((item) => item.replaceAll("_", " ")).join(", ") || "No existing downstream artifacts"}</p>{preview.impact.warnings.map((warning) => <p className="preview-warning" key={warning}>{warning}</p>)}<label className="impact-ack"><input type="checkbox" checked={impactAcknowledged} disabled={!previewMatchesOperations} onChange={(event) => setImpactAcknowledged(event.target.checked)} /><span>I reviewed the allocated IDs, affected records, warnings, and downstream impact for this current preview.</span></label><button className="button button-primary full-width" disabled={!impactAcknowledged || !previewMatchesOperations || busy} onClick={() => { if (previewMatchesOperations) onSave(operations, preview.impact.impactChecksum); }}>{busy ? "Saving canonical draft…" : "Save Course Model draft"}</button></section> : null}
+          <button className="button button-primary full-width" disabled={!operations.length || busy || conflict} onClick={() => onPreview(operations)}>{busy ? "Validating…" : currentPreview ? "Preview again" : "Preview impact"}</button>
+          {currentPreview ? <section className="course-model-preview-result" aria-live="polite">
+            <div className="preview-ready"><span aria-hidden="true">✓</span><div><strong>Backend validation passed</strong><small>This preview is bound to the current artifact and operation batch.</small></div></div>
+            <dl><div><dt>Allocated IDs</dt><dd>{Object.keys(currentPreview.allocatedIds).length || "None"}</dd></div><div><dt>Affected families</dt><dd>{Object.keys(currentPreview.affectedRecords).length}</dd></div><div><dt>Downstream stages</dt><dd>{currentPreview.impact.requiresRerunStages.length}</dd></div></dl>
+            {Object.keys(currentPreview.allocatedIds).length ? <ul>{Object.entries(currentPreview.allocatedIds).map(([local, canonical]) => <li key={local}><code>{local}</code> → <code>{canonical}</code></li>)}</ul> : null}
+            <CourseModelDiff original={baseModelRef.current} preview={currentPreview} />
+            <p><strong>Downstream impact:</strong> {currentPreview.impact.staleArtifacts.map((item) => item.replaceAll("_", " ")).join(", ") || "No existing downstream artifacts"}</p>
+            {currentPreview.impact.warnings.map((warning) => <p className="preview-warning" key={warning}>{warning}</p>)}
+            <label className="impact-ack"><input type="checkbox" checked={impactAcknowledged} onChange={(event) => setImpactAcknowledged(event.target.checked)} /><span>I reviewed the detailed structural diff, allocated IDs, warnings, and downstream impact for this current preview.</span></label>
+            <button className="button button-primary full-width" disabled={!impactAcknowledged || busy} onClick={() => onSave(operations, currentPreview.impact.impactChecksum)}>{busy ? "Saving canonical draft…" : "Save Course Model draft"}</button>
+          </section> : null}
           <button className="button button-quiet full-width" disabled={busy} onClick={() => { if (!operations.length || window.confirm("Discard all unsaved Course Model changes?")) onCancel(); }}>Cancel editing</button>
           <p className="separate-approval-note">Saving creates a canonical draft. Approval remains a separate checkpoint in the stage action bar.</p>
         </aside>
       </div>
       </fieldset>
-      <div className="sr-status" role="status" aria-live="polite">{busy ? "Course Model request in progress." : preview ? "Course Model preview is ready for acknowledgement." : operations.length ? `${operations.length} unsaved Course Model operations.` : "Course Model editor ready."}</div>
+      <div className="sr-status" role="status" aria-live="polite">{busy ? "Course Model request in progress." : currentPreview ? "Course Model detailed preview is ready for acknowledgement." : operations.length ? `${operations.length} unsaved Course Model operations.` : "Course Model editor ready."}</div>
       {removal ? <Modal title={`Remove ${removal.label}?`} confirmLabel="Remove record" busy={busy} onCancel={() => setRemoval(null)} onConfirm={confirmRemoval}><p>This typed removal may also remove contained records. Backend validation will reject unresolved references before anything is saved.</p></Modal> : null}
       {conflict ? <Modal title="The Course Model changed elsewhere" cancelLabel="Discard local work" confirmLabel="Reapply operation batch" busy={busy} onCancel={() => onRecoverConflict("discard")} onConfirm={() => onRecoverConflict("reapply")}><p>The latest canonical Course Model is shown below for comparison. No structural operations were merged or submitted automatically.</p><div className="course-model-conflict-latest"><strong>Latest server structure</strong><p>{model.modules.length} modules · {model.modules.reduce((count, module) => count + module.subtopics.length, 0)} subtopics</p><ul>{model.modules.map((module) => <li key={module.id}><code>{module.id}</code> {module.title}<ul>{module.subtopics.map((subtopic) => <li key={subtopic.id}><code>{subtopic.id}</code> {subtopic.title}</li>)}</ul></li>)}</ul></div><p>Reapply keeps your ordered local batch against the latest checksum, but you must inspect the records and run a new preview before save. Discard removes the local batch and shows this latest server state.</p></Modal> : null}
     </div>

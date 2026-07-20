@@ -23,9 +23,10 @@
 > canonical draft, survives refresh, protects unsaved work, resolves stale conflicts
 > without silent loss, and leaves approval explicit. NC-303 remains deferred to NC-90
 > behind NC-902. NC-401 through NC-403 passed independent NC-40 backend checkpoint
-> review on 2026-07-20 after corrective hardening. NC-404 passed independent review
-> with deterministic browser Scenario A6 evidence. NC-40 is not complete. NC-405,
-> NC-406, and all later packages remain unstarted. Unsupported
+> review on 2026-07-20 after corrective hardening. NC-404 and NC-405 passed independent
+> review with deterministic browser Scenario A6 evidence, including the exact-preview
+> structural diff. NC-40 is not complete because NC-406 remains deferred to NC-90.
+> NC-406 and all later packages remain unstarted. Unsupported
 > generic revision controls remain removed or disabled.
 
 ## 1. Purpose of this document
@@ -292,8 +293,10 @@ It also exposes referential-integrity context. NC-401 through NC-403 now provide
 typed deterministic backend operation contract, stable ID allocation, and atomic
 validation evidence and have passed independent review. Typed inline structural editing
 is implemented under NC-404 with preview-before-save, impact acknowledgement, canonical
-draft refresh, and conflict recovery. The polished NC-405 detailed diff and NC-406
-scoped live Course Model revision remain unstarted.
+draft refresh, and conflict recovery. NC-405 now adds the exact-preview structural diff
+for additions, removals and cascades, renames, moves/reorders, purpose/scope changes, and
+source assignments. It passed independent review with deterministic browser evidence.
+NC-406 scoped live Course Model revision remains deferred to NC-90 and unstarted.
 
 ### 6.5 Blueprint
 
@@ -616,8 +619,9 @@ NC-40 backend validation additionally includes `tests/test_course_model_operatio
 `tests/test_schema_validation.py`. Its independent checkpoint reran those focused tests,
 the complete Python suite and lint, frontend unit/build/browser regressions, and the diff
 check. Independently verified NC-404 adds component/integration coverage and
-deterministic browser Scenario A6 over that reviewed backend contract. No NC-405
-detailed diff or NC-406 live revision surface was added.
+deterministic browser Scenario A6 over that reviewed backend contract. NC-405 adds
+focused diff-category tests and extends Scenario A6 to assert the bound detailed diff
+before save; independent review passed. No NC-406 live revision surface was added.
 
 The UI contract tests intentionally protect the artifact-first layout, pre-generation
 states, source checkpoint, stage progression, structured Course Model/Blueprint views,
@@ -674,14 +678,15 @@ content verification workbench, Lesson Plan review, and Package default selectio
 NC-301 and NC-302 have passed independent review. NC-303 remains deferred to NC-90
 behind NC-902. NC-401 through NC-403 have passed independent NC-40 backend checkpoint
 review. NC-404 is independently verified with deterministic browser Scenario A6
-evidence. NC-40 is not complete; NC-405, NC-406, and all later packages remain
-unstarted. Source repair and verifier-driven targeted
+evidence. NC-405 passed independent review with deterministic browser Scenario A6 diff
+evidence. NC-40 is not complete; NC-406 and all later packages remain unstarted. Source
+repair and verifier-driven targeted
 revision remain the central trust milestone, but begin only after the intervening
 command contracts are stable.
 
 After that, sensible frontend increments are:
 
-1. implement NC-405 Course Model diff summaries;
+1. implement NC-501 through NC-503 Blueprint decisions and keep NC-504 deferred;
 2. keep NC-406 live Course Model revision unstarted until its dependencies are complete;
 3. render the actual selected Markdown file inside the Package preview;
 4. wire typed Blueprint editing after the NC-40 Course Model contract is stable;
@@ -699,7 +704,9 @@ browser. Guided Brief intake and typed Outcomes decisions now form the first two
 independently verified, dependency-gated design checkpoints that can be completed
 structurally without terminal or JSON intervention. The Course Model backend checkpoint
 and browser editor are independently verified through NC-404 with deterministic
-Scenario A6 evidence. NC-40 remains incomplete; NC-405 and NC-406 are unstarted.
+Scenario A6 evidence. NC-405's exact-preview detailed structural diff passed independent
+review with deterministic browser evidence. NC-40 remains incomplete; NC-406 is
+deferred to NC-90 and unstarted.
 
 The implementation should be extended as a thin, truthful product layer over canonical
 artifacts and typed commands. The frontend may improve how decisions are presented, but

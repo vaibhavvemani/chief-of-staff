@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-404 independently verified with deterministic browser evidence
+> **Status:** NC-405 independently verified with deterministic browser evidence
 > **Updated:** 2026-07-20
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -52,7 +52,8 @@ NC-109, NC-201 through NC-207, NC-301, and NC-302 are independently verified. NC
 remains deferred to NC-90 behind NC-902. NC-401 through NC-403 passed independent NC-40
 backend checkpoint review on 2026-07-20 after corrective hardening. NC-40 is not
 complete. NC-404 is independently verified with deterministic browser Scenario A6
-evidence. NC-405, NC-406, and every later package remain unstarted.
+evidence. NC-405 is independently verified with deterministic browser Scenario A6 diff
+evidence. NC-406 and every later package remain unstarted.
 This status note does not mark Milestone 3, NC-40,
 or any later package complete.
 
@@ -361,7 +362,8 @@ complete inputs do not receive unnecessary questions; the contract is ready for 
 checkpoint review. NC-303 remains deferred to NC-90 behind NC-902 and has not started.
 NC-401 through NC-403 are independently verified after the NC-40 backend checkpoint.
 NC-404 is independently verified with deterministic browser Scenario A6 evidence.
-NC-40 is not complete. NC-405, NC-406, and every later package remain unstarted.
+NC-405 is independently verified with deterministic browser evidence. NC-40 is not
+complete. NC-406 and every later package remain unstarted.
 
 ### Tasks
 
@@ -420,7 +422,9 @@ Outcomes and preserve stable IDs where possible.
 **Implementation status (2026-07-20):** NC-401 through NC-403 passed independent NC-40
 backend checkpoint review after corrective hardening. This does not complete NC-40.
 NC-404 is independently verified with deterministic browser Scenario A6 evidence.
-NC-405, NC-406, and every later package remain unstarted. NC-40 is not complete.
+NC-405 is independently verified with deterministic browser Scenario A6 diff evidence.
+NC-406 and every later package remain unstarted. NC-40 is not complete because NC-406
+remains deferred to NC-90.
 
 ### Tasks
 
@@ -466,7 +470,7 @@ NC-405, NC-406, and every later package remain unstarted. NC-40 is not complete.
 
 - **Priority:** P0-P
 - **Dependencies:** NC-404
-- **Status:** Not started.
+- **Status:** Independently verified with deterministic browser Scenario A6 evidence.
 - Show added, removed, renamed, moved, scope-changed, and source-changed records.
 
 #### NC-406 — Add scoped live Course Model revision

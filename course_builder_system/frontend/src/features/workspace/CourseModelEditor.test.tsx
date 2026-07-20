@@ -278,15 +278,17 @@ describe("CourseModelEditor", () => {
     expect(save).toBeDisabled();
     expect(screen.getByText(/new_coverage_test/)).toBeVisible();
     expect(screen.getByText(/Blueprint will require rerun/)).toBeVisible();
-    await user.click(screen.getByRole("checkbox", { name: /reviewed the allocated ids/i }));
+    await user.click(screen.getByRole("checkbox", { name: /reviewed the detailed structural diff/i }));
     await user.type(screen.getByLabelText("Subtopic title for s1"), " again");
-    expect(save).toBeDisabled();
-    expect(screen.getByRole("checkbox", { name: /reviewed the allocated ids/i })).toBeDisabled();
+    expect(save).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save Course Model draft" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: /reviewed the detailed structural diff/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "What will change" })).not.toBeInTheDocument();
     const currentPreview = { ...preview, impact: { ...preview.impact, impactChecksum: "current-impact-checksum" } };
     view.rerender(<CourseModelEditor {...editorProps({ onSave, preview: currentPreview })} />);
-    await waitFor(() => expect(screen.getByRole("checkbox", { name: /reviewed the allocated ids/i })).toBeEnabled());
-    await user.click(screen.getByRole("checkbox", { name: /reviewed the allocated ids/i }));
-    await user.click(save);
+    await waitFor(() => expect(screen.getByRole("checkbox", { name: /reviewed the detailed structural diff/i })).toBeEnabled());
+    await user.click(screen.getByRole("checkbox", { name: /reviewed the detailed structural diff/i }));
+    await user.click(screen.getByRole("button", { name: "Save Course Model draft" }));
     expect(onSave).toHaveBeenCalledWith(expect.any(Array), "current-impact-checksum");
   });
 

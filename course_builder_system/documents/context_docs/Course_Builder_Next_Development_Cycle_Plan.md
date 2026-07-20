@@ -15,9 +15,11 @@
 > current Guided Brief behavior is documented in the frontend implementation handoff.
 > NC-301 and NC-302 have passed independent NC-30 checkpoint review. NC-303 remains
 > deferred to NC-90 behind NC-902. NC-401 through NC-403 passed independent NC-40
-> backend checkpoint review on 2026-07-20 after corrective hardening. NC-404 passed
-> independent review with deterministic browser Scenario A6 evidence. NC-40 is not
-> complete. NC-405, NC-406, and all later packages remain unstarted.
+> backend checkpoint review on 2026-07-20 after corrective hardening. NC-404 and NC-405
+> passed independent review with deterministic browser Scenario A6 evidence, including
+> the exact-preview structural diff. NC-40 is not complete because NC-406 remains
+> deferred to NC-90. NC-406 and all later packages remain
+> unstarted.
 > This does not complete Milestone 3 or the cycle.
 
 ## 1. Purpose of this document
@@ -133,7 +135,7 @@ The most important gaps are not cosmetic.
 | Brief questions | Typed question and gap-detection primitives exist in Python, but the browser immediately creates a default Brief. | Expose the question contract through the API and implement bounded question rounds. |
 | Outcomes editing | NC-301 and NC-302 now provide independently verified strict deterministic reduction and a typed React editor. | Preserve the typed contract and keep NC-303 live scoped revision deferred to NC-90 behind NC-902. |
 | Blueprint editing | The backend has a typed decision command, but React is read-only. | Wire asset selection, defaults, exceptions, and depth controls. |
-| Course Model editing | NC-401 through NC-404 provide an independently verified typed backend mutation contract and browser editor with deterministic Scenario A6 evidence. | Begin NC-405 diff work; keep NC-406 live revision unstarted until its dependencies are complete. |
+| Course Model editing | NC-401 through NC-405 provide an independently verified typed backend mutation contract, browser editor, and exact-preview detailed diff with deterministic Scenario A6 evidence. | Keep NC-406 live revision unstarted until its NC-90 dependencies are complete; proceed to NC-50. |
 | Lesson Plan editing | The view shows constraints, but changes rely on generic feedback. | Add typed constraint and sequence commands. |
 | Generic revision | Several stage steps accept feedback at the API boundary but ignore it in the step implementation. | Show revision actions only when a real scoped handler exists. |
 | Reopening | The API has a reopen command, but React does not expose it consistently. | Add explicit reopen and downstream-impact confirmation. |
@@ -419,8 +421,9 @@ operator-relevant decisions.
 checkpoint review. This does not complete the Milestone 3 exit gate. NC-303 remains
 deferred to NC-90 behind NC-902. NC-401 through NC-403 are implemented with
 deterministic backend evidence and have passed independent NC-40 backend checkpoint
-review. NC-404 is independently verified with deterministic browser Scenario A6
-evidence. NC-40 is not complete; NC-405, NC-406, and all later packages remain unstarted.
+review. NC-404 and NC-405 are independently verified with deterministic browser Scenario
+A6 evidence, including the exact-preview structural diff. NC-40 is not complete; NC-406
+and all later packages remain unstarted.
 
 1. Wire the existing typed Outcomes API command into React.
 2. Support add, edit, remove, reorder, evidence, cognitive level, and priority.

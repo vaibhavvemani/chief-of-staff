@@ -684,9 +684,18 @@ test("Scenario A6 edits, previews, persists, and approves the typed Course Model
   }).click();
   await page.getByRole("button", { name: "Preview impact" }).click();
   await expect(page.getByText("Backend validation passed")).toBeVisible();
-  await expect(page.getByText(/Affected records:/)).toBeVisible();
+  const detailedDiff = page.getByRole("region", { name: "What will change" });
+  await expect(detailedDiff).toBeVisible();
+  const added = detailedDiff.getByRole("region", { name: "Added records: 1" });
+  await expect(added.getByText("Compare two grind settings and justify the next extraction adjustment.")).toBeVisible();
+  await expect(added.locator(".course-model-diff-ref code").first()).toHaveText(/^new_coverage_/);
+  await expect(added.locator(".course-model-diff-ref code").nth(1)).toHaveText(/^cr[0-9]+$/);
+  const renamed = detailedDiff.getByRole("region", { name: "Renamed records: 1" });
+  await expect(renamed.locator(".diff-before")).toContainText("Grind Size");
+  await expect(renamed.locator(".diff-after")).toContainText("Grind Size and Extraction Control");
+  await expect(detailedDiff.getByRole("region", { name: /Moved or reordered records:/ })).toBeVisible();
   await expect(page.getByText(/Downstream impact:/)).toBeVisible();
-  await page.getByRole("checkbox", { name: /reviewed the allocated ids/i }).check();
+  await page.getByRole("checkbox", { name: /reviewed the detailed structural diff/i }).check();
   await page.getByRole("button", { name: "Save Course Model draft" }).click();
 
   await expect.poll(

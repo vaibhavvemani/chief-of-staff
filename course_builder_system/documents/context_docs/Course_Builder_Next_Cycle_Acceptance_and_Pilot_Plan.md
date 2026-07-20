@@ -23,10 +23,10 @@
 > **NC-40 backend checkpoint — 2026-07-20:** NC-401 through NC-403 passed independent
 > deterministic review after corrective hardening of stable ID history, ordered typed
 > references, source provenance, shared schema enforcement, and rollback cleanup.
-> NC-404 passed independent review with deterministic browser Scenario A6 evidence.
-> NC-40 is not complete. NC-405, NC-406, and all later packages remain
-> unstarted. This does not mark Milestone 3 or the
-> whole cycle complete.
+> NC-404 and NC-405 passed independent review with deterministic browser Scenario A6
+> evidence, including the exact-preview structural diff. NC-40 is not complete because
+> NC-406 remains deferred to NC-90. NC-406 and all later packages
+> remain unstarted. This does not mark Milestone 3 or the whole cycle complete.
 
 ## 1. Purpose
 
@@ -275,8 +275,10 @@ audience, and resolve it.
 ### A6 — Generate and edit Course Model
 
 **Current checkpoint status:** The NC-401 through NC-403 backend portion is independently
-verified. NC-404 passed independent review with deterministic browser evidence for the
-operator actions below. NC-405 remains unstarted, and NC-40 is not complete.
+verified. NC-404 and NC-405 passed independent review with deterministic browser evidence
+for the operator actions below, including allocated request-local IDs and the added,
+renamed, and moved/reordered diff before save. NC-40 is not complete because NC-406
+remains deferred to NC-90.
 
 **Operator action**
 

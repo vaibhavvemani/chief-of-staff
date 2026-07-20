@@ -45,7 +45,7 @@ describe("typed API commands", () => {
       .mockResolvedValueOnce(jsonResponse({
         candidate_artifact: { body: { course_metadata: { course_outcome_ids: ["co1"] }, modules: [], structural_rationale: [], source_registry: [] } },
         allocated_ids: { new_coverage_ui: "cr3" },
-        change_records: [],
+        change_records: [{ operation_index: 0, op: "update_subtopic", action: "updated", record_type: "subtopic", record_id: "s1" }],
         affected_records: { subtopic: { changed_ids: ["s1"], removed_ids: [] } },
         impact: { direct_artifacts: ["course_model"], stale_artifacts: ["blueprint"], requires_rerun_stages: ["blueprint"], warnings: [], impact_level: "downstream", impact_checksum: "impact-1" },
       }))
@@ -72,6 +72,15 @@ describe("typed API commands", () => {
       ],
     });
     expect(preview.allocatedIds).toEqual({ new_coverage_ui: "cr3" });
+    expect(preview.changeRecords).toEqual([{
+      operationIndex: 0,
+      op: "update_subtopic",
+      action: "updated",
+      recordType: "subtopic",
+      recordId: "s1",
+      recordIds: [],
+      parentId: undefined,
+    }]);
     expect(preview.impact.impactChecksum).toBe("impact-1");
 
     await saveCourseModelDecision("herb-course", operations, "course-model-1", "impact-1");
