@@ -23,6 +23,7 @@ os.environ["COURSE_BUILDER_INCLUDE_EXAMPLES"] = "false"
 # lifecycle tests can reopen an approved mid-pipeline stage without mutating the
 # committed example or replaying later work packages through the UI.
 SEEDED_LIFECYCLE_COURSE_ID = "studio-course-model-reopen-fixture"
+PACKAGE_PREVIEW_COURSE_ID = "studio-package-preview-fixture"
 COURSE_MODEL_EDITOR_COURSE_ID = "studio-course-model-editor-fixture"
 BLUEPRINT_EDITOR_COURSE_ID = "studio-blueprint-editor-fixture"
 LESSON_PLAN_EDITOR_COURSE_ID = "studio-lesson-plan-editor-fixture"
@@ -45,6 +46,27 @@ for _fixture_path in _fixture_root.glob("*.json"):
         json.dumps(_artifact, indent=2) + "\n",
         encoding="utf-8",
     )
+_rendered_fixture_root = _fixture_root.parent / "rendered_course"
+shutil.copytree(
+    _rendered_fixture_root,
+    _acceptance_root / "rendered_courses" / SEEDED_LIFECYCLE_COURSE_ID,
+)
+
+# Keep Package rendering independent from the lifecycle fixture, which another
+# scenario intentionally reopens and invalidates.
+_package_seed_root = _acceptance_root / "courses" / PACKAGE_PREVIEW_COURSE_ID
+_package_seed_root.mkdir(parents=True)
+for _fixture_path in _fixture_root.glob("*.json"):
+    _artifact = json.loads(_fixture_path.read_text(encoding="utf-8"))
+    _artifact["course_id"] = PACKAGE_PREVIEW_COURSE_ID
+    (_package_seed_root / _fixture_path.name).write_text(
+        json.dumps(_artifact, indent=2) + "\n",
+        encoding="utf-8",
+    )
+shutil.copytree(
+    _rendered_fixture_root,
+    _acceptance_root / "rendered_courses" / PACKAGE_PREVIEW_COURSE_ID,
+)
 
 # A second bounded fixture stops at the approved Research checkpoint so the browser
 # acceptance scenario exercises the real deterministic Course Model run before editing.

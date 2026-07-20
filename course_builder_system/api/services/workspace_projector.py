@@ -76,6 +76,8 @@ class WorkspaceProjector:
             )
         attention = self._attention(artifacts)
         active = self._active_job(course_id)
+        activity = self._activity(course_id)
+        diagnostics = self._diagnostics(course_id)
         stages = [
             self._project_stage(
                 course_id,
@@ -104,11 +106,16 @@ class WorkspaceProjector:
             None,
         )
         updated = max(
-            (
+            [
                 str(artifact.get("updated_at") or "")
                 for artifact in artifacts.values()
                 if artifact.get("updated_at")
-            ),
+            ]
+            + [
+                str(event.get("timestamp") or "")
+                for event in activity
+                if event.get("timestamp")
+            ],
             default=None,
         )
         return {
@@ -121,8 +128,12 @@ class WorkspaceProjector:
             "next_action": self._next_action(next_stage),
             "last_activity_at": updated,
             "active_job": active,
+            "activity": activity,
+            "diagnostics": diagnostics,
+            "provider_readiness": self.catalog.provider_readiness(),
             "attention": attention,
             "stages": stages,
+            "release_checks": self._release_checks(course_id, artifacts, attention),
             "artifact_types": sorted(artifacts),
         }
 
@@ -429,6 +440,126 @@ class WorkspaceProjector:
         if self.job_runner is None or not hasattr(self.job_runner, "latest_for_stage"):
             return None
         return self.job_runner.latest_for_stage(course_id, stage_slug)
+
+    def _activity(self, course_id: str) -> list[dict[str, Any]]:
+        if self.job_runner is None or not hasattr(self.job_runner, "activity_for_course"):
+            return []
+        return self.job_runner.activity_for_course(course_id)
+
+    def _diagnostics(self, course_id: str) -> dict[str, Any]:
+        if self.job_runner is None or not hasattr(self.job_runner, "diagnostics_for_course"):
+            return {"stages": [], "totals": {}}
+        return self.job_runner.diagnostics_for_course(course_id)
+
+    def _release_checks(
+        self,
+        course_id: str,
+        artifacts: dict[str, dict[str, Any]],
+        attention: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        """Project backend-owned release truth with an actionable navigation target."""
+        if "render_manifest" not in artifacts:
+            return []
+        failures = self.approval_guards.failures(course_id, "package")
+        grouped: tuple[
+            tuple[str, str, frozenset[str], str, str],
+            ...,
+        ] = (
+            (
+                "integrity",
+                "Artifact integrity",
+                frozenset({"referential_integrity_failed"}),
+                "course-model",
+                "All downstream references resolve.",
+            ),
+            (
+                "source_boundary",
+                "Source boundary",
+                frozenset({"rejected_source_leakage", "source_reference_invalid"}),
+                "research",
+                "Only approved, content-bearing sources are referenced.",
+            ),
+            (
+                "asset_reconciliation",
+                "Asset reconciliation",
+                frozenset(
+                    {
+                        "content_selection_mismatch",
+                        "content_generation_incomplete",
+                        "content_asset_ids_invalid",
+                        "package_asset_mismatch",
+                    }
+                ),
+                "content",
+                "Selected, generated, and rendered assets reconcile.",
+            ),
+            (
+                "human_review",
+                "Human content review",
+                frozenset(
+                    {
+                        "hard_verifier_blockers",
+                        "content_review_missing",
+                        "content_review_incomplete",
+                    }
+                ),
+                "content",
+                "Every current learner asset has completed human review.",
+            ),
+        )
+        checks: list[dict[str, Any]] = []
+        classified: set[int] = set()
+        for check_id, label, codes, fallback_stage, passed_detail in grouped:
+            matched = [
+                (index, failure)
+                for index, failure in enumerate(failures)
+                if failure.code in codes
+            ]
+            classified.update(index for index, _failure in matched)
+            first = matched[0][1] if matched else None
+            target_stage = fallback_stage
+            if first is not None and check_id == "integrity" and first.artifact_type:
+                target_stage = (
+                    self.catalog.stage_for_artifact(first.artifact_type) or fallback_stage
+                )
+            target_asset_id = None
+            if check_id == "human_review":
+                flagged = attention.get("flagged_assets", [])
+                if flagged and isinstance(flagged[0], dict):
+                    target_asset_id = flagged[0].get("asset_id")
+                elif first and first.record_ids:
+                    target_asset_id = first.record_ids[0]
+            elif check_id == "asset_reconciliation" and first and first.record_ids:
+                target_asset_id = first.record_ids[0]
+            checks.append(
+                {
+                    "id": check_id,
+                    "label": label,
+                    "passed": not matched,
+                    "detail": first.message if first is not None else passed_detail,
+                    "target_stage": target_stage,
+                    "target_asset_id": target_asset_id,
+                }
+            )
+        for index, failure in enumerate(failures):
+            if index in classified:
+                continue
+            target_stage = (
+                self.catalog.stage_for_artifact(failure.artifact_type)
+                if failure.artifact_type
+                else None
+            ) or "package"
+            checks.append(
+                {
+                    "id": f"failure_{index}_{failure.code}",
+                    "label": failure.code.replace("_", " ").title(),
+                    "passed": False,
+                    "detail": failure.message,
+                    "target_stage": target_stage,
+                    "target_asset_id": failure.record_ids[0] if failure.record_ids else None,
+                }
+            )
+        return checks
 
     @staticmethod
     def _needs_input(

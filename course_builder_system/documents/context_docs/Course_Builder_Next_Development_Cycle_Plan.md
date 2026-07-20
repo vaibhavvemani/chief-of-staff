@@ -35,7 +35,11 @@
 > Live and deterministic ownership is explicit, live output is schema-validated and
 > reducer-owned, and provider failure never falls back silently. Two-topic injected
 > stage evals do not replace the credentialed live end-to-end required by NC-1104.
-> NC-100 and later packages remain unstarted; Milestone 3 and the cycle are incomplete.
+> NC-1001 through NC-1007 passed independent checkpoint review. Evidence covers timely
+> unit progress, persisted secret-safe activity and diagnostics, readiness gates on all
+> live start paths, actual safe Markdown rendering, actionable backend-owned release
+> checks, and acceptance-path accessibility. NC-110 and later remain unstarted;
+> Milestone 3 and the cycle are incomplete.
 
 ## 1. Purpose of this document
 
@@ -155,11 +159,11 @@ The most important gaps are not cosmetic.
 | Generic revision | Several stage steps accept feedback at the API boundary but ignore it in the step implementation. | Show revision actions only when a real scoped handler exists. |
 | Reopening | The API has a reopen command, but React does not expose it consistently. | Add explicit reopen and downstream-impact confirmation. |
 | Source repair | NC-701 through NC-709 and NC-801 through NC-808 provide verified bounded source/content repair and review closure; NC-912 adds a bounded live candidate provider. | Complete independent NC-90 review without weakening human source authority. |
-| Live mode | NC-901 through NC-912 provide explicit live implementations or explicit reused live responsibilities behind one registry. | Complete independent NC-90 review, then add NC-100 diagnostics and NC-110 browser proof. |
-| Progress | The browser receives stage events, but content unit events are not emitted continuously during generation. | Connect generation callbacks to persisted progress events. |
-| Activity | The visual surface exists, but activity, diagnostics, and cost data are incomplete or placeholder-like. | Project real safe events and stage-level call summaries. |
-| Package preview | Raw Markdown can be opened, but the inline preview is representative content. | Fetch and render the actual selected file. |
-| Browser assurance | API coverage is strong, but there is no true browser end-to-end acceptance suite. | Add component, accessibility, and Playwright coverage. |
+| Live mode | NC-901 through NC-912 provide explicit live implementations or explicit reused live responsibilities behind one registry; NC-100 gates all live starts on provider readiness. | Prove the credentialed live workflow at NC-1104. |
+| Progress | NC-100 emits persisted generation and repair unit events while work is running. | Preserve this contract through NC-110 recovery acceptance. |
+| Activity | NC-100 projects secret-safe persisted activity plus stage-level provider/model/call/token/cost/cache/retry/error summaries. | Validate the surface through NC-110 browser scenarios. |
+| Package preview | NC-100 fetches bounded canonical Markdown and renders it inline with raw HTML disabled. | Exercise selection and negative path handling in NC-110. |
+| Browser assurance | NC-100 adds focused component, accessibility, and Chromium coverage; the corrected acceptance suite passes 9 scenarios. | Complete NC-110 deterministic, recovery, negative, and live release validation. |
 
 ### 3.3 Important product truth
 
@@ -444,7 +448,8 @@ evidence; NC-601 through NC-603 are independently verified with deterministic br
 Scenario A12 evidence. NC-701 through NC-709 are
 independently verified with deterministic browser evidence for Scenario A10's source-
 decision and route phase. NC-801 through NC-808 and NC-901 through NC-912 are
-independently verified; NC-100 remains unstarted.
+independently verified. NC-1001 through NC-1007 are independently verified; NC-110 is
+the next package.
 
 1. Wire the existing typed Outcomes API command into React.
 2. Support add, edit, remove, reorder, evidence, cognitive level, and priority.

@@ -122,6 +122,16 @@ def generate_content_package_body(
     current_anchor_by_subtopic: dict[str, dict[str, Any]] = {}
     generate_asset = asset_generator or student_content.generate_asset_to_depth
 
+    def emit(record: dict[str, Any]) -> None:
+        _emit(
+            progress_callback,
+            {
+                **record,
+                "completed_units": len(progress["units"]),
+                "expected_units": len(units),
+            },
+        )
+
     for unit in units:
         scoped = {**inputs, "subtopic_id": unit.subtopic_id}
         spec = student_content.resolve_asset_spec(
@@ -135,19 +145,23 @@ def generate_content_package_body(
             "asset_type": unit.asset_type,
             "asset_id": unit.asset_id,
         }
-        _emit(progress_callback, record)
+        emit(record)
 
         existing = existing_by_subtopic.get(unit.subtopic_id, {}).get(unit.asset_id)
         if _asset_complete(existing):
             output_by_subtopic.setdefault(unit.subtopic_id, []).append(deepcopy(existing))
             if unit.asset_type == "course_content":
                 current_anchor_by_subtopic[unit.subtopic_id] = deepcopy(existing)
-            _record(progress, {**record, "status": "skipped"})
+            terminal = {**record, "status": "skipped"}
+            _record(progress, terminal)
+            emit(terminal)
             continue
 
         gap = _evidence_gap(spec, scoped)
         if gap:
-            _record(progress, {**record, "status": "evidence_gap", "error": gap})
+            terminal = {**record, "status": "evidence_gap", "error": gap}
+            _record(progress, terminal)
+            emit(terminal)
             if not continue_on_error:
                 break
             continue
@@ -156,14 +170,13 @@ def generate_content_package_body(
             spec.conditioned_on_course_content
             and unit.subtopic_id not in current_anchor_by_subtopic
         ):
-            _record(
-                progress,
-                {
-                    **record,
-                    "status": "pending",
-                    "error": "Course Content anchor is not available for this subtopic.",
-                },
-            )
+            terminal = {
+                **record,
+                "status": "pending",
+                "error": "Course Content anchor is not available for this subtopic.",
+            }
+            _record(progress, terminal)
+            emit(terminal)
             if not continue_on_error:
                 break
             continue
@@ -191,15 +204,14 @@ def generate_content_package_body(
                     break
 
         if generated is None:
-            _record(
-                progress,
-                {
-                    **record,
-                    "status": "failed",
-                    "attempts": attempts,
-                    "error": str(last_error),
-                },
-            )
+            terminal = {
+                **record,
+                "status": "failed",
+                "attempts": attempts,
+                "error": str(last_error),
+            }
+            _record(progress, terminal)
+            emit(terminal)
             if not continue_on_error:
                 break
             continue
@@ -207,7 +219,9 @@ def generate_content_package_body(
         output_by_subtopic.setdefault(unit.subtopic_id, []).append(generated)
         if unit.asset_type == "course_content":
             current_anchor_by_subtopic[unit.subtopic_id] = generated
-        _record(progress, {**record, "status": "completed", "attempts": attempt_count})
+        terminal = {**record, "status": "completed", "attempts": attempt_count}
+        _record(progress, terminal)
+        emit(terminal)
 
     body = {
         "asset_vocabulary": ASSET_VOCABULARY,

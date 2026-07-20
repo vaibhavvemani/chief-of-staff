@@ -34,7 +34,12 @@ including deferred scoped live revisions NC-303, NC-406, NC-504, and NC-604, pas
 independent NC-90 checkpoint review on 2026-07-20. The package adds an
 explicit provider-neutral registry, bounded live stage adapters reduced through
 deterministic domain contracts, no-fallback failures, live Brief and evidence-repair
-providers, and two-topic stage evals. NC-100 and later packages remain unstarted.
+providers, and two-topic stage evals. NC-1001 through NC-1007 passed independent
+NC-100 checkpoint review on 2026-07-20.
+Evidence covers timely unit progress including targeted repair, persisted secret-safe
+activity and call diagnostics, provider readiness across every live start path, actual
+safe Markdown rendering, actionable backend-owned release blockers, and keyboard,
+focus, status, and contrast coverage. NC-110 and later packages remain unstarted.
 NC-003 is resolved with the documented fallback live subject,
 `Indoor herb gardening for apartment beginners`, course ID `studio-live-pilot`, a
 five-subtopic boundary, and a representative ten-asset review envelope.
@@ -70,8 +75,10 @@ NC-301 and NC-302. NC-401 through NC-405, NC-501 through NC-503, and NC-601 thro
 NC-603 are independently verified. NC-701 through NC-709 and NC-801 through NC-808 are
 independently verified, and NC-003 is resolved with the documented fallback subject.
 NC-901 through NC-912 and the four previously deferred scoped live revisions are
-independently verified. The next safe action is NC-100, beginning with NC-1001 and
-following its dependency order. Do not skip ahead to NC-110 browser acceptance.
+independently verified. NC-1001 through NC-1007 are independently verified. The next
+safe action is NC-110, beginning with NC-1101 and following its dependency order. Do
+not start credentialed live acceptance NC-1104 before NC-1101 through NC-1103 have
+their prerequisite evidence.
 Source repair plus verifier-driven targeted revision remains the central trust milestone
 after the intervening stage contracts.
 

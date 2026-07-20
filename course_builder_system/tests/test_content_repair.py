@@ -260,6 +260,14 @@ def test_existing_evidence_repair_changes_only_target_and_resets_only_its_review
         assert job["status"] == "completed", job
         assert job["result"]["changed_asset_ids"] == [TARGET_ASSET]
         assert job["result"]["hard_blocker_total"] == 0
+        unit_events = [
+            event
+            for event in app.state.jobs.events(job["job_id"])
+            if event["event_type"].startswith("unit.")
+        ]
+        assert any(event["event_type"] == "unit.started" for event in unit_events)
+        assert any(event["event_type"] == "unit.completed" for event in unit_events)
+        assert any(event.get("asset_id") == TARGET_ASSET for event in unit_events)
 
         projection = client.get("/api/courses/content-repair/content/repairs").json()
         workspace = client.get("/api/courses/content-repair/workspace").json()
@@ -447,7 +455,7 @@ def test_better_evidence_generation_failure_preserves_content_and_is_retryable(
         monkeypatch.setattr(
             app.state.catalog,
             "steps_for_stage",
-            lambda _slug, mode: [step],
+            lambda _slug, mode, progress_callback=None: [step],
         )
         with pytest.raises(RuntimeError, match="super-secret-value"):
             app.state.content_repairs.execute(
@@ -492,7 +500,7 @@ def test_failed_content_repair_job_keeps_typed_retry_available_through_http(
         monkeypatch.setattr(
             app.state.catalog,
             "steps_for_stage",
-            lambda _slug, mode: [step],
+            lambda _slug, mode, progress_callback=None: [step],
         )
         content = client.get(f"/api/courses/{course_id}/artifacts/content_package").json()
         ledger = client.get(f"/api/courses/{course_id}/source-repairs").json()
@@ -670,7 +678,7 @@ def test_scope_escaping_generation_is_rejected_without_any_canonical_write(
     monkeypatch.setattr(
         app.state.catalog,
         "steps_for_stage",
-        lambda _slug, mode: [step],
+        lambda _slug, mode, progress_callback=None: [step],
     )
 
     with pytest.raises(ValueError, match="out-of-scope assets"):

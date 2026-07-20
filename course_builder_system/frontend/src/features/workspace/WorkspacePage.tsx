@@ -38,10 +38,14 @@ import { StageView, stageData, type BriefEditSection } from "./StageViews";
 
 const stageSlugs: StageSlug[] = ["brief", "outcomes", "research", "course-model", "blueprint", "content", "lesson-plan", "package"];
 export function sourceRepairModeAvailability(
-  _runMode: "deterministic" | "live",
+  runMode: "deterministic" | "live",
   backendEnabled: boolean,
+  liveReady = true,
 ): { available: boolean; reason?: string } {
   if (!backendEnabled) return { available: false };
+  if (runMode === "live" && !liveReady) {
+    return { available: false, reason: "Live provider credentials are not configured on the server." };
+  }
   return { available: true };
 }
 
@@ -160,13 +164,46 @@ function ContextInspector({ workspace, stage, onClose }: { workspace: Workspace;
 function ActivityDrawer({ workspace, onClose }: { workspace: Workspace; onClose: () => void }) {
   const failedStage = workspace.stages.find((stage) => stage.status === "failed");
   const activeStage = workspace.activeJob?.stage;
+  const dialogRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])")];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable.at(-1)!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      previous?.focus();
+    };
+  }, []);
   return (
     <div className="drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
-      <aside className="activity-drawer" role="dialog" aria-modal="true" aria-labelledby="activity-title">
-        <header><div><span className="eyebrow">Audit & diagnostics</span><h2 id="activity-title">Activity</h2></div><button onClick={onClose} aria-label="Close activity drawer">×</button></header>
+      <aside ref={dialogRef} className="activity-drawer" role="dialog" aria-modal="true" aria-labelledby="activity-title" aria-describedby="activity-boundary">
+        <header><div><span className="eyebrow">Audit & diagnostics</span><h2 id="activity-title">Activity</h2></div><button ref={closeRef} onClick={onClose} aria-label="Close activity drawer">×</button></header>
         <div className="run-summary-card"><div><span className="run-glyph" aria-hidden="true">{failedStage ? "!" : activeStage ? "…" : "✓"}</span><span><strong>{failedStage ? `${stageName(failedStage.slug)} run failed` : activeStage ? `${stageName(activeStage)} run in progress` : "Workspace state is current"}</strong><small>{failedStage?.lastFailure ?? workspace.course.nextAction}</small></span></div><code>{workspace.course.courseId}</code></div>
-        <div className="activity-list">{workspace.activity.map((event) => <article key={event.id}><time>{new Date(event.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time><span className={`activity-dot activity-${event.tone ?? "neutral"}`} /><div><strong>{event.title}</strong><p>{event.detail}</p></div></article>)}</div>
-        <footer><button className="button button-secondary full-width" disabled title="Model-call diagnostics are not exposed in this release">Model-call diagnostics unavailable</button><p>Prompts, source bodies, and private reasoning are never shown in activity events.</p></footer>
+        <div className="activity-list" aria-label="Persisted runtime events">{workspace.activity.length ? workspace.activity.map((event) => <article key={event.id}><time>{new Date(event.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time><span className={`activity-dot activity-${event.tone ?? "neutral"}`} /><div><strong>{event.title}</strong><p>{event.detail}</p>{event.stage ? <small>{stageName(event.stage)}</small> : null}</div></article>) : <p className="activity-empty">No persisted runtime events yet.</p>}</div>
+        <section className="model-diagnostics" tabIndex={0} aria-labelledby="diagnostics-title"><header><div><span className="eyebrow">Safe model-call summary</span><h3 id="diagnostics-title">Diagnostics by stage</h3></div><strong>{workspace.diagnostics.totals.calls} call{workspace.diagnostics.totals.calls === 1 ? "" : "s"}</strong></header>{workspace.diagnostics.stages.length ? <div>{workspace.diagnostics.stages.map((diagnostic) => <article key={diagnostic.stage}><div><strong>{stageName(diagnostic.stage as StageSlug)}</strong><small>{diagnostic.providers.join(", ") || "Provider not reported"} · {diagnostic.models.join(", ") || "Model not reported"}</small></div><dl><div><dt>Calls</dt><dd>{diagnostic.calls}</dd></div><div><dt>Tokens</dt><dd>{(diagnostic.inputTokens + diagnostic.outputTokens).toLocaleString()}</dd></div><div><dt>Cost</dt><dd>${diagnostic.estimatedCostUsd.toFixed(4)}</dd></div><div><dt>Cache</dt><dd>{diagnostic.cacheHits}</dd></div><div><dt>Retries</dt><dd>{diagnostic.retries}</dd></div><div><dt>Errors</dt><dd>{diagnostic.errors.length}</dd></div></dl>{diagnostic.errors.map((error, index) => <p className="diagnostic-error" key={`${error.type}:${error.at ?? index}`}><strong>{error.type}</strong> {error.message}</p>)}</article>)}</div> : <p className="activity-empty">No live model calls have been recorded for this course.</p>}</section>
+        <footer><p id="activity-boundary">Prompts, source bodies, credentials, learner content, and private reasoning are never shown in activity events.</p></footer>
       </aside>
     </div>
   );
@@ -248,7 +285,7 @@ function AgentRunScreen({ stage, mode, progress }: { stage: StageSlug; mode: "de
         <div key={messageIndex}><strong>{messages[messageIndex]}</strong><small>{progress?.message ?? "Work is in progress"}</small></div>
         {progress?.completed != null && progress.expected ? <b>{progress.completed}/{progress.expected}</b> : null}
       </div>
-      <div className={`agent-run-track ${percent == null ? "indeterminate" : ""}`} aria-hidden="true"><span style={percent == null ? undefined : { width: `${percent}%` }} /></div>
+      <div className={`agent-run-track ${percent == null ? "indeterminate" : ""}`} role="progressbar" aria-label={`${stageName(stage)} run progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><span style={percent == null ? undefined : { width: `${percent}%` }} /></div>
       <p className="agent-run-note">Live runs may take a few minutes. Approval will only be available after the output is fully saved.</p>
     </section>
   );
@@ -492,6 +529,7 @@ export function WorkspacePage() {
   });
   const workspace = query.data?.workspace;
   const currentSummary = workspace?.stages.find((item) => item.slug === stage);
+  const liveReady = workspace?.providerReadiness.ready ?? false;
   const outcomesEditCapability = stage === "outcomes"
     && Boolean(currentSummary?.actions.some((action) => action.id === "edit" && action.enabled));
   const courseModelEditCapability = stage === "course-model"
@@ -513,6 +551,7 @@ export function WorkspacePage() {
       && Boolean(workspace)
       && !query.data?.demoMode
       && !query.data?.readOnly
+      && (runMode !== "live" || liveReady)
       && currentSummary?.status === "needs_input",
   });
 
@@ -670,6 +709,9 @@ export function WorkspacePage() {
   const mutation = useMutation({
     mutationFn: async (action: { type: "run" | "approve" }) => {
       if (!workspace) return;
+      if (action.type === "run" && runMode === "live" && !workspace.providerReadiness.ready) {
+        throw new Error(workspace.providerReadiness.message);
+      }
       if (action.type === "run") return runStage(courseId, stage, { expectedChecksum: currentSummary?.checksum, mode: runMode });
       return approveStage(courseId, stage, { expectedChecksum: currentSummary?.checksum });
     },
@@ -896,6 +938,7 @@ export function WorkspacePage() {
   const sourceRepairRequestMutation = useMutation({
     mutationFn: ({ asset, claim }: { asset: ContentAsset; claim: Claim }) => {
       if (!workspace?.content.packageChecksum) throw new Error("Source repair requires the current Content Package checksum.");
+      if (runMode === "live" && !workspace.providerReadiness.ready) throw new Error(workspace.providerReadiness.message);
       return requestSourceRepair(courseId, {
         expectedContentChecksum: workspace.content.packageChecksum,
         subtopicId: asset.subtopicId,
@@ -976,6 +1019,10 @@ export function WorkspacePage() {
       if (strategy === "better_evidence" && !workspace.sourceRepairChecksum) {
         throw new Error("Better-evidence repair requires the current Source Repair checksum.");
       }
+      const repairMode = entry?.requestedMode ?? runMode;
+      if (repairMode === "live" && !workspace.providerReadiness.ready) {
+        throw new Error(workspace.providerReadiness.message);
+      }
       return requestContentRepair(courseId, {
         expectedContentChecksum: workspace.content.packageChecksum,
         strategy,
@@ -986,7 +1033,7 @@ export function WorkspacePage() {
         }],
         sourceRepairId: entry?.id,
         expectedSourceRepairChecksum: entry ? workspace.sourceRepairChecksum : undefined,
-        mode: entry?.requestedMode ?? runMode,
+        mode: repairMode,
       });
     },
     onSuccess: (result) => {
@@ -1070,6 +1117,10 @@ export function WorkspacePage() {
   const revisionMutation = useMutation({
     mutationFn: () => {
       if (!pendingRevision || !revisionImpact) throw new Error("A current scoped revision impact preview is required.");
+      const revisionMode = pendingRevision.stage === "content" ? runMode : "live";
+      if (revisionMode === "live" && !workspace?.providerReadiness.ready) {
+        throw new Error(workspace?.providerReadiness.message ?? "Live provider credentials are not configured on the server.");
+      }
       return reviseStage(courseId, pendingRevision.stage, {
         targetType: pendingRevision.targetType,
         targetIds: [pendingRevision.id],
@@ -1077,7 +1128,7 @@ export function WorkspacePage() {
         instruction: pendingRevision.instruction,
         expectedChecksum: pendingRevision.expectedChecksum,
         impactChecksum: revisionImpact.impactChecksum,
-        mode: pendingRevision.stage === "content" ? runMode : "live",
+        mode: revisionMode,
       });
     },
     onSuccess: (result) => {
@@ -1107,16 +1158,19 @@ export function WorkspacePage() {
         await reviewContentAsset(courseId, asset.id, action, workspace.content.reviewChecksum, claim?.note);
       } else if (action === "revise") {
         if (!currentSummary?.actions.some((candidate) => candidate.id === "revise" && candidate.enabled)) throw new Error("Scoped revision is not available in the current stage state.");
+        if (runMode === "live" && !workspace.providerReadiness.ready) throw new Error(workspace.providerReadiness.message);
         if (!currentSummary.checksum) throw new Error("Revision requires the current Content checksum.");
         const categories = currentSummary.actions.find((candidate) => candidate.id === "revise")?.revisionTargets?.find((target) => target.targetType === "asset")?.categories ?? [];
         setRevisionTarget({ stage: "content", targetType: "asset", id: asset.id, label: asset.title, categories, expectedChecksum: currentSummary.checksum, claim });
         return;
       } else if (action === "repair_existing") {
         if (!currentSummary?.actions.some((candidate) => candidate.id === "content_repair" && candidate.enabled)) throw new Error("Typed Content repair is not available in the current stage state.");
+        if (runMode === "live" && !workspace.providerReadiness.ready) throw new Error(workspace.providerReadiness.message);
         contentRepairMutation.mutate({ strategy: "existing_evidence", asset, claim });
         return;
       } else if (action === "source_repair") {
         if (!currentSummary?.actions.some((candidate) => candidate.id === "source_repair" && candidate.enabled)) throw new Error("Source repair is not available in the current stage state.");
+        if (runMode === "live" && !workspace.providerReadiness.ready) throw new Error(workspace.providerReadiness.message);
         if (!claim) throw new Error("Source repair requires one named verifier finding.");
         sourceRepairRequestMutation.mutate({ asset, claim });
         return;
@@ -1184,9 +1238,14 @@ export function WorkspacePage() {
   const demoMode = query.data?.demoMode ?? false;
   const readOnly = query.data?.readOnly ?? false;
   const actionEnabled = (id: StageActionId) => Boolean(currentSummary?.actions.some((action) => action.id === id && action.enabled));
-  const sourceRepairMode = sourceRepairModeAvailability(runMode, actionEnabled("source_repair"));
+  const sourceRepairMode = sourceRepairModeAvailability(runMode, actionEnabled("source_repair"), workspace.providerReadiness.ready);
   const sourceRepairAvailable = sourceRepairMode.available;
   const sourceRepairUnavailableReason = sourceRepairMode.reason;
+  const contentRepairAvailable = actionEnabled("content_repair") && (runMode !== "live" || workspace.providerReadiness.ready);
+  const contentRevisionAvailable = actionEnabled("revise") && (runMode !== "live" || workspace.providerReadiness.ready);
+  const routedContentRepairAvailable = actionEnabled("content_repair") && !workspace.sourceRepairs.some(
+    (entry) => entry.status === "awaiting_content_repair" && entry.requestedMode === "live" && !workspace.providerReadiness.ready,
+  );
   const briefQuestionsError = briefAnswersMutation.error instanceof Error
     ? briefAnswersMutation.error.message
     : briefQuestionsQuery.error instanceof Error
@@ -1195,6 +1254,10 @@ export function WorkspacePage() {
   const handleStageAction = (action: StageAction) => {
     if (!action.enabled) return;
     if (action.id === "run" || action.id === "retry") {
+      if (runMode === "live" && !workspace.providerReadiness.ready) {
+        setToast({ tone: "attention", message: workspace.providerReadiness.message });
+        return;
+      }
       mutation.mutate({ type: "run" });
       return;
     }
@@ -1260,6 +1323,10 @@ export function WorkspacePage() {
     if (selector) document.querySelector(selector)?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
   const changeRunMode = (nextMode: "deterministic" | "live") => {
+    if (nextMode === "live" && !workspace.providerReadiness.ready) {
+      setToast({ tone: "attention", message: workspace.providerReadiness.message });
+      return;
+    }
     setRunMode(nextMode);
     const params = new URLSearchParams(location.search);
     params.set("mode", nextMode);
@@ -1272,7 +1339,8 @@ export function WorkspacePage() {
         <div className="workspace-course-title"><Link to="/courses">Courses</Link><span aria-hidden="true">/</span><div><strong>{workspace.course.title}</strong><small>{courseId}</small></div></div>
         <div className="workspace-header-actions">
           {demoMode ? <span className="environment-badge"><i /> Preview data</span> : readOnly ? <span className="environment-badge snapshot"><i /> Archived snapshot</span> : <span className="environment-badge connected"><i /> API connected</span>}
-          <label className="run-mode-selector" title="Choose how stage runs execute"><span>Run mode</span><select value={runMode} onChange={(event) => changeRunMode(event.target.value as "deterministic" | "live")}><option value="live">Live agent</option><option value="deterministic">Deterministic</option></select></label>
+          <label className="run-mode-selector" title="Choose how stage runs execute"><span>Run mode</span><select aria-describedby={!workspace.providerReadiness.ready ? "live-readiness-message" : undefined} value={runMode} onChange={(event) => changeRunMode(event.target.value as "deterministic" | "live")}><option value="live" disabled={!workspace.providerReadiness.ready}>Live agent</option><option value="deterministic">Deterministic</option></select></label>
+          {!workspace.providerReadiness.ready ? <span id="live-readiness-message" className="provider-readiness provider-unavailable" role="status"><i aria-hidden="true" /> Live unavailable · {workspace.providerReadiness.message}</span> : <span className="provider-readiness provider-ready" title={`${workspace.providerReadiness.provider} · ${workspace.providerReadiness.model}`}><i aria-hidden="true" /> Live ready</span>}
           {runProgress ? <span className="environment-badge connected run-progress"><i /> {runProgress.completed != null && runProgress.expected ? `${runProgress.completed}/${runProgress.expected} · ` : ""}{runProgress.message}</span> : null}
           {workspace.estimatedCost ? <span className="cost-note">${workspace.estimatedCost.toFixed(2)} est.</span> : null}
           <button className={`context-toggle ${inspectorOpen ? "active" : ""}`} onClick={() => setInspectorOpen((open) => !open)} aria-expanded={inspectorOpen}><span aria-hidden="true">i</span> Context</button>
@@ -1289,16 +1357,22 @@ export function WorkspacePage() {
           ) : <StageView
             stage={stage}
             workspace={workspace}
-            contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise"), contentRepair: actionEnabled("content_repair"), repair: sourceRepairAvailable, repairUnavailableReason: sourceRepairUnavailableReason }}
-            onContentAction={actionEnabled("review_asset") || actionEnabled("revise") || actionEnabled("content_repair") || sourceRepairAvailable ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined}
-            onRequestRevision={stage !== "content" && actionEnabled("revise") ? requestLiveRevision : undefined}
+            initialAssetId={new URLSearchParams(location.search).get("asset") ?? undefined}
+            onNavigate={(targetStage, assetId) => navigate(`/courses/${courseId}/${targetStage}?mode=${runMode}${assetId ? `&asset=${encodeURIComponent(assetId)}` : ""}`)}
+            contentCapabilities={{ review: actionEnabled("review_asset"), revise: contentRevisionAvailable, contentRepair: contentRepairAvailable, repair: sourceRepairAvailable, repairUnavailableReason: sourceRepairUnavailableReason }}
+            onContentAction={actionEnabled("review_asset") || contentRevisionAvailable || contentRepairAvailable || sourceRepairAvailable ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined}
+            onRequestRevision={stage !== "content" && actionEnabled("revise") && workspace.providerReadiness.ready ? requestLiveRevision : undefined}
             onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined}
             onAddKnownSource={actionEnabled("add_source") ? (source) => knownSourceMutation.mutate(source) : undefined}
             sourceMutationBusy={knownSourceMutation.isPending}
             sourceRepairBusy={sourceRepairRequestMutation.isPending || sourceRepairDecisionMutation.isPending || sourceRepairRouteMutation.isPending || contentRepairMutation.isPending || Boolean(activeJobId)}
             onSourceRepairDecision={sourceRepairAvailable ? (entry, candidateId) => sourceRepairDecisionMutation.mutate({ entry, candidateId }) : undefined}
             onSourceRepairRoute={sourceRepairAvailable ? (entry) => sourceRepairRouteMutation.mutate(entry) : undefined}
-            onContentRepair={actionEnabled("content_repair") ? (entry) => {
+            onContentRepair={routedContentRepairAvailable ? (entry) => {
+              if (entry.requestedMode === "live" && !workspace.providerReadiness.ready) {
+                setToast({ tone: "attention", message: workspace.providerReadiness.message });
+                return;
+              }
               const asset = workspace.content.assets.find((candidate) => candidate.id === entry.origin.assetId);
               const claim = asset?.claims.find((candidate) => candidate.id === entry.origin.claimId);
               if (asset) contentRepairMutation.mutate({ strategy: "better_evidence", asset, claim, entry });
@@ -1357,7 +1431,7 @@ export function WorkspacePage() {
         <DecisionBar
           stage={stage}
           status={currentSummary?.status ?? "ready"}
-          actions={currentSummary?.actions ?? []}
+          actions={(currentSummary?.actions ?? []).map((action) => runMode === "live" && !workspace.providerReadiness.ready && ["run", "retry"].includes(action.id) ? { ...action, enabled: false, reason: workspace.providerReadiness.message } : action)}
           busy={mutation.isPending || outcomesMutation.isPending || outcomesEditing || courseModelPreviewMutation.isPending || courseModelSaveMutation.isPending || courseModelEditing || blueprintMutation.isPending || blueprintEditing || lessonPlanMutation.isPending || lessonPlanEditing || impactMutation.isPending || reopenMutation.isPending || revisionImpactMutation.isPending || revisionMutation.isPending || briefMutation.isPending || briefAnswersMutation.isPending || knownSourceMutation.isPending || sourceRepairRequestMutation.isPending || sourceRepairDecisionMutation.isPending || sourceRepairRouteMutation.isPending || Boolean(activeJobId)}
           onAction={handleStageAction}
         />

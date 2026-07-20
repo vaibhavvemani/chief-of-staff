@@ -53,14 +53,28 @@ def test_safe_job_errors_redact_common_credential_shapes() -> None:
     message = _safe_error_message(
         RuntimeError(
             "provider failed: ANTHROPIC_API_KEY=top-secret-value; "
-            "Authorization: Bearer-token-value Bearer direct-token-value"
+            "Authorization: Bearer-token-value Bearer direct-token-value; "
+            "config {'api_key': 'ultra-sensitive-value', "
+            "\"authorization\": \"Basic structured-sensitive-value\"}"
         )
     )
 
     assert "top-secret-value" not in message
     assert "Bearer-token-value" not in message
     assert "direct-token-value" not in message
-    assert message.count("[redacted]") == 3
+    assert "ultra-sensitive-value" not in message
+    assert "structured-sensitive-value" not in message
+    assert message.count("[redacted]") == 4
+
+    scheme_message = _safe_error_message(
+        RuntimeError(
+            "authorization=Basic ultra-sensitive-value; "
+            "Authorization: Token another-sensitive-value"
+        )
+    )
+    assert "ultra-sensitive-value" not in scheme_message
+    assert "another-sensitive-value" not in scheme_message
+    assert scheme_message.count("[redacted]") == 2
 
 
 def test_failed_multistep_package_run_preserves_canonical_outputs_and_retries(
@@ -347,6 +361,7 @@ def test_interrupted_job_is_projected_as_retryable_after_restart(
         assert projected["state"] == "failed"
         assert projected["last_failure"] == recovered["error"]
         assert [action["id"] for action in projected["actions"]] == ["retry"]
+        assert jobs.events(interrupted_id)[-1]["error_type"] == "InterruptedJob"
 
         retry = jobs.submit(
             course_id=course_id,

@@ -8,6 +8,7 @@ import {
   courseModelValidationIssues,
   decideSourceRepair,
   getBriefQuestions,
+  getOutputMarkdown,
   getWorkspace,
   normalizeStatus,
   outcomeValidationIssues,
@@ -138,6 +139,9 @@ describe("typed API commands", () => {
           title: "Indoor herbs",
           current_stage: "brief",
           operator_status: "needs_input",
+          provider_readiness: { ready: false, provider: "anthropic", model: "claude-opus-4-8", message: "Credentials are not configured." },
+          activity: [{ event_id: "evt-1", event_type: "model.call.completed", timestamp: "2026-07-20T12:00:00Z", stage: "brief", message: "Live model call completed" }],
+          diagnostics: { stages: [{ stage: "brief", providers: ["anthropic"], models: ["claude-opus-4-8"], calls: 1, input_tokens: 10, output_tokens: 5, estimated_cost_usd: 0.02, cache_hits: 0, retries: 1, errors: [] }], totals: { calls: 1, input_tokens: 10, output_tokens: 5, estimated_cost_usd: 0.02, cache_hits: 0, retries: 1, errors: 0 } },
           stages: [
             {
               slug: "brief",
@@ -217,6 +221,26 @@ describe("typed API commands", () => {
     ]);
     expect(result.workspace.brief.assessmentExpectations).toBeNull();
     expect(result.workspace.briefChecksum).toBe("brief-artifact-checksum");
+    expect(result.workspace.providerReadiness).toMatchObject({ ready: false, provider: "anthropic" });
+    expect(result.workspace.activity).toEqual([expect.objectContaining({ id: "evt-1", stage: "brief", tone: "good" })]);
+    expect(result.workspace.diagnostics.totals).toMatchObject({ calls: 1, retries: 1, estimatedCostUsd: 0.02 });
+    expect(result.workspace.estimatedCost).toBe(0.02);
+  });
+
+  it("fetches rendered Markdown only from a safe relative path and text response", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(
+      "# Rendered course",
+      { headers: { "Content-Type": "text/markdown; charset=utf-8" } },
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getOutputMarkdown("herb-course", "modules/01_intro.md")).resolves.toBe("# Rendered course");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/courses/herb-course/outputs/modules/01_intro.md",
+      expect.objectContaining({ headers: { Accept: "text/markdown, text/plain;q=0.9" } }),
+    );
+    await expect(getOutputMarkdown("herb-course", "../secret.md")).rejects.toThrow(/only a rendered Markdown/i);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("normalizes the complete backend-owned Brief question contract", async () => {

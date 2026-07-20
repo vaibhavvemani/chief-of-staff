@@ -323,6 +323,18 @@ export const demoWorkspace: Workspace = {
   stages: demoStages,
   artifactVersion: "demo-coffee-live-main-r1",
   estimatedCost: 2.5,
+  providerReadiness: {
+    ready: true,
+    provider: "anthropic",
+    model: "claude-opus-4-8",
+    message: "Live provider is ready.",
+  },
+  diagnostics: {
+    totals: { calls: 18, inputTokens: 12400, outputTokens: 6800, estimatedCostUsd: 2.5, cacheHits: 4, retries: 1, errors: 0 },
+    stages: [
+      { stage: "content", providers: ["anthropic"], models: ["claude-opus-4-8"], calls: 18, inputTokens: 12400, outputTokens: 6800, estimatedCostUsd: 2.5, cacheHits: 4, retries: 1, errors: [] },
+    ],
+  },
   brief: {
     courseTitle: "Coffee Making",
     subject: "Coffee making",
@@ -598,6 +610,12 @@ export const demoWorkspace: Workspace = {
     selectedAssets: contentAssets.length,
     renderedAssets: contentAssets.length,
     unresolvedBlockers: 9,
+    releaseChecks: [
+      { id: "integrity", label: "Artifact integrity", passed: true, detail: "All downstream references resolve.", targetStage: "course-model" },
+      { id: "source_boundary", label: "Source boundary", passed: true, detail: "Only approved, content-bearing sources are referenced.", targetStage: "research" },
+      { id: "asset_reconciliation", label: "Asset reconciliation", passed: true, detail: "Selected, generated, and rendered assets reconcile.", targetStage: "content" },
+      { id: "human_review", label: "Human content review", passed: false, detail: "Resolve unsupported, ungrounded, and unattributed claims.", targetStage: "content", targetAssetId: "m1_s4_cc" },
+    ],
     files: [
       { path: "README.md", label: "Course index", kind: "markdown" },
       { path: "course_overview.md", label: "Course overview", kind: "markdown" },

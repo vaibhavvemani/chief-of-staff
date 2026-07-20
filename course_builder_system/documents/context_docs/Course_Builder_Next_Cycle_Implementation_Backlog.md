@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-90 independently verified; NC-100 next
+> **Status:** NC-100 independently verified; NC-110 next
 > **Updated:** 2026-07-20
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -64,7 +64,10 @@ NC-808 are independently verified with deterministic browser Scenarios A8 throug
 evidence, including both repair strategies, target-only regeneration, truthful blocker
 and review state, and typed failure/restart recovery. NC-901 through NC-912 and scoped
 live revisions NC-303, NC-406, NC-504, and NC-604 passed independent NC-90 checkpoint
-review. NC-100 and later packages remain unstarted. This
+review. NC-1001 through NC-1007 passed independent NC-100 checkpoint review with real
+progress, safe persisted activity and call diagnostics, readiness gates across all live
+starts, actual safe Markdown rendering, actionable backend-owned Package blockers, and
+acceptance-path accessibility evidence. NC-110 and later packages remain unstarted. This
 status note does not mark Milestone 3 or the cycle complete.
 
 ```text
@@ -397,8 +400,8 @@ NC-404 is independently verified with deterministic browser Scenario A6 evidence
 NC-405 is independently verified with deterministic browser evidence. NC-40 is not
 complete. NC-501 through NC-503 and NC-601 through NC-603 are independently verified.
 NC-406, NC-504, and NC-604 are independently verified behind their NC-90 dependencies. NC-701
-through NC-709 and NC-801 through NC-808 are independently verified; NC-90 review is
-pending and NC-100 remains unstarted.
+through NC-709, NC-801 through NC-808, NC-901 through NC-912, and NC-1001 through
+NC-1007 are independently verified. NC-110 is the next package.
 
 ### Tasks
 
@@ -462,7 +465,8 @@ NC-501 through NC-503 are independently verified with deterministic browser Scen
 evidence. NC-406, NC-504, and NC-604 are implemented behind their NC-90 dependencies
 and independently verified. NC-601 through NC-603 are independently verified with
 deterministic browser Scenario A12 evidence. NC-701 through NC-709 and NC-801 through
-NC-808 are independently verified; NC-100 remains unstarted.
+NC-808, NC-901 through NC-912, and NC-1001 through NC-1007 are independently verified;
+NC-110 is the next package.
 
 ### Tasks
 
@@ -914,10 +918,19 @@ Replace deterministic proposals behind stable contracts, one stage at a time.
 
 ## 15. Work package NC-100 — Progress, diagnostics, and Package completion
 
+**Implementation status (2026-07-20): independently checkpointed.** NC-1001 through
+NC-1007 passed fresh read-only review. Evidence covers timely generation and repair
+unit progress, persisted secret-safe activity, stage diagnostics with provider, model,
+calls, tokens, cost, cache, real retry attempts, and safe errors, provider readiness on
+every live start path, bounded canonical Markdown fetch and raw-HTML-disabled rendering,
+backend-owned release-check navigation to exact stages/assets, and keyboard, focus,
+status, and contrast coverage. The corrected Chromium suite passes all 9 scenarios.
+
 ### Tasks
 
 #### NC-1001 — Connect live unit progress callback
 
+- **Status:** Independently verified.
 - **Priority:** P0-P
 - **Dependencies:** NC-901
 - Pass an event adapter through pipeline factories.
@@ -925,6 +938,7 @@ Replace deterministic proposals behind stable contracts, one stage at a time.
 
 #### NC-1002 — Project real activity history
 
+- **Status:** Independently verified.
 - **Priority:** P0-P
 - **Dependencies:** NC-1001
 - Read persisted jobs/events and safe call summaries.
@@ -932,6 +946,7 @@ Replace deterministic proposals behind stable contracts, one stage at a time.
 
 #### NC-1003 — Add safe call/cost diagnostics
 
+- **Status:** Independently verified.
 - **Priority:** P0-P
 - **Dependencies:** NC-901
 - Show provider, model, calls, tokens, estimated cost, cache hits, retries, and safe errors
@@ -939,6 +954,7 @@ Replace deterministic proposals behind stable contracts, one stage at a time.
 
 #### NC-1004 — Add provider-readiness UI
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-901
 - Block live start when required provider credentials are unavailable.
@@ -946,6 +962,7 @@ Replace deterministic proposals behind stable contracts, one stage at a time.
 
 #### NC-1005 — Fetch and render selected Markdown
 
+- **Status:** Independently verified.
 - **Priority:** P0-D
 - **Dependencies:** NC-104
 - Add safe text response/fetch handling.
@@ -953,12 +970,14 @@ Replace deterministic proposals behind stable contracts, one stage at a time.
 
 #### NC-1006 — Add Package blocker navigation
 
+- **Status:** Independently verified.
 - **Priority:** P0-P
 - **Dependencies:** NC-806, NC-1005
 - Link each failed release check to the responsible stage/asset.
 
 #### NC-1007 — Add accessibility coverage
 
+- **Status:** Independently verified.
 - **Priority:** P0-P
 - **Dependencies:** Major UI tasks complete
 - Cover keyboard flow, focus, labels, dialogs, status announcements, and contrast issues

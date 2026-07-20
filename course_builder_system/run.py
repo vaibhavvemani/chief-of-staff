@@ -23,6 +23,7 @@ from orchestrator import (
 
 OUTPUT_TRANSFORMS = {"course_model": carry_forward_course_model_allocation}
 StepCallable = Callable[[dict, str | None], dict]
+ProgressCallback = Callable[[dict], None]
 
 
 def _implementation(
@@ -39,7 +40,9 @@ def _implementation(
 
 
 def build_pipeline(
-    *, implementations: Mapping[str, StepCallable] | None = None
+    *,
+    implementations: Mapping[str, StepCallable] | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> list[Step]:
     """The pipeline is just data: an ordered list of steps, each declaring
     what it consumes and produces. This is the spine. Phase 1+ only swaps the
@@ -75,7 +78,9 @@ def build_pipeline(
             consumes=["course_model", "blueprint", "course_outcomes"],
             produces=["content_package"],
             run=_implementation(
-                implementations, "student_content", steps.student_content_step
+                implementations,
+                "student_content",
+                steps.make_student_content_step(progress_callback=progress_callback),
             ),
         ),
         Step(
@@ -179,6 +184,7 @@ def build_sprint3_pipeline(
     *,
     live_research: bool = False,
     implementations: Mapping[str, StepCallable] | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> list[Step]:
     """Sparse request -> Markdown course folder and resumable run summary."""
     return [
@@ -191,7 +197,9 @@ def build_sprint3_pipeline(
             consumes=["course_model", "blueprint", "course_outcomes"],
             produces=["content_package", "content_progress"],
             run=_implementation(
-                implementations, "student_content", steps.student_content_step
+                implementations,
+                "student_content",
+                steps.make_student_content_step(progress_callback=progress_callback),
             ),
         ),
         Step(
@@ -236,6 +244,7 @@ def build_sprint4_acceptance_pipeline(
     output_root: Path = Path("rendered_courses"),
     controls: acceptance.DeterministicAcceptanceControls | None = None,
     implementations: Mapping[str, StepCallable] | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> list[Step]:
     """Acceptance pipeline with deterministic local content and verification."""
     return [
@@ -260,6 +269,7 @@ def build_sprint4_acceptance_pipeline(
                         acceptance.deterministic_verify_asset,
                         controls=controls,
                     ),
+                    progress_callback=progress_callback,
                 ),
             ),
         ),

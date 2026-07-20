@@ -15,8 +15,12 @@
 > reducers. Stage outputs and downstream invalidations commit in one exact-precondition
 > transaction. Provider failures are explicit and never select deterministic output.
 > Stage evals use injected provider fixtures on two unrelated topics; a credentialed
-> live end-to-end run remains NC-1104. NC-100 and later packages remain unstarted. This
-> does not complete Milestone 3 or the cycle.
+> live end-to-end run remains NC-1104. NC-1001 through NC-1007 passed independent
+> contract review: progress events are timely, persisted activity and call diagnostics
+> are secret-safe, readiness gates cover every live start path, Markdown delivery is
+> bounded and raw-HTML-disabled, and Package blockers remain backend-owned and
+> actionable. NC-110 and later remain unstarted. This does not complete Milestone 3 or
+> the cycle.
 
 ## 1. How to use this document
 

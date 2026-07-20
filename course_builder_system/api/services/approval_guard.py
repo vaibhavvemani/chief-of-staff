@@ -435,12 +435,21 @@ class ApprovalGuardService:
             )
         review = self.repository.load(course_id, "content_review")
         if review is None:
+            asset_ids = tuple(
+                sorted(
+                    str(asset.get("id"))
+                    for subtopic in package.get("body", {}).get("subtopics", [])
+                    for asset in subtopic.get("assets", [])
+                    if isinstance(asset, dict) and asset.get("id")
+                )
+            )
             failures.append(
                 GuardFailure(
                     "content_review_missing",
                     "Synchronize and complete the human Content review.",
                     "content",
                     "content_review",
+                    asset_ids,
                 )
             )
             return failures

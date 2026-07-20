@@ -13,7 +13,7 @@ from typing import Any
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 import llm
@@ -88,6 +88,7 @@ from implementation_registry import build_default_implementation_registry
 from research_adapter import ResearchProvider
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+MAX_MARKDOWN_PREVIEW_BYTES = 2 * 1024 * 1024
 
 
 def create_app(
@@ -394,6 +395,7 @@ def create_app(
                 "prerequisites_ready", False
             ),
         )
+        catalog.assert_mode_ready(command.mode, stage_slug)
         job = jobs.submit(
             course_id=course_id,
             stage=stage_slug,
@@ -503,6 +505,7 @@ def create_app(
             stage_slug,
             allowed={"awaiting_review", "requires_attention"},
         )
+        catalog.assert_mode_ready(command.mode, stage_slug)
         revision_payload = {
             "target_type": command.target_type,
             "target_ids": command.target_ids,
@@ -599,6 +602,7 @@ def create_app(
                 course_id=course_id,
                 max_calls=1,
                 max_input_chars=60_000,
+                emit=jobs.event_emitter(course_id, "brief"),
             ):
                 round_data = brief_intake.question_round(
                     subject,
@@ -630,6 +634,7 @@ def create_app(
                     course_id=course_id,
                     max_calls=1,
                     max_input_chars=60_000,
+                    emit=jobs.event_emitter(course_id, "brief"),
                 ):
                     value = decisions.save_brief_answers(
                         course_id,
@@ -765,6 +770,7 @@ def create_app(
     ) -> dict[str, Any]:
         with jobs.mutate_now(course_id):
             assert_projected_action(course_id, "content", "source_repair")
+            catalog.assert_mode_ready(command.mode, "content")
             requested = source_repairs.request(
                 course_id,
                 expected_content_checksum=command.expected_content_checksum,
@@ -793,6 +799,19 @@ def create_app(
     )
     def restart_source_repair_research(course_id: str, repair_id: str) -> dict[str, Any]:
         assert_projected_action(course_id, "content", "source_repair")
+        existing_entry = next(
+            (
+                entry
+                for entry in source_repairs.view(course_id)["entries"]
+                if entry.get("id") == repair_id
+            ),
+            None,
+        )
+        if existing_entry is not None:
+            catalog.assert_mode_ready(
+                str(existing_entry.get("requested_mode") or "deterministic"),
+                "content",
+            )
         job = jobs.submit(
             course_id=course_id,
             stage="content",
@@ -908,6 +927,7 @@ def create_app(
         }
         with jobs.mutate_now(course_id):
             assert_projected_action(course_id, "content", "content_repair")
+            catalog.assert_mode_ready(command.mode, "content")
             prepared = content_repairs.prepare(course_id, **values)
         job = jobs.submit(
             course_id=course_id,
@@ -985,8 +1005,34 @@ def create_app(
         return {"artifact": value, "checksum": repository.checksum(value)}
 
     @app.get("/api/courses/{course_id}/outputs/{relative_path:path}")
-    def output(course_id: str, relative_path: str) -> FileResponse:
-        return FileResponse(repository.output_path(course_id, relative_path))
+    def output(course_id: str, relative_path: str) -> PlainTextResponse:
+        path = repository.output_path(course_id, relative_path)
+        if path.suffix.lower() != ".md":
+            raise HTTPException(
+                status_code=415,
+                detail="Only rendered Markdown files can be previewed.",
+            )
+        if path.stat().st_size > MAX_MARKDOWN_PREVIEW_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail="Rendered Markdown exceeds the preview size limit.",
+            )
+        try:
+            content = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            raise HTTPException(
+                status_code=422,
+                detail="Rendered Markdown must be valid UTF-8 text.",
+            ) from exc
+        return PlainTextResponse(
+            content,
+            media_type="text/markdown",
+            headers={
+                "Cache-Control": "no-store",
+                "Content-Security-Policy": "default-src 'none'; sandbox",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
 
     @app.get("/api/jobs/{job_id}")
     def job(job_id: str) -> dict[str, Any]:

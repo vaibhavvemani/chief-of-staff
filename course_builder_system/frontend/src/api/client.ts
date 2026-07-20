@@ -34,6 +34,7 @@ import type {
   OutcomePriority,
   OutcomeValidationIssue,
   OutputFile,
+  ReleaseCheck,
   SourceCandidate,
   SourceQuality,
   SourceRepairEntry,
@@ -88,6 +89,29 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
+}
+
+async function apiText(path: string): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetch(path, { headers: { Accept: "text/markdown, text/plain;q=0.9" } });
+  } catch (error) {
+    throw new ApiError(error instanceof Error ? error.message : "The API is unavailable.", 0, error);
+  }
+  if (!response.ok) {
+    const detail = await response.json().catch(() => null);
+    const message = isRecord(detail) && isRecord(detail.error) && typeof detail.error.message === "string"
+      ? detail.error.message
+      : isRecord(detail) && typeof detail.detail === "string"
+        ? detail.detail
+        : `Request failed with ${response.status}`;
+    throw new ApiError(message, response.status, detail);
+  }
+  const contentType = response.headers.get("Content-Type")?.toLowerCase() ?? "";
+  if (!contentType.startsWith("text/markdown") && !contentType.startsWith("text/plain")) {
+    throw new ApiError("The rendered output was not returned as safe text.", 415);
+  }
+  return response.text();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -338,6 +362,10 @@ interface BackendWorkspace {
   };
   stages?: BackendStage[];
   artifact_types?: string[];
+  activity?: unknown[];
+  diagnostics?: unknown;
+  provider_readiness?: unknown;
+  release_checks?: unknown[];
 }
 
 interface StageArtifact {
@@ -1083,6 +1111,94 @@ function normalizeOutputFiles(value: unknown, courseId: string): OutputFile[] {
   return files;
 }
 
+function normalizeActivity(value: unknown): Workspace["activity"] {
+  return asArray(value).flatMap((item) => {
+    if (!isRecord(item)) return [];
+    const id = asString(item.event_id);
+    const at = asString(item.timestamp);
+    const eventType = asString(item.event_type);
+    if (!id || !at || !eventType) return [];
+    const stageValue = asString(item.stage) as StageSlug;
+    const stage = allStageSlugs.includes(stageValue) ? stageValue : undefined;
+    const title = eventType.split(".").map((part) => part.replaceAll("_", " ")).join(" · ");
+    return [{
+      id,
+      at,
+      title: title.charAt(0).toUpperCase() + title.slice(1),
+      detail: asString(item.message, "Recorded runtime event."),
+      tone: eventType.endsWith("failed")
+        ? "attention" as const
+        : eventType.endsWith("completed") || eventType === "stage.output_ready"
+          ? "good" as const
+          : "neutral" as const,
+      eventType,
+      stage,
+    }];
+  });
+}
+
+function normalizeDiagnostics(value: unknown): Workspace["diagnostics"] {
+  const record = isRecord(value) ? value : {};
+  const totals = isRecord(record.totals) ? record.totals : {};
+  return {
+    stages: asArray(record.stages).flatMap((item) => isRecord(item) ? [{
+      stage: asString(item.stage, "unknown"),
+      providers: asStringArray(item.providers),
+      models: asStringArray(item.models),
+      calls: asNumber(item.calls),
+      inputTokens: asNumber(item.input_tokens),
+      outputTokens: asNumber(item.output_tokens),
+      estimatedCostUsd: asNumber(item.estimated_cost_usd),
+      cacheHits: asNumber(item.cache_hits),
+      retries: asNumber(item.retries),
+      errors: asArray(item.errors).flatMap((error) => isRecord(error) ? [{
+        type: asString(error.type, "ModelCallFailed"),
+        message: asString(error.message, "The model call failed safely."),
+        at: asString(error.at) || undefined,
+      }] : []),
+    }] : []),
+    totals: {
+      calls: asNumber(totals.calls),
+      inputTokens: asNumber(totals.input_tokens),
+      outputTokens: asNumber(totals.output_tokens),
+      estimatedCostUsd: asNumber(totals.estimated_cost_usd),
+      cacheHits: asNumber(totals.cache_hits),
+      retries: asNumber(totals.retries),
+      errors: asNumber(totals.errors),
+    },
+  };
+}
+
+function normalizeProviderReadiness(value: unknown): Workspace["providerReadiness"] {
+  const record = isRecord(value) ? value : {};
+  const ready = record.ready === true;
+  return {
+    ready,
+    provider: asString(record.provider, "live provider"),
+    model: asString(record.model, "not reported"),
+    message: asString(
+      record.message,
+      ready ? "Live provider is ready." : "Live provider credentials are not configured on the server.",
+    ),
+  };
+}
+
+function normalizeReleaseChecks(value: unknown): ReleaseCheck[] {
+  return asArray(value).flatMap((item) => {
+    if (!isRecord(item)) return [];
+    const targetStage = asString(item.target_stage) as StageSlug;
+    if (!allStageSlugs.includes(targetStage)) return [];
+    return [{
+      id: asString(item.id),
+      label: asString(item.label),
+      passed: item.passed === true,
+      detail: asString(item.detail),
+      targetStage,
+      targetAssetId: asString(item.target_asset_id) || undefined,
+    }];
+  });
+}
+
 function normalizeStages(raw: BackendWorkspace, fallback: StageSummary[]): StageSummary[] {
   if (!raw.stages?.length) return fallback;
   return raw.stages.flatMap((stage) => {
@@ -1127,6 +1243,9 @@ async function getStage(courseId: string, slug: StageSlug): Promise<BackendStage
 export async function getWorkspace(courseId: string): Promise<{ workspace: Workspace; demoMode: boolean; readOnly: boolean }> {
   try {
     const projection = await apiFetch<BackendWorkspace>(`/api/courses/${encodeURIComponent(courseId)}/workspace`);
+    const diagnostics = normalizeDiagnostics(projection.diagnostics);
+    const providerReadiness = normalizeProviderReadiness(projection.provider_readiness);
+    const activity = normalizeActivity(projection.activity);
     const stageResults = await Promise.allSettled(allStageSlugs.map((slug) => getStage(courseId, slug)));
     const backendStages = stageResults.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
     const artifacts = artifactMap(backendStages);
@@ -1178,7 +1297,9 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
       course: emptyCourse,
       stages: normalizeStages(projection, []),
       artifactVersion: "",
-      estimatedCost: undefined,
+      estimatedCost: diagnostics.totals.estimatedCostUsd || undefined,
+      providerReadiness,
+      diagnostics,
       brief: {
         courseTitle: projection.title ?? "Untitled course",
         subject: startingSubject,
@@ -1237,8 +1358,9 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
         renderedAssets: 0,
         unresolvedBlockers: projection.attention?.blocking_total ?? 0,
         files: [],
+        releaseChecks: normalizeReleaseChecks(projection.release_checks),
       },
-      activity: [],
+      activity,
       briefChecksum: artifacts.get("brief")?.checksum,
     };
     const runSummary = artifacts.get("run_summary")?.body;
@@ -1347,6 +1469,7 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
           ? Object.keys(manifestRecord.paths.assets).length
           : content.completed,
         files: normalizeOutputFiles(manifestRecord, courseId),
+        releaseChecks: normalizeReleaseChecks(projection.release_checks),
       },
     };
     return { workspace, demoMode: false, readOnly: Boolean(projection.read_only) };
@@ -1356,6 +1479,19 @@ export async function getWorkspace(courseId: string): Promise<{ workspace: Works
     }
     throw error;
   }
+}
+
+export async function getOutputMarkdown(courseId: string, relativePath: string): Promise<string> {
+  const segments = relativePath.split("/");
+  if (
+    !segments.length
+    || segments.some((segment) => !segment || segment === "." || segment === ".." || segment.includes("\\"))
+    || !relativePath.toLowerCase().endsWith(".md")
+  ) {
+    throw new ApiError("Only a rendered Markdown file can be previewed.", 400);
+  }
+  const encodedPath = segments.map(encodeURIComponent).join("/");
+  return apiText(`/api/courses/${encodeURIComponent(courseId)}/outputs/${encodedPath}`);
 }
 
 function workspaceSourceCount(value: unknown): number {

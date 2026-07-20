@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from copy import deepcopy
+from inspect import signature
 from typing import Any
 
 import llm
@@ -75,7 +76,42 @@ class StageRunner:
                     f"running {stage_slug}"
                 )
         self.catalog.assert_mode_ready(mode, stage_slug)
-        steps = self.catalog.steps_for_stage(stage_slug, mode=mode)
+
+        def emit_unit_progress(record: dict[str, Any]) -> None:
+            status = record.get("status")
+            if status == "running":
+                event_type = "unit.started"
+                state = "started"
+            elif status in {"failed", "pending", "evidence_gap"}:
+                event_type = "unit.failed"
+                state = "failed"
+            else:
+                event_type = "unit.completed"
+                state = "completed" if status == "completed" else "reused"
+            emit(
+                event_type,
+                stage=stage_slug,
+                subtopic_id=record.get("subtopic_id"),
+                asset_id=record.get("asset_id"),
+                progress={
+                    "completed": record.get("completed_units", 0),
+                    "expected": record.get("expected_units"),
+                },
+                attempts=record.get("attempts", 0),
+                message=f"{record.get('asset_id') or 'Content unit'} {state}",
+            )
+
+        supports_progress = "progress_callback" in signature(
+            self.catalog.steps_for_stage
+        ).parameters
+        if stage_slug == "content" and supports_progress:
+            steps = self.catalog.steps_for_stage(
+                stage_slug,
+                mode=mode,
+                progress_callback=emit_unit_progress,
+            )
+        else:
+            steps = self.catalog.steps_for_stage(stage_slug, mode=mode)
         prepared_revision = self._prepare_revision(
             course_id,
             stage_slug,
@@ -139,24 +175,6 @@ class StageRunner:
                 self._validate_output(course_id, artifact_type, artifact)
                 previous.setdefault(artifact_type, self.repository.load(course_id, artifact_type))
                 staged[artifact_type] = deepcopy(artifact)
-            progress = produced.get("content_progress", {}).get("body", {})
-            for unit in progress.get("units", []):
-                event_type = (
-                    "unit.failed"
-                    if unit.get("status") in {"failed", "evidence_gap"}
-                    else "unit.completed"
-                )
-                emit(
-                    event_type,
-                    stage=stage_slug,
-                    subtopic_id=unit.get("subtopic_id"),
-                    asset_id=unit.get("asset_id"),
-                    progress={
-                        "completed": progress.get("completed_asset_count"),
-                        "expected": progress.get("expected_asset_count"),
-                    },
-                    message=f"{unit.get('asset_id') or 'Content unit'} {unit.get('status')}",
-                )
         if stage_slug == "content" and "content_package" in staged:
             previous_review = self.repository.load(course_id, "content_review")
             review = content_review.build_content_review_artifact(

@@ -15,6 +15,8 @@ from agents.live_stages import LiveStageImplementations, StructuredModelProvider
 from research_adapter import ResearchProvider
 
 StepCallable = Callable[[dict, str | None], dict]
+ProgressCallback = Callable[[dict[str, Any]], None]
+ProgressStepFactory = Callable[[ProgressCallback | None], StepCallable]
 
 REQUIRED_STEP_NAMES = frozenset(
     {
@@ -58,12 +60,17 @@ class StageImplementationRegistry:
         deterministic: Mapping[str, StepCallable],
         live: Mapping[str, StepCallable],
         live_readiness: Callable[[], dict[str, Any]],
+        progress_factories: Mapping[str, Mapping[str, ProgressStepFactory]] | None = None,
     ) -> None:
         self._modes = {
             "deterministic": dict(deterministic),
             "live": dict(live),
         }
         self._live_readiness = live_readiness
+        self._progress_factories = {
+            mode: dict(factories)
+            for mode, factories in (progress_factories or {}).items()
+        }
         for mode, implementations in self._modes.items():
             missing = sorted(REQUIRED_STEP_NAMES - set(implementations))
             extra = sorted(set(implementations) - REQUIRED_STEP_NAMES)
@@ -73,12 +80,21 @@ class StageImplementationRegistry:
                     f"missing={missing}, extra={extra}"
                 )
 
-    def selection(self, mode: str) -> ImplementationSelection:
+    def selection(
+        self,
+        mode: str,
+        *,
+        progress_callback: ProgressCallback | None = None,
+    ) -> ImplementationSelection:
         try:
             implementations = self._modes[mode]
         except KeyError as exc:
             raise ValueError(f"unknown stage-run mode: {mode!r}") from exc
-        return ImplementationSelection(mode=mode, steps=dict(implementations))
+        selected = dict(implementations)
+        if progress_callback is not None:
+            for name, factory in self._progress_factories.get(mode, {}).items():
+                selected[name] = factory(progress_callback)
+        return ImplementationSelection(mode=mode, steps=selected)
 
     def resolve(self, mode: str, step_name: str) -> StepCallable:
         selection = self.selection(mode)
@@ -92,6 +108,14 @@ class StageImplementationRegistry:
     def provider_readiness(self) -> dict[str, Any]:
         result = dict(self._live_readiness())
         result.setdefault("ready", False)
+        if result["ready"] is True:
+            result.setdefault("message", "Live provider is ready.")
+        else:
+            provider = str(result.get("provider") or "live provider")
+            result.setdefault(
+                "message",
+                f"Live {provider} credentials are not configured on the server.",
+            )
         return result
 
     def assert_mode_ready(self, mode: str, stage_slug: str) -> None:
@@ -118,14 +142,10 @@ def build_default_implementation_registry(
         model=model_provider,
         research_provider_factory=research_provider_factory,
     )
-    deterministic: dict[str, StepCallable] = {
-        "intake": steps.intake_step,
-        "course_outcomes": steps.course_outcomes_step,
-        "research": steps.sprint2_research_step,
-        "source_selection": steps.source_selection_step,
-        "structure": steps.structure_step,
-        "blueprint": steps.blueprint_step,
-        "student_content": steps.make_student_content_step(
+    def deterministic_content(
+        progress_callback: ProgressCallback | None = None,
+    ) -> StepCallable:
+        return steps.make_student_content_step(
             asset_generator=acceptance.deterministic_generate_asset,
             package_verifier=partial(
                 acceptance.deterministic_verify_content_package,
@@ -135,7 +155,20 @@ def build_default_implementation_registry(
                 acceptance.deterministic_verify_asset,
                 controls=deterministic_controls,
             ),
-        ),
+            progress_callback=progress_callback,
+        )
+
+    def live_content(progress_callback: ProgressCallback | None = None) -> StepCallable:
+        return steps.make_student_content_step(progress_callback=progress_callback)
+
+    deterministic: dict[str, StepCallable] = {
+        "intake": steps.intake_step,
+        "course_outcomes": steps.course_outcomes_step,
+        "research": steps.sprint2_research_step,
+        "source_selection": steps.source_selection_step,
+        "structure": steps.structure_step,
+        "blueprint": steps.blueprint_step,
+        "student_content": deterministic_content(),
         "lesson_plan": steps.lesson_plan_step,
         "render_course_folder": steps.make_render_course_folder_step(
             output_root=rendered_root
@@ -162,4 +195,8 @@ def build_default_implementation_registry(
         deterministic=deterministic,
         live=live_steps,
         live_readiness=live.provider_readiness,
+        progress_factories={
+            "deterministic": {"student_content": deterministic_content},
+            "live": {"student_content": live_content},
+        },
     )

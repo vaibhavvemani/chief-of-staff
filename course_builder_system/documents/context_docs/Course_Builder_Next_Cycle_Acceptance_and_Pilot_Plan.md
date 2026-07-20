@@ -81,8 +81,16 @@
 > no-fallback failures. Stage evals use an injected structured provider across indoor
 > herb gardening and bicycle maintenance and prove grounding, coverage, source routing,
 > generation/verification separation, revision scope, and repair categories. They are
-> not a credentialed Anthropic end-to-end run; that remains NC-1104. NC-100 is not
-> started, and neither Milestone 3 nor the cycle is complete.
+> not a credentialed Anthropic end-to-end run; that remains NC-1104.
+
+> **NC-100 checkpoint — 2026-07-20:** NC-1001 through NC-1007 passed independent
+> review. Evidence covers timely generation and targeted-repair progress, persisted
+> secret-safe activity and stage call summaries, readiness gates on every live start
+> path, actual bounded Markdown rendering with raw HTML disabled, exact backend-owned
+> release-blocker navigation, and keyboard/focus/status/contrast coverage. The full
+> Python suite passes 458 tests, the frontend suite passes 92 tests, and the corrected
+> Chromium acceptance suite passes all 9 scenarios. NC-110 is next; neither Milestone 3
+> nor the cycle is complete.
 
 ## 1. Purpose
 

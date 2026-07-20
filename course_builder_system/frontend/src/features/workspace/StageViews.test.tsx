@@ -1,8 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { demoWorkspace } from "../../data/demo";
 import type { Workspace } from "../../types";
 import { StageView } from "./StageViews";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("truthful lifecycle controls", () => {
   it("distinguishes explicit Brief answers from accepted defaults", () => {
@@ -265,11 +267,25 @@ describe("truthful lifecycle controls", () => {
     sourceButtons.forEach((button) => expect(button).toBeDisabled());
   });
 
-  it("labels package inspection truthfully instead of fabricating file contents", () => {
+  it("renders the selected canonical Markdown as text and disables raw HTML", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(
+      "# Canonical course index\n\nLearner-ready text.\n\n<script>unsafe-preview-marker</script>",
+      { headers: { "Content-Type": "text/markdown; charset=utf-8" } },
+    )));
     render(<StageView stage="package" workspace={demoWorkspace} />);
 
-    expect(screen.getByText(/an inline renderer is not implemented/i)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Canonical course index" })).toBeVisible();
+    expect(screen.getByText("Learner-ready text.")).toBeVisible();
+    expect(screen.queryByText("unsafe-preview-marker")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /open raw file/i })).toHaveAttribute("href", expect.stringContaining("/outputs/"));
+  });
+
+  it("routes a failed release check to its responsible stage and asset", () => {
+    const onNavigate = vi.fn();
+    render(<StageView stage="package" workspace={demoWorkspace} onNavigate={onNavigate} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /human content review blocker/i }));
+    expect(onNavigate).toHaveBeenCalledWith("content", "m1_s4_cc");
   });
 
   it("renders Outcomes editing only when the backend-projected edit capability is wired", () => {

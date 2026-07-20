@@ -243,6 +243,7 @@ def make_student_content_step(
     asset_generator: Callable[..., dict[str, Any]] | None = None,
     package_verifier: Callable[..., dict[str, Any]] | None = None,
     asset_verifier: Callable[..., dict[str, Any]] | None = None,
+    progress_callback: whole_course.ProgressCallback | None = None,
 ) -> Callable[[dict, str | None], dict]:
     """Return a Student Content step with injectable generation services."""
 
@@ -253,6 +254,7 @@ def make_student_content_step(
             asset_generator=asset_generator,
             package_verifier=package_verifier,
             asset_verifier=asset_verifier,
+            progress_callback=progress_callback,
         )
 
     return run
@@ -269,6 +271,7 @@ def _student_content_step(
     asset_generator: Callable[..., dict[str, Any]] | None = None,
     package_verifier: Callable[..., dict[str, Any]] | None = None,
     asset_verifier: Callable[..., dict[str, Any]] | None = None,
+    progress_callback: whole_course.ProgressCallback | None = None,
 ) -> dict:
     """Course Model + Blueprint -> verified v0.2 Content Package.
 
@@ -306,15 +309,49 @@ def _student_content_step(
             feedback,
         )
         gen_inputs["subtopic_id"] = subtopic_id
-        package_body = revision.revise_content_package(
-            existing["body"],
-            gen_inputs,
-            inputs["course_model"],
-            feedback,
-            subtopic_id=subtopic_id,
-            asset_generator=asset_generator,
-            asset_verifier=asset_verifier,
-        )
+        revision_unit = {
+            "stage": "student_content",
+            "subtopic_id": subtopic_id,
+            "asset_type": "targeted_revision",
+            "asset_id": "targeted_revision",
+            "status": "running",
+            "attempts": 0,
+            "error": None,
+            "completed_units": 0,
+            "expected_units": 1,
+        }
+        if progress_callback is not None:
+            progress_callback(revision_unit)
+        try:
+            package_body = revision.revise_content_package(
+                existing["body"],
+                gen_inputs,
+                inputs["course_model"],
+                feedback,
+                subtopic_id=subtopic_id,
+                asset_generator=asset_generator,
+                asset_verifier=asset_verifier,
+            )
+        except Exception:
+            if progress_callback is not None:
+                progress_callback(
+                    {
+                        **revision_unit,
+                        "status": "failed",
+                        "attempts": 1,
+                        "completed_units": 1,
+                    }
+                )
+            raise
+        if progress_callback is not None:
+            progress_callback(
+                {
+                    **revision_unit,
+                    "status": "completed",
+                    "attempts": 1,
+                    "completed_units": 1,
+                }
+            )
         progress_body = {
             "stage": "student_content",
             "current": None,
@@ -343,6 +380,7 @@ def _student_content_step(
             target_subtopic_ids=target_subtopic_ids,
             max_retries=1,
             asset_generator=asset_generator,
+            progress_callback=progress_callback,
         )
 
         if progress_body["complete"]:

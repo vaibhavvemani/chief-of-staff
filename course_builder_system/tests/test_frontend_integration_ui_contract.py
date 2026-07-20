@@ -195,7 +195,8 @@ def test_package_has_a_prebuild_state_and_selects_the_first_rendered_file() -> N
     assert "Use <strong>Run Package</strong>" in stage_views
     assert "setSelectedPath(markdownFiles[0].path)" in stage_views
     assert "selectedPath={selected?.path}" in stage_views
-    assert "An inline renderer is not implemented" in stage_views
+    assert "getOutputMarkdown" in stage_views
+    assert "<ReactMarkdown skipHtml>" in stage_views
     assert 'integrityPassed: artifacts.has("render_manifest")' in api_client
 
 
@@ -205,7 +206,7 @@ def test_workspace_actions_and_reopen_are_backend_projected() -> None:
         encoding="utf-8"
     )
 
-    assert "actions={currentSummary?.actions ?? []}" in workspace
+    assert "currentSummary?.actions ?? []" in workspace
     assert "visibleActions.map((action)" in workspace
     assert "previewStageImpact" in workspace
     assert "impactChecksum: impactPreview.impactChecksum" in workspace
@@ -224,10 +225,8 @@ def test_affected_workflow_has_only_registered_mutations() -> None:
     assert "requestSourceRepair" in workspace
     assert "confirmSourceRepairRoute" in workspace
     assert "requestStageChanges" not in workspace
-    assert "Model-call diagnostics unavailable" in workspace
-    assert (
-        'disabled title="Model-call diagnostics are not exposed in this release"'
-        in workspace
-    )
-    assert "An inline renderer is not implemented" in stage_views
+    assert "Diagnostics by stage" in workspace
+    assert "workspace.diagnostics.stages" in workspace
+    assert "credentials, learner content" in workspace
+    assert "getOutputMarkdown" in stage_views
     assert "Use <strong>Request changes</strong>" not in stage_views

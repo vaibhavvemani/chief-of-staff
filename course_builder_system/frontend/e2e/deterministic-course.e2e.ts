@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 import { createHash } from "node:crypto";
 
 const SEEDED_LIFECYCLE_COURSE_ID = "studio-course-model-reopen-fixture";
+const PACKAGE_PREVIEW_COURSE_ID = "studio-package-preview-fixture";
 const COURSE_MODEL_EDITOR_COURSE_ID = "studio-course-model-editor-fixture";
 const BLUEPRINT_EDITOR_COURSE_ID = "studio-blueprint-editor-fixture";
 const LESSON_PLAN_EDITOR_COURSE_ID = "studio-lesson-plan-editor-fixture";
@@ -856,11 +857,14 @@ test("keeps the seeded Course Model reopen lifecycle scenario", async ({ page, r
   await expect(page.getByText("Grind Size", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Edit Course Model" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add module" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Open activity" }).click();
-  await expect(
-    page.getByRole("button", { name: "Model-call diagnostics unavailable" }),
-  ).toBeDisabled();
-  await page.getByRole("button", { name: "Close activity drawer" }).click();
+  const activityTrigger = page.getByRole("button", { name: "Open activity" });
+  await activityTrigger.click();
+  await expect(page.getByRole("heading", { name: "Diagnostics by stage" })).toBeVisible();
+  await expect(page.getByText("No live model calls have been recorded for this course.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Close activity drawer" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Activity" })).toHaveCount(0);
+  await expect(activityTrigger).toBeFocused();
 
   const reopenCourseModel = page.getByRole("button", { name: "Reopen Course Model" });
   await expect(reopenCourseModel).toBeVisible();
@@ -878,6 +882,39 @@ test("keeps the seeded Course Model reopen lifecycle scenario", async ({ page, r
   }).toBe("stale");
   await expect(page.getByText("Grind Size", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Edit Course Model" }).first()).toBeVisible();
+});
+
+test("renders canonical Package Markdown and routes its named blocker", async ({ page }) => {
+  await page.goto(
+    `/courses/${PACKAGE_PREVIEW_COURSE_ID}/package?mode=deterministic`,
+  );
+  await expect(page.getByRole("heading", { name: "Course Package" })).toBeVisible();
+  const preview = page.getByRole("region", { name: "Preview of Course index" });
+  await expect(preview.getByRole("heading", { name: "Coffee making" })).toBeVisible();
+  await expect(preview.getByRole("heading", { name: "Deliverables" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open raw file" })).toHaveAttribute(
+    "href",
+    new RegExp(`/api/courses/${PACKAGE_PREVIEW_COURSE_ID}/outputs/README\\.md$`),
+  );
+
+  await page.getByRole("button", { name: "Course overview" }).click();
+  await expect(
+    page.getByRole("region", { name: "Preview of Course overview" })
+      .getByText("Audience: General adult learners who are new to the subject."),
+  ).toBeVisible();
+
+  const blocker = page.getByRole("button", {
+    name: /Go to Human content review blocker in content, asset /,
+  });
+  await expect(blocker).toBeVisible();
+  const label = await blocker.getAttribute("aria-label");
+  const targetAsset = label?.split(", asset ").at(-1);
+  expect(targetAsset).toBeTruthy();
+  await blocker.click();
+  await expect(page).toHaveURL(
+    new RegExp(`/courses/${PACKAGE_PREVIEW_COURSE_ID}/content\\?mode=deterministic&asset=${targetAsset}$`),
+  );
+  await expect(page.locator(".production-board button.active")).toBeVisible();
 });
 
 test("Scenario A6 edits, previews, persists, and approves the typed Course Model", async ({

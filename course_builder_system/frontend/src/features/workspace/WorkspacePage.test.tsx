@@ -510,6 +510,32 @@ describe("Workspace Outcomes decisions", () => {
 });
 
 describe("Workspace Course Model decisions", () => {
+  it("blocks unavailable live mode and restores focus after keyboard-closing Activity", async () => {
+    const user = userEvent.setup();
+    const backend = courseModelFetch();
+    vi.stubGlobal("fetch", backend.fetchMock);
+    const view = renderCourseModelWorkspace();
+
+    await screen.findByRole("heading", { name: "Course Model" });
+    expect(screen.getByRole("option", { name: "Live agent" })).toBeDisabled();
+    expect(screen.getByText(/live unavailable/i)).toBeVisible();
+
+    const trigger = screen.getByRole("button", { name: "Open activity" });
+    await user.click(trigger);
+    const dialog = screen.getByRole("dialog", { name: "Activity" });
+    expect(
+      within(dialog).getByRole("button", { name: "Close activity drawer" }),
+    ).toHaveFocus();
+    const diagnostics = within(dialog).getByRole("region", { name: "Diagnostics by stage" });
+    diagnostics.focus();
+    expect(diagnostics).toHaveFocus();
+    await view.queryClient.invalidateQueries({ queryKey: ["workspace", "herb-course"] });
+    await waitFor(() => expect(diagnostics).toHaveFocus());
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "Activity" })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
   it("previews typed operations, replaces local state with the canonical draft, persists refresh, and approves separately", async () => {
     const user = userEvent.setup();
     const backend = courseModelFetch();

@@ -49,6 +49,15 @@
 > still require current checksums and impact confirmation. A credentialed live browser
 > end-to-end remains NC-1104, not evidence claimed by the injected two-topic NC-90 evals.
 
+> **NC-100 implementation update — 2026-07-20:** NC-1001 through NC-1007 passed
+> independent review. Course Builder Studio now displays persisted real-time generation
+> and targeted-repair progress, secret-safe activity and provider/model/call/token/cost/
+> cache/retry/error diagnostics, and explicit provider readiness. Every live start path
+> is readiness-gated. Package fetches and safely renders the selected canonical Markdown,
+> and backend-owned release checks navigate to the exact responsible stage or asset.
+> Keyboard, focus, status, dialog, progress, and contrast coverage is included in the
+> corrected 9-scenario Chromium acceptance run. NC-110 is the next package.
+
 ## 1. Purpose of this document
 
 This is the canonical implementation context for Course Builder Studio, the browser
@@ -736,19 +745,17 @@ content verification workbench, Lesson Plan review, and Package default selectio
 NC-301/NC-302, NC-401 through NC-405, NC-501 through NC-503, NC-601 through
 NC-603, NC-701 through NC-709, and NC-801 through NC-808 have passed independent
 review. NC-901 through NC-912 and scoped live revisions NC-303, NC-406, NC-504, and
-NC-604 are independently verified. NC-100 is the next frontend package; credentialed
-live browser proof remains NC-1104.
+NC-604 are independently verified. NC-1001 through NC-1007 are independently verified.
+NC-110 is the next package; credentialed live browser proof remains NC-1104.
 
 After that, sensible frontend increments are:
 
-1. begin NC-100 progress, diagnostics, and Package-completion work;
+1. begin NC-110 deterministic browser acceptance and follow its dependency order;
 2. preserve the independently verified NC-90 registry and no-fallback contracts;
-3. render the actual selected Markdown file inside the Package preview;
-4. preserve the reviewed Blueprint contract while extending diagnostics;
-5. preserve the reviewed Lesson Plan coverage contract while extending diagnostics;
-6. improve activity/model-call diagnostics without exposing private reasoning;
-7. add focused browser acceptance and accessibility coverage;
-8. split large routes/components if bundle growth continues.
+3. preserve NC-100's safe telemetry, readiness, Markdown, and blocker contracts;
+4. complete lifecycle/recovery and negative-source browser scenarios before NC-1104;
+5. run the bounded credentialed live workflow and second-topic regression;
+6. split large routes/components if bundle growth continues.
 
 ## 16. Handoff summary
 

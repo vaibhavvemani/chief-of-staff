@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import json
-import os
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
-from dotenv import load_dotenv
-
+import llm
 from agents import content_review
 from api.services.approval_guard import hard_verifier_blocker_count
 from api.services.artifact_repository import (
@@ -200,14 +198,7 @@ class ContentRepairService:
             raise VersionConflict(actual)
         if package.get("status") == "stale":
             raise ValueError("Content repair cannot start from a stale Content Package")
-        if mode == "live":
-            load_dotenv()
-            if not os.getenv("ANTHROPIC_API_KEY"):
-                raise RuntimeError(
-                    "Live Student Content repair requires ANTHROPIC_API_KEY on the Python server."
-                )
-        elif mode != "deterministic":
-            raise ValueError(f"unknown Content repair mode: {mode!r}")
+        self.catalog.assert_mode_ready(mode, "content")
 
         assets, subtopics = self._assets(package)
         asset_ids = tuple(target["asset_id"] for target in targets)
@@ -311,7 +302,35 @@ class ContentRepairService:
                 raise VersionConflict(self.repository.checksum(previous_package))
             previous_progress = self.repository.load(course_id, "content_progress")
             previous_review = self.repository.load(course_id, "content_review")
-            step = self.catalog.steps_for_stage("content", mode=prepared.mode)[0]
+            def emit_unit_progress(record: dict[str, Any]) -> None:
+                status = record.get("status")
+                if status == "running":
+                    event_type = "unit.started"
+                    state = "started"
+                elif status in {"failed", "pending", "evidence_gap"}:
+                    event_type = "unit.failed"
+                    state = "failed"
+                else:
+                    event_type = "unit.completed"
+                    state = "completed" if status == "completed" else "reused"
+                emit(
+                    event_type,
+                    stage="content",
+                    subtopic_id=record.get("subtopic_id"),
+                    asset_id=record.get("asset_id"),
+                    progress={
+                        "completed": record.get("completed_units", 0),
+                        "expected": record.get("expected_units"),
+                    },
+                    attempts=record.get("attempts", 0),
+                    message=f"{record.get('asset_id') or 'Content unit'} {state}",
+                )
+
+            step = self.catalog.steps_for_stage(
+                "content",
+                mode=prepared.mode,
+                progress_callback=emit_unit_progress,
+            )[0]
             inputs: dict[str, dict[str, Any]] = {}
             for artifact_type in step.consumes:
                 artifact = self.repository.require(course_id, artifact_type)
@@ -321,7 +340,17 @@ class ContentRepairService:
                     )
                 inputs[artifact_type] = artifact
             inputs["existing_content_package"] = previous_package
-            produced = step.run(inputs, prepared.feedback)
+            if prepared.mode == "live":
+                with llm.live_call_context(
+                    stage="content",
+                    course_id=course_id,
+                    max_calls=64,
+                    max_input_chars=180_000,
+                    emit=emit,
+                ):
+                    produced = step.run(inputs, prepared.feedback)
+            else:
+                produced = step.run(inputs, prepared.feedback)
             if set(produced) != {"content_package", "content_progress"}:
                 raise ValueError("Content repair step produced an unexpected artifact set")
             package = deepcopy(produced["content_package"])

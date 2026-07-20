@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from collections import defaultdict, deque
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from orchestrator import Step
 
@@ -184,40 +185,60 @@ class PipelineCatalog:
         except KeyError as exc:
             raise ValueError(f"unknown product stage: {slug!r}") from exc
 
-    def executable_steps(self, *, mode: str = "deterministic") -> dict[str, Step]:
+    def executable_steps(
+        self,
+        *,
+        mode: str = "deterministic",
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> dict[str, Step]:
         # Import lazily so read-only projection does not initialize agent clients.
         import run
 
-        implementations = self.implementation_registry.selection(mode).steps
+        implementations = self.implementation_registry.selection(
+            mode,
+            progress_callback=progress_callback,
+        ).steps
         if mode == "deterministic":
             pipeline = run.build_sprint4_acceptance_pipeline(
                 output_root=self.rendered_root,
                 implementations=implementations,
+                progress_callback=progress_callback,
             )
         elif mode == "live":
             pipeline = run.build_sprint3_pipeline(
                 live_research=True,
                 implementations=implementations,
+                progress_callback=progress_callback,
             )
         else:  # selection above supplies the authoritative mode error
             raise AssertionError("unreachable implementation mode")
         return {step.name: step for step in pipeline}
 
-    def pipeline_steps(self, *, mode: str = "deterministic") -> list[Step]:
+    def pipeline_steps(
+        self,
+        *,
+        mode: str = "deterministic",
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> list[Step]:
         """Return the ordered executable contract used to derive dependencies."""
         # Import lazily so projection and tests do not initialize live clients.
         import run
 
-        implementations = self.implementation_registry.selection(mode).steps
+        implementations = self.implementation_registry.selection(
+            mode,
+            progress_callback=progress_callback,
+        ).steps
         if mode == "deterministic":
             return run.build_sprint4_acceptance_pipeline(
                 output_root=self.rendered_root,
                 implementations=implementations,
+                progress_callback=progress_callback,
             )
         if mode == "live":
             return run.build_sprint3_pipeline(
                 live_research=True,
                 implementations=implementations,
+                progress_callback=progress_callback,
             )
         raise AssertionError("unreachable implementation mode")
 
@@ -228,9 +249,18 @@ class PipelineCatalog:
         self.stage(stage_slug)
         self.implementation_registry.assert_mode_ready(mode, stage_slug)
 
-    def steps_for_stage(self, slug: str, *, mode: str = "deterministic") -> list[Step]:
+    def steps_for_stage(
+        self,
+        slug: str,
+        *,
+        mode: str = "deterministic",
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> list[Step]:
         stage = self.stage(slug)
-        by_name = self.executable_steps(mode=mode)
+        by_name = self.executable_steps(
+            mode=mode,
+            progress_callback=progress_callback,
+        )
         return [by_name[name] for name in stage.step_names]
 
     def prerequisites_for_stage(

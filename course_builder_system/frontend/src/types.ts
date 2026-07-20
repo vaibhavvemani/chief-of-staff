@@ -592,6 +592,53 @@ export interface ActivityEvent {
   title: string;
   detail: string;
   tone?: "neutral" | "good" | "attention";
+  eventType?: string;
+  stage?: StageSlug;
+}
+
+export interface ModelCallError {
+  type: string;
+  message: string;
+  at?: string;
+}
+
+export interface ModelCallDiagnostic {
+  stage: string;
+  providers: string[];
+  models: string[];
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostUsd: number;
+  cacheHits: number;
+  retries: number;
+  errors: ModelCallError[];
+}
+
+export interface ModelCallTotals {
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostUsd: number;
+  cacheHits: number;
+  retries: number;
+  errors: number;
+}
+
+export interface ProviderReadiness {
+  ready: boolean;
+  provider: string;
+  model: string;
+  message: string;
+}
+
+export interface ReleaseCheck {
+  id: string;
+  label: string;
+  passed: boolean;
+  detail: string;
+  targetStage: StageSlug;
+  targetAssetId?: string;
 }
 
 export interface Workspace {
@@ -604,6 +651,11 @@ export interface Workspace {
   };
   artifactVersion: string;
   estimatedCost?: number;
+  providerReadiness: ProviderReadiness;
+  diagnostics: {
+    stages: ModelCallDiagnostic[];
+    totals: ModelCallTotals;
+  };
   brief: BriefData;
   outcomes: Outcome[];
   outcomesChecksum?: string;
@@ -654,6 +706,7 @@ export interface Workspace {
     renderedAssets: number;
     unresolvedBlockers: number;
     files: OutputFile[];
+    releaseChecks: ReleaseCheck[];
   };
   activity: ActivityEvent[];
   briefChecksum?: string;
