@@ -71,6 +71,19 @@
 > horticultural sources, and no medicinal, commercial, pesticide-prescription,
 > electrical-installation, or other expert-sign-off scope.
 
+> **NC-90 checkpoint — 2026-07-20:** NC-901 through NC-912 and scoped live revisions
+> NC-303, NC-406, NC-504, and NC-604 passed independent review. Contract evidence
+> covers explicit deterministic/live registry
+> ownership, original-schema validation for paid and cached structured output, bounded
+> research retries and stable result IDs, reducer-owned live proposals/revisions,
+> truthful live Brief provenance and repeat clarification, bounded live evidence repair,
+> atomic stage-plus-invalidation writes, unknown-target rejection, and explicit
+> no-fallback failures. Stage evals use an injected structured provider across indoor
+> herb gardening and bicycle maintenance and prove grounding, coverage, source routing,
+> generation/verification separation, revision scope, and repair categories. They are
+> not a credentialed Anthropic end-to-end run; that remains NC-1104. NC-100 is not
+> started, and neither Milestone 3 nor the cycle is complete.
+
 ## 1. Purpose
 
 This document defines how the next development cycle will be proven complete.
@@ -341,8 +354,8 @@ audience, and resolve it.
 **Current checkpoint status:** The NC-401 through NC-403 backend portion is independently
 verified. NC-404 and NC-405 passed independent review with deterministic browser evidence
 for the operator actions below, including allocated request-local IDs and the added,
-renamed, and moved/reordered diff before save. NC-40 is not complete because NC-406
-remains deferred to NC-90.
+renamed, and moved/reordered diff before save. NC-406 is independently verified behind
+NC-904.
 
 **Operator action**
 

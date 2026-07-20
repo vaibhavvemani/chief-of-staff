@@ -34,10 +34,18 @@ class ImpactPreviewService:
     ) -> dict[str, Any]:
         stage = self.catalog.stage(stage_slug)
         all_assets = self._content_assets(course_id)
-        bounded_revision = action == "revise" and stage_slug == "content"
-        if bounded_revision:
-            if target_type != "asset" or not target_ids:
-                raise ValueError("a scoped Content revision impact requires named asset targets")
+        scoped_revision = action == "revise"
+        bounded_content_revision = scoped_revision and stage_slug == "content"
+        if scoped_revision:
+            registered_targets = {
+                revision.target_type
+                for revision in self.catalog.registered_capabilities(stage_slug).revisions
+            }
+            if target_type not in registered_targets or not target_ids:
+                raise ValueError(
+                    f"a scoped {stage.label} revision impact requires named "
+                    f"{sorted(registered_targets)} targets"
+                )
             normalized_targets = [
                 item.strip() for item in target_ids if isinstance(item, str) and item.strip()
             ]
@@ -45,12 +53,21 @@ class ImpactPreviewService:
                 normalized_targets
             ):
                 raise ValueError("impact target IDs must be non-empty and unique")
-            unknown = sorted(set(normalized_targets) - set(all_assets))
+            known_targets = self._revision_target_ids(course_id, stage_slug, str(target_type))
+            unknown = sorted(set(normalized_targets) - known_targets)
             if unknown:
-                raise ValueError("unknown impact target asset(s): " + ", ".join(unknown))
-            downstream = ("render_manifest", "run_summary")
-            targeted_assets = sorted(normalized_targets)
-            preserved_assets = sorted(set(all_assets) - set(targeted_assets))
+                raise ValueError(
+                    f"unknown impact target {target_type}(s): " + ", ".join(unknown)
+                )
+            if bounded_content_revision:
+                downstream = ("render_manifest", "run_summary")
+                targeted_assets = sorted(normalized_targets)
+                preserved_assets = sorted(set(all_assets) - set(targeted_assets))
+            else:
+                downstream = self.catalog.downstream_artifacts(set(stage.artifacts))
+                content_is_affected = "content_package" in downstream
+                targeted_assets = sorted(all_assets) if content_is_affected else []
+                preserved_assets = [] if content_is_affected else sorted(all_assets)
         else:
             general_course_model_edit = action == "edit" and stage_slug == "course-model"
             if action != "reopen" and not general_course_model_edit:
@@ -76,12 +93,20 @@ class ImpactPreviewService:
             for artifact_type in stage.artifacts
             if self.repository.load(course_id, artifact_type) is not None
         ]
-        if bounded_revision and self.repository.load(course_id, "content_review") is not None:
+        if (
+            bounded_content_revision
+            and self.repository.load(course_id, "content_review") is not None
+        ):
             direct.append("content_review")
         rerun_stages = self.catalog.stages_for_artifacts(downstream)
         warnings: list[str] = []
-        if bounded_revision:
+        if bounded_content_revision:
             warnings.append("The changed learner asset will require human review again.")
+        elif scoped_revision:
+            warnings.append(
+                f"Only the named {target_type} records may change, but saved downstream "
+                "artifacts will still become stale."
+            )
         if "content_package" in existing_downstream:
             warnings.append("Approved learner content will require generation and review again.")
         if "render_manifest" in existing_downstream or "run_summary" in existing_downstream:
@@ -92,7 +117,7 @@ class ImpactPreviewService:
             stage_slug,
             targeted_assets,
             preserved_assets,
-            bounded=bounded_revision,
+            bounded=bounded_content_revision,
         )
         fingerprint_payload = {
             "action": action,
@@ -132,6 +157,49 @@ class ImpactPreviewService:
             if isinstance(subtopic, dict)
             for asset in subtopic.get("assets", [])
             if isinstance(asset, dict) and asset.get("id")
+        }
+
+    def _revision_target_ids(
+        self,
+        course_id: str,
+        stage_slug: str,
+        target_type: str,
+    ) -> set[str]:
+        if stage_slug == "content" and target_type == "asset":
+            return set(self._content_assets(course_id))
+        artifact_type, collection, key = {
+            ("outcomes", "outcome"): ("course_outcomes", "outcomes", "id"),
+            ("blueprint", "subtopic"): (
+                "blueprint",
+                "subtopic_plans",
+                "subtopic_id",
+            ),
+        }.get((stage_slug, target_type), (None, None, None))
+        if stage_slug == "course-model" and target_type == "subtopic":
+            artifact = self.repository.load(course_id, "course_model") or {}
+            return {
+                str(item["id"])
+                for module in artifact.get("body", {}).get("modules", [])
+                if isinstance(module, dict)
+                for item in module.get("subtopics", [])
+                if isinstance(item, dict) and item.get("id")
+            }
+        if stage_slug == "lesson-plan" and target_type == "subtopic":
+            artifact = self.repository.load(course_id, "lesson_plan") or {}
+            return {
+                str(cover["subtopic_id"])
+                for session in artifact.get("body", {}).get("sessions", [])
+                if isinstance(session, dict)
+                for cover in session.get("covers", [])
+                if isinstance(cover, dict) and cover.get("subtopic_id")
+            }
+        if artifact_type is None or collection is None or key is None:
+            return set()
+        artifact = self.repository.load(course_id, artifact_type) or {}
+        return {
+            str(item[key])
+            for item in artifact.get("body", {}).get(collection, [])
+            if isinstance(item, dict) and item.get(key)
         }
 
     @staticmethod

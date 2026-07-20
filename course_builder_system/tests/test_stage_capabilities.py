@@ -53,7 +53,7 @@ def test_target_state_vocabulary_is_exhaustive_and_has_an_action_treatment() -> 
     }
 
 
-def test_capability_matrix_never_projects_unregistered_generic_revisions() -> None:
+def test_capability_matrix_projects_only_registered_scoped_revisions() -> None:
     catalog = PipelineCatalog()
     capabilities = StageCapabilityService(catalog)
 
@@ -65,14 +65,41 @@ def test_capability_matrix_never_projects_unregistered_generic_revisions() -> No
             approval_failures=[],
         )
         revision = next((item for item in actions if item["id"] == "revise"), None)
-        if stage.slug == "content":
-            assert revision is not None
-            assert revision["revision_targets"] == [
+        expected = {
+            "outcomes": [
+                {
+                    "target_type": "outcome",
+                    "categories": ["scope", "clarity", "evidence"],
+                }
+            ],
+            "course-model": [
+                {
+                    "target_type": "subtopic",
+                    "categories": ["scope", "structure"],
+                }
+            ],
+            "blueprint": [
+                {
+                    "target_type": "subtopic",
+                    "categories": ["depth", "structure"],
+                }
+            ],
+            "content": [
                 {
                     "target_type": "asset",
                     "categories": ["clarity", "depth", "evidence"],
                 }
-            ]
+            ],
+            "lesson-plan": [
+                {
+                    "target_type": "subtopic",
+                    "categories": ["delivery", "sequence"],
+                }
+            ],
+        }.get(stage.slug)
+        if expected is not None:
+            assert revision is not None
+            assert revision["revision_targets"] == expected
         else:
             assert revision is None
 
@@ -128,7 +155,7 @@ def test_course_model_edit_is_available_only_at_reviewable_mutable_checkpoints()
 
     for state in ("awaiting_review", "requires_attention"):
         actions = service.actions("course-model", state, read_only=False)
-        assert [item["id"] for item in actions] == ["edit", "approve"]
+        assert [item["id"] for item in actions] == ["edit", "revise", "approve"]
         assert actions[0]["label"] == "Edit Course Model"
 
     assert [

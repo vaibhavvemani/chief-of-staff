@@ -29,6 +29,14 @@
 > reverification remain NC-80 work; NC-80 is next.
 > This does not complete Milestone 3 or the cycle.
 
+> **Current implementation update — 2026-07-20:** NC-801 through NC-808 subsequently
+> passed independent review. NC-901 through NC-912 and scoped live revisions NC-303,
+> NC-406, NC-504, and NC-604 passed independent NC-90 review.
+> Live and deterministic ownership is explicit, live output is schema-validated and
+> reducer-owned, and provider failure never falls back silently. Two-topic injected
+> stage evals do not replace the credentialed live end-to-end required by NC-1104.
+> NC-100 and later packages remain unstarted; Milestone 3 and the cycle are incomplete.
+
 ## 1. Purpose of this document
 
 This document is the active plan for the development cycle after the first Course
@@ -140,14 +148,14 @@ The most important gaps are not cosmetic.
 | Area | Current behavior | Required direction |
 |---|---|---|
 | Brief questions | Typed question and gap-detection primitives exist in Python, but the browser immediately creates a default Brief. | Expose the question contract through the API and implement bounded question rounds. |
-| Outcomes editing | NC-301 and NC-302 now provide independently verified strict deterministic reduction and a typed React editor. | Preserve the typed contract and keep NC-303 live scoped revision deferred to NC-90 behind NC-902. |
-| Blueprint editing | NC-501 through NC-503 provide an independently verified typed reducer/API, browser defaults and exceptions editor, reconciliation preview, and deterministic Scenario A7 evidence. | Keep NC-504 live revision deferred to NC-90 behind NC-905. |
-| Course Model editing | NC-401 through NC-405 provide an independently verified typed backend mutation contract, browser editor, and exact-preview detailed diff with deterministic Scenario A6 evidence. | Keep NC-406 live revision unstarted until its NC-90 dependencies are complete. |
-| Lesson Plan editing | NC-601 through NC-603 provide independently verified typed constraints/operations, conflict-safe browser controls, exact Course Model coverage, stable session IDs, bounded preservation, and Scenario A12 evidence. | Keep NC-604 live revision deferred to NC-90 behind NC-908. |
+| Outcomes editing | NC-301 and NC-302 provide independently verified deterministic reduction and a typed React editor; NC-303 adds a bounded live scoped revision path. | Complete independent NC-90 review without weakening the typed reducer. |
+| Blueprint editing | NC-501 through NC-503 provide the verified deterministic reducer/UI; NC-504 adds bounded live asset/depth proposals with semantic context. | Complete independent NC-90 review and preserve exact reconciliation/source routing. |
+| Course Model editing | NC-401 through NC-405 provide the verified deterministic contract/UI; NC-406 adds reducer-owned scoped live updates. | Complete independent NC-90 review and preserve exact target scope. |
+| Lesson Plan editing | NC-601 through NC-603 provide the verified deterministic contract/UI; NC-604 adds live delivery and real sequence operations. | Complete independent NC-90 review and preserve exact coverage/non-target order. |
 | Generic revision | Several stage steps accept feedback at the API boundary but ignore it in the step implementation. | Show revision actions only when a real scoped handler exists. |
 | Reopening | The API has a reopen command, but React does not expose it consistently. | Add explicit reopen and downstream-impact confirmation. |
-| Source repair | NC-701 through NC-709 provide an independently verified bounded workflow for reviewable quality, proposed candidates, human approval, and exact atomic routing. Content remains unchanged at `awaiting_content_repair`. | Complete targeted regeneration, reverification, and review closure in NC-80 without weakening the NC-70 source contract. |
-| Live mode | Research and Student Content/verification are live; several upstream proposal stages remain deterministic. | Add live implementations behind the same stage contracts. |
+| Source repair | NC-701 through NC-709 and NC-801 through NC-808 provide verified bounded source/content repair and review closure; NC-912 adds a bounded live candidate provider. | Complete independent NC-90 review without weakening human source authority. |
+| Live mode | NC-901 through NC-912 provide explicit live implementations or explicit reused live responsibilities behind one registry. | Complete independent NC-90 review, then add NC-100 diagnostics and NC-110 browser proof. |
 | Progress | The browser receives stage events, but content unit events are not emitted continuously during generation. | Connect generation callbacks to persisted progress events. |
 | Activity | The visual surface exists, but activity, diagnostics, and cost data are incomplete or placeholder-like. | Project real safe events and stage-level call summaries. |
 | Package preview | Raw Markdown can be opened, but the inline preview is representative content. | Fetch and render the actual selected file. |
@@ -425,18 +433,18 @@ operator-relevant decisions.
 ### 9.2 Outcomes
 
 **Implementation status (2026-07-20):** NC-301 and NC-302 have passed independent
-checkpoint review. This does not complete the Milestone 3 exit gate. NC-303 remains
-deferred to NC-90 behind NC-902. NC-401 through NC-403 are implemented with
+checkpoint review. NC-303 is independently verified behind NC-902.
+This does not complete the Milestone 3 exit gate. NC-401 through NC-403 have
 deterministic backend evidence and have passed independent NC-40 backend checkpoint
 review. NC-404 and NC-405 are independently verified with deterministic browser Scenario
-A6 evidence, including the exact-preview structural diff. NC-40 is not complete; NC-406
-remains deferred to NC-90. NC-501 through NC-503 are independently verified with
-deterministic browser Scenario A7 evidence. NC-504 remains deferred behind NC-905;
-NC-601 through NC-603 are independently verified with deterministic browser Scenario
-A12 evidence. NC-604 remains deferred behind NC-908. NC-701 through NC-709 are
+A6 evidence, including the exact-preview structural diff. NC-406, NC-504, and NC-604
+are independently verified behind their NC-90 dependencies.
+NC-501 through NC-503 are independently verified with deterministic browser Scenario A7
+evidence; NC-601 through NC-603 are independently verified with deterministic browser
+Scenario A12 evidence. NC-701 through NC-709 are
 independently verified with deterministic browser evidence for Scenario A10's source-
-decision and route phase. Targeted Content regeneration and reverification remain
-NC-80 work; NC-80 and later packages remain unstarted.
+decision and route phase. NC-801 through NC-808 and NC-901 through NC-912 are
+independently verified; NC-100 remains unstarted.
 
 1. Wire the existing typed Outcomes API command into React.
 2. Support add, edit, remove, reorder, evidence, cognitive level, and priority.
@@ -465,8 +473,8 @@ NC-80 work; NC-80 and later packages remain unstarted.
 
 **Implementation status (2026-07-20):** NC-501 through NC-503 are independently
 verified, including exact defaults/exceptions, anchor and source boundaries,
-reconciliation, concurrency recovery, and deterministic browser Scenario A7. NC-504
-remains deferred to NC-90 behind NC-905.
+reconciliation, concurrency recovery, and deterministic browser Scenario A7. NC-504 is
+independently verified behind NC-905.
 
 1. Wire the existing typed Blueprint decision API into React.
 2. Support applying course-wide defaults.
@@ -482,7 +490,7 @@ remains deferred to NC-90 behind NC-905.
 verified, including typed constraints and operations, Course Model-authoritative exact
 coverage, monotonic session identity, intent-aware conflict rebasing, exact affected-
 session reporting, bounded preservation, and deterministic browser Scenario A12.
-NC-604 remains deferred to NC-90 behind NC-908.
+NC-604 is independently verified behind NC-908.
 
 1. Add a typed Lesson Plan constraints command.
 2. Support maximum session length, default delivery mode, and relevant live constraints.

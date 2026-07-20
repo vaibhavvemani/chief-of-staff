@@ -1,0 +1,24 @@
+[
+  {
+    "course_id": "live-eval-herbs",
+    "subject": "Indoor herb gardening for apartment beginners",
+    "audience": "Apartment beginners",
+    "must_have_topics": [
+      "light and containers",
+      "watering and feeding",
+      "pruning and harvesting"
+    ],
+    "excluded": "medicinal or commercial cultivation"
+  },
+  {
+    "course_id": "live-eval-bike",
+    "subject": "Everyday bicycle maintenance for new commuters",
+    "audience": "New bicycle commuters",
+    "must_have_topics": [
+      "pre-ride safety checks",
+      "tyre and chain care",
+      "basic roadside troubleshooting"
+    ],
+    "excluded": "structural frame repair or expert certification"
+  }
+]

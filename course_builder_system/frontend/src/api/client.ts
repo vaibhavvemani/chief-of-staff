@@ -1397,10 +1397,36 @@ export async function getBriefQuestions(courseId: string): Promise<BriefQuestion
   };
 }
 
+export async function runBriefClarifications(
+  courseId: string,
+  mode: "deterministic" | "live",
+  expectedChecksum: string,
+): Promise<BriefQuestionRound> {
+  const response = await apiFetch<Record<string, unknown>>(
+    `/api/courses/${encodeURIComponent(courseId)}/brief/clarifications/run`,
+    {
+      method: "POST",
+      body: JSON.stringify({ mode, expected_checksum: expectedChecksum }),
+    },
+  );
+  const questions = asArray(response.questions).flatMap((item) => {
+    const question = normalizeQuestion(item);
+    return question ? [question] : [];
+  });
+  return {
+    questions,
+    roundKind: asRoundKind(response.round_kind),
+    gapAnalysis: normalizeGapAnalysis(response.gap_analysis),
+    intakeState: normalizeIntakeState(response.intake_state),
+    checksum: asString(response.checksum),
+  };
+}
+
 export async function saveBriefAnswers(
   courseId: string,
   answers: BriefQuestionAnswer[],
   expectedChecksum: string,
+  mode: "deterministic" | "live" = "deterministic",
 ): Promise<{ checksum?: string }> {
   return apiFetch<{ checksum?: string }>(`/api/courses/${encodeURIComponent(courseId)}/brief/answers`, {
     method: "PUT",
@@ -1412,6 +1438,7 @@ export async function saveBriefAnswers(
         ...(answer.skip ? { skip: true } : {}),
       })),
       expected_checksum: expectedChecksum,
+      mode,
     }),
   });
 }

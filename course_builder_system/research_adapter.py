@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import html
 import re
 import time
@@ -88,10 +89,19 @@ class BoundedLiveResearchProvider:
         if limit < 1:
             return []
         locator = self.search_url_template.format(query=quote_plus(query))
-        try:
-            status_code, headers, payload = self._fetch_bytes(locator)
-        except (HTTPError, URLError, TimeoutError, OSError):
-            return []
+        for attempt in range(self.max_retries + 1):
+            try:
+                status_code, headers, payload = self._fetch_bytes(locator)
+                if status_code == 429 or status_code >= 500:
+                    if attempt == self.max_retries:
+                        return []
+                    time.sleep(self.retry_backoff_s * (attempt + 1))
+                    continue
+                break
+            except (HTTPError, URLError, TimeoutError, OSError):
+                if attempt == self.max_retries:
+                    return []
+                time.sleep(self.retry_backoff_s * (attempt + 1))
         if status_code >= 400:
             return []
         content_type = headers.get("content-type", headers.get("Content-Type", ""))
@@ -112,7 +122,7 @@ class BoundedLiveResearchProvider:
                 continue
             results.append(
                 SearchResult(
-                    id=f"live_{len(results) + 1}",
+                    id=_live_result_id(normalized),
                     title=title[:180],
                     locator=normalized,
                     snippet=f"Live search result for: {query}",
@@ -169,6 +179,18 @@ class BoundedLiveResearchProvider:
             try:
                 status_code, headers, payload = self._fetch_bytes(locator)
                 content_type = headers.get("content-type", headers.get("Content-Type", ""))
+                if status_code == 429 or status_code >= 500:
+                    last_reason = f"HTTP {status_code}"
+                    if attempt < self.max_retries:
+                        time.sleep(self.retry_backoff_s * (attempt + 1))
+                        continue
+                    return FetchResult(
+                        locator=locator,
+                        ok=False,
+                        reason=last_reason,
+                        content_type=content_type,
+                        status_code=status_code,
+                    )
                 if status_code >= 400:
                     return FetchResult(
                         locator=locator,
@@ -206,6 +228,12 @@ class BoundedLiveResearchProvider:
             if len(payload) > self.max_bytes:
                 raise OSError(f"response exceeded max_bytes={self.max_bytes}")
             return response.status, dict(response.headers.items()), payload
+
+
+def _live_result_id(locator: str) -> str:
+    """Return a stable reference even when search ranking order changes."""
+    digest = hashlib.sha256(locator.encode("utf-8")).hexdigest()[:16]
+    return f"live_{digest}"
 
 
 class MockResearchProvider:

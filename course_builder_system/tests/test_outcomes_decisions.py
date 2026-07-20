@@ -440,7 +440,11 @@ def test_initial_decision_with_missing_checksum_saves_draft_and_survives_refresh
     assert refreshed["checksum"] == decided["checksum"]
     assert refreshed["artifact"]["body"]["next_outcome_id"] == 6
     stage = client.get("/api/courses/initial-outcomes/stages/outcomes").json()
-    assert {action["id"] for action in stage["actions"]} == {"edit", "approve"}
+    assert {action["id"] for action in stage["actions"]} == {
+        "edit",
+        "revise",
+        "approve",
+    }
     assert stage["advisories"] == decided["advisories"]
 
 

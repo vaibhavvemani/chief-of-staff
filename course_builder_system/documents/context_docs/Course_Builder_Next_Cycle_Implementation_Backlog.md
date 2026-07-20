@@ -1,6 +1,6 @@
 # Course Builder — Next Cycle Implementation Backlog
 
-> **Status:** NC-003 resolved; NC-801 through NC-808 independently verified
+> **Status:** NC-90 independently verified; NC-100 next
 > **Updated:** 2026-07-20
 > **Planning model:** Dependency and exit-gate driven; no fixed calendar estimate  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`  
@@ -48,23 +48,24 @@ Unless a task says otherwise, it is complete only when:
 ## 4. Dependency overview
 
 Implementation checkpoint (2026-07-20): NC-002 through NC-005, NC-101 through
-NC-109, NC-201 through NC-207, NC-301, and NC-302 are independently verified. NC-303
-remains deferred to NC-90 behind NC-902. NC-401 through NC-403 passed independent NC-40
+NC-109, NC-201 through NC-207, NC-301, and NC-302 are independently verified. NC-401
+through NC-403 passed independent NC-40
 backend checkpoint review on 2026-07-20 after corrective hardening. NC-40 is not
 complete. NC-404 is independently verified with deterministic browser Scenario A6
 evidence. NC-405 is independently verified with deterministic browser Scenario A6 diff
 evidence. NC-501 through NC-503 are independently verified with deterministic browser
-Scenario A7 evidence after corrective lifecycle/source-authority hardening. NC-406 and
-NC-504 remain deferred to NC-90. NC-601 through NC-603 are independently verified with
+Scenario A7 evidence after corrective lifecycle/source-authority hardening. NC-601
+through NC-603 are independently verified with
 deterministic browser Scenario A12 evidence after corrective conflict-rebase, stable-ID,
-Course Model-authority, and affected-session hardening. NC-604 remains deferred to NC-90
-behind NC-908. NC-701 through NC-709 are independently verified with deterministic
+Course Model-authority, and affected-session hardening. NC-701 through NC-709 are
+independently verified with deterministic
 browser evidence for Scenario A10's source-decision and route phase. NC-801 through
 NC-808 are independently verified with deterministic browser Scenarios A8 through A11
 evidence, including both repair strategies, target-only regeneration, truthful blocker
-and review state, and typed failure/restart recovery. NC-90 and every later package
-remain unstarted. This status note does not mark Milestone 3, NC-40, or any later
-package complete.
+and review state, and typed failure/restart recovery. NC-901 through NC-912 and scoped
+live revisions NC-303, NC-406, NC-504, and NC-604 passed independent NC-90 checkpoint
+review. NC-100 and later packages remain unstarted. This
+status note does not mark Milestone 3 or the cycle complete.
 
 ```text
 NC-00 acceptance foundation
@@ -390,13 +391,14 @@ complete inputs do not receive unnecessary questions; the contract is ready for 
 ## 8. Work package NC-30 — Outcomes decisions
 
 **Implementation status (2026-07-20):** NC-301 and NC-302 have passed independent
-checkpoint review. NC-303 remains deferred to NC-90 behind NC-902 and has not started.
+checkpoint review. NC-303 is independently verified behind NC-902.
 NC-401 through NC-403 are independently verified after the NC-40 backend checkpoint.
 NC-404 is independently verified with deterministic browser Scenario A6 evidence.
 NC-405 is independently verified with deterministic browser evidence. NC-40 is not
 complete. NC-501 through NC-503 and NC-601 through NC-603 are independently verified.
-NC-406, NC-504, and NC-604 remain deferred. NC-701 through NC-709 and NC-801 through
-NC-808 are independently verified; NC-90 and every later package remain unstarted.
+NC-406, NC-504, and NC-604 are independently verified behind their NC-90 dependencies. NC-701
+through NC-709 and NC-801 through NC-808 are independently verified; NC-90 review is
+pending and NC-100 remains unstarted.
 
 ### Tasks
 
@@ -436,7 +438,7 @@ NC-808 are independently verified; NC-90 and every later package remain unstarte
 
 - **Priority:** P0-L
 - **Dependencies:** NC-107, NC-902
-- **Status:** Deferred to NC-90 behind NC-902; not started.
+- **Status:** Independently verified behind NC-902.
 - Target named outcomes/categories.
 - Reduce live output through the Outcomes validator.
 
@@ -457,11 +459,10 @@ backend checkpoint review after corrective hardening. This does not complete NC-
 NC-404 is independently verified with deterministic browser Scenario A6 evidence.
 NC-405 is independently verified with deterministic browser Scenario A6 diff evidence.
 NC-501 through NC-503 are independently verified with deterministic browser Scenario A7
-evidence. NC-40 is not complete because NC-406 remains deferred to NC-90. NC-504 is
-also deferred to NC-90 behind NC-905. NC-601 through NC-603 are independently verified
-with deterministic browser Scenario A12 evidence; NC-604 remains deferred behind
-NC-908. NC-701 through NC-709 and NC-801 through NC-808 are independently verified;
-NC-90 and every later package remain unstarted.
+evidence. NC-406, NC-504, and NC-604 are implemented behind their NC-90 dependencies
+and independently verified. NC-601 through NC-603 are independently verified with
+deterministic browser Scenario A12 evidence. NC-701 through NC-709 and NC-801 through
+NC-808 are independently verified; NC-100 remains unstarted.
 
 ### Tasks
 
@@ -514,7 +515,7 @@ NC-90 and every later package remain unstarted.
 
 - **Priority:** P0-L
 - **Dependencies:** NC-403, NC-904
-- **Status:** Not started.
+- **Status:** Independently verified behind NC-904.
 - Ask the model for structured operations, not a replacement artifact.
 - Validate/reduce through the same batch service.
 
@@ -532,7 +533,7 @@ through the same typed operations.
 **Implementation status (2026-07-20):** NC-501 through NC-503 passed independent
 checkpoint review with deterministic browser Scenario A7 evidence. Corrective review
 closed draft/stale Course Model mutation and rejected/contentless source-route leaks
-with exact no-mutation regressions. NC-504 remains deferred to NC-90 behind NC-905.
+with exact no-mutation regressions. NC-504 is independently verified behind NC-905.
 
 ### Tasks
 
@@ -564,7 +565,7 @@ with exact no-mutation regressions. NC-504 remains deferred to NC-90 behind NC-9
 
 - **Priority:** P0-L
 - **Dependencies:** NC-107, NC-905
-- **Status:** Deferred to NC-90 behind NC-905; unstarted.
+- **Status:** Independently verified behind NC-905.
 - Request structured selected-asset/depth changes.
 - Validate through the deterministic reducer.
 
@@ -582,7 +583,7 @@ anchor or source rules.
 review with deterministic browser Scenario A12 evidence. The reviewed contract covers
 typed constraints and session operations, ordered Course Model-authoritative coverage,
 monotonic session IDs, intent-aware checksum-conflict rebasing, bounded preservation,
-and exact affected-session reporting. NC-604 remains deferred to NC-90 behind NC-908.
+and exact affected-session reporting. NC-604 is independently verified behind NC-908.
 
 ### Tasks
 
@@ -610,6 +611,7 @@ and exact affected-session reporting. NC-604 remains deferred to NC-90 behind NC
 
 - **Priority:** P0-L
 - **Dependencies:** NC-601, NC-908
+- **Status:** Independently verified behind NC-908.
 - Request structured constraint/operation proposals.
 - Validate exact coverage deterministically.
 
@@ -800,6 +802,12 @@ secret-safe typed failure/retry, and process-restart recovery.
 
 ## 14. Work package NC-90 — Live-agent parity
 
+**Implementation status (2026-07-20):** NC-901 through NC-912 and the dependency-gated
+scoped live revisions NC-303, NC-406, NC-504, and NC-604 passed independent checkpoint
+review. Evidence uses injected structured providers on indoor
+herb gardening and bicycle maintenance; it is not a credentialed Anthropic end-to-end
+run, which remains NC-1104.
+
 ### Goal
 
 Replace deterministic proposals behind stable contracts, one stage at a time.
@@ -808,6 +816,7 @@ Replace deterministic proposals behind stable contracts, one stage at a time.
 
 #### NC-901 — Add provider-neutral implementation registry
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-10 package exit
 - Resolve deterministic/live callables for each stage through pipeline factories.
@@ -815,30 +824,35 @@ Replace deterministic proposals behind stable contracts, one stage at a time.
 
 #### NC-902 — Live Outcomes implementation
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-301, NC-901
 - Add structured output, validation, cache/cost logs, and eval fixtures.
 
 #### NC-903 — Live Research implementation hardening
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-901
 - Add bounded search planning/tool use, ranking inputs, retries, and safe failures.
 
 #### NC-904 — Live Course Model implementation
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-403, NC-901
 - Generate validated structure or operations from approved inputs only.
 
 #### NC-905 — Live Blueprint implementation
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-501, NC-901
 - Generate selected assets/depth proposals through the deterministic reducer.
 
 #### NC-906 — Live Student Content regression hardening
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-901
 - Preserve current context slicing, source bounds, cache, verification, and targeted
@@ -846,24 +860,28 @@ Replace deterministic proposals behind stable contracts, one stage at a time.
 
 #### NC-907 — Live Verification regression hardening
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-906
 - Verify separation from generation, result parsing, attribution, and repair categories.
 
 #### NC-908 — Live Lesson Plan implementation
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-601, NC-901
 - Generate validated sessions/operations under deterministic coverage constraints.
 
 #### NC-909 — Live Brief clarification/synthesis
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-206, NC-901
 - Propose bounded validated questions and optional structured Brief revisions.
 
 #### NC-912 — Live bounded evidence-repair provider
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-706, NC-903
 - Connect the Source Repair job to live bounded search/extraction.
@@ -872,6 +890,7 @@ Replace deterministic proposals behind stable contracts, one stage at a time.
 
 #### NC-910 — Stage-level live eval suite
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-902 through NC-909 and NC-912 as applicable
 - Cover schema validity, instruction adherence, domain neutrality, grounding, coverage,
@@ -879,6 +898,7 @@ Replace deterministic proposals behind stable contracts, one stage at a time.
 
 #### NC-911 — Prevent silent live fallback
 
+- **Status:** Independently verified.
 - **Priority:** P0-L
 - **Dependencies:** NC-901
 - Make provider failure explicit.

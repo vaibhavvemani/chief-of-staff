@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -16,8 +16,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+import llm
+from agents.live_stages import (
+    AnthropicStructuredModelProvider,
+    LiveClarificationProvider,
+    StructuredModelProvider,
+)
 from agents.outcomes import OutcomeDecisionValidationError, outcome_advisories
-from agents.source_repair import SourceRepairProvider
+from agents.source_repair import LiveSourceRepairProvider, SourceRepairProvider
 from api.models import (
     ApproveStageCommand,
     BlueprintDecisionCommand,
@@ -78,6 +84,8 @@ from course_model_operations import (
     CourseModelValidationError,
     carry_forward_course_model_allocation,
 )
+from implementation_registry import build_default_implementation_registry
+from research_adapter import ResearchProvider
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -91,6 +99,8 @@ def create_app(
     include_examples: bool = True,
     deterministic_source_repair_provider: SourceRepairProvider | None = None,
     live_source_repair_provider: SourceRepairProvider | None = None,
+    structured_model_provider: StructuredModelProvider | None = None,
+    live_research_provider_factory: Callable[[], ResearchProvider] | None = None,
 ) -> FastAPI:
     repo_root = repo_root.resolve()
     repository = ArtifactRepository(
@@ -99,9 +109,22 @@ def create_app(
         rendered_root=rendered_root,
         include_examples=include_examples,
     )
-    catalog = PipelineCatalog(rendered_root=repository.rendered_root)
+    model_provider = structured_model_provider or AnthropicStructuredModelProvider()
+    implementation_registry = build_default_implementation_registry(
+        rendered_root=repository.rendered_root,
+        model_provider=model_provider,
+        research_provider_factory=live_research_provider_factory,
+    )
+    catalog = PipelineCatalog(
+        rendered_root=repository.rendered_root,
+        implementation_registry=implementation_registry,
+    )
     jobs = LocalJobRunner(runtime_root or repo_root / "runtime")
-    brief_intake = BriefIntakeService()
+    brief_intake = BriefIntakeService(
+        clarification_providers={
+            "live": LiveClarificationProvider(model_provider),
+        }
+    )
     guards = ApprovalGuardService(repository, catalog, brief_intake=brief_intake)
     capabilities = StageCapabilityService(catalog)
     impact = ImpactPreviewService(repository, catalog)
@@ -127,7 +150,7 @@ def create_app(
     source_repairs = SourceRepairService(
         repository,
         deterministic_provider=deterministic_source_repair_provider,
-        live_provider=live_source_repair_provider,
+        live_provider=live_source_repair_provider or LiveSourceRepairProvider(),
     )
     for recovered_job in jobs.recovered_interrupted_jobs():
         if recovered_job.get("operation") != "content_repair":
@@ -270,6 +293,10 @@ def create_app(
     async def _ambiguous_revision(_request: Request, exc: AmbiguousRevision):
         return _error_response(400, str(exc), extra={"code": "ambiguous_revision"})
 
+    @app.exception_handler(llm.ProviderNotReady)
+    async def _provider_not_ready(_request: Request, exc: llm.ProviderNotReady):
+        return _error_response(503, str(exc), extra={"code": "provider_not_ready"})
+
     @app.exception_handler(OutcomeDecisionValidationError)
     async def _invalid_outcome_decision(_request: Request, exc: OutcomeDecisionValidationError):
         return _error_response(
@@ -293,11 +320,19 @@ def create_app(
     @app.get("/api/health")
     def health() -> dict[str, Any]:
         load_dotenv()
+        live_readiness = catalog.provider_readiness()
         return {
             "status": "ok",
             "provider_readiness": {
                 "deterministic": True,
-                "live_anthropic": bool(os.getenv("ANTHROPIC_API_KEY")),
+                # Preserve the original compact readiness flag for older clients,
+                # while exposing the provider-neutral safe diagnostic contract.
+                "live_anthropic": (
+                    live_readiness.get("ready") is True
+                    if live_readiness.get("provider") == "anthropic"
+                    else False
+                ),
+                "live": live_readiness,
             },
             "frontend_built": (frontend_dist / "index.html").is_file(),
         }
@@ -475,7 +510,7 @@ def create_app(
             "instruction": command.instruction,
         }
         # Reject unsupported, unknown, or cross-subtopic targets before a job exists.
-        revisions.prepare(course_id, stage_slug, **revision_payload)
+        revisions.prepare(course_id, stage_slug, mode=command.mode, **revision_payload)
         current_impact = impact.preview(
             course_id,
             stage_slug,
@@ -519,6 +554,13 @@ def create_app(
         job = jobs.submit(
             course_id=course_id,
             stage=stage_slug,
+            operation="revision",
+            context={
+                "mode": command.mode,
+                "target_type": command.target_type,
+                "target_ids": ",".join(command.target_ids),
+                "category": command.category,
+            },
             task=execute_revision,
         )
         return _job_accepted(job)
@@ -544,16 +586,33 @@ def create_app(
         course_id: str,
         command: BriefClarificationCommand,
     ) -> dict[str, Any]:
-        # NC-20 always runs deterministic gap detection. ``mode`` reserves the
-        # provider-neutral command shape for NC-909 without invoking a model here.
         brief = repository.require(course_id, "brief")
         checksum = repository.checksum(brief)
         if checksum != command.expected_checksum:
             raise VersionConflict(checksum)
         subject = repository.require(course_id, "subject_request")
         normalized = brief_intake.normalize_artifact(subject, brief)
+        catalog.assert_mode_ready(command.mode, "brief")
+        if command.mode == "live":
+            with llm.live_call_context(
+                stage="brief",
+                course_id=course_id,
+                max_calls=1,
+                max_input_chars=60_000,
+            ):
+                round_data = brief_intake.question_round(
+                    subject,
+                    normalized.get("body", {}),
+                    mode="live",
+                )
+        else:
+            round_data = brief_intake.question_round(
+                subject,
+                normalized.get("body", {}),
+                mode="deterministic",
+            )
         return serialize_round(
-            brief_intake.question_round(subject, normalized.get("body", {})),
+            round_data,
             checksum=checksum,
         )
 
@@ -561,10 +620,28 @@ def create_app(
     def brief_answers(course_id: str, command: BriefAnswersCommand) -> dict[str, Any]:
         with jobs.mutate_now(course_id):
             _check_artifact_version(repository, course_id, "brief", command.expected_checksum)
-            value = decisions.save_brief_answers(
-                course_id,
-                [answer.model_dump(exclude_unset=True) for answer in command.answers],
-            )
+            catalog.assert_mode_ready(command.mode, "brief")
+            answers = [
+                answer.model_dump(exclude_unset=True) for answer in command.answers
+            ]
+            if command.mode == "live":
+                with llm.live_call_context(
+                    stage="brief",
+                    course_id=course_id,
+                    max_calls=1,
+                    max_input_chars=60_000,
+                ):
+                    value = decisions.save_brief_answers(
+                        course_id,
+                        answers,
+                        mode="live",
+                    )
+            else:
+                value = decisions.save_brief_answers(
+                    course_id,
+                    answers,
+                    mode="deterministic",
+                )
         return {"artifact": value, "checksum": repository.checksum(value)}
 
     @app.patch("/api/courses/{course_id}/brief")

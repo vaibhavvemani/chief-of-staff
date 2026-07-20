@@ -19,6 +19,7 @@ import {
   reviseStage,
   reviewContentAsset,
   runStage,
+  runBriefClarifications,
   saveBriefAnswers,
   saveBriefUpdates,
   saveBlueprintDecision,
@@ -292,6 +293,33 @@ describe("typed API commands", () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/courses/herb-course/brief/questions");
   });
 
+  it("requests live Brief clarifications without changing mode implicitly", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
+      questions: [],
+      round_kind: "complete",
+      gap_analysis: [],
+      intake_state: {
+        explicit_fields: [],
+        accepted_default_fields: [],
+        unresolved_required_fields: [],
+        answered_question_ids: [],
+        last_gap_analysis: [],
+      },
+      checksum: "brief-live",
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await runBriefClarifications("herb-course", "live", "brief-before");
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "/api/courses/herb-course/brief/clarifications/run",
+    );
+    expect(requestBody(fetchMock)).toEqual({
+      mode: "live",
+      expected_checksum: "brief-before",
+    });
+  });
+
   it("maps sparse course creation to one atomic backend request", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse({ course_id: "herb-course", workspace: { course_id: "herb-course" } }, 201));
@@ -333,6 +361,7 @@ describe("typed API commands", () => {
         { question_id: "brief_tools_or_equipment", skip: true },
       ],
       expected_checksum: "brief-before",
+      mode: "deterministic",
     });
   });
 

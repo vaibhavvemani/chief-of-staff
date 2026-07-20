@@ -300,6 +300,25 @@ describe("truthful lifecycle controls", () => {
     expect(onStartOutcomesEdit).toHaveBeenCalledOnce();
   });
 
+  it("routes a named live Outcomes revision target without inventing a category", () => {
+    const onRequestRevision = vi.fn();
+    render(
+      <StageView
+        stage="outcomes"
+        workspace={demoWorkspace}
+        onRequestRevision={onRequestRevision}
+      />,
+    );
+
+    const controls = screen.getByRole("region", { name: "Live scoped revision targets" });
+    fireEvent.click(controls.querySelector("button") as HTMLButtonElement);
+    expect(onRequestRevision).toHaveBeenCalledWith(
+      "outcome",
+      "co1",
+      demoWorkspace.outcomes[0].statement,
+    );
+  });
+
   it("routes the controlled Outcomes edit state and save callback", () => {
     const onSaveOutcomes = vi.fn();
     render(

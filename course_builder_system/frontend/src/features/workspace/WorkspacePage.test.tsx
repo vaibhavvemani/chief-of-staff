@@ -380,10 +380,9 @@ function outcomesFetch(options: { conflict?: boolean } = {}) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Source Repair execution mode", () => {
-  it("never substitutes deterministic evidence in Live agent mode", () => {
+  it("uses the backend-projected live evidence-repair capability", () => {
     expect(sourceRepairModeAvailability("live", true)).toEqual({
-      available: false,
-      reason: expect.stringContaining("No deterministic candidate will be substituted"),
+      available: true,
     });
     expect(sourceRepairModeAvailability("deterministic", true)).toEqual({
       available: true,

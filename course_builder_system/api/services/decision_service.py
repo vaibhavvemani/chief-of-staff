@@ -192,6 +192,8 @@ class DecisionService:
         self,
         course_id: str,
         answers: list[dict[str, Any]],
+        *,
+        mode: str = "deterministic",
     ) -> dict[str, Any]:
         self._writable(course_id)
         subject = self.repository.require(course_id, "subject_request")
@@ -199,7 +201,10 @@ class DecisionService:
         self._ensure_editable(existing, "brief")
         normalized = self.brief_intake.normalize_artifact(subject, existing)
         body = self.brief_intake.merge_answers(
-            subject, normalized.get("body", {}), answers
+            subject,
+            normalized.get("body", {}),
+            answers,
+            mode=mode,
         )
         artifact = intake.brief_artifact_from_body(subject, body)
         artifact["revision"] = int(existing.get("revision", 0)) + 1

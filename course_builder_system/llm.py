@@ -18,8 +18,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import sys
 import time
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -27,6 +29,8 @@ from typing import Any
 
 import anthropic
 from dotenv import load_dotenv
+
+from schema_validation import validate_json_schema
 
 # ---------------------------------------------------------------------------
 # Bootstrap
@@ -78,6 +82,14 @@ class LLMError(RuntimeError):
     """
 
 
+class ProviderNotReady(LLMError):
+    """Raised before a live request when its server-side provider is unavailable."""
+
+
+class LiveCallLimitExceeded(LLMError):
+    """Raised before a live request exceeds a stage-specific call or input bound."""
+
+
 # ---------------------------------------------------------------------------
 # Result dataclass
 # ---------------------------------------------------------------------------
@@ -94,6 +106,52 @@ class LLMResult:
     prompt_hash: str
     cache_hit: bool
     parsed: Any = field(default=None)  # populated when `schema` is provided
+
+
+@dataclass
+class LiveCallContext:
+    """Safe per-stage diagnostics and hard bounds for nested model calls."""
+
+    stage: str
+    course_id: str | None
+    max_calls: int
+    max_input_chars: int
+    emit: Callable[..., Any] | None = None
+    call_count: int = 0
+
+
+_CALL_CONTEXT: ContextVar[LiveCallContext | None] = ContextVar(
+    "course_builder_live_call_context",
+    default=None,
+)
+
+
+@contextmanager
+def live_call_context(
+    *,
+    stage: str,
+    course_id: str | None,
+    max_calls: int,
+    max_input_chars: int,
+    emit: Callable[..., Any] | None = None,
+) -> Iterator[LiveCallContext]:
+    """Apply stage attribution and hard limits without changing artifact bodies."""
+    if max_calls < 1:
+        raise ValueError("max_calls must be positive")
+    if max_input_chars < 1:
+        raise ValueError("max_input_chars must be positive")
+    context = LiveCallContext(
+        stage=stage,
+        course_id=course_id,
+        max_calls=max_calls,
+        max_input_chars=max_input_chars,
+        emit=emit,
+    )
+    token = _CALL_CONTEXT.set(context)
+    try:
+        yield context
+    finally:
+        _CALL_CONTEXT.reset(token)
 
 
 # ---------------------------------------------------------------------------
@@ -199,6 +257,14 @@ def _append_log(
     cache_hit: bool,
     usage: dict[str, Any],
     latency_s: float,
+    stage: str | None = None,
+    course_id: str | None = None,
+    provider: str = "anthropic",
+    call_index: int | None = None,
+    input_chars: int | None = None,
+    max_tokens: int | None = None,
+    retry_count: int = 0,
+    failure_type: str | None = None,
 ) -> None:
     """Append one token-and-cost record to ``logs/llm_calls.jsonl``."""
     _LOG_DIR.mkdir(exist_ok=True)
@@ -219,6 +285,9 @@ def _append_log(
         }
     entry = {
         "timestamp": timestamp,
+        "stage": stage,
+        "course_id": course_id,
+        "provider": provider,
         "model": model,
         "prompt_hash": prompt_hash,
         "cache_hit": cache_hit,
@@ -226,6 +295,11 @@ def _append_log(
         "estimated_cost_usd": _estimate_cost_usd(model, log_usage),
         "pricing_as_of": "2026-06-30",
         "latency_s": latency_s,
+        "call_index": call_index,
+        "input_chars": input_chars,
+        "max_tokens": max_tokens,
+        "retry_count": retry_count,
+        "failure_type": failure_type,
     }
     with _LOG_FILE.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(entry) + "\n")
@@ -291,12 +365,44 @@ def call(
         (optionally) parsed structured output.
 
     Raises:
-        SystemExit: If ANTHROPIC_API_KEY is unset and an API call is required.
+        ProviderNotReady: If ANTHROPIC_API_KEY is unset and an API call is required.
+        LiveCallLimitExceeded: If the current stage call/input bound would be exceeded.
         LLMError:   If the model stops uncleanly (truncation/refusal/context
                     overflow) or structured output is not valid JSON.
     """
     t0 = time.monotonic()
     timestamp = datetime.now(tz=UTC).isoformat()
+    context = _CALL_CONTEXT.get()
+    input_chars = len(
+        json.dumps(
+            {"system": system, "messages": messages, "schema": schema},
+            sort_keys=True,
+            ensure_ascii=False,
+        )
+    )
+    call_index: int | None = None
+    if context is not None:
+        call_index = context.call_count + 1
+        if call_index > context.max_calls:
+            raise LiveCallLimitExceeded(
+                f"{context.stage} exceeded its live call limit of {context.max_calls}"
+            )
+        if input_chars > context.max_input_chars:
+            raise LiveCallLimitExceeded(
+                f"{context.stage} live input exceeded {context.max_input_chars} characters"
+            )
+        context.call_count = call_index
+        if context.emit is not None:
+            context.emit(
+                "model.call.started",
+                stage=context.stage,
+                provider="anthropic",
+                model=model,
+                call_index=call_index,
+                input_chars=input_chars,
+                max_tokens=max_tokens,
+                message=f"Live model call {call_index} started",
+            )
 
     prompt_hash = _canonical_key(model, system, messages, max_tokens, schema, thinking)
 
@@ -307,6 +413,47 @@ def call(
         cached = _load_cache(prompt_hash)
         if cached is not None:
             latency_s = time.monotonic() - t0
+            if schema is not None:
+                issues = validate_json_schema(cached.parsed, schema)
+                if issues:
+                    first = issues[0]
+                    error = LLMError(
+                        "cached structured output violated the local contract at "
+                        f"{first['path']}: {first['message']}"
+                    )
+                    _append_log(
+                        timestamp=timestamp,
+                        model=cached.model,
+                        prompt_hash=prompt_hash,
+                        cache_hit=True,
+                        usage=cached.usage,
+                        latency_s=latency_s,
+                        stage=context.stage if context else None,
+                        course_id=context.course_id if context else None,
+                        call_index=call_index,
+                        input_chars=input_chars,
+                        max_tokens=max_tokens,
+                        failure_type=type(error).__name__,
+                    )
+                    if context is not None and context.emit is not None:
+                        context.emit(
+                            "model.call.failed",
+                            stage=context.stage,
+                            provider="anthropic",
+                            model=cached.model,
+                            call_index=call_index,
+                            input_tokens=0,
+                            output_tokens=0,
+                            estimated_cost_usd=0.0,
+                            retry_count=0,
+                            cache_hit=True,
+                            error_type=type(error).__name__,
+                            message=(
+                                "The cached model response is unusable; bypassing or "
+                                "refreshing the cache is required."
+                            ),
+                        )
+                    raise error
             _append_log(
                 timestamp=timestamp,
                 model=model,
@@ -314,17 +461,49 @@ def call(
                 cache_hit=True,
                 usage=cached.usage,
                 latency_s=latency_s,
+                stage=context.stage if context else None,
+                course_id=context.course_id if context else None,
+                call_index=call_index,
+                input_chars=input_chars,
+                max_tokens=max_tokens,
             )
+            if context is not None and context.emit is not None:
+                context.emit(
+                    "model.call.completed",
+                    stage=context.stage,
+                    provider="anthropic",
+                    model=cached.model,
+                    call_index=call_index,
+                    input_tokens=0,
+                    output_tokens=0,
+                    estimated_cost_usd=0.0,
+                    retry_count=0,
+                    cache_hit=True,
+                    message=f"Live model call {call_index} completed from cache",
+                )
             return cached
 
     # ------------------------------------------------------------------
     # API call path — guard the key here, not at import time.
     # ------------------------------------------------------------------
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        sys.exit(
+        error = ProviderNotReady(
             "ANTHROPIC_API_KEY is not set.  "
             "Add it to your .env file or export it in your shell before running."
         )
+        if context is not None and context.emit is not None:
+            context.emit(
+                "model.call.failed",
+                stage=context.stage,
+                provider="anthropic",
+                model=model,
+                call_index=call_index,
+                retry_count=0,
+                cache_hit=False,
+                error_type=type(error).__name__,
+                message=str(error),
+            )
+        raise error
 
     # Build keyword arguments shared by the streaming and non-streaming paths.
     kwargs: dict[str, Any] = {
@@ -335,27 +514,59 @@ def call(
     if system is not None:
         kwargs["system"] = system
     if schema is not None:
-        kwargs["output_config"] = {"format": {"type": "json_schema", "schema": schema}}
+        # The API accepts a narrower JSON Schema dialect than the local domain
+        # contracts. Anthropic's helper preserves unsupported assertions in
+        # descriptions while removing them from the wire schema. We still
+        # validate the returned instance against the original contract below.
+        kwargs["output_config"] = {
+            "format": {
+                "type": "json_schema",
+                "schema": anthropic.transform_schema(schema),
+            }
+        }
     if thinking is not None:
         kwargs["thinking"] = thinking
 
     # Stream large outputs so we never trip the SDK's non-streaming timeout
     # guard; get_final_message() returns the same Message a create() would.
     should_stream = stream if stream is not None else max_tokens > _STREAM_THRESHOLD
-    if should_stream:
-        with _client.messages.stream(**kwargs) as streamed:
-            response = streamed.get_final_message()
-    else:
-        response = _client.messages.create(**kwargs)
+    try:
+        if should_stream:
+            with _client.messages.stream(**kwargs) as streamed:
+                response = streamed.get_final_message()
+        else:
+            response = _client.messages.create(**kwargs)
+    except Exception as exc:
+        latency_s = time.monotonic() - t0
+        _append_log(
+            timestamp=timestamp,
+            model=model,
+            prompt_hash=prompt_hash,
+            cache_hit=False,
+            usage={},
+            latency_s=latency_s,
+            stage=context.stage if context else None,
+            course_id=context.course_id if context else None,
+            call_index=call_index,
+            input_chars=input_chars,
+            max_tokens=max_tokens,
+            failure_type=type(exc).__name__,
+        )
+        if context is not None and context.emit is not None:
+            context.emit(
+                "model.call.failed",
+                stage=context.stage,
+                provider="anthropic",
+                model=model,
+                call_index=call_index,
+                retry_count=0,
+                cache_hit=False,
+                error_type=type(exc).__name__,
+                message="The live model request failed; retry is available.",
+            )
+        raise
 
     latency_s = time.monotonic() - t0
-
-    # Fail loud on output we cannot use, rather than caching/parsing truncated
-    # or empty text and surfacing an opaque error far from the cause.
-    _raise_on_bad_stop(response, max_tokens)
-
-    # Extract text from all text-type content blocks
-    text = "".join(block.text for block in response.content if block.type == "text")
 
     # Serialise usage (only the fields we care about)
     usage: dict[str, Any] = {
@@ -365,20 +576,66 @@ def call(
         "cache_read_input_tokens": response.usage.cache_read_input_tokens or 0,
     }
 
-    # Serialise the raw response to a plain dict for caching/logging
-    raw: dict[str, Any] = json.loads(response.model_dump_json())
+    try:
+        # Fail loud on output we cannot use, rather than caching/parsing truncated
+        # or empty text and surfacing an opaque error far from the cause.
+        _raise_on_bad_stop(response, max_tokens)
 
-    # Structured output
-    parsed: Any = None
-    if schema is not None:
-        try:
-            parsed = json.loads(text)
-        except json.JSONDecodeError as exc:
-            rid = getattr(response, "_request_id", None)
-            raise LLMError(
-                f"structured-output response was not valid JSON ({exc}); "
-                f"model={response.model} request_id={rid}"
-            ) from exc
+        # Extract text from all text-type content blocks
+        text = "".join(block.text for block in response.content if block.type == "text")
+
+        # Serialise the raw response to a plain dict for caching/logging
+        raw: dict[str, Any] = json.loads(response.model_dump_json())
+
+        # Structured output
+        parsed: Any = None
+        if schema is not None:
+            try:
+                parsed = json.loads(text)
+            except json.JSONDecodeError as exc:
+                rid = getattr(response, "_request_id", None)
+                raise LLMError(
+                    f"structured-output response was not valid JSON ({exc}); "
+                    f"model={response.model} request_id={rid}"
+                ) from exc
+            issues = validate_json_schema(parsed, schema)
+            if issues:
+                first = issues[0]
+                raise LLMError(
+                    "structured-output response violated the local contract at "
+                    f"{first['path']}: {first['message']}"
+                )
+    except LLMError as exc:
+        _append_log(
+            timestamp=timestamp,
+            model=response.model,
+            prompt_hash=prompt_hash,
+            cache_hit=False,
+            usage=usage,
+            latency_s=latency_s,
+            stage=context.stage if context else None,
+            course_id=context.course_id if context else None,
+            call_index=call_index,
+            input_chars=input_chars,
+            max_tokens=max_tokens,
+            failure_type=type(exc).__name__,
+        )
+        if context is not None and context.emit is not None:
+            context.emit(
+                "model.call.failed",
+                stage=context.stage,
+                provider="anthropic",
+                model=response.model,
+                call_index=call_index,
+                input_tokens=usage.get("input_tokens", 0),
+                output_tokens=usage.get("output_tokens", 0),
+                estimated_cost_usd=_estimate_cost_usd(response.model, usage),
+                retry_count=0,
+                cache_hit=False,
+                error_type=type(exc).__name__,
+                message="The live model returned an unusable response; retry is available.",
+            )
+        raise
 
     result = LLMResult(
         text=text,
@@ -398,6 +655,26 @@ def call(
         cache_hit=False,
         usage=usage,
         latency_s=latency_s,
+        stage=context.stage if context else None,
+        course_id=context.course_id if context else None,
+        call_index=call_index,
+        input_chars=input_chars,
+        max_tokens=max_tokens,
     )
+
+    if context is not None and context.emit is not None:
+        context.emit(
+            "model.call.completed",
+            stage=context.stage,
+            provider="anthropic",
+            model=result.model,
+            call_index=call_index,
+            input_tokens=usage.get("input_tokens", 0),
+            output_tokens=usage.get("output_tokens", 0),
+            estimated_cost_usd=_estimate_cost_usd(result.model, usage),
+            retry_count=0,
+            cache_hit=False,
+            message=f"Live model call {call_index} completed",
+        )
 
     return result

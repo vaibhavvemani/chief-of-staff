@@ -217,6 +217,7 @@ class BriefQuestionAnswer(StrictCommand):
 class BriefAnswersCommand(VersionedCommand):
     expected_checksum: str = Field(min_length=6, max_length=128)
     answers: list[BriefQuestionAnswer] = Field(min_length=1, max_length=5)
+    mode: Literal["deterministic", "live"] = "deterministic"
 
 
 class BriefUpdatesCommand(VersionedCommand):

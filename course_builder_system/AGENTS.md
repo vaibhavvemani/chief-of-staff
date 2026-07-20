@@ -11,26 +11,31 @@ local Course Builder Studio frontend and FastAPI adapter are implemented as of
 2026-07-14. The next milestone-gated development cycle is planned as of
 2026-07-15. Its NC-10 lifecycle/command foundation and NC-20 Guided Brief Intake
 package have passed independent review. NC-301 and NC-302 have now also passed their
-independent NC-30 checkpoint review. NC-303 remains deferred to NC-90 behind NC-902,
-and NC-401 through NC-403 passed independent NC-40 backend checkpoint review on
+independent NC-30 checkpoint review. NC-401 through NC-403 passed independent NC-40
+backend checkpoint review on
 2026-07-20 after corrective hardening of stable IDs, ordered references, source
 authority, shared schema validation, and rollback cleanup. NC-404 and NC-405 passed
 independent review on 2026-07-20 with deterministic browser Scenario A6 evidence,
-including the exact-preview structural diff. NC-40 is not complete because NC-406
-remains deferred to NC-90. NC-501 through NC-503 passed independent NC-50 review on
+including the exact-preview structural diff. NC-501 through NC-503 passed independent
+NC-50 review on
 2026-07-20 with deterministic browser Scenario A7 evidence after corrective hardening
-of upstream lifecycle and authoritative source-route gates. NC-504 remains deferred to
-NC-90 behind NC-905. NC-601 through NC-603 passed independent NC-60 review on
+of upstream lifecycle and authoritative source-route gates. NC-601 through NC-603
+passed independent NC-60 review on
 2026-07-20 with deterministic browser Scenario A12 evidence after corrective hardening
 of conflict rebasing, monotonic session IDs, Course Model authority, and exact affected-
-session reporting. NC-604 remains deferred to NC-90 behind NC-908. NC-701 through
-NC-709 passed independent NC-70 review on 2026-07-20 with deterministic browser
+session reporting. NC-701 through NC-709 passed independent NC-70 review on 2026-07-20
+with deterministic browser
 evidence for Scenario A10's source-decision and route phase. NC-801 through NC-808
 passed independent NC-80 review on 2026-07-20 with deterministic browser Scenarios
 A8 through A11 evidence after corrective hardening of typed retry/restart recovery,
 source-less and unattributed blocker truth, target-only regeneration, source-repair
-lifecycle closure, and review fingerprint synchronization. NC-90 and later packages
-remain unstarted. NC-003 is resolved with the documented fallback live subject,
+lifecycle closure, and review fingerprint synchronization. NC-901 through NC-912,
+including deferred scoped live revisions NC-303, NC-406, NC-504, and NC-604, passed
+independent NC-90 checkpoint review on 2026-07-20. The package adds an
+explicit provider-neutral registry, bounded live stage adapters reduced through
+deterministic domain contracts, no-fallback failures, live Brief and evidence-repair
+providers, and two-topic stage evals. NC-100 and later packages remain unstarted.
+NC-003 is resolved with the documented fallback live subject,
 `Indoor herb gardening for apartment beginners`, course ID `studio-live-pilot`, a
 five-subtopic boundary, and a representative ten-asset review envelope.
 
@@ -61,15 +66,12 @@ internal course director and then proves the same workflow with live agent-backe
 stages. NC-002, NC-004, NC-005, and NC-101 through NC-109 are implemented and
 independently verified. NC-201 through NC-207 are also independently verified. NC-30
 Outcomes reducer validation and browser editing are independently verified through
-NC-301 and NC-302. NC-303 remains deferred to NC-90 behind NC-902. NC-401 through
-NC-405 are independently verified; this does not complete NC-40 because NC-406 remains
-deferred to NC-90. NC-501 through NC-503 are independently verified; NC-504 remains
-deferred to NC-90 behind NC-905. NC-601 through NC-603 are independently verified;
-NC-604 remains deferred to NC-90 behind NC-908. NC-701 through NC-709 are independently
-verified. NC-801 through NC-808 are independently verified, and NC-003 is resolved with
-the documented fallback subject. The next safe action is NC-901, followed by the rest
-of NC-90 in dependency order. Do not start NC-406, NC-504, or NC-604 before their NC-90
-dependencies or skip ahead within live-agent parity.
+NC-301 and NC-302. NC-401 through NC-405, NC-501 through NC-503, and NC-601 through
+NC-603 are independently verified. NC-701 through NC-709 and NC-801 through NC-808 are
+independently verified, and NC-003 is resolved with the documented fallback subject.
+NC-901 through NC-912 and the four previously deferred scoped live revisions are
+independently verified. The next safe action is NC-100, beginning with NC-1001 and
+following its dependency order. Do not skip ahead to NC-110 browser acceptance.
 Source repair plus verifier-driven targeted revision remains the central trust milestone
 after the intervening stage contracts.
 

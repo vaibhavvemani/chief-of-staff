@@ -7,9 +7,11 @@ visibility, validation, or persistence into React or a model response.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from copy import deepcopy
 from typing import Protocol
 
+import llm
 from agents import intake
 from interaction import QuestionSpec
 
@@ -50,8 +52,19 @@ class BriefIntakeService:
     def __init__(
         self,
         clarification_provider: ClarificationProvider | None = None,
+        *,
+        clarification_providers: Mapping[str, ClarificationProvider | None] | None = None,
     ) -> None:
-        self.clarification_provider = clarification_provider or DeterministicClarificationProvider()
+        deterministic = clarification_provider or DeterministicClarificationProvider()
+        configured = dict(clarification_providers or {})
+        self.clarification_providers: dict[str, ClarificationProvider | None] = {
+            "deterministic": configured.pop("deterministic", deterministic),
+            "live": configured.pop("live", None),
+        }
+        if configured:
+            raise ValueError(
+                "unknown Brief clarification modes: " + ", ".join(sorted(configured))
+            )
 
     def normalize(self, subject_request: dict, brief_body: dict) -> dict:
         return intake.normalize_brief_body(subject_request, brief_body)
@@ -86,11 +99,17 @@ class BriefIntakeService:
             subject_request, brief
         )
 
-    def question_round(self, subject_request: dict, brief_body: dict) -> dict:
+    def question_round(
+        self,
+        subject_request: dict,
+        brief_body: dict,
+        *,
+        mode: str = "deterministic",
+    ) -> dict:
         return intake.brief_question_round(
             subject_request,
             brief_body,
-            clarification_provider=self.clarification_provider,
+            clarification_provider=self._provider(mode),
         )
 
     def merge_answers(
@@ -98,12 +117,14 @@ class BriefIntakeService:
         subject_request: dict,
         brief_body: dict,
         answers: list[dict],
+        *,
+        mode: str = "deterministic",
     ) -> dict:
         return intake.merge_answer_round(
             subject_request,
             brief_body,
             answers,
-            clarification_provider=self.clarification_provider,
+            clarification_provider=self._provider(mode),
         )
 
     def merge_updates(
@@ -113,6 +134,17 @@ class BriefIntakeService:
         updates: dict,
     ) -> dict:
         return intake.merge_brief_updates(subject_request, brief_body, updates)
+
+    def _provider(self, mode: str) -> ClarificationProvider:
+        if mode not in self.clarification_providers:
+            raise ValueError(f"unknown Brief clarification mode: {mode!r}")
+        provider = self.clarification_providers[mode]
+        if provider is None:
+            raise llm.ProviderNotReady(
+                f"{mode.capitalize()} Brief clarification is not configured; "
+                "choose deterministic mode explicitly or configure the live provider."
+            )
+        return provider
 
 
 def serialize_question(question: QuestionSpec) -> dict:

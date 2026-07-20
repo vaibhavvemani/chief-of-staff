@@ -19,6 +19,7 @@ import {
   reviseStage,
   reviewContentAsset,
   runStage,
+  runBriefClarifications,
   saveBriefAnswers,
   saveBriefUpdates,
   saveBlueprintDecision,
@@ -36,16 +37,12 @@ import type { BlueprintDecisionDraft, BriefData, BriefQuestionAnswer, BriefUpdat
 import { StageView, stageData, type BriefEditSection } from "./StageViews";
 
 const stageSlugs: StageSlug[] = ["brief", "outcomes", "research", "course-model", "blueprint", "content", "lesson-plan", "package"];
-const LIVE_SOURCE_REPAIR_UNAVAILABLE = "Live better-evidence repair is not configured until NC-912. No deterministic candidate will be substituted in Live agent mode.";
-
 export function sourceRepairModeAvailability(
-  runMode: "deterministic" | "live",
+  _runMode: "deterministic" | "live",
   backendEnabled: boolean,
 ): { available: boolean; reason?: string } {
   if (!backendEnabled) return { available: false };
-  return runMode === "deterministic"
-    ? { available: true }
-    : { available: false, reason: LIVE_SOURCE_REPAIR_UNAVAILABLE };
+  return { available: true };
 }
 
 function stageName(stage: StageSlug): string {
@@ -257,9 +254,19 @@ function AgentRunScreen({ stage, mode, progress }: { stage: StageSlug; mode: "de
   );
 }
 
-function ScopedRevisionDialog({ asset, claim, categories, busy, onCancel, onSubmit }: { asset: ContentAsset; claim?: Claim; categories: string[]; busy: boolean; onCancel: () => void; onSubmit: (category: string, instruction: string) => void }) {
-  const [category, setCategory] = useState(categories.includes("evidence") && claim ? "evidence" : categories[0] ?? "clarity");
-  const [instruction, setInstruction] = useState(claim ? `Correct verifier finding ${claim.id}: ${claim.note || claim.text}` : "");
+type RevisionTarget = {
+  stage: StageSlug;
+  targetType: string;
+  id: string;
+  label: string;
+  categories: string[];
+  expectedChecksum: string;
+  claim?: Claim;
+};
+
+function ScopedRevisionDialog({ target, busy, onCancel, onSubmit }: { target: RevisionTarget; busy: boolean; onCancel: () => void; onSubmit: (category: string, instruction: string) => void }) {
+  const [category, setCategory] = useState(target.categories.includes("evidence") && target.claim ? "evidence" : target.categories[0] ?? "clarity");
+  const [instruction, setInstruction] = useState(target.claim ? `Correct verifier finding ${target.claim.id}: ${target.claim.note || target.claim.text}` : "");
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onCancel(); };
     window.addEventListener("keydown", onKeyDown);
@@ -268,10 +275,10 @@ function ScopedRevisionDialog({ asset, claim, categories, busy, onCancel, onSubm
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onCancel(); }}>
       <div className="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="revision-title">
-        <header><span className="eyebrow">Scoped content revision</span><h2 id="revision-title">Revise {asset.title}</h2><p>Only <code>{asset.id}</code> will be regenerated. Other content assets remain unchanged.</p></header>
-        <label><span>Revision category</span><select value={category} onChange={(event) => setCategory(event.target.value)}>{categories.map((item) => <option key={item} value={item}>{item.charAt(0).toUpperCase() + item.slice(1)}</option>)}</select></label>
-        <label><span>Revision instruction</span><textarea autoFocus rows={5} value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder="Describe the exact learner-facing change required for this asset." /></label>
-        <div className="impact-preview"><span className="micro-label">Execution boundary</span><div><span aria-hidden="true">→</span>Target type: asset</div><div><span aria-hidden="true">→</span>Target ID: {asset.id}</div><div><span aria-hidden="true">→</span>Execution mode preserves unaffected assets</div></div>
+        <header><span className="eyebrow">{target.stage === "content" ? "Scoped content revision" : `Scoped ${stageName(target.stage)} revision`}</span><h2 id="revision-title">Revise {target.label}</h2><p>Only the named <code>{target.targetType}</code> record may change. Backend validation preserves every unrelated record.</p></header>
+        <label><span>Revision category</span><select value={category} onChange={(event) => setCategory(event.target.value)}>{target.categories.map((item) => <option key={item} value={item}>{item.charAt(0).toUpperCase() + item.slice(1)}</option>)}</select></label>
+        <label><span>Revision instruction</span><textarea autoFocus rows={5} value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder="Describe the exact bounded change required for this record." /></label>
+        <div className="impact-preview"><span className="micro-label">Execution boundary</span><div><span aria-hidden="true">→</span>Target type: {target.targetType}</div><div><span aria-hidden="true">→</span>Target ID: {target.id}</div><div><span aria-hidden="true">→</span>Unrelated records must remain unchanged</div></div>
         <footer><button className="button button-quiet" onClick={onCancel}>Cancel</button><button className="button button-primary" disabled={!instruction.trim() || busy} onClick={() => onSubmit(category, instruction.trim())}>{busy ? "Starting revision…" : "Start scoped revision"}</button></footer>
       </div>
     </div>
@@ -302,7 +309,7 @@ function ImpactConfirmationDialog({ stage, preview, busy, onCancel, onConfirm }:
   );
 }
 
-function RevisionImpactConfirmationDialog({ preview, busy, onCancel, onConfirm }: { preview: ImpactPreview; busy: boolean; onCancel: () => void; onConfirm: () => void }) {
+function RevisionImpactConfirmationDialog({ stage, preview, busy, onCancel, onConfirm }: { stage: StageSlug; preview: ImpactPreview; busy: boolean; onCancel: () => void; onConfirm: () => void }) {
   const [acknowledged, setAcknowledged] = useState(false);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onCancel(); };
@@ -312,11 +319,11 @@ function RevisionImpactConfirmationDialog({ preview, busy, onCancel, onConfirm }
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onCancel(); }}>
       <div className="feedback-dialog impact-dialog" role="dialog" aria-modal="true" aria-labelledby="revision-impact-title">
-        <header><span className="eyebrow">Scoped revision impact</span><h2 id="revision-impact-title">Confirm this Content revision?</h2><p>The server proved the bounded asset scope and will revalidate this preview while holding the course mutation lock.</p></header>
-        <div className="impact-summary-grid"><div><strong>{preview.targetedAssets.length}</strong><span>content asset revised</span></div><div><strong>{preview.preservedAssets.length}</strong><span>content assets preserved</span></div><div><strong>{preview.staleArtifacts.length}</strong><span>Package artifacts made stale</span></div></div>
-        <dl className="impact-boundaries"><div><dt>Target asset</dt><dd>{preview.targetedAssets.join(", ")}</dd></div><div><dt>Preserved assets</dt><dd>{preview.preservedAssets.length} unchanged</dd></div><div><dt>Marked stale</dt><dd>{preview.staleArtifacts.map((item) => item.replaceAll("_", " ")).join(", ") || "None"}</dd></div><div><dt>Preserved stage</dt><dd>Lesson Plan</dd></div></dl>
+        <header><span className="eyebrow">Scoped revision impact</span><h2 id="revision-impact-title">Confirm this {stageName(stage)} revision?</h2><p>The server proved the named-record boundary and will revalidate this preview while holding the course mutation lock.</p></header>
+        <div className="impact-summary-grid"><div><strong>{preview.directArtifacts.length}</strong><span>stage artifact revised</span></div><div><strong>{preview.staleArtifacts.length}</strong><span>downstream artifacts made stale</span></div><div><strong>{preview.requiresRerunStages.length}</strong><span>stages requiring rerun</span></div></div>
+        <dl className="impact-boundaries"><div><dt>Direct artifact</dt><dd>{preview.directArtifacts.map((item) => item.replaceAll("_", " ")).join(", ")}</dd></div><div><dt>Marked stale</dt><dd>{preview.staleArtifacts.map((item) => item.replaceAll("_", " ")).join(", ") || "None"}</dd></div><div><dt>Content assets affected</dt><dd>{preview.targetedAssets.length || "None"}</dd></div><div><dt>Rerun stages</dt><dd>{preview.requiresRerunStages.map(stageName).join(", ") || "None"}</dd></div></dl>
         {preview.warnings.length ? <div className="impact-warnings">{preview.warnings.map((warning) => <p key={warning}><span aria-hidden="true">!</span>{warning}</p>)}</div> : null}
-        <label className="impact-ack"><input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} /><span>I understand the changed asset will require human review again and the current Package will become stale.</span></label>
+        <label className="impact-ack"><input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} /><span>I understand the named record will be validated in scope and the listed downstream artifacts will become stale.</span></label>
         <footer><button className="button button-quiet" onClick={onCancel}>Back</button><button className="button button-primary" disabled={!acknowledged || busy} onClick={onConfirm}>{busy ? "Revalidating impact…" : "Confirm and start revision"}</button></footer>
       </div>
     </div>
@@ -449,8 +456,8 @@ export function WorkspacePage() {
   const [runMode, setRunMode] = useState<"deterministic" | "live">(() => new URLSearchParams(location.search).get("mode") === "deterministic" ? "deterministic" : "live");
   const [activityOpen, setActivityOpen] = useState(false);
   const [impactPreview, setImpactPreview] = useState<ImpactPreview | null>(null);
-  const [revisionTarget, setRevisionTarget] = useState<{ asset: ContentAsset; claim?: Claim; expectedChecksum?: string } | null>(null);
-  const [pendingRevision, setPendingRevision] = useState<{ asset: ContentAsset; category: string; instruction: string; expectedChecksum: string } | null>(null);
+  const [revisionTarget, setRevisionTarget] = useState<RevisionTarget | null>(null);
+  const [pendingRevision, setPendingRevision] = useState<(RevisionTarget & { category: string; instruction: string }) | null>(null);
   const [revisionImpact, setRevisionImpact] = useState<ImpactPreview | null>(null);
   const [briefEditSection, setBriefEditSection] = useState<BriefEditSection | null>(null);
   const [outcomesEditing, setOutcomesEditing] = useState(false);
@@ -494,8 +501,14 @@ export function WorkspacePage() {
   const lessonPlanEditCapability = stage === "lesson-plan"
     && Boolean(currentSummary?.actions.some((action) => action.id === "edit" && action.enabled));
   const briefQuestionsQuery = useQuery({
-    queryKey: ["brief-questions", courseId],
-    queryFn: () => getBriefQuestions(courseId),
+    queryKey: ["brief-questions", courseId, runMode],
+    queryFn: () => {
+      if (runMode === "deterministic") return getBriefQuestions(courseId);
+      if (!workspace?.briefChecksum) {
+        throw new Error("Live Brief clarification requires the current checksum.");
+      }
+      return runBriefClarifications(courseId, runMode, workspace.briefChecksum);
+    },
     enabled: stage === "brief"
       && Boolean(workspace)
       && !query.data?.demoMode
@@ -603,7 +616,7 @@ export function WorkspacePage() {
     mutationFn: (answers: BriefQuestionAnswer[]) => {
       const round = briefQuestionsQuery.data;
       if (!round?.checksum) throw new Error("Brief answers require the current checksum.");
-      return saveBriefAnswers(courseId, answers, round.checksum);
+      return saveBriefAnswers(courseId, answers, round.checksum, runMode);
     },
     onSuccess: async () => {
       setToast({ tone: "good", message: "Brief answers saved. The next relevant round is ready." });
@@ -883,7 +896,6 @@ export function WorkspacePage() {
   const sourceRepairRequestMutation = useMutation({
     mutationFn: ({ asset, claim }: { asset: ContentAsset; claim: Claim }) => {
       if (!workspace?.content.packageChecksum) throw new Error("Source repair requires the current Content Package checksum.");
-      if (runMode !== "deterministic") throw new Error(LIVE_SOURCE_REPAIR_UNAVAILABLE);
       return requestSourceRepair(courseId, {
         expectedContentChecksum: workspace.content.packageChecksum,
         subtopicId: asset.subtopicId,
@@ -1032,20 +1044,18 @@ export function WorkspacePage() {
 
   const revisionImpactMutation = useMutation({
     mutationFn: ({ category, instruction }: { category: string; instruction: string }) => {
-      if (!revisionTarget) throw new Error("Choose a content asset to revise.");
-      if (!revisionTarget.expectedChecksum) throw new Error("Revision requires the current Content checksum.");
-      return previewStageImpact(courseId, "content", revisionTarget.expectedChecksum, {
+      if (!revisionTarget) throw new Error("Choose a record to revise.");
+      return previewStageImpact(courseId, revisionTarget.stage, revisionTarget.expectedChecksum, {
         action: "revise",
-        targetType: "asset",
-        targetIds: [revisionTarget.asset.id],
+        targetType: revisionTarget.targetType,
+        targetIds: [revisionTarget.id],
         operationSummary: instruction,
       }).then((preview) => ({
         preview,
         pending: {
-          asset: revisionTarget.asset,
+          ...revisionTarget,
           category,
           instruction,
-          expectedChecksum: revisionTarget.expectedChecksum as string,
         },
       }));
     },
@@ -1060,29 +1070,30 @@ export function WorkspacePage() {
   const revisionMutation = useMutation({
     mutationFn: () => {
       if (!pendingRevision || !revisionImpact) throw new Error("A current scoped revision impact preview is required.");
-      return reviseStage(courseId, "content", {
-        targetType: "asset",
-        targetIds: [pendingRevision.asset.id],
+      return reviseStage(courseId, pendingRevision.stage, {
+        targetType: pendingRevision.targetType,
+        targetIds: [pendingRevision.id],
         category: pendingRevision.category,
         instruction: pendingRevision.instruction,
         expectedChecksum: pendingRevision.expectedChecksum,
         impactChecksum: revisionImpact.impactChecksum,
-        mode: runMode,
+        mode: pendingRevision.stage === "content" ? runMode : "live",
       });
     },
     onSuccess: (result) => {
+      const revisedStage = pendingRevision?.stage ?? stage;
       setPendingRevision(null);
       setRevisionImpact(null);
       setActiveJobId(result.job.job_id);
-      setActiveJobStage("content");
+      setActiveJobStage(revisedStage);
       setRunProgress({ message: "Scoped revision queued" });
-      setToast({ tone: "good", message: "Scoped revision started. Unaffected content assets will be preserved." });
+      setToast({ tone: "good", message: `Scoped ${stageName(revisedStage)} revision started. Unrelated records must remain unchanged.` });
       void refresh();
     },
     onError: (error) => {
       setRevisionImpact(null);
       setPendingRevision(null);
-      setToast({ tone: "attention", message: error instanceof ApiError && error.status === 409 ? "The course changed after this impact preview. Review the asset and try again." : error instanceof Error ? error.message : "The scoped revision could not start." });
+      setToast({ tone: "attention", message: error instanceof ApiError && error.status === 409 ? "The course changed after this impact preview. Review the record and try again." : error instanceof Error ? error.message : "The scoped revision could not start." });
       void refresh();
     },
   });
@@ -1096,7 +1107,9 @@ export function WorkspacePage() {
         await reviewContentAsset(courseId, asset.id, action, workspace.content.reviewChecksum, claim?.note);
       } else if (action === "revise") {
         if (!currentSummary?.actions.some((candidate) => candidate.id === "revise" && candidate.enabled)) throw new Error("Scoped revision is not available in the current stage state.");
-        setRevisionTarget({ asset, claim, expectedChecksum: currentSummary.checksum });
+        if (!currentSummary.checksum) throw new Error("Revision requires the current Content checksum.");
+        const categories = currentSummary.actions.find((candidate) => candidate.id === "revise")?.revisionTargets?.find((target) => target.targetType === "asset")?.categories ?? [];
+        setRevisionTarget({ stage: "content", targetType: "asset", id: asset.id, label: asset.title, categories, expectedChecksum: currentSummary.checksum, claim });
         return;
       } else if (action === "repair_existing") {
         if (!currentSummary?.actions.some((candidate) => candidate.id === "content_repair" && candidate.enabled)) throw new Error("Typed Content repair is not available in the current stage state.");
@@ -1118,6 +1131,37 @@ export function WorkspacePage() {
     } catch (error) {
       setToast({ tone: "attention", message: error instanceof Error ? error.message : "The content action failed." });
     }
+  }
+
+  function requestLiveRevision(targetType: string, id: string, label: string) {
+    const action = currentSummary?.actions.find(
+      (candidate) => candidate.id === "revise" && candidate.enabled,
+    );
+    const categories = action?.revisionTargets?.find(
+      (target) => target.targetType === targetType,
+    )?.categories;
+    if (runMode !== "live") {
+      setToast({
+        tone: "attention",
+        message: "Scoped revisions for this stage require explicit Live agent mode.",
+      });
+      return;
+    }
+    if (!action || !categories?.length || !currentSummary?.checksum) {
+      setToast({
+        tone: "attention",
+        message: "Scoped revision is unavailable in the current stage state.",
+      });
+      return;
+    }
+    setRevisionTarget({
+      stage,
+      targetType,
+      id,
+      label,
+      categories,
+      expectedChecksum: currentSummary.checksum,
+    });
   }
 
   async function sourceDecision(selectedIds: string[]) {
@@ -1247,6 +1291,7 @@ export function WorkspacePage() {
             workspace={workspace}
             contentCapabilities={{ review: actionEnabled("review_asset"), revise: actionEnabled("revise"), contentRepair: actionEnabled("content_repair"), repair: sourceRepairAvailable, repairUnavailableReason: sourceRepairUnavailableReason }}
             onContentAction={actionEnabled("review_asset") || actionEnabled("revise") || actionEnabled("content_repair") || sourceRepairAvailable ? (action, asset, claim) => void contentAction(action, asset, claim) : undefined}
+            onRequestRevision={stage !== "content" && actionEnabled("revise") ? requestLiveRevision : undefined}
             onSourceDecision={actionEnabled("source_decision") ? (selectedIds) => void sourceDecision(selectedIds) : undefined}
             onAddKnownSource={actionEnabled("add_source") ? (source) => knownSourceMutation.mutate(source) : undefined}
             sourceMutationBusy={knownSourceMutation.isPending}
@@ -1318,8 +1363,8 @@ export function WorkspacePage() {
         />
       </div>
       {activityOpen ? <ActivityDrawer workspace={workspace} onClose={() => setActivityOpen(false)} /> : null}
-      {revisionTarget ? <ScopedRevisionDialog asset={revisionTarget.asset} claim={revisionTarget.claim} categories={currentSummary?.actions.find((action) => action.id === "revise")?.revisionTargets?.find((target) => target.targetType === "asset")?.categories ?? []} busy={revisionImpactMutation.isPending} onCancel={() => setRevisionTarget(null)} onSubmit={(category, instruction) => revisionImpactMutation.mutate({ category, instruction })} /> : null}
-      {revisionImpact ? <RevisionImpactConfirmationDialog preview={revisionImpact} busy={revisionMutation.isPending} onCancel={() => { setRevisionImpact(null); setPendingRevision(null); }} onConfirm={() => revisionMutation.mutate()} /> : null}
+      {revisionTarget ? <ScopedRevisionDialog target={revisionTarget} busy={revisionImpactMutation.isPending} onCancel={() => setRevisionTarget(null)} onSubmit={(category, instruction) => revisionImpactMutation.mutate({ category, instruction })} /> : null}
+      {revisionImpact && pendingRevision ? <RevisionImpactConfirmationDialog stage={pendingRevision.stage} preview={revisionImpact} busy={revisionMutation.isPending} onCancel={() => { setRevisionImpact(null); setPendingRevision(null); }} onConfirm={() => revisionMutation.mutate()} /> : null}
       {impactPreview ? <ImpactConfirmationDialog stage={stage} preview={impactPreview} busy={reopenMutation.isPending} onCancel={() => setImpactPreview(null)} onConfirm={(reason) => reopenMutation.mutate(reason)} /> : null}
       {briefEditSection ? <BriefEditDialog section={briefEditSection} brief={workspace.brief} busy={briefMutation.isPending} onCancel={() => setBriefEditSection(null)} onSubmit={(brief) => briefMutation.mutate(brief)} /> : null}
       {toast ? <Toast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} /> : null}

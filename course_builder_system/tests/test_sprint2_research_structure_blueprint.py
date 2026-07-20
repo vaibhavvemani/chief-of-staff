@@ -10,6 +10,7 @@ import pytest
 import integrity
 import orchestrator
 import run
+import steps
 from agents import blueprint as blueprint_agent
 from agents import course_model as course_model_agent
 from agents import intake, research
@@ -148,6 +149,86 @@ def test_live_provider_parses_search_html_fetches_html_and_pdf_text() -> None:
     assert outline.outline_status == "usable"
 
 
+def test_live_provider_retries_search_transport_failures() -> None:
+    attempts = 0
+
+    def fetch_bytes(locator: str) -> tuple[int, dict[str, str], bytes]:
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            raise TimeoutError("temporary search failure")
+        return (
+            200,
+            {"content-type": "text/html"},
+            b'<a href="https://course.test/outline">Course Outline</a>',
+        )
+
+    provider = BoundedLiveResearchProvider(
+        search_url_template="https://search.test/?q={query}",
+        max_retries=2,
+        retry_backoff_s=0,
+        fetch_bytes=fetch_bytes,
+    )
+
+    results = provider.search("bounded retry", limit=1)
+
+    assert attempts == 3
+    assert [result.locator for result in results] == ["https://course.test/outline"]
+
+
+def test_live_provider_ids_are_stable_when_search_order_changes() -> None:
+    pages = [
+        b'<a href="https://course.test/alpha">Alpha</a>'
+        b'<a href="https://course.test/beta">Beta</a>',
+        b'<a href="https://course.test/beta">Beta</a>'
+        b'<a href="https://course.test/alpha">Alpha</a>',
+    ]
+
+    def fetch_bytes(_locator: str) -> tuple[int, dict[str, str], bytes]:
+        return 200, {"content-type": "text/html"}, pages.pop(0)
+
+    provider = BoundedLiveResearchProvider(
+        search_url_template="https://search.test/?q={query}",
+        fetch_bytes=fetch_bytes,
+    )
+
+    first = {item.locator: item.id for item in provider.search("first", limit=2)}
+    second = {item.locator: item.id for item in provider.search("second", limit=2)}
+
+    assert first == second
+    assert all(value.startswith("live_") and len(value) == 21 for value in first.values())
+
+
+def test_live_provider_retries_transient_http_statuses_for_search_and_fetch() -> None:
+    attempts: dict[str, int] = {"search": 0, "page": 0}
+
+    def fetch_bytes(locator: str) -> tuple[int, dict[str, str], bytes]:
+        key = "search" if "search.test" in locator else "page"
+        attempts[key] += 1
+        if attempts[key] == 1:
+            return 503, {"content-type": "text/html"}, b"temporary"
+        if key == "search":
+            return (
+                200,
+                {"content-type": "text/html"},
+                b'<a href="https://course.test/page">Course Page</a>',
+            )
+        return 200, {"content-type": "text/html"}, b"<p>Usable page evidence.</p>"
+
+    provider = BoundedLiveResearchProvider(
+        search_url_template="https://search.test/?q={query}",
+        max_retries=1,
+        retry_backoff_s=0,
+        fetch_bytes=fetch_bytes,
+    )
+
+    results = provider.search("retry status", limit=1)
+    fetched = provider.fetch(results[0].locator)
+
+    assert attempts == {"search": 2, "page": 2}
+    assert fetched.ok is True
+
+
 def test_research_assembly_requires_three_outlines_and_defers_source_ingestion() -> None:
     dossier = _coffee_research_artifact()
 
@@ -205,6 +286,28 @@ def test_source_capture_records_selected_fetch_failure_but_keeps_successes(tmp_p
     assert [source["id"] for source in registry] == ["coffee_g1"]
     assert statuses["coffee_g2"] == "rejected"
     assert any(failure["id"] == "sf_coffee_g2" for failure in decided["body"]["source_failures"])
+
+
+def test_source_selection_step_fails_atomically_when_any_selected_capture_fails(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    dossier = _coffee_research_artifact()
+    for candidate in dossier["body"]["source_candidates"]:
+        if candidate["id"] == "coffee_g2":
+            candidate["locator"] = "https://example.test/missing-source"
+    monkeypatch.setattr(
+        steps,
+        "_provider_for_research",
+        lambda _dossier: coffee_mock_provider(),
+    )
+    monkeypatch.setattr(steps, "course_dir", lambda _course_id: tmp_path / "course")
+
+    with pytest.raises(ValueError, match="no source decision was saved.*coffee_g2"):
+        steps.source_selection_step(
+            {"research_dossier": dossier},
+            "coffee_g1,coffee_g2",
+        )
 
 
 def test_generated_course_model_and_blueprint_match_schema_and_integrity(tmp_path) -> None:

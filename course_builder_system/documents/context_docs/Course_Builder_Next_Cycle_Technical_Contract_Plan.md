@@ -6,14 +6,17 @@
 > observability boundaries needed to implement the next development cycle  
 > **Parent plan:** `Course_Builder_Next_Development_Cycle_Plan.md`
 
-> **NC-40 backend contract update — 2026-07-20:** NC-301 and NC-302 have passed
-> independent checkpoint review, and NC-303 remains deferred to NC-90 behind NC-902.
-> NC-401 through NC-403 passed independent NC-40 backend checkpoint review on
-> 2026-07-20 after corrective hardening. NC-404 and NC-405 passed independent review with
-> deterministic browser Scenario A6 evidence, including the exact-preview structural
-> diff. NC-40 is not complete because NC-406 remains deferred to NC-90. NC-406 and all
-> later packages remain unstarted. This does not complete
-> Milestone 3 or the cycle.
+> **NC-90 contract update — 2026-07-20:** NC-901 through NC-912 and scoped live
+> revisions NC-303, NC-406, NC-504, and NC-604 passed independent checkpoint review.
+> Deterministic and live Steps resolve through one
+> provider-neutral registry; live structured output is transformed for the Anthropic
+> wire dialect and validated against the original local schema, including cache hits.
+> Judgment-heavy proposals are bounded semantic slices and pass through deterministic
+> reducers. Stage outputs and downstream invalidations commit in one exact-precondition
+> transaction. Provider failures are explicit and never select deterministic output.
+> Stage evals use injected provider fixtures on two unrelated topics; a credentialed
+> live end-to-end run remains NC-1104. NC-100 and later packages remain unstarted. This
+> does not complete Milestone 3 or the cycle.
 
 ## 1. How to use this document
 

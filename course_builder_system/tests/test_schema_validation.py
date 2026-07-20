@@ -73,3 +73,15 @@ def test_any_of_and_its_assertion_siblings_are_all_applied() -> None:
         {"path": "$", "message": "Value does not match any allowed schema shape."},
         {"path": "$", "message": "Value is not one of ['allowed', 1]."},
     ]
+
+
+def test_numeric_minimum_and_maximum_are_both_enforced() -> None:
+    schema = {"type": "integer", "minimum": 2, "maximum": 4}
+
+    assert validate_json_schema(3, schema) == []
+    assert validate_json_schema(1, schema) == [
+        {"path": "$", "message": "Value is less than 2."}
+    ]
+    assert validate_json_schema(5, schema) == [
+        {"path": "$", "message": "Value is greater than 4."}
+    ]

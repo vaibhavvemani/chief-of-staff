@@ -184,7 +184,7 @@ def test_preview_is_read_only_and_save_atomically_invalidates_exact_descendants(
     stage = client.get(f"/api/courses/{course_id}/stages/course-model").json()
     action_ids = {action["id"] for action in stage["actions"]}
     assert "edit" in action_ids
-    assert "revise" not in action_ids
+    assert "revise" in action_ids
 
     approved = client.post(
         f"/api/courses/{course_id}/stages/course-model/approve",

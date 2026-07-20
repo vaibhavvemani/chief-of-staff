@@ -47,6 +47,18 @@ function TagList({ values, tone = "neutral" }: { values: string[]; tone?: "neutr
   return <div className="tag-list">{values.map((value) => <span key={value} className={`tag tag-${tone}`}>{value}</span>)}</div>;
 }
 
+type ScopedRevisionRecord = { targetType: string; id: string; label: string };
+
+function LiveRevisionControls({ records, onRequest }: { records: ScopedRevisionRecord[]; onRequest?: (targetType: string, id: string, label: string) => void }) {
+  if (!onRequest || !records.length) return null;
+  return (
+    <section className="live-revision-controls" aria-label="Live scoped revision targets">
+      <div><span className="eyebrow">Live scoped revision</span><h2>Ask the agent to revise one named record</h2><p>The backend accepts structured output only and rejects changes outside the selected ID.</p></div>
+      <div>{records.map((record) => <button className="button button-secondary" key={`${record.targetType}:${record.id}`} onClick={() => onRequest(record.targetType, record.id, record.label)}><span>{record.label}</span><code>{record.id}</code></button>)}</div>
+    </section>
+  );
+}
+
 function displayCode(value: string): string {
   const normalized = value.replaceAll("_", " ");
   return normalized ? normalized[0].toUpperCase() + normalized.slice(1) : "Not set";
@@ -209,6 +221,7 @@ function OutcomesView({
   onSave,
   onResolveConflict,
   onDirtyChange,
+  onRequestRevision,
 }: {
   workspace: Workspace;
   editing?: boolean;
@@ -221,6 +234,7 @@ function OutcomesView({
   onSave?: (decision: OutcomeDecisionDraft) => void;
   onResolveConflict?: (choice: "latest" | "keep") => void;
   onDirtyChange?: (dirty: boolean) => void;
+  onRequestRevision?: (targetType: string, id: string, label: string) => void;
 }) {
   return (
     <div className="stage-view">
@@ -245,6 +259,7 @@ function OutcomesView({
         onResolveConflict={onResolveConflict ?? (() => undefined)}
         onDirtyChange={onDirtyChange}
       />
+      {!editing ? <LiveRevisionControls records={workspace.outcomes.map((outcome) => ({ targetType: "outcome", id: outcome.id, label: outcome.statement }))} onRequest={onRequestRevision} /> : null}
     </div>
   );
 }
@@ -386,8 +401,8 @@ function ModelDetail({ subtopic }: { subtopic: Subtopic }) {
   );
 }
 
-function CourseModelView({ workspace, ...props }: { workspace: Workspace; editing?: boolean; busy?: boolean; conflict?: boolean; serverError?: string; serverIssues?: CourseModelValidationIssue[]; preview?: CourseModelPreview | null; onStartEdit?: () => void; onCancel?: () => void; onPreview?: (operations: CourseModelOperation[]) => void; onSave?: (operations: CourseModelOperation[], impactChecksum: string) => void; onInvalidatePreview?: () => void; onRecoverConflict?: (choice: "reapply" | "discard") => void; onDirtyChange?: (dirty: boolean) => void }) {
-  return <CourseModelEditor model={workspace.courseModel} outcomes={workspace.outcomes} canEdit={Boolean(props.onStartEdit)} editing={Boolean(props.editing)} busy={Boolean(props.busy)} conflict={Boolean(props.conflict)} serverError={props.serverError} serverIssues={props.serverIssues} preview={props.preview} onStartEdit={props.onStartEdit ?? (() => undefined)} onCancel={props.onCancel ?? (() => undefined)} onPreview={props.onPreview ?? (() => undefined)} onSave={props.onSave ?? (() => undefined)} onInvalidatePreview={props.onInvalidatePreview ?? (() => undefined)} onRecoverConflict={props.onRecoverConflict ?? (() => undefined)} onDirtyChange={props.onDirtyChange} />;
+function CourseModelView({ workspace, ...props }: { workspace: Workspace; editing?: boolean; busy?: boolean; conflict?: boolean; serverError?: string; serverIssues?: CourseModelValidationIssue[]; preview?: CourseModelPreview | null; onStartEdit?: () => void; onCancel?: () => void; onPreview?: (operations: CourseModelOperation[]) => void; onSave?: (operations: CourseModelOperation[], impactChecksum: string) => void; onInvalidatePreview?: () => void; onRecoverConflict?: (choice: "reapply" | "discard") => void; onDirtyChange?: (dirty: boolean) => void; onRequestRevision?: (targetType: string, id: string, label: string) => void }) {
+  return <><CourseModelEditor model={workspace.courseModel} outcomes={workspace.outcomes} canEdit={Boolean(props.onStartEdit)} editing={Boolean(props.editing)} busy={Boolean(props.busy)} conflict={Boolean(props.conflict)} serverError={props.serverError} serverIssues={props.serverIssues} preview={props.preview} onStartEdit={props.onStartEdit ?? (() => undefined)} onCancel={props.onCancel ?? (() => undefined)} onPreview={props.onPreview ?? (() => undefined)} onSave={props.onSave ?? (() => undefined)} onInvalidatePreview={props.onInvalidatePreview ?? (() => undefined)} onRecoverConflict={props.onRecoverConflict ?? (() => undefined)} onDirtyChange={props.onDirtyChange} />{!props.editing ? <LiveRevisionControls records={workspace.modules.flatMap((module) => module.subtopics.map((subtopic) => ({ targetType: "subtopic", id: subtopic.id, label: subtopic.title })))} onRequest={props.onRequestRevision} /> : null}</>;
 }
 
 const assetColumns = [
@@ -418,6 +433,7 @@ function BlueprintView({
   onSave,
   onRecoverConflict,
   onDirtyChange,
+  onRequestRevision,
 }: {
   workspace: Workspace;
   editing?: boolean;
@@ -429,6 +445,7 @@ function BlueprintView({
   onSave?: (decision: BlueprintDecisionDraft) => void;
   onRecoverConflict?: (choice: "reapply" | "discard") => void;
   onDirtyChange?: (dirty: boolean) => void;
+  onRequestRevision?: (targetType: string, id: string, label: string) => void;
 }) {
   const [exceptionsOnly, setExceptionsOnly] = useState(false);
   const plans = exceptionsOnly ? workspace.blueprint.plans.filter((plan) => plan.exception) : workspace.blueprint.plans;
@@ -471,6 +488,7 @@ function BlueprintView({
         }) : <div className="blueprint-empty"><span aria-hidden="true">◇</span><h3>No overridden rows</h3><p>Every subtopic currently uses the course-wide baseline.</p></div>}
       </section>
       <div className="matrix-guardrail"><span className="guardrail-symbol" aria-hidden="true">◆</span><div><strong>Course Content remains the anchor.</strong><p>Every subtopic keeps one required Course Content asset. Generation can only use approved sources routed through the Course Model.</p></div></div>
+      <LiveRevisionControls records={workspace.blueprint.plans.map((plan) => ({ targetType: "subtopic", id: plan.subtopicId, label: names.get(plan.subtopicId) ?? plan.subtopicId }))} onRequest={onRequestRevision} />
     </div>
   );
 }
@@ -657,6 +675,7 @@ function LessonPlanView({
   onSave,
   onRecoverConflict,
   onDirtyChange,
+  onRequestRevision,
 }: {
   workspace: Workspace;
   editing?: boolean;
@@ -668,6 +687,7 @@ function LessonPlanView({
   onSave?: (decision: LessonPlanDecisionDraft) => void;
   onRecoverConflict?: (choice: "reapply" | "discard") => void;
   onDirtyChange?: (dirty: boolean) => void;
+  onRequestRevision?: (targetType: string, id: string, label: string) => void;
 }) {
   const names = new Map(workspace.modules.flatMap((module) => module.subtopics.map((subtopic) => [subtopic.id, subtopic.title])));
   const nameRecord = Object.fromEntries(names);
@@ -706,6 +726,7 @@ function LessonPlanView({
           <div className="constraint-revision-note"><span aria-hidden="true">↳</span><p>{onStartEdit ? "Use the typed editor to change timing, delivery mode, placement, or sequence." : "Editing is unavailable in the current lifecycle state."}</p></div>
         </aside>
       </div>
+      <LiveRevisionControls records={workspace.lessonPlan.expectedSubtopicIds.map((id) => ({ targetType: "subtopic", id, label: names.get(id) ?? id }))} onRequest={onRequestRevision} />
     </div>
   );
 }
@@ -754,15 +775,15 @@ function PackageView({ workspace }: { workspace: Workspace }) {
   );
 }
 
-export function StageView({ stage, workspace, contentCapabilities, onContentAction, onSourceDecision, onAddKnownSource, sourceMutationBusy, sourceRepairBusy, onSourceRepairDecision, onSourceRepairRoute, onContentRepair, onEditBrief, outcomesEditing, outcomesBusy, outcomesConflict, outcomesServerError, outcomesServerIssues, onStartOutcomesEdit, onCancelOutcomesEdit, onSaveOutcomes, onResolveOutcomesConflict, onOutcomesDirtyChange, courseModelEditing, courseModelBusy, courseModelConflict, courseModelServerError, courseModelServerIssues, courseModelPreview, onStartCourseModelEdit, onCancelCourseModelEdit, onPreviewCourseModel, onSaveCourseModel, onInvalidateCourseModelPreview, onRecoverCourseModelConflict, onCourseModelDirtyChange, blueprintEditing, blueprintBusy, blueprintConflict, blueprintServerError, onStartBlueprintEdit, onCancelBlueprintEdit, onSaveBlueprint, onRecoverBlueprintConflict, onBlueprintDirtyChange, lessonPlanEditing, lessonPlanBusy, lessonPlanConflict, lessonPlanServerError, onStartLessonPlanEdit, onCancelLessonPlanEdit, onSaveLessonPlan, onRecoverLessonPlanConflict, onLessonPlanDirtyChange, briefQuestionRound, briefQuestionsLoading, briefQuestionsBusy, briefQuestionsError, onRetryBriefQuestions, onSubmitBriefQuestions }: { stage: StageSlug; workspace: Workspace; contentCapabilities?: { review: boolean; revise: boolean; contentRepair: boolean; repair: boolean; repairUnavailableReason?: string }; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onSourceDecision?: (selectedIds: string[]) => void; onAddKnownSource?: (source: { locator: string; title?: string; publisher?: string; trustNotes?: string; relevance?: string }) => void; sourceMutationBusy?: boolean; sourceRepairBusy?: boolean; onSourceRepairDecision?: (entry: SourceRepairEntry, candidateId: string) => void; onSourceRepairRoute?: (entry: SourceRepairEntry) => void; onContentRepair?: (entry: SourceRepairEntry) => void; onEditBrief?: (section: BriefEditSection) => void; outcomesEditing?: boolean; outcomesBusy?: boolean; outcomesConflict?: boolean; outcomesServerError?: string; outcomesServerIssues?: OutcomeValidationIssue[]; onStartOutcomesEdit?: () => void; onCancelOutcomesEdit?: () => void; onSaveOutcomes?: (decision: OutcomeDecisionDraft) => void; onResolveOutcomesConflict?: (choice: "latest" | "keep") => void; onOutcomesDirtyChange?: (dirty: boolean) => void; courseModelEditing?: boolean; courseModelBusy?: boolean; courseModelConflict?: boolean; courseModelServerError?: string; courseModelServerIssues?: CourseModelValidationIssue[]; courseModelPreview?: CourseModelPreview | null; onStartCourseModelEdit?: () => void; onCancelCourseModelEdit?: () => void; onPreviewCourseModel?: (operations: CourseModelOperation[]) => void; onSaveCourseModel?: (operations: CourseModelOperation[], impactChecksum: string) => void; onInvalidateCourseModelPreview?: () => void; onRecoverCourseModelConflict?: (choice: "reapply" | "discard") => void; onCourseModelDirtyChange?: (dirty: boolean) => void; blueprintEditing?: boolean; blueprintBusy?: boolean; blueprintConflict?: boolean; blueprintServerError?: string; onStartBlueprintEdit?: () => void; onCancelBlueprintEdit?: () => void; onSaveBlueprint?: (decision: BlueprintDecisionDraft) => void; onRecoverBlueprintConflict?: (choice: "reapply" | "discard") => void; onBlueprintDirtyChange?: (dirty: boolean) => void; lessonPlanEditing?: boolean; lessonPlanBusy?: boolean; lessonPlanConflict?: boolean; lessonPlanServerError?: string; onStartLessonPlanEdit?: () => void; onCancelLessonPlanEdit?: () => void; onSaveLessonPlan?: (decision: LessonPlanDecisionDraft) => void; onRecoverLessonPlanConflict?: (choice: "reapply" | "discard") => void; onLessonPlanDirtyChange?: (dirty: boolean) => void; briefQuestionRound?: BriefQuestionRoundData; briefQuestionsLoading?: boolean; briefQuestionsBusy?: boolean; briefQuestionsError?: string; onRetryBriefQuestions?: () => void; onSubmitBriefQuestions?: (answers: BriefQuestionAnswer[]) => void }) {
+export function StageView({ stage, workspace, contentCapabilities, onContentAction, onRequestRevision, onSourceDecision, onAddKnownSource, sourceMutationBusy, sourceRepairBusy, onSourceRepairDecision, onSourceRepairRoute, onContentRepair, onEditBrief, outcomesEditing, outcomesBusy, outcomesConflict, outcomesServerError, outcomesServerIssues, onStartOutcomesEdit, onCancelOutcomesEdit, onSaveOutcomes, onResolveOutcomesConflict, onOutcomesDirtyChange, courseModelEditing, courseModelBusy, courseModelConflict, courseModelServerError, courseModelServerIssues, courseModelPreview, onStartCourseModelEdit, onCancelCourseModelEdit, onPreviewCourseModel, onSaveCourseModel, onInvalidateCourseModelPreview, onRecoverCourseModelConflict, onCourseModelDirtyChange, blueprintEditing, blueprintBusy, blueprintConflict, blueprintServerError, onStartBlueprintEdit, onCancelBlueprintEdit, onSaveBlueprint, onRecoverBlueprintConflict, onBlueprintDirtyChange, lessonPlanEditing, lessonPlanBusy, lessonPlanConflict, lessonPlanServerError, onStartLessonPlanEdit, onCancelLessonPlanEdit, onSaveLessonPlan, onRecoverLessonPlanConflict, onLessonPlanDirtyChange, briefQuestionRound, briefQuestionsLoading, briefQuestionsBusy, briefQuestionsError, onRetryBriefQuestions, onSubmitBriefQuestions }: { stage: StageSlug; workspace: Workspace; contentCapabilities?: { review: boolean; revise: boolean; contentRepair: boolean; repair: boolean; repairUnavailableReason?: string }; onContentAction?: (action: string, asset: ContentAsset, claim?: Claim) => void; onRequestRevision?: (targetType: string, id: string, label: string) => void; onSourceDecision?: (selectedIds: string[]) => void; onAddKnownSource?: (source: { locator: string; title?: string; publisher?: string; trustNotes?: string; relevance?: string }) => void; sourceMutationBusy?: boolean; sourceRepairBusy?: boolean; onSourceRepairDecision?: (entry: SourceRepairEntry, candidateId: string) => void; onSourceRepairRoute?: (entry: SourceRepairEntry) => void; onContentRepair?: (entry: SourceRepairEntry) => void; onEditBrief?: (section: BriefEditSection) => void; outcomesEditing?: boolean; outcomesBusy?: boolean; outcomesConflict?: boolean; outcomesServerError?: string; outcomesServerIssues?: OutcomeValidationIssue[]; onStartOutcomesEdit?: () => void; onCancelOutcomesEdit?: () => void; onSaveOutcomes?: (decision: OutcomeDecisionDraft) => void; onResolveOutcomesConflict?: (choice: "latest" | "keep") => void; onOutcomesDirtyChange?: (dirty: boolean) => void; courseModelEditing?: boolean; courseModelBusy?: boolean; courseModelConflict?: boolean; courseModelServerError?: string; courseModelServerIssues?: CourseModelValidationIssue[]; courseModelPreview?: CourseModelPreview | null; onStartCourseModelEdit?: () => void; onCancelCourseModelEdit?: () => void; onPreviewCourseModel?: (operations: CourseModelOperation[]) => void; onSaveCourseModel?: (operations: CourseModelOperation[], impactChecksum: string) => void; onInvalidateCourseModelPreview?: () => void; onRecoverCourseModelConflict?: (choice: "reapply" | "discard") => void; onCourseModelDirtyChange?: (dirty: boolean) => void; blueprintEditing?: boolean; blueprintBusy?: boolean; blueprintConflict?: boolean; blueprintServerError?: string; onStartBlueprintEdit?: () => void; onCancelBlueprintEdit?: () => void; onSaveBlueprint?: (decision: BlueprintDecisionDraft) => void; onRecoverBlueprintConflict?: (choice: "reapply" | "discard") => void; onBlueprintDirtyChange?: (dirty: boolean) => void; lessonPlanEditing?: boolean; lessonPlanBusy?: boolean; lessonPlanConflict?: boolean; lessonPlanServerError?: string; onStartLessonPlanEdit?: () => void; onCancelLessonPlanEdit?: () => void; onSaveLessonPlan?: (decision: LessonPlanDecisionDraft) => void; onRecoverLessonPlanConflict?: (choice: "reapply" | "discard") => void; onLessonPlanDirtyChange?: (dirty: boolean) => void; briefQuestionRound?: BriefQuestionRoundData; briefQuestionsLoading?: boolean; briefQuestionsBusy?: boolean; briefQuestionsError?: string; onRetryBriefQuestions?: () => void; onSubmitBriefQuestions?: (answers: BriefQuestionAnswer[]) => void }) {
   switch (stage) {
     case "brief": return <BriefView workspace={workspace} onEdit={onEditBrief} questionRound={briefQuestionRound} questionsLoading={briefQuestionsLoading} questionsBusy={briefQuestionsBusy} questionsError={briefQuestionsError} onRetryQuestions={onRetryBriefQuestions} onSubmitQuestions={onSubmitBriefQuestions} />;
-    case "outcomes": return <OutcomesView workspace={workspace} editing={outcomesEditing} busy={outcomesBusy} conflict={outcomesConflict} serverError={outcomesServerError} serverIssues={outcomesServerIssues} onStartEdit={onStartOutcomesEdit} onCancel={onCancelOutcomesEdit} onSave={onSaveOutcomes} onResolveConflict={onResolveOutcomesConflict} onDirtyChange={onOutcomesDirtyChange} />;
+    case "outcomes": return <OutcomesView workspace={workspace} editing={outcomesEditing} busy={outcomesBusy} conflict={outcomesConflict} serverError={outcomesServerError} serverIssues={outcomesServerIssues} onStartEdit={onStartOutcomesEdit} onCancel={onCancelOutcomesEdit} onSave={onSaveOutcomes} onResolveConflict={onResolveOutcomesConflict} onDirtyChange={onOutcomesDirtyChange} onRequestRevision={onRequestRevision} />;
     case "research": return <ResearchView workspace={workspace} onSourceDecision={onSourceDecision} onAddKnownSource={onAddKnownSource} sourceMutationBusy={sourceMutationBusy} />;
-    case "course-model": return <CourseModelView workspace={workspace} editing={courseModelEditing} busy={courseModelBusy} conflict={courseModelConflict} serverError={courseModelServerError} serverIssues={courseModelServerIssues} preview={courseModelPreview} onStartEdit={onStartCourseModelEdit} onCancel={onCancelCourseModelEdit} onPreview={onPreviewCourseModel} onSave={onSaveCourseModel} onInvalidatePreview={onInvalidateCourseModelPreview} onRecoverConflict={onRecoverCourseModelConflict} onDirtyChange={onCourseModelDirtyChange} />;
-    case "blueprint": return <BlueprintView workspace={workspace} editing={blueprintEditing} busy={blueprintBusy} conflict={blueprintConflict} serverError={blueprintServerError} onStartEdit={onStartBlueprintEdit} onCancel={onCancelBlueprintEdit} onSave={onSaveBlueprint} onRecoverConflict={onRecoverBlueprintConflict} onDirtyChange={onBlueprintDirtyChange} />;
+    case "course-model": return <CourseModelView workspace={workspace} editing={courseModelEditing} busy={courseModelBusy} conflict={courseModelConflict} serverError={courseModelServerError} serverIssues={courseModelServerIssues} preview={courseModelPreview} onStartEdit={onStartCourseModelEdit} onCancel={onCancelCourseModelEdit} onPreview={onPreviewCourseModel} onSave={onSaveCourseModel} onInvalidatePreview={onInvalidateCourseModelPreview} onRecoverConflict={onRecoverCourseModelConflict} onDirtyChange={onCourseModelDirtyChange} onRequestRevision={onRequestRevision} />;
+    case "blueprint": return <BlueprintView workspace={workspace} editing={blueprintEditing} busy={blueprintBusy} conflict={blueprintConflict} serverError={blueprintServerError} onStartEdit={onStartBlueprintEdit} onCancel={onCancelBlueprintEdit} onSave={onSaveBlueprint} onRecoverConflict={onRecoverBlueprintConflict} onDirtyChange={onBlueprintDirtyChange} onRequestRevision={onRequestRevision} />;
     case "content": return <ContentView workspace={workspace} canReview={contentCapabilities?.review ?? false} canRevise={contentCapabilities?.revise ?? false} canContentRepair={contentCapabilities?.contentRepair ?? false} canRepair={contentCapabilities?.repair ?? false} repairUnavailableReason={contentCapabilities?.repairUnavailableReason} repairBusy={sourceRepairBusy ?? false} onContentAction={onContentAction} onRepairDecision={onSourceRepairDecision} onRepairRoute={onSourceRepairRoute} onContentRepair={onContentRepair} />;
-    case "lesson-plan": return <LessonPlanView workspace={workspace} editing={lessonPlanEditing} busy={lessonPlanBusy} conflict={lessonPlanConflict} serverError={lessonPlanServerError} onStartEdit={onStartLessonPlanEdit} onCancel={onCancelLessonPlanEdit} onSave={onSaveLessonPlan} onRecoverConflict={onRecoverLessonPlanConflict} onDirtyChange={onLessonPlanDirtyChange} />;
+    case "lesson-plan": return <LessonPlanView workspace={workspace} editing={lessonPlanEditing} busy={lessonPlanBusy} conflict={lessonPlanConflict} serverError={lessonPlanServerError} onStartEdit={onStartLessonPlanEdit} onCancel={onCancelLessonPlanEdit} onSave={onSaveLessonPlan} onRecoverConflict={onRecoverLessonPlanConflict} onDirtyChange={onLessonPlanDirtyChange} onRequestRevision={onRequestRevision} />;
     case "package": return <PackageView workspace={workspace} />;
   }
 }

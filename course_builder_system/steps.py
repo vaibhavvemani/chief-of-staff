@@ -143,6 +143,23 @@ def source_selection_step(inputs: dict, feedback: str | None) -> dict:
     else:
         decided_dossier = apply_source_decision(inputs["research_dossier"], selected_ids)
     registry = approved_source_registry(decided_dossier)
+    approved_ids = [source["id"] for source in registry]
+    failed_selected_ids = sorted(set(selected_ids) - set(approved_ids))
+    if failed_selected_ids:
+        failures = {
+            str(failure.get("id", "")).removeprefix("sf_"): str(
+                failure.get("reason") or "capture failed"
+            )
+            for failure in decided_dossier["body"].get("source_failures", [])
+            if isinstance(failure, dict)
+        }
+        detail = "; ".join(
+            f"{source_id}: {failures.get(source_id, 'source was not approved')}"
+            for source_id in failed_selected_ids
+        )
+        raise ValueError(
+            "Selected source capture failed; no source decision was saved. " + detail
+        )
     rejected_ids = [
         candidate["id"]
         for candidate in decided_dossier["body"].get("source_candidates", [])
@@ -171,7 +188,7 @@ def source_selection_step(inputs: dict, feedback: str | None) -> dict:
             },
             "decision": {
                 "selected_ids": list(selected_ids),
-                "approved_ids": [source["id"] for source in registry],
+                "approved_ids": approved_ids,
                 "rejected_ids": rejected_ids,
             },
             "source_registry": registry,

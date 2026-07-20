@@ -5,8 +5,12 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from orchestrator import Step
+
+if TYPE_CHECKING:
+    from implementation_registry import StageImplementationRegistry
 
 
 @dataclass(frozen=True)
@@ -97,10 +101,34 @@ SUPPORT_ARTIFACT_STAGES: dict[str, str] = {
 
 STAGE_CAPABILITIES: dict[str, StageCapabilities] = {
     "brief": StageCapabilities(direct_actions=("edit",)),
-    "outcomes": StageCapabilities(direct_actions=("edit",)),
+    "outcomes": StageCapabilities(
+        direct_actions=("edit",),
+        revisions=(
+            RevisionCapability(
+                target_type="outcome",
+                categories=("scope", "clarity", "evidence"),
+            ),
+        ),
+    ),
     "research": StageCapabilities(direct_actions=("source_decision", "add_source")),
-    "course-model": StageCapabilities(direct_actions=("edit",)),
-    "blueprint": StageCapabilities(direct_actions=("edit",)),
+    "course-model": StageCapabilities(
+        direct_actions=("edit",),
+        revisions=(
+            RevisionCapability(
+                target_type="subtopic",
+                categories=("scope", "structure"),
+            ),
+        ),
+    ),
+    "blueprint": StageCapabilities(
+        direct_actions=("edit",),
+        revisions=(
+            RevisionCapability(
+                target_type="subtopic",
+                categories=("depth", "structure"),
+            ),
+        ),
+    ),
     "content": StageCapabilities(
         direct_actions=("review_asset", "source_repair", "content_repair"),
         revisions=(
@@ -110,7 +138,15 @@ STAGE_CAPABILITIES: dict[str, StageCapabilities] = {
             ),
         ),
     ),
-    "lesson-plan": StageCapabilities(direct_actions=("edit",)),
+    "lesson-plan": StageCapabilities(
+        direct_actions=("edit",),
+        revisions=(
+            RevisionCapability(
+                target_type="subtopic",
+                categories=("delivery", "sequence"),
+            ),
+        ),
+    ),
     "package": StageCapabilities(),
 }
 
@@ -118,9 +154,25 @@ STAGE_CAPABILITIES: dict[str, StageCapabilities] = {
 class PipelineCatalog:
     """A read-only view over the pipeline data already assembled by ``run.py``."""
 
-    def __init__(self, *, rendered_root: Path | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        rendered_root: Path | None = None,
+        implementation_registry: StageImplementationRegistry | None = None,
+    ) -> None:
         self.rendered_root = rendered_root or Path("rendered_courses")
+        self._implementation_registry = implementation_registry
         self._by_slug = {stage.slug: stage for stage in STAGES}
+
+    @property
+    def implementation_registry(self) -> StageImplementationRegistry:
+        if self._implementation_registry is None:
+            from implementation_registry import build_default_implementation_registry
+
+            self._implementation_registry = build_default_implementation_registry(
+                rendered_root=self.rendered_root
+            )
+        return self._implementation_registry
 
     @property
     def stages(self) -> tuple[StageDefinition, ...]:
@@ -136,12 +188,19 @@ class PipelineCatalog:
         # Import lazily so read-only projection does not initialize agent clients.
         import run
 
+        implementations = self.implementation_registry.selection(mode).steps
         if mode == "deterministic":
-            pipeline = run.build_sprint4_acceptance_pipeline(output_root=self.rendered_root)
+            pipeline = run.build_sprint4_acceptance_pipeline(
+                output_root=self.rendered_root,
+                implementations=implementations,
+            )
         elif mode == "live":
-            pipeline = run.build_sprint3_pipeline(live_research=True)
-        else:
-            raise ValueError(f"unknown stage-run mode: {mode!r}")
+            pipeline = run.build_sprint3_pipeline(
+                live_research=True,
+                implementations=implementations,
+            )
+        else:  # selection above supplies the authoritative mode error
+            raise AssertionError("unreachable implementation mode")
         return {step.name: step for step in pipeline}
 
     def pipeline_steps(self, *, mode: str = "deterministic") -> list[Step]:
@@ -149,11 +208,25 @@ class PipelineCatalog:
         # Import lazily so projection and tests do not initialize live clients.
         import run
 
+        implementations = self.implementation_registry.selection(mode).steps
         if mode == "deterministic":
-            return run.build_sprint4_acceptance_pipeline(output_root=self.rendered_root)
+            return run.build_sprint4_acceptance_pipeline(
+                output_root=self.rendered_root,
+                implementations=implementations,
+            )
         if mode == "live":
-            return run.build_sprint3_pipeline(live_research=True)
-        raise ValueError(f"unknown stage-run mode: {mode!r}")
+            return run.build_sprint3_pipeline(
+                live_research=True,
+                implementations=implementations,
+            )
+        raise AssertionError("unreachable implementation mode")
+
+    def provider_readiness(self) -> dict[str, object]:
+        return self.implementation_registry.provider_readiness()
+
+    def assert_mode_ready(self, mode: str, stage_slug: str) -> None:
+        self.stage(stage_slug)
+        self.implementation_registry.assert_mode_ready(mode, stage_slug)
 
     def steps_for_stage(self, slug: str, *, mode: str = "deterministic") -> list[Step]:
         stage = self.stage(slug)

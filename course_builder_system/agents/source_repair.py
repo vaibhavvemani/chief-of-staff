@@ -5,9 +5,11 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from typing import Any, Protocol
+from urllib.parse import urlparse
 
 from agents.source_quality import project_source_quality
 from orchestrator import make_artifact
+from research_adapter import BoundedLiveResearchProvider, ResearchProvider
 
 SOURCE_REPAIR_SCHEMA_VERSION = "0.1"
 SOURCE_REPAIR_STATES = frozenset(
@@ -95,6 +97,67 @@ class DeterministicSourceRepairProvider:
                 content=content,
             )
         ][:limit]
+
+
+class LiveSourceRepairProvider:
+    """Bounded live search/extraction for one named verifier evidence gap."""
+
+    def __init__(
+        self,
+        provider: ResearchProvider | None = None,
+        *,
+        max_content_chars: int = 20_000,
+    ) -> None:
+        if max_content_chars < 1:
+            raise ValueError("max_content_chars must be positive")
+        self.provider = provider or BoundedLiveResearchProvider()
+        self.max_content_chars = max_content_chars
+
+    def research(
+        self,
+        scope: RepairResearchScope,
+        *,
+        limit: int,
+    ) -> list[RepairSourceCandidate]:
+        bounded_limit = min(max(limit, 0), 3)
+        if bounded_limit == 0:
+            return []
+        query = (
+            f"{scope.evidence_gap} {scope.subtopic_id} authoritative guide evidence"
+        )[:500]
+        results = self.provider.search(query, limit=min(bounded_limit * 3, 9))
+        candidates: list[RepairSourceCandidate] = []
+        seen_locators: set[str] = set()
+        for result in results:
+            if result.locator in seen_locators:
+                continue
+            seen_locators.add(result.locator)
+            fetched = self.provider.fetch(result.locator)
+            if not fetched.ok or not fetched.content:
+                continue
+            digest = hashlib.sha256(result.locator.encode()).hexdigest()[:12]
+            host = urlparse(result.locator).hostname or "Unknown publisher"
+            candidates.append(
+                RepairSourceCandidate(
+                    id=f"repair_src_{digest}",
+                    title=result.title[:180],
+                    publisher=host.removeprefix("www."),
+                    source_type="live web source",
+                    locator=result.locator,
+                    trust_notes=(
+                        "Live bounded candidate; authority and fit remain advisory until "
+                        "the course director reviews the source."
+                    ),
+                    relevance=(
+                        f"Search result and fetched text target the evidence gap: "
+                        f"{scope.evidence_gap}"
+                    )[:500],
+                    content=fetched.content[: self.max_content_chars],
+                )
+            )
+            if len(candidates) >= bounded_limit:
+                break
+        return candidates
 
 
 def build_source_repair_artifact(course_id: str) -> dict[str, Any]:

@@ -934,7 +934,10 @@ test("Scenario A6 edits, previews, persists, and approves the typed Course Model
     page.getByRole("heading", { name: "Grind Size and Extraction Control" }),
   ).toBeVisible();
   await page.reload();
-  await page.getByRole("button", { name: /Grind Size and Extraction Control/ }).click();
+  await page
+    .locator(".model-tree")
+    .getByRole("button", { name: /Grind Size and Extraction Control/ })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Grind Size and Extraction Control" }),
   ).toBeVisible();

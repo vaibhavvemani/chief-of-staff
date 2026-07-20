@@ -25,6 +25,7 @@ _SUPPORTED_SCHEMA_KEYWORDS = frozenset(
         "items",
         "maxItems",
         "maxLength",
+        "maximum",
         "minItems",
         "minLength",
         "minimum",
@@ -112,6 +113,13 @@ def _validate_json_schema(
         and instance < schema["minimum"]
     ):
         issues.append(_issue(path, f"Value is less than {schema['minimum']}."))
+    if (
+        "maximum" in schema
+        and isinstance(instance, (int, float))
+        and not isinstance(instance, bool)
+        and instance > schema["maximum"]
+    ):
+        issues.append(_issue(path, f"Value is greater than {schema['maximum']}."))
 
     if isinstance(instance, dict):
         properties = schema.get("properties", {})
@@ -267,11 +275,12 @@ def _assert_keyword_shapes(schema: dict[str, Any], *, path: str) -> None:
         ):
             raise ValueError(f"JSON Schema {keyword} at {path} must be a non-negative integer.")
 
-    if "minimum" in schema and (
-        not isinstance(schema["minimum"], (int, float))
-        or isinstance(schema["minimum"], bool)
-    ):
-        raise ValueError(f"JSON Schema minimum at {path} must be numeric.")
+    for keyword in ("minimum", "maximum"):
+        if keyword in schema and (
+            not isinstance(schema[keyword], (int, float))
+            or isinstance(schema[keyword], bool)
+        ):
+            raise ValueError(f"JSON Schema {keyword} at {path} must be numeric.")
     if "uniqueItems" in schema and not isinstance(schema["uniqueItems"], bool):
         raise ValueError(f"JSON Schema uniqueItems at {path} must be a boolean.")
     if "pattern" in schema:

@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from api.main import create_app
@@ -150,3 +151,34 @@ def test_content_reopen_reports_direct_content_as_affected(tmp_path: Path) -> No
             "render_manifest",
             "run_summary",
         }
+
+
+@pytest.mark.parametrize(
+    ("stage", "target_type"),
+    [
+        ("outcomes", "outcome"),
+        ("course-model", "subtopic"),
+        ("blueprint", "subtopic"),
+        ("lesson-plan", "subtopic"),
+    ],
+)
+def test_scoped_impact_rejects_unknown_noncontent_targets(
+    stage: str,
+    target_type: str,
+    tmp_path: Path,
+) -> None:
+    with _client_with_complete_course(tmp_path) as client:
+        stage_view = client.get(f"/api/courses/impact-course/stages/{stage}").json()
+        response = client.post(
+            f"/api/courses/impact-course/stages/{stage}/impact",
+            json={
+                "action": "revise",
+                "target_type": target_type,
+                "target_ids": ["missing-record"],
+                "operation_summary": "This target does not exist.",
+                "expected_checksum": stage_view["checksum"],
+            },
+        )
+
+        assert response.status_code == 400
+        assert "unknown impact target" in response.json()["error"]["message"]

@@ -469,6 +469,75 @@ def build_brief_artifact(subject_request: dict, answers: dict[str, Any]) -> dict
     )
 
 
+def build_inferred_brief_artifact(
+    subject_request: dict,
+    proposals: dict[str, Any],
+) -> dict:
+    """Build a model-proposed Brief without claiming the user supplied its values."""
+    subject_body = subject_request["body"]
+    seed_answers = _seed_answers(subject_request)
+    seeded_body = build_brief_body(subject_body, seed_answers)
+    proposed_body = build_brief_body(subject_body, proposals)
+    values = _brief_values(proposed_body, subject_body)
+    for field_name in seed_answers:
+        values[field_name] = deepcopy(seeded_body[field_name])
+    explicit_fields = {"subject", *seed_answers}
+    state = _make_intake_state(
+        subject_body,
+        values,
+        explicit_fields=explicit_fields,
+        accepted_default_fields=set(),
+        answered_question_ids={
+            question.id
+            for question in COURSE_BRIEF_QUESTIONS
+            if question.field in explicit_fields and _present(values.get(question.field))
+        },
+    )
+    body = _build_readable_body(subject_body, values, state)
+    inferred_fields = {
+        field_name
+        for field_name in proposals
+        if field_name not in explicit_fields and _present(values.get(field_name))
+    }
+    by_field = {
+        item["field"]: item
+        for item in body["provenance"]
+        if isinstance(item, dict) and isinstance(item.get("field"), str)
+    }
+    for field_name in inferred_fields:
+        by_field[field_name] = {
+            "field": field_name,
+            "source": "inferred",
+            "confidence": "needs_review",
+        }
+    provenance_order = dict.fromkeys(
+        (
+            *BRIEF_FIELD_ORDER,
+            "constraints",
+            "available_materials",
+            "accessibility_requirements",
+        )
+    )
+    body["provenance"] = [
+        by_field[field_name]
+        for field_name in provenance_order
+        if field_name in by_field
+    ]
+    body["assumptions"] = [
+        item for item in body["assumptions"] if item.get("field") not in inferred_fields
+    ] + [
+        {
+            "field": field_name,
+            "value": str(values.get(field_name))[:300],
+            "rationale": (
+                "The live provider proposed this value; the course director must review it."
+            ),
+        }
+        for field_name in sorted(inferred_fields)
+    ]
+    return brief_artifact_from_body(subject_request, body)
+
+
 def build_initial_brief_artifact(subject_request: dict) -> dict:
     """Create the canonical durable intake draft for a newly created course."""
     return build_brief_artifact(subject_request, _seed_answers(subject_request))
