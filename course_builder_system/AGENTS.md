@@ -39,7 +39,10 @@ NC-100 checkpoint review on 2026-07-20.
 Evidence covers timely unit progress including targeted repair, persisted secret-safe
 activity and call diagnostics, provider readiness across every live start path, actual
 safe Markdown rendering, actionable backend-owned release blockers, and keyboard,
-focus, status, and contrast coverage. NC-110 and later packages remain unstarted.
+focus, status, and contrast coverage. NC-1101 through NC-1105 passed independent
+checkpoint review on 2026-07-23 after hardening metadata-only verifier evidence and
+replacing seeded recovery states with real post-start failure and API-process restart
+evidence. NC-120 remains unstarted.
 NC-003 is resolved with the documented fallback live subject,
 `Indoor herb gardening for apartment beginners`, course ID `studio-live-pilot`, a
 five-subtopic boundary, and a representative ten-asset review envelope.
@@ -75,10 +78,9 @@ NC-301 and NC-302. NC-401 through NC-405, NC-501 through NC-503, and NC-601 thro
 NC-603 are independently verified. NC-701 through NC-709 and NC-801 through NC-808 are
 independently verified, and NC-003 is resolved with the documented fallback subject.
 NC-901 through NC-912 and the four previously deferred scoped live revisions are
-independently verified. NC-1001 through NC-1007 are independently verified. The next
-safe action is NC-110, beginning with NC-1101 and following its dependency order. Do
-not start credentialed live acceptance NC-1104 before NC-1101 through NC-1103 have
-their prerequisite evidence.
+independently verified. NC-1001 through NC-1007 and NC-1101 through NC-1105 are
+independently verified. NC-120 remains unstarted; NC-1202 remains a real nontechnical
+course-director pilot and must not be simulated by an agent.
 Source repair plus verifier-driven targeted revision remains the central trust milestone
 after the intervening stage contracts.
 

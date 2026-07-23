@@ -4,32 +4,33 @@ import { fileURLToPath } from "node:url";
 
 const frontendRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.dirname(frontendRoot);
-const artifactRoot = path.join(repositoryRoot, "output", "playwright");
+const artifactRoot = path.join(repositoryRoot, "output", "playwright", "live");
 const python = path.join(repositoryRoot, ".venv", "bin", "python");
 
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: "**/*.e2e.ts",
-  testIgnore: "**/live-course.e2e.ts",
+  testMatch: "**/live-course.e2e.ts",
   fullyParallel: false,
-  forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 2 : 0,
+  forbidOnly: true,
+  retries: 0,
   workers: 1,
+  timeout: 30 * 60_000,
+  expect: { timeout: 30_000 },
   reporter: [
     ["list"],
     ["html", { outputFolder: path.join(artifactRoot, "report"), open: "never" }],
   ],
   outputDir: path.join(artifactRoot, "test-results"),
   use: {
-    baseURL: "http://127.0.0.1:8765",
+    baseURL: "http://127.0.0.1:8766",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
   },
   webServer: {
-    command: `${python} tests/browser_acceptance_supervisor.py`,
+    command: `${python} -m uvicorn api.main:app --host 127.0.0.1 --port 8766 --no-access-log`,
     cwd: repositoryRoot,
-    url: "http://127.0.0.1:8765/api/health",
+    url: "http://127.0.0.1:8766/api/health",
     reuseExistingServer: false,
     timeout: 120_000,
     stdout: "pipe",
@@ -37,7 +38,7 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "chromium",
+      name: "chromium-live",
       use: { ...devices["Desktop Chrome"] },
     },
   ],

@@ -103,6 +103,133 @@ def _llm_result(response: dict | None, text: str = "") -> SimpleNamespace:
     return SimpleNamespace(parsed=response, text=text or json.dumps(response))
 
 
+def test_verification_schema_is_accepted_by_anthropic_transformer():
+    transformed = verification.llm.anthropic.transform_schema(
+        verification._verification_response_schema()
+    )
+
+    support = transformed["properties"]["claim_verdicts"]["items"]["properties"]["support"]
+    assert support == {
+        "type": "string",
+        "enum": ["supported", "partial", "unsupported"],
+    }
+
+
+def test_verify_asset_accepts_registered_url_metadata_as_evidence(source_setup):
+    domain_model, _excerpts = source_setup
+    source = domain_model["body"]["grounding_sources"][0]["items"][0]
+    source["url"] = "https://example.test/approved-guide"
+    asset = _asset(
+        {
+            **_claim("source-url"),
+            "text": "The approved guide is available at https://example.test/approved-guide.",
+        }
+    )
+    response = _response(
+        [
+            {
+                "claim_id": "source-url",
+                "support": "supported",
+                "supporting_excerpt": "URL: https://example.test/approved-guide",
+                "note": "The registered source metadata supplies the exact URL.",
+            }
+        ]
+    )
+
+    with patch.object(
+        verification.llm,
+        "call",
+        return_value=_llm_result(response),
+    ) as mock_call:
+        verified = verification.verify_asset(
+            asset,
+            domain_model,
+            checked_at=CHECKED_AT,
+        )
+
+    assert verified["claims"][0]["support"] == "supported"
+    assert "URL: https://example.test/approved-guide" in mock_call.call_args.args[0][0][
+        "content"
+    ]
+
+
+def test_verify_asset_rejects_metadata_excerpt_for_substantive_claim(source_setup):
+    domain_model, _excerpts = source_setup
+    source = domain_model["body"]["grounding_sources"][0]["items"][0]
+    source["url"] = "https://example.test/approved-guide"
+    asset = _asset(
+        {
+            **_claim("substantive"),
+            "text": (
+                "The approved guide at https://example.test/approved-guide says "
+                "plants should be watered twice daily."
+            ),
+        }
+    )
+    response = _response(
+        [
+            {
+                "claim_id": "substantive",
+                "support": "supported",
+                "supporting_excerpt": "URL: https://example.test/approved-guide",
+                "note": "The registered metadata contains the URL.",
+            }
+        ]
+    )
+
+    with patch.object(
+        verification.llm,
+        "call",
+        return_value=_llm_result(response),
+    ) as call:
+        verified = verification.verify_asset(
+            asset,
+            domain_model,
+            checked_at=CHECKED_AT,
+        )
+
+    assert call.call_count == 2
+    assert verified["claims"][0]["support"] == "unsupported"
+    assert verified["claims"][0]["supporting_excerpt"] is None
+
+
+def test_verify_asset_rejects_prescriptive_title_as_body_evidence(source_setup):
+    domain_model, _excerpts = source_setup
+    source = domain_model["body"]["grounding_sources"][0]["items"][0]
+    source["name"] = "Plants should be watered twice daily."
+    asset = _asset(
+        {
+            **_claim("prescriptive-title"),
+            "text": "Plants should be watered twice daily.",
+        }
+    )
+    response = _response(
+        [
+            {
+                "claim_id": "prescriptive-title",
+                "support": "supported",
+                "supporting_excerpt": "Title: Plants should be watered twice daily.",
+                "note": "The registered metadata contains the exact title.",
+            }
+        ]
+    )
+
+    with patch.object(
+        verification.llm,
+        "call",
+        return_value=_llm_result(response),
+    ) as call:
+        verified = verification.verify_asset(
+            asset,
+            domain_model,
+            checked_at=CHECKED_AT,
+        )
+
+    assert call.call_count == 2
+    assert verified["claims"][0]["support"] == "unsupported"
+    assert verified["claims"][0]["supporting_excerpt"] is None
+
+
 def test_verify_asset_annotates_all_verdicts_and_ungrounded(source_setup):
     domain_model, excerpts = source_setup
     original = _asset(

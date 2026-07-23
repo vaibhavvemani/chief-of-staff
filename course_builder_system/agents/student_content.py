@@ -326,6 +326,7 @@ def generate_asset(
         max_tokens=spec.max_tokens,
         schema=schema,
         use_cache=use_cache,
+        call_role="content_generation",
     )
 
     asset = result.parsed

@@ -16,7 +16,7 @@ from agents import intake, lesson_plan, outcomes, research
 from course_model_integrity import validate_course_model_semantics
 from course_model_operations import reduce_course_model_operations
 from interaction import QuestionSpec
-from research_adapter import BoundedLiveResearchProvider, ResearchProvider
+from research_adapter import BoundedLiveResearchProvider, ResearchProvider, SearchResult
 
 
 class StructuredModelProvider(Protocol):
@@ -64,6 +64,7 @@ class AnthropicStructuredModelProvider:
             max_tokens=max_tokens,
             schema=schema,
             use_cache=use_cache,
+            call_role=stage,
         )
         if not isinstance(result.parsed, dict):
             raise llm.LLMError(f"{stage} structured output must be an object")
@@ -71,31 +72,88 @@ class AnthropicStructuredModelProvider:
 
 
 class _PlannedResearchProvider:
-    """Apply exactly two model-planned queries to the existing bounded provider."""
+    """Apply a bounded primary/fallback competitor plan plus one source query."""
 
     def __init__(
         self,
         provider: ResearchProvider,
         *,
         competitor_query: str,
+        competitor_fallback_query: str,
         source_query: str,
+        competitor_seed_locators: list[str] | tuple[str, ...] = (),
     ) -> None:
         self.provider = provider
-        self.queries = [competitor_query, source_query]
+        self.competitor_queries = (competitor_query, competitor_fallback_query)
+        self.source_query = source_query
+        self.competitor_seed_results = [
+            SearchResult(
+                id=f"operator_material_{index}",
+                title=locator.rstrip("/").rsplit("/", 1)[-1].replace("-", " "),
+                locator=locator,
+                snippet="Operator-provided available material for competitor review.",
+            )
+            for index, locator in enumerate(competitor_seed_locators, start=1)
+            if locator.startswith(("https://", "http://"))
+        ]
         self.search_count = 0
+        self.web_search_count = 0
 
     def search(self, _query: str, *, limit: int):
-        if self.search_count >= len(self.queries):
+        if self.search_count >= 2:
             raise ValueError("live Research exceeded its two-query plan")
-        query = self.queries[self.search_count]
+        if self.search_count == 0:
+            results = [
+                result
+                for query in self.competitor_queries
+                for result in self.provider.search(query, limit=limit)
+            ]
+            results.extend(self.competitor_seed_results)
+            self.web_search_count += 2
+            selected = _rank_course_results(results, limit=limit)
+        else:
+            selected = self.provider.search(self.source_query, limit=limit)
+            self.web_search_count += 1
         self.search_count += 1
-        return self.provider.search(query, limit=limit)
+        return selected
 
     def fetch(self, locator: str):
         return self.provider.fetch(locator)
 
     def extract_competitor_outline(self, result):
         return self.provider.extract_competitor_outline(result)
+
+
+def _rank_course_results(results: list[Any], *, limit: int) -> list[Any]:
+    """Deduplicate and stably prefer public course/curriculum-shaped results."""
+    unique: list[Any] = []
+    seen: set[str] = set()
+    for result in results:
+        locator = str(result.locator)
+        if locator in seen:
+            continue
+        seen.add(locator)
+        unique.append(result)
+
+    def score(result: Any) -> int:
+        text = f"{result.title} {result.locator}".casefold()
+        weighted_markers = {
+            "course outline": 8,
+            "learning outcomes": 8,
+            "curriculum": 7,
+            "syllabus": 7,
+            "modules": 6,
+            "course": 3,
+            "class": 2,
+            "training": 2,
+        }
+        operator_priority = 20 if str(result.id).startswith("operator_material_") else 0
+        return operator_priority + sum(
+            weight for marker, weight in weighted_markers.items() if marker in text
+        )
+
+    ranked = sorted(enumerate(unique), key=lambda item: (-score(item[1]), item[0]))
+    return [result for _index, result in ranked[:limit]]
 
 
 class LiveClarificationProvider:
@@ -298,8 +356,14 @@ class LiveStageImplementations:
         response = self.model.generate(
             stage="research",
             system=(
-                "Plan exactly one bounded competitor query and one bounded factual-source "
-                "query. Keep them specific to the Brief and avoid high-stakes expansion."
+                "Plan one primary and one fallback bounded competitor query plus one "
+                "bounded factual-source query. Keep them specific to the Brief and avoid "
+                "high-stakes expansion. Both competitor queries must target public "
+                "instructional course pages rather than general how-to articles and must "
+                "explicitly seek an outline, curriculum, syllabus, modules, or learning "
+                "outcomes. The fallback must use different search terms and may use only a "
+                "closely adjacent non-high-stakes instructional domain that preserves every "
+                "Brief exclusion."
             ),
             payload={
                 "brief": _brief_slice(brief.get("body", {})),
@@ -308,12 +372,29 @@ class LiveStageImplementations:
             schema={
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["competitor_query", "source_query"],
+                "required": [
+                    "competitor_query",
+                    "competitor_fallback_query",
+                    "source_query",
+                ],
                 "properties": {
                     "competitor_query": {
                         "type": "string",
                         "minLength": 3,
                         "maxLength": 240,
+                        "pattern": (
+                            ".*([Oo]utline|[Cc]urriculum|[Ss]yllabus|[Mm]odules?|"
+                            "[Ll]earning [Oo]utcomes).*"
+                        ),
+                    },
+                    "competitor_fallback_query": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 240,
+                        "pattern": (
+                            ".*([Oo]utline|[Cc]urriculum|[Ss]yllabus|[Mm]odules?|"
+                            "[Ll]earning [Oo]utcomes).*"
+                        ),
                     },
                     "source_query": {
                         "type": "string",
@@ -327,7 +408,13 @@ class LiveStageImplementations:
         provider = _PlannedResearchProvider(
             self.research_provider_factory(),
             competitor_query=response["competitor_query"],
+            competitor_fallback_query=response["competitor_fallback_query"],
             source_query=response["source_query"],
+            competitor_seed_locators=[
+                str(locator)
+                for locator in brief.get("body", {}).get("available_materials", [])
+                if isinstance(locator, str)
+            ],
         )
         artifact = research.build_research_dossier_artifact(
             brief,
@@ -341,6 +428,8 @@ class LiveStageImplementations:
         )
         if provider.search_count != 2:
             raise ValueError("live Research did not execute its exact two-query plan")
+        if provider.web_search_count != 3:
+            raise ValueError("live Research did not execute its bounded three-search plan")
         return {"research_dossier": artifact}
 
     def structure(self, inputs: dict, feedback: str | None) -> dict:

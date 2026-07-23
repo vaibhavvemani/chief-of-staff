@@ -778,3 +778,45 @@ def test_content_repair_projection_rederives_review_readiness_from_current_finge
     assert projection["hard_blocker_total"] == 0
     assert projection["review_summary"]["pending"] == 1
     assert projection["ready_for_package"] is False
+
+
+def test_failed_scoped_revision_preserves_normal_content_repair_capabilities(
+    tmp_path: Path,
+) -> None:
+    _repository, app = _app(tmp_path, "failed-revision")
+    projector = app.state.projector
+    original_runner = projector.job_runner
+
+    class FailedRevisionRunner:
+        @staticmethod
+        def active_for_course(_course_id: str) -> None:
+            return None
+
+        @staticmethod
+        def latest_for_stage(_course_id: str, stage_slug: str) -> dict | None:
+            if stage_slug != "content":
+                return None
+            return {
+                "job_id": "interrupted-revision",
+                "stage": "content",
+                "operation": "revision",
+                "status": "failed",
+                "error": {"type": "InterruptedJob"},
+            }
+
+        @staticmethod
+        def activity_for_course(_course_id: str) -> list:
+            return []
+
+        @staticmethod
+        def diagnostics_for_course(_course_id: str) -> dict:
+            return {"stages": [], "totals": {}}
+
+    projector.job_runner = FailedRevisionRunner()
+    try:
+        projected = projector.stage("failed-revision", "content")
+    finally:
+        projector.job_runner = original_runner
+
+    assert projected["state"] == "requires_attention"
+    assert "revise" in {action["id"] for action in projected["actions"]}

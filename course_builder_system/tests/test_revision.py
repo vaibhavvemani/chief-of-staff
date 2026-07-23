@@ -67,7 +67,7 @@ def test_parse_verifier_request_selects_only_flagged_assets() -> None:
 
 
 def test_revise_content_package_preserves_unselected_assets() -> None:
-    cc = _asset("course_content")
+    cc = _asset("course_content", flagged=True)
     summary = _asset("summary", flagged=True)
     package = _package(cc, summary)
     generated_summary = deepcopy(summary)
@@ -96,7 +96,9 @@ def test_revise_content_package_preserves_unselected_assets() -> None:
             package,
             generation_inputs=_generation_inputs(),
             course_model=_generation_inputs()["course_model"],
-            raw_feedback="verifier",
+            raw_feedback=(
+                '{"asset":"summary","feedback":"keep the prose concise","verifier":true}'
+            ),
         )
 
     revised_assets = revised["subtopics"][0]["assets"]
@@ -111,14 +113,15 @@ def test_revise_content_package_preserves_unselected_assets() -> None:
     verify.assert_called_once()
 
 
-def test_json_request_can_combine_human_and_verifier_targets() -> None:
+def test_json_request_keeps_explicit_target_with_verifier_context() -> None:
     request = revision.parse_revision_request(
         '{"asset": "course_content", "feedback": "deepen examples", "verifier": true}',
         [_asset("course_content"), _asset("summary", flagged=True)],
     )
 
-    assert request.asset_keys == ("course_content", "summary")
+    assert request.asset_keys == ("course_content",)
     assert request.feedback == "deepen examples"
+    assert request.include_verifier_flags is True
 
 
 def test_student_content_step_routes_rejection_to_targeted_revision() -> None:

@@ -496,16 +496,24 @@ def run_summary_step(inputs: dict, feedback: str | None) -> dict:
     stage_records = [
         run_summary.stage_record(
             name=artifact_type,
-            status="completed" if artifact.get("status") == "approved" else "pending_review",
+            status=(
+                "completed"
+                if artifact.get("status") == "approved" or artifact_type == "render_manifest"
+                else "pending_review"
+            ),
             artifact_types=[artifact_type],
         )
         for artifact_type, artifact in inputs.items()
         if artifact_type != "content_progress"
     ]
     progress_body = inputs.get("content_progress", {}).get("body", {})
+    unit_records = _current_content_unit_records(
+        inputs.get("content_package", {}),
+        progress_body.get("units", []),
+    )
     failed_units = [
         unit
-        for unit in progress_body.get("units", [])
+        for unit in unit_records
         if unit.get("status") in {"failed", "pending", "evidence_gap"}
     ]
     if failed_units:
@@ -520,11 +528,59 @@ def run_summary_step(inputs: dict, feedback: str | None) -> dict:
         course_id=course_id,
         stage_records=stage_records,
         output_paths=inputs.get("render_manifest", {}).get("body", {}).get("paths", {}),
-        unit_records=progress_body.get("units", []),
+        unit_records=unit_records,
         content_package=inputs.get("content_package"),
         inputs=list(inputs),
     )
     return {"run_summary": summary}
+
+
+def _current_content_unit_records(
+    content_package: dict[str, Any],
+    progress_units: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Reconcile operation-scoped progress with the current whole-course package."""
+    body = content_package.get("body", {})
+    package_assets = [
+        (subtopic.get("subtopic_id"), asset)
+        for subtopic in body.get("subtopics", [])
+        for asset in subtopic.get("assets", [])
+    ]
+    package_ids = [asset.get("id") for _subtopic_id, asset in package_assets]
+    progress_ids = [unit.get("asset_id") for unit in progress_units]
+    if package_ids == progress_ids:
+        return progress_units
+
+    progress_by_id = {
+        unit.get("asset_id"): unit
+        for unit in progress_units
+        if isinstance(unit.get("asset_id"), str)
+    }
+    records: list[dict[str, Any]] = []
+    for subtopic_id, asset in package_assets:
+        asset_id = asset.get("id")
+        latest = progress_by_id.get(asset_id, {})
+        record = {
+            "stage": "student_content",
+            "subtopic_id": subtopic_id,
+            "asset_type": asset.get("type"),
+            "asset_id": asset_id,
+            "title": asset.get("title"),
+            "format": asset.get("format"),
+            "status": "completed" if asset.get("status") == "done" else asset.get("status"),
+            "attempts": latest.get("attempts", 1),
+            "error": latest.get("error"),
+        }
+        records.append(record)
+
+    package_id_set = set(package_ids)
+    records.extend(
+        unit
+        for unit in progress_units
+        if unit.get("asset_id") not in package_id_set
+        and unit.get("status") in {"failed", "pending", "evidence_gap"}
+    )
+    return records
 
 
 def _research_fixture_for(brief: dict) -> Path:

@@ -67,8 +67,10 @@ live revisions NC-303, NC-406, NC-504, and NC-604 passed independent NC-90 check
 review. NC-1001 through NC-1007 passed independent NC-100 checkpoint review with real
 progress, safe persisted activity and call diagnostics, readiness gates across all live
 starts, actual safe Markdown rendering, actionable backend-owned Package blockers, and
-acceptance-path accessibility evidence. NC-110 and later packages remain unstarted. This
-status note does not mark Milestone 3 or the cycle complete.
+acceptance-path accessibility evidence. NC-1101 through NC-1105 passed independent
+checkpoint review on 2026-07-23 with green deterministic, recovery, negative,
+accessibility, credentialed live, integrity, source-boundary, and two-topic gates.
+NC-120 is unstarted. This status note does not mark Milestone 3 or the cycle complete.
 
 ```text
 NC-00 acceptance foundation
@@ -810,7 +812,7 @@ secret-safe typed failure/retry, and process-restart recovery.
 scoped live revisions NC-303, NC-406, NC-504, and NC-604 passed independent checkpoint
 review. Evidence uses injected structured providers on indoor
 herb gardening and bicycle maintenance; it is not a credentialed Anthropic end-to-end
-run, which remains NC-1104.
+run. That credentialed run was later completed under NC-1104 on 2026-07-23.
 
 ### Goal
 
@@ -992,22 +994,34 @@ status, and contrast coverage. The corrected Chromium suite passes all 9 scenari
 
 ## 16. Work package NC-110 — Automated release validation
 
+**Implementation status (2026-07-23):** NC-1101 through NC-1105 passed independent
+checkpoint review. Evidence includes 468 Python tests, Ruff, 92 frontend tests, the
+production build, 13 deterministic Chromium
+scenarios, the bounded credentialed `studio-live-pilot` journey, zero final hard
+verifier blockers, exact ten-asset/source reconciliation, integrity, and the unrelated
+bicycle-maintenance regression. Recovery uses real post-start failure and API-process
+restart evidence, and verifier metadata support is deterministically metadata-only. See
+`Course_Builder_NC110_Release_Validation_Evidence.md`.
+
 ### Tasks
 
 #### NC-1101 — Full deterministic browser acceptance
 
+- **Status:** Independently verified.
 - **Priority:** P0-D
 - **Dependencies:** NC-20 through NC-80 deterministic exits, NC-1005
 - Automate the complete scenario in the acceptance plan.
 
 #### NC-1102 — Lifecycle/recovery browser scenarios
 
+- **Status:** Independently verified.
 - **Priority:** P0-P
 - **Dependencies:** NC-108, NC-1002
 - Cover refresh during run, API restart, retry, stale conflict, reopen, and navigation.
 
 #### NC-1103 — Negative source and approval scenarios
 
+- **Status:** Independently verified.
 - **Priority:** P0-P
 - **Dependencies:** NC-104, NC-708
 - Attempt rejected source leakage, blocker approval, read-only mutation, path traversal, and
@@ -1015,6 +1029,7 @@ status, and contrast coverage. The corrected Chromium suite passes all 9 scenari
 
 #### NC-1104 — Bounded live end-to-end acceptance
 
+- **Status:** Independently verified; credentialed Chromium acceptance passes.
 - **Priority:** P0-L
 - **Dependencies:** NC-90 and NC-100 exits
 - Run the selected live subject through Package.
@@ -1022,6 +1037,7 @@ status, and contrast coverage. The corrected Chromium suite passes all 9 scenari
 
 #### NC-1105 — Domain-neutral second-topic regression
 
+- **Status:** Independently verified; herb/bicycle regression passes.
 - **Priority:** P0-L
 - **Dependencies:** NC-1104
 - Confirm no subject-specific prompt or code assumption was introduced.

@@ -25,12 +25,19 @@ when it materially helps the configured audience.
   or the approved source texts below.
 - Reproduce URLs exactly as supplied. Do not invent, repair, expand, or guess a
   URL, title, edition, date, author, organization, or access condition.
-- Every significant factual claim must appear in `claims[]`. A claim about a
-  resource must cite that resource's valid approved `source_id`.
-- Each listed resource must remain traceable internally through `claims[]`, but
-  learner-facing `content` must not expose claim IDs or internal source labels.
-- Pedagogical recommendations may use `source_id: null` when they assert no
-  independently verifiable fact.
+- Every significant factual claim must appear in `claims[]`. For this asset,
+  claims cover a resource's substantive guidance and cite that resource's valid
+  approved `source_id`.
+- Approved locator, title, publisher, and access metadata may be reproduced in
+  learner-facing `content`, but do not restate that metadata as factual claims.
+- Do not create claims for URLs, navigation or access statements, study order,
+  headings, transitions, or learner directions. Those are metadata or
+  pedagogical framing, not source-body facts.
+- Every entry in `claims[]` must cite a valid approved `source_id`. Do not use
+  `source_id: null`; omit non-factual pedagogical framing from the claim ledger.
+- Factual explanations of why a listed resource matters must remain traceable
+  internally through `claims[]`, but learner-facing `content` must not expose
+  claim IDs or internal source labels.
 - Do not add remembered books, sites, media, tools, or courses that are absent
   from the approved source set.
 - Do not imply that an excerpt is a complete publication.

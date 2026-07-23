@@ -149,6 +149,48 @@ def test_live_provider_parses_search_html_fetches_html_and_pdf_text() -> None:
     assert outline.outline_status == "usable"
 
 
+def test_live_provider_extracts_domain_neutral_learning_outcomes_as_outline() -> None:
+    def fetch_bytes(locator: str) -> tuple[int, dict[str, str], bytes]:
+        if "search.test" in locator:
+            return (
+                200,
+                {"content-type": "text/html"},
+                b'<a href="https://course.test/container">Container course</a>',
+            )
+        return (
+            200,
+            {"content-type": "text/html"},
+            b"""
+            <html><body>
+              <h1>Container and Small Space Gardening</h1>
+              <h2>By the end of the course, you will be able to:</h2>
+              <ul>
+                <li>Describe the benefits of containers in gardening</li>
+                <li>Explain how container placement affects plant growth</li>
+                <li>Demonstrate when to water container-grown plants</li>
+                <li>Recognize and remedy common plant problems</li>
+              </ul>
+            </body></html>
+            """,
+        )
+
+    provider = BoundedLiveResearchProvider(
+        search_url_template="https://search.test/?q={query}",
+        fetch_bytes=fetch_bytes,
+    )
+
+    result = provider.search("container gardening course learning outcomes", limit=1)[0]
+    outline = provider.extract_competitor_outline(result)
+
+    assert outline.outline_status == "usable"
+    assert outline.outline_labels == (
+        "Describe the benefits of containers in gardening",
+        "Explain how container placement affects plant growth",
+        "Demonstrate when to water container-grown plants",
+        "Recognize and remedy common plant problems",
+    )
+
+
 def test_live_provider_retries_search_transport_failures() -> None:
     attempts = 0
 

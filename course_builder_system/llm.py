@@ -265,6 +265,7 @@ def _append_log(
     max_tokens: int | None = None,
     retry_count: int = 0,
     failure_type: str | None = None,
+    call_role: str | None = None,
 ) -> None:
     """Append one token-and-cost record to ``logs/llm_calls.jsonl``."""
     _LOG_DIR.mkdir(exist_ok=True)
@@ -300,6 +301,7 @@ def _append_log(
         "max_tokens": max_tokens,
         "retry_count": retry_count,
         "failure_type": failure_type,
+        "call_role": call_role,
     }
     with _LOG_FILE.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(entry) + "\n")
@@ -338,6 +340,7 @@ def call(
     thinking: dict[str, Any] | None = None,
     stream: bool | None = None,
     use_cache: bool = True,
+    call_role: str | None = None,
 ) -> LLMResult:
     """Call the Anthropic Messages API, with local disk caching and token logging.
 
@@ -359,6 +362,8 @@ def call(
                     exceeds the streaming threshold; True/False force it. The
                     final message is identical either way.
         use_cache:  When False, always bypass the local cache and call the API.
+        call_role:  Optional safe operation label for persisted live telemetry. It is
+                    not included in the provider request or cache key.
 
     Returns:
         LLMResult with text, raw response dict, usage token counts, and
@@ -398,6 +403,7 @@ def call(
                 stage=context.stage,
                 provider="anthropic",
                 model=model,
+                call_role=call_role,
                 call_index=call_index,
                 input_chars=input_chars,
                 max_tokens=max_tokens,
@@ -434,6 +440,7 @@ def call(
                         input_chars=input_chars,
                         max_tokens=max_tokens,
                         failure_type=type(error).__name__,
+                        call_role=call_role,
                     )
                     if context is not None and context.emit is not None:
                         context.emit(
@@ -441,6 +448,7 @@ def call(
                             stage=context.stage,
                             provider="anthropic",
                             model=cached.model,
+                            call_role=call_role,
                             call_index=call_index,
                             input_tokens=0,
                             output_tokens=0,
@@ -466,6 +474,7 @@ def call(
                 call_index=call_index,
                 input_chars=input_chars,
                 max_tokens=max_tokens,
+                call_role=call_role,
             )
             if context is not None and context.emit is not None:
                 context.emit(
@@ -473,6 +482,7 @@ def call(
                     stage=context.stage,
                     provider="anthropic",
                     model=cached.model,
+                    call_role=call_role,
                     call_index=call_index,
                     input_tokens=0,
                     output_tokens=0,
@@ -497,6 +507,7 @@ def call(
                 stage=context.stage,
                 provider="anthropic",
                 model=model,
+                call_role=call_role,
                 call_index=call_index,
                 retry_count=0,
                 cache_hit=False,
@@ -551,6 +562,7 @@ def call(
             input_chars=input_chars,
             max_tokens=max_tokens,
             failure_type=type(exc).__name__,
+            call_role=call_role,
         )
         if context is not None and context.emit is not None:
             context.emit(
@@ -558,6 +570,7 @@ def call(
                 stage=context.stage,
                 provider="anthropic",
                 model=model,
+                call_role=call_role,
                 call_index=call_index,
                 retry_count=0,
                 cache_hit=False,
@@ -619,6 +632,7 @@ def call(
             input_chars=input_chars,
             max_tokens=max_tokens,
             failure_type=type(exc).__name__,
+            call_role=call_role,
         )
         if context is not None and context.emit is not None:
             context.emit(
@@ -626,6 +640,7 @@ def call(
                 stage=context.stage,
                 provider="anthropic",
                 model=response.model,
+                call_role=call_role,
                 call_index=call_index,
                 input_tokens=usage.get("input_tokens", 0),
                 output_tokens=usage.get("output_tokens", 0),
@@ -660,6 +675,7 @@ def call(
         call_index=call_index,
         input_chars=input_chars,
         max_tokens=max_tokens,
+        call_role=call_role,
     )
 
     if context is not None and context.emit is not None:
@@ -668,6 +684,7 @@ def call(
             stage=context.stage,
             provider="anthropic",
             model=result.model,
+            call_role=call_role,
             call_index=call_index,
             input_tokens=usage.get("input_tokens", 0),
             output_tokens=usage.get("output_tokens", 0),

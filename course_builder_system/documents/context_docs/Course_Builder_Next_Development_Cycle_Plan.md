@@ -38,8 +38,11 @@
 > NC-1001 through NC-1007 passed independent checkpoint review. Evidence covers timely
 > unit progress, persisted secret-safe activity and diagnostics, readiness gates on all
 > live start paths, actual safe Markdown rendering, actionable backend-owned release
-> checks, and acceptance-path accessibility. NC-110 and later remain unstarted;
-> Milestone 3 and the cycle are incomplete.
+> checks, and acceptance-path accessibility. NC-1101 through NC-1105 passed independent
+> review on 2026-07-23, including the bounded credentialed `studio-live-pilot`
+> journey, unrelated bicycle-maintenance regression, metadata-only evidence
+> enforcement, and real process-restart recovery. NC-120 remains unstarted; Milestone
+> 3 and the cycle are incomplete.
 
 ## 1. Purpose of this document
 

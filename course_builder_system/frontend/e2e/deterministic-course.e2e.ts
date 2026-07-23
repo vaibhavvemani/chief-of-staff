@@ -9,6 +9,12 @@ const LESSON_PLAN_EDITOR_COURSE_ID = "studio-lesson-plan-editor-fixture";
 const SOURCE_REPAIR_COURSE_ID = "studio-source-repair-fixture";
 const CONTENT_REPAIR_COURSE_ID = "studio-content-repair-fixture";
 const CONTENT_BLOCKER_TRUTH_COURSE_ID = "studio-content-blocker-truth-fixture";
+const REOPEN_RERUN_COURSE_ID = "studio-reopen-rerun-fixture";
+const FAILURE_RECOVERY_COURSE_ID = "studio-failure-recovery-fixture";
+const ACTIVE_REFRESH_COURSE_ID = "studio-active-refresh-fixture";
+const RESTART_RECOVERY_COURSE_ID = "studio-restart-recovery-fixture";
+const NEGATIVE_SOURCE_COURSE_ID = "studio-negative-source-fixture";
+const READ_ONLY_ACCEPTANCE_COURSE_ID = "coffee-acceptance";
 
 interface StageProjection {
   state: string;
@@ -216,6 +222,20 @@ interface ContentRepairProjection {
   ready_for_package: boolean;
 }
 
+interface WorkspaceProjection {
+  operator_status: string;
+  active_job?: {
+    job_id: string;
+    status: string;
+    stage: string;
+  } | null;
+  stages: Array<{
+    slug: string;
+    state: string;
+    actions: Array<{ id: string; enabled: boolean }>;
+  }>;
+}
+
 async function stage(
   request: APIRequestContext,
   courseId: string,
@@ -303,6 +323,84 @@ async function contentRepairProjection(
   return response.json() as Promise<ContentRepairProjection>;
 }
 
+async function workspace(
+  request: APIRequestContext,
+  courseId: string,
+): Promise<WorkspaceProjection> {
+  const response = await request.get(`/api/courses/${courseId}/workspace`);
+  expect(response.ok()).toBe(true);
+  return response.json() as Promise<WorkspaceProjection>;
+}
+
+async function waitForStageState(
+  request: APIRequestContext,
+  courseId: string,
+  stageSlug: string,
+  expected: string,
+  timeout = 30_000,
+) {
+  await expect.poll(
+    async () => (await stage(request, courseId, stageSlug)).state,
+    { timeout },
+  ).toBe(expected);
+}
+
+async function runStageFromBrowser(
+  page: Page,
+  request: APIRequestContext,
+  courseId: string,
+  stageSlug: string,
+  buttonName: string,
+  expected: string,
+  timeout = 30_000,
+) {
+  await page.goto(`/courses/${courseId}/${stageSlug}?mode=deterministic`);
+  const button = page.getByRole("button", { name: buttonName });
+  await expect(button).toBeEnabled();
+  await button.click();
+  await waitForStageState(request, courseId, stageSlug, expected, timeout);
+}
+
+async function approveStageFromBrowser(
+  page: Page,
+  request: APIRequestContext,
+  courseId: string,
+  stageSlug: string,
+  buttonName: string,
+) {
+  const button = page.getByRole("button", { name: buttonName });
+  await expect(button).toBeEnabled();
+  await button.click();
+  await waitForStageState(request, courseId, stageSlug, "approved");
+}
+
+async function reviewEveryVisibleContentAsset(
+  page: Page,
+  request: APIRequestContext,
+  courseId: string,
+) {
+  const content = await canonicalArtifact<ContentPackageBody>(
+    request,
+    courseId,
+    "content_package",
+  );
+  const assetIds = [...contentAssets(content.artifact.body).keys()];
+  expect(assetIds.length).toBeGreaterThan(0);
+  for (const assetId of assetIds) {
+    await page.goto(
+      `/courses/${courseId}/content?mode=deterministic&asset=${encodeURIComponent(assetId)}`,
+    );
+    const review = page.getByRole("button", { name: "Mark asset reviewed" });
+    await expect(review, assetId).toBeEnabled();
+    await review.click();
+    await expect.poll(async () => {
+      const ledger = await contentReview(request, courseId);
+      return ledger.artifact.body.assets.find((record) => record.asset_id === assetId)
+        ?.decision;
+    }).toBe("approved");
+  }
+}
+
 function contentAssets(body: ContentPackageBody): Map<string, ContentAssetRecord> {
   return new Map(
     body.subtopics.flatMap((subtopic) =>
@@ -354,6 +452,7 @@ test("completes bounded durable Guided Brief intake and protects approved editin
   page,
   request,
 }, testInfo) => {
+  test.setTimeout(180_000);
   const subject = testInfo.retry
     ? `Coffee making for home beginners retry ${testInfo.retry}`
     : "Coffee making for home beginners";
@@ -847,11 +946,155 @@ test("completes bounded durable Guided Brief intake and protects approved editin
   await page.goto(`/courses/${courseId}/research?mode=deterministic`);
   await expect(page.getByRole("heading", { name: "Research & Sources" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Run Research" })).toBeVisible();
+
+  // NC-1101 continues the same isolated course through every remaining Scenario A
+  // checkpoint instead of treating separately seeded editor tests as an end-to-end run.
+  await page.getByRole("button", { name: "Run Research" }).click();
+  await waitForStageState(request, courseId, "research", "awaiting_review");
+  await expect(page.getByRole("button", { name: "+ Add source" })).toBeEnabled();
+  await page.getByRole("button", { name: "+ Add source" }).click();
+  await page.getByLabel("Source URL").fill("https://example.edu/nc110-known-coffee-source");
+  await page.getByLabel(/Title/).fill("NC-110 known coffee candidate");
+  await page.getByLabel(/Publisher/).fill("Example University");
+  await page.getByRole("button", { name: "Add proposed source" }).click();
+  await expect(
+    page.getByRole("heading", { name: "NC-110 known coffee candidate" }),
+  ).toBeVisible();
+
+  const selectableSources = page.getByRole("button", { name: "Select" });
+  expect(await selectableSources.count()).toBeGreaterThanOrEqual(2);
+  await selectableSources.nth(0).click();
+  await selectableSources.nth(1).click();
+  await page.getByRole("button", { name: /Save 2 selected sources/ }).click();
+  await expect(page.getByText("Ready for stage approval.")).toBeVisible();
+  await approveStageFromBrowser(
+    page,
+    request,
+    courseId,
+    "research",
+    "Approve Research",
+  );
+  expect((await stage(request, courseId, "course-model")).state).toBe("ready");
+
+  await runStageFromBrowser(
+    page,
+    request,
+    courseId,
+    "course-model",
+    "Run Course Model",
+    "awaiting_review",
+  );
+  await page.locator(".decision-bar").getByRole("button", { name: "Edit Course Model" }).click();
+  const firstSubtopicTitle = page.getByLabel(/^Subtopic title for /).first();
+  const originalSubtopicTitle = await firstSubtopicTitle.inputValue();
+  await firstSubtopicTitle.fill(`${originalSubtopicTitle} for Home Brewing`);
+  await page.getByRole("button", { name: "Preview impact" }).click();
+  await expect(page.getByText("Backend validation passed")).toBeVisible();
+  await page.getByRole("checkbox", { name: /reviewed the detailed structural diff/i }).check();
+  await page.getByRole("button", { name: "Save Course Model draft" }).click();
+  await expect(
+    page.getByRole("heading", { name: `${originalSubtopicTitle} for Home Brewing` }),
+  ).toBeVisible();
+  await approveStageFromBrowser(
+    page,
+    request,
+    courseId,
+    "course-model",
+    "Approve Course Model",
+  );
+
+  await runStageFromBrowser(
+    page,
+    request,
+    courseId,
+    "blueprint",
+    "Run Blueprint",
+    "awaiting_review",
+  );
+  await page.locator(".decision-bar").getByRole("button", { name: "Edit Blueprint" }).click();
+  const firstAssetGroup = page.locator('[aria-label^="Assets for "]').first();
+  const activityToggle = firstAssetGroup.getByRole("button", { name: /Activity/ });
+  await activityToggle.click();
+  await page.getByLabel(/learning time/).first().fill("25");
+  await page.getByRole("checkbox", { name: /reviewed the exact asset additions/i }).check();
+  await page.getByRole("button", { name: "Save Blueprint draft" }).click();
+  await approveStageFromBrowser(
+    page,
+    request,
+    courseId,
+    "blueprint",
+    "Approve Blueprint",
+  );
+
+  await runStageFromBrowser(
+    page,
+    request,
+    courseId,
+    "content",
+    "Run Student Content",
+    "awaiting_review",
+    60_000,
+  );
+  await expect(page.getByText("No blocking verification findings")).toBeVisible();
+  await reviewEveryVisibleContentAsset(page, request, courseId);
+  await approveStageFromBrowser(
+    page,
+    request,
+    courseId,
+    "content",
+    "Approve Student Content",
+  );
+
+  await runStageFromBrowser(
+    page,
+    request,
+    courseId,
+    "lesson-plan",
+    "Run Lesson Plan",
+    "awaiting_review",
+  );
+  await page.locator(".decision-bar").getByRole("button", { name: "Edit Lesson Plan" }).click();
+  await page.getByLabel("Maximum session hours").fill("0.5");
+  await page.getByLabel(/^Delivery mode for /).first().selectOption("self_study");
+  await page.getByRole("checkbox", { name: /reviewed the changed constraints/i }).check();
+  await page.getByRole("button", { name: "Save Lesson Plan draft" }).click();
+  await approveStageFromBrowser(
+    page,
+    request,
+    courseId,
+    "lesson-plan",
+    "Approve Lesson Plan",
+  );
+
+  await runStageFromBrowser(
+    page,
+    request,
+    courseId,
+    "package",
+    "Run Package",
+    "awaiting_review",
+  );
+  const packagePreview = page.getByRole("region", { name: "Preview of Course index" });
+  await expect(packagePreview.getByRole("heading").first()).toBeVisible();
+  const rawPackage = await request.get(`/api/courses/${courseId}/outputs/README.md`);
+  expect(rawPackage.ok()).toBe(true);
+  expect(await rawPackage.text()).toContain(`# ${await packagePreview.getByRole("heading").first().innerText()}`);
+  await approveStageFromBrowser(
+    page,
+    request,
+    courseId,
+    "package",
+    "Approve Package",
+  );
+  await expect.poll(async () => (await workspace(request, courseId)).operator_status).toBe(
+    "complete",
+  );
 });
 
-test("keeps the seeded Course Model reopen lifecycle scenario", async ({ page, request }) => {
+test("Scenario B reopens, changes, and reruns downstream stages to completion", async ({ page, request }) => {
+  test.setTimeout(180_000);
   await page.goto(
-    `/courses/${SEEDED_LIFECYCLE_COURSE_ID}/course-model?mode=deterministic`,
+    `/courses/${REOPEN_RERUN_COURSE_ID}/course-model?mode=deterministic`,
   );
   await expect(page.getByRole("heading", { name: "Course Model" })).toBeVisible();
   await expect(page.getByText("Grind Size", { exact: true }).first()).toBeVisible();
@@ -875,13 +1118,323 @@ test("keeps the seeded Course Model reopen lifecycle scenario", async ({ page, r
   await page.getByRole("button", { name: "Confirm and reopen" }).click();
 
   await expect.poll(async () => {
-    return (await stage(request, SEEDED_LIFECYCLE_COURSE_ID, "course-model")).state;
+    return (await stage(request, REOPEN_RERUN_COURSE_ID, "course-model")).state;
   }).toBe("awaiting_review");
   await expect.poll(async () => {
-    return (await stage(request, SEEDED_LIFECYCLE_COURSE_ID, "blueprint")).state;
+    return (await stage(request, REOPEN_RERUN_COURSE_ID, "blueprint")).state;
   }).toBe("stale");
   await expect(page.getByText("Grind Size", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Edit Course Model" }).first()).toBeVisible();
+
+  await page.locator(".decision-bar").getByRole("button", { name: "Edit Course Model" }).click();
+  await page.getByLabel("Subtopic title for m1_s1").fill("Grind Size After Reopen");
+  await page.getByRole("button", { name: "Preview impact" }).click();
+  await expect(page.getByText("Backend validation passed")).toBeVisible();
+  await page.getByRole("checkbox", { name: /reviewed the detailed structural diff/i }).check();
+  await page.getByRole("button", { name: "Save Course Model draft" }).click();
+  await expect(page.getByRole("heading", { name: "Grind Size After Reopen" })).toBeVisible();
+  await approveStageFromBrowser(
+    page,
+    request,
+    REOPEN_RERUN_COURSE_ID,
+    "course-model",
+    "Approve Course Model",
+  );
+
+  await runStageFromBrowser(
+    page,
+    request,
+    REOPEN_RERUN_COURSE_ID,
+    "blueprint",
+    "Run Blueprint",
+    "awaiting_review",
+  );
+  await approveStageFromBrowser(
+    page,
+    request,
+    REOPEN_RERUN_COURSE_ID,
+    "blueprint",
+    "Approve Blueprint",
+  );
+  await runStageFromBrowser(
+    page,
+    request,
+    REOPEN_RERUN_COURSE_ID,
+    "content",
+    "Run Student Content",
+    "awaiting_review",
+    60_000,
+  );
+  await reviewEveryVisibleContentAsset(page, request, REOPEN_RERUN_COURSE_ID);
+  await approveStageFromBrowser(
+    page,
+    request,
+    REOPEN_RERUN_COURSE_ID,
+    "content",
+    "Approve Student Content",
+  );
+  await runStageFromBrowser(
+    page,
+    request,
+    REOPEN_RERUN_COURSE_ID,
+    "lesson-plan",
+    "Run Lesson Plan",
+    "awaiting_review",
+  );
+  await approveStageFromBrowser(
+    page,
+    request,
+    REOPEN_RERUN_COURSE_ID,
+    "lesson-plan",
+    "Approve Lesson Plan",
+  );
+  await runStageFromBrowser(
+    page,
+    request,
+    REOPEN_RERUN_COURSE_ID,
+    "package",
+    "Run Package",
+    "awaiting_review",
+  );
+  await approveStageFromBrowser(
+    page,
+    request,
+    REOPEN_RERUN_COURSE_ID,
+    "package",
+    "Approve Package",
+  );
+  await expect.poll(
+    async () => (await workspace(request, REOPEN_RERUN_COURSE_ID)).operator_status,
+  ).toBe("complete");
+});
+
+test("Scenario C1 fails safely and retries through the browser", async ({ page, request }) => {
+  test.setTimeout(60_000);
+  await page.goto(
+    `/courses/${FAILURE_RECOVERY_COURSE_ID}/content?mode=deterministic`,
+  );
+  expect((await stage(request, FAILURE_RECOVERY_COURSE_ID, "content")).state).toBe("ready");
+  const contentBeforeFailure = await request.get(
+    `/api/courses/${FAILURE_RECOVERY_COURSE_ID}/artifacts/content_package`,
+  );
+  expect(contentBeforeFailure.status()).toBe(404);
+  await page.getByRole("button", { name: "Run Student Content" }).click();
+  await waitForStageState(
+    request,
+    FAILURE_RECOVERY_COURSE_ID,
+    "content",
+    "failed",
+  );
+  const contentAfterFailure = await request.get(
+    `/api/courses/${FAILURE_RECOVERY_COURSE_ID}/artifacts/content_package`,
+  );
+  expect(contentAfterFailure.status()).toBe(404);
+  await expect(page.getByText("Last run failed safely")).toBeVisible();
+  const retry = page.getByRole("button", { name: "Retry Student Content" });
+  await expect(retry).toBeEnabled();
+
+  await page.getByRole("button", { name: "Open activity" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Activity" }).getByText(
+      "controlled NC-110 deterministic generation failure",
+      { exact: true },
+    ).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: "Activity" }).getByText("Job started", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await retry.click();
+  await waitForStageState(
+    request,
+    FAILURE_RECOVERY_COURSE_ID,
+    "content",
+    "awaiting_review",
+    60_000,
+  );
+  await expect(page.getByText("No blocking verification findings")).toBeVisible();
+});
+
+test("Scenario C2 recovers an interrupted API job and retries it visibly", async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(60_000);
+  await page.goto(
+    `/courses/${RESTART_RECOVERY_COURSE_ID}/outcomes?mode=deterministic`,
+  );
+  expect((await stage(request, RESTART_RECOVERY_COURSE_ID, "outcomes")).state).toBe("ready");
+  await page.getByRole("button", { name: "Run Outcomes" }).click();
+  await expect.poll(async () => {
+    const current = await workspace(request, RESTART_RECOVERY_COURSE_ID);
+    return current.active_job?.status;
+  }).toBe("running");
+
+  const termination = await request.post("/__acceptance__/terminate-api");
+  expect(termination.ok()).toBe(true);
+  await expect.poll(async () => {
+    try {
+      return (await request.get("/api/health")).ok();
+    } catch {
+      return false;
+    }
+  }, { timeout: 10_000 }).toBe(false);
+  await expect.poll(async () => {
+    try {
+      return (await request.get("/api/health")).ok();
+    } catch {
+      return false;
+    }
+  }, { timeout: 30_000 }).toBe(true);
+
+  await page.goto(
+    `/courses/${RESTART_RECOVERY_COURSE_ID}/outcomes?mode=deterministic`,
+  );
+  await waitForStageState(
+    request,
+    RESTART_RECOVERY_COURSE_ID,
+    "outcomes",
+    "failed",
+  );
+  await expect(page.getByText("Last run failed safely")).toBeVisible();
+  await page.getByRole("button", { name: "Open activity" }).click();
+  await expect(
+    page.getByLabel("Persisted runtime events").getByText(
+      /API process stopped before this job completed/i,
+    ),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  const retry = page.getByRole("button", { name: "Retry Outcomes" });
+  await expect(retry).toBeEnabled();
+  await retry.click();
+  await waitForStageState(
+    request,
+    RESTART_RECOVERY_COURSE_ID,
+    "outcomes",
+    "awaiting_review",
+  );
+  await expect(page.getByRole("heading", { name: "Course Outcomes" })).toBeVisible();
+});
+
+test("Scenarios C3 and C4 rediscover active work and reject a competing mutation", async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(60_000);
+  await page.goto(
+    `/courses/${ACTIVE_REFRESH_COURSE_ID}/content?mode=deterministic`,
+  );
+  await page.getByRole("button", { name: "Run Student Content" }).click();
+  await expect.poll(async () => {
+    const current = await workspace(request, ACTIVE_REFRESH_COURSE_ID);
+    return current.active_job?.stage;
+  }).toBe("content");
+  await expect(
+    page.getByRole("progressbar", { name: "Student Content run progress" }),
+  ).toBeVisible();
+
+  const competingRun = await request.post(
+    `/api/courses/${ACTIVE_REFRESH_COURSE_ID}/stages/content/run`,
+    { data: { mode: "deterministic" } },
+  );
+  expect(competingRun.ok()).toBe(false);
+  expect(competingRun.status()).toBe(409);
+
+  await page.reload();
+  await expect(
+    page.getByRole("progressbar", { name: "Student Content run progress" }),
+  ).toBeVisible();
+  await page.goto(
+    `/courses/${ACTIVE_REFRESH_COURSE_ID}/blueprint?mode=deterministic`,
+  );
+  const afterNavigation = await workspace(request, ACTIVE_REFRESH_COURSE_ID);
+  expect(
+    afterNavigation.stages.find((candidate) => candidate.slug === "content")?.state,
+  ).toMatch(/running|awaiting_review/);
+  await page.goto(
+    `/courses/${ACTIVE_REFRESH_COURSE_ID}/content?mode=deterministic`,
+  );
+  await waitForStageState(
+    request,
+    ACTIVE_REFRESH_COURSE_ID,
+    "content",
+    "awaiting_review",
+    60_000,
+  );
+  expect((await workspace(request, ACTIVE_REFRESH_COURSE_ID)).active_job).toBeFalsy();
+});
+
+test("Scenario D rejects source leakage, blocker approval, read-only writes, and traversal", async ({
+  page,
+  request,
+}) => {
+  const modelBefore = await canonicalArtifact<CourseModelSourceBody>(
+    request,
+    NEGATIVE_SOURCE_COURSE_ID,
+    "course_model",
+  );
+  const rejectedSourcePreview = await request.post(
+    `/api/courses/${NEGATIVE_SOURCE_COURSE_ID}/course-model/decision/preview`,
+    {
+      data: {
+        expected_checksum: modelBefore.checksum,
+        operations: [
+          {
+            op: "assign_sources",
+            target_type: "subtopic",
+            target_id: "m1_s1",
+            source_ids: ["coffee_g3"],
+          },
+        ],
+      },
+    },
+  );
+  expect(rejectedSourcePreview.ok()).toBe(false);
+  expect(rejectedSourcePreview.status()).toBe(400);
+  expect(
+    await canonicalArtifact<CourseModelSourceBody>(
+      request,
+      NEGATIVE_SOURCE_COURSE_ID,
+      "course_model",
+    ),
+  ).toEqual(modelBefore);
+
+  await page.goto(
+    `/courses/${CONTENT_BLOCKER_TRUTH_COURSE_ID}/content?mode=deterministic`,
+  );
+  await expect(page.getByRole("button", { name: "Approve Student Content" })).toBeDisabled();
+  const blockedContent = await stage(
+    request,
+    CONTENT_BLOCKER_TRUTH_COURSE_ID,
+    "content",
+  );
+  const blockedApproval = await request.post(
+    `/api/courses/${CONTENT_BLOCKER_TRUTH_COURSE_ID}/stages/content/approve`,
+    { data: { expected_checksum: blockedContent.checksum } },
+  );
+  expect(blockedApproval.ok()).toBe(false);
+  expect((await stage(request, CONTENT_BLOCKER_TRUTH_COURSE_ID, "content")).state)
+    .toBe("requires_attention");
+
+  await page.goto(
+    `/courses/${READ_ONLY_ACCEPTANCE_COURSE_ID}/course-model?mode=deterministic`,
+  );
+  await expect(page.getByText("Archived snapshot")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Reopen Course Model/ })).toHaveCount(0);
+  const readOnlyWrite = await request.post(
+    `/api/courses/${READ_ONLY_ACCEPTANCE_COURSE_ID}/stages/course-model/run`,
+    { data: { mode: "deterministic" } },
+  );
+  expect(readOnlyWrite.status()).toBe(403);
+
+  const traversal = await request.get(
+    `/api/courses/${PACKAGE_PREVIEW_COURSE_ID}/outputs/%2e%2e%2F%2e%2e%2FAGENTS.md`,
+  );
+  expect(traversal.ok()).toBe(false);
+  expect(traversal.status()).toBeGreaterThanOrEqual(400);
+  expect(traversal.status()).toBeLessThan(500);
 });
 
 test("renders canonical Package Markdown and routes its named blocker", async ({ page }) => {

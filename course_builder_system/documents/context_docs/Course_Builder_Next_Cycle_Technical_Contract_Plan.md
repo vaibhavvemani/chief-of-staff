@@ -14,13 +14,18 @@
 > Judgment-heavy proposals are bounded semantic slices and pass through deterministic
 > reducers. Stage outputs and downstream invalidations commit in one exact-precondition
 > transaction. Provider failures are explicit and never select deterministic output.
-> Stage evals use injected provider fixtures on two unrelated topics; a credentialed
-> live end-to-end run remains NC-1104. NC-1001 through NC-1007 passed independent
+> Stage evals use injected provider fixtures on two unrelated topics; the credentialed
+> live end-to-end run was subsequently completed under NC-1104. NC-1001 through
+> NC-1007 passed independent
 > contract review: progress events are timely, persisted activity and call diagnostics
 > are secret-safe, readiness gates cover every live start path, Markdown delivery is
 > bounded and raw-HTML-disabled, and Package blockers remain backend-owned and
-> actionable. NC-110 and later remain unstarted. This does not complete Milestone 3 or
-> the cycle.
+> actionable. NC-1101 through NC-1105 passed independent review on 2026-07-23 with all
+> deterministic, recovery, negative, accessibility, live, integrity, source-boundary,
+> and domain-neutral gates green. Final corrections require explicit metadata
+> relationships for metadata evidence and prove real post-start failure plus
+> API-process restart recovery. NC-120 remains unstarted. This does not complete
+> Milestone 3 or the cycle.
 
 ## 1. How to use this document
 

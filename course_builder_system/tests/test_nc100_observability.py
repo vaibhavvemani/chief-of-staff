@@ -111,6 +111,7 @@ def test_activity_and_diagnostics_are_persisted_aggregated_and_secret_safe(
                 stage="outcomes",
                 provider="anthropic",
                 model="claude-opus-4-8",
+                call_role="verification",
                 input_tokens=120,
                 output_tokens=30,
                 estimated_cost_usd=0.01,
@@ -154,6 +155,7 @@ def test_activity_and_diagnostics_are_persisted_aggregated_and_secret_safe(
         assert "ultra-sensitive-value" not in serialized
         assert "structured-sensitive-value" not in serialized
         assert serialized.count("[redacted]") >= 2
+        assert any(event.get("call_role") == "verification" for event in activity)
 
         diagnostics = runner.diagnostics_for_course("safe-events")
         assert diagnostics["totals"] == {

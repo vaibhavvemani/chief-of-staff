@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
@@ -29,6 +30,56 @@ VERIFICATION_SYSTEM = (
 
 SUPPORT_VALUES = {"supported", "partial", "unsupported"}
 UNGROUNDED_NOTE = "Ungrounded claim: no source_id was supplied; human review is required."
+_METADATA_CLAIM_GLUE = {
+    "a",
+    "an",
+    "and",
+    "approved",
+    "article",
+    "as",
+    "at",
+    "available",
+    "be",
+    "by",
+    "called",
+    "can",
+    "category",
+    "classified",
+    "found",
+    "from",
+    "guide",
+    "has",
+    "is",
+    "its",
+    "link",
+    "located",
+    "maintained",
+    "named",
+    "of",
+    "online",
+    "page",
+    "provided",
+    "published",
+    "publisher",
+    "registered",
+    "resource",
+    "source",
+    "the",
+    "this",
+    "title",
+    "titled",
+    "type",
+    "url",
+    "was",
+    "web",
+    "website",
+}
+_METADATA_RELATIONSHIP_WORDS = {
+    "Title": {"called", "named", "title", "titled"},
+    "Publisher": {"by", "maintained", "provided", "published", "publisher"},
+    "Type": {"as", "category", "classified", "type"},
+    "URL": {"available", "found", "link", "located", "online", "url", "website"},
+}
 
 
 def verify_asset(
@@ -142,6 +193,7 @@ def _verify_asset_with_sources(
             max_tokens=8_000,
             schema=_verification_response_schema(),
             use_cache=use_cache,
+            call_role="verification",
         )
         response: dict[str, Any] | None = None
         try:
@@ -282,7 +334,9 @@ def _conservative_verifier_fallback(
         excerpt = verdict.get("supporting_excerpt")
         support = verdict.get("support")
         if support in {"supported", "partial"} and (
-            not isinstance(excerpt, str) or not excerpt.strip() or excerpt not in source["text"]
+            not isinstance(excerpt, str)
+            or not excerpt.strip()
+            or not _evidence_excerpt_is_valid(claim, excerpt, source)
         ):
             verdict["support"] = "unsupported"
             verdict["supporting_excerpt"] = None
@@ -404,16 +458,16 @@ def _validate_response(
 
         excerpt = verdict["supporting_excerpt"]
         source_id = claims_by_id[claim_id]["source_id"]
-        source_text = source_registry[source_id]["text"]
+        source = source_registry[source_id]
         if support in {"supported", "partial"}:
             if not isinstance(excerpt, str) or not excerpt.strip():
                 raise ValueError(
                     f"claim {claim_id!r} marked {support} must include an evidence excerpt"
                 )
-            if excerpt not in source_text:
+            if not _evidence_excerpt_is_valid(claims_by_id[claim_id], excerpt, source):
                 raise ValueError(
                     f"claim {claim_id!r} evidence excerpt is not an exact substring "
-                    f"of source {source_id!r}"
+                    f"of allowed evidence from source {source_id!r}"
                 )
         elif excerpt is not None:
             raise ValueError(f"claim {claim_id!r} marked unsupported must use a null excerpt")
@@ -498,6 +552,9 @@ def _render_prompt(
             "\n".join(
                 [
                     f"### Source {source_id}: {source.get('name', '')}",
+                    "<SOURCE_METADATA>",
+                    _source_metadata(source),
+                    "</SOURCE_METADATA>",
                     "<SOURCE_TEXT>",
                     source["text"],
                     "</SOURCE_TEXT>",
@@ -509,6 +566,84 @@ def _render_prompt(
         "{{ASSET_JSON}}",
         json.dumps(asset_payload, ensure_ascii=False, indent=2),
     ).replace("{{SOURCE_TEXTS}}", "\n\n".join(source_blocks))
+
+
+def _source_metadata(source: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            f"Title: {source.get('name', '')}",
+            f"Publisher: {source.get('publisher', '')}",
+            f"Type: {source.get('category', '')}",
+            f"URL: {source.get('url', '')}",
+        ]
+    )
+
+
+def _evidence_excerpt_is_valid(
+    claim: dict[str, Any],
+    excerpt: str,
+    source: dict[str, Any],
+) -> bool:
+    if excerpt in source["text"]:
+        return True
+    return _metadata_excerpt_is_valid(claim, excerpt, source)
+
+
+def _metadata_excerpt_is_valid(
+    claim: dict[str, Any],
+    excerpt: str,
+    source: dict[str, Any],
+) -> bool:
+    """Allow metadata evidence only for a narrowly metadata-only claim.
+
+    Prompt guidance is not a trust boundary. The deterministic validator therefore
+    requires the claimed metadata value to appear verbatim in the claim and rejects
+    any remaining vocabulary outside a small metadata relationship vocabulary.
+    Substantive words cannot be justified merely because an excerpt appears beside
+    the source title, publisher, type, or URL in the verifier prompt.
+    """
+    fields = (
+        ("Title", source.get("name")),
+        ("Publisher", source.get("publisher")),
+        ("Type", source.get("category")),
+        ("URL", source.get("url")),
+    )
+    matching_fields = [
+        (label, value.strip())
+        for label, value in fields
+        if isinstance(value, str)
+        and value.strip()
+        and excerpt in f"{label}: {value}"
+    ]
+    if not matching_fields:
+        return False
+
+    claim_text = claim.get("text")
+    if not isinstance(claim_text, str):
+        return False
+    folded_claim = claim_text.casefold()
+    if not any(value.casefold() in folded_claim for _label, value in matching_fields):
+        return False
+
+    residual = folded_claim
+    metadata_values = sorted(
+        {
+            value.strip().casefold()
+            for _label, value in fields
+            if isinstance(value, str) and value.strip()
+        },
+        key=len,
+        reverse=True,
+    )
+    for value in metadata_values:
+        residual = residual.replace(value, " ")
+    remaining_words = set(re.findall(r"[a-z0-9]+", residual))
+    if not remaining_words <= _METADATA_CLAIM_GLUE:
+        return False
+    return any(
+        remaining_words & _METADATA_RELATIONSHIP_WORDS[label]
+        for label, _value in matching_fields
+    )
 
 
 def _verification_response_schema() -> dict[str, Any]:
@@ -530,7 +665,10 @@ def _verification_response_schema() -> dict[str, Any]:
                     ],
                     "properties": {
                         "claim_id": {"type": "string"},
-                        "support": {"enum": ["supported", "partial", "unsupported"]},
+                        "support": {
+                            "type": "string",
+                            "enum": ["supported", "partial", "unsupported"],
+                        },
                         "supporting_excerpt": {"anyOf": [{"type": "string"}, {"type": "null"}]},
                         "note": {"type": "string"},
                     },

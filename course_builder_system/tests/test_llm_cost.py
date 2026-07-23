@@ -98,6 +98,7 @@ def test_missing_live_provider_key_fails_explicitly_and_emits_safe_events(
             llm.call(
                 [{"role": "user", "content": "Return a bounded proposal."}],
                 use_cache=False,
+                call_role="verification",
             )
 
     assert [event_type for event_type, _ in events] == [
@@ -105,6 +106,7 @@ def test_missing_live_provider_key_fails_explicitly_and_emits_safe_events(
         "model.call.failed",
     ]
     assert events[-1][1]["error_type"] == "ProviderNotReady"
+    assert {payload["call_role"] for _, payload in events} == {"verification"}
 
 
 def test_structured_call_transforms_wire_schema_and_enforces_original_contract(

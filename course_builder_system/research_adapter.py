@@ -657,6 +657,12 @@ OUTLINE_START_MARKERS = (
     "what you will learn",
     "what you'll learn",
     "modules include",
+    "learning outcomes",
+    "course objectives",
+    "by the end of the course",
+    "by the end of this course",
+    "upon completion of the course",
+    "upon completion of this course",
 )
 
 OUTLINE_STOP_MARKERS = (
@@ -703,6 +709,16 @@ OUTLINE_TOPIC_MARKERS = (
     "milk",
     "grind",
     "water",
+    "apply",
+    "create",
+    "demonstrate",
+    "describe",
+    "evaluate",
+    "explain",
+    "identify",
+    "recognize",
+    "select",
+    "understand",
 )
 
 OUTLINE_SKIP_EXACT = {

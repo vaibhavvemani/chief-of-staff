@@ -253,7 +253,7 @@ class WorkspaceProjector:
         failed_job_controls_stage = bool(
             latest_job
             and latest_job.get("status") == "failed"
-            and latest_job.get("operation", "run") != "content_repair"
+            and latest_job.get("operation", "run") not in {"content_repair", "revision"}
         )
         needs_input = self._needs_input(stage, artifacts)
         requires_reopen = bool(

@@ -30,6 +30,9 @@ def parse_revision_request(
     Accepted forms are ``course_content: make the example deeper``,
     ``verifier`` / ``verifier: extra direction``, or a JSON object such as
     ``{"assets": ["m1_s1_cc"], "feedback": "...", "verifier": true}``.
+    Explicit JSON asset selectors remain the exact mutation scope; ``verifier``
+    adds finding context for those assets. Without selectors, ``verifier``
+    selects every flagged asset in the current subtopic.
     """
     if not isinstance(raw_feedback, str) or not raw_feedback.strip():
         raise ValueError("revision feedback must be a non-empty string")
@@ -57,8 +60,8 @@ def parse_revision_request(
         ):
             raise ValueError("revision feedback field 'feedback' must be a non-empty string")
         keys = _resolve_selectors(selectors, aliases) if selectors is not None else ()
-        if include_flags:
-            keys = _ordered_union(keys, _flagged_asset_keys(assets))
+        if include_flags and not keys:
+            keys = _flagged_asset_keys(assets)
         if not keys:
             raise ValueError("revision request selected no assets")
         return RevisionRequest(

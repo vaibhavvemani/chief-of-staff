@@ -149,6 +149,55 @@ def test_package_approval_rechecks_lesson_plan_integrity(
     )
 
 
+def test_package_approval_rejects_selected_rendered_asset_mismatch_without_mutation(
+    guarded_client: TestClient,
+) -> None:
+    client = guarded_client
+    repository = client.app.state.repository
+    manifest = repository.require("guard-course", "render_manifest")
+    manifest_checksum = repository.checksum(manifest)
+    rendered_assets = manifest["body"]["paths"]["assets"]
+    omitted_asset_id = next(iter(rendered_assets))
+    del rendered_assets[omitted_asset_id]
+    manifest["status"] = "draft"
+    manifest = repository.save(manifest, expected_checksum=manifest_checksum)
+    summary = repository.require("guard-course", "run_summary")
+    summary_checksum = repository.checksum(summary)
+    summary["status"] = "draft"
+    repository.save(summary, expected_checksum=summary_checksum)
+    before = repository.checksum(manifest)
+
+    package_stage = client.get("/api/courses/guard-course/stages/package").json()
+    # A pure render reconciliation failure has no verifier attention count, so the
+    # lifecycle remains at its human checkpoint while the projected approval action
+    # is disabled by the backend-owned package guard.
+    assert package_stage["state"] == "awaiting_review"
+    assert "package_asset_mismatch" in {
+        failure["code"] for failure in package_stage["approval_failures"]
+    }
+    approve_action = next(
+        action for action in package_stage["actions"] if action["id"] == "approve"
+    )
+    assert approve_action["enabled"] is False
+    response = client.post(
+        "/api/courses/guard-course/stages/package/approve",
+        json={"expected_checksum": package_stage["checksum"]},
+    )
+
+    assert response.status_code == 409
+    failures = response.json()["error"]["failures"]
+    mismatch = next(
+        failure for failure in failures if failure["code"] == "package_asset_mismatch"
+    )
+    assert mismatch["artifact_type"] == "render_manifest"
+    assert omitted_asset_id in mismatch["record_ids"]
+    assert (
+        repository.checksum(repository.require("guard-course", "render_manifest"))
+        == before
+    )
+    assert repository.require("guard-course", "render_manifest")["status"] == "draft"
+
+
 def test_synchronizing_changed_content_review_stales_package_without_body_loss(
     guarded_client: TestClient,
 ) -> None:

@@ -92,6 +92,20 @@
 > Chromium acceptance suite passes all 9 scenarios. NC-110 is next; neither Milestone 3
 > nor the cycle is complete.
 
+> **NC-110 implementation evidence — 2026-07-23:** NC-1101 through NC-1105 are
+> implemented and independently verified. The full Python suite passes 468 tests,
+> Ruff passes, the frontend suite passes 92 tests, the
+> corrected deterministic Chromium suite passes 13 scenarios, and the credentialed
+> `studio-live-pilot` Chromium journey reaches an approved Package with ten reconciled
+> assets, zero hard verifier blockers, current human reviews, enforced approved-source
+> routing, and successful integrity. Known recorded Anthropic cost is $5.930895; two
+> interrupted calls have unknown billing outside that estimate. The two-topic injected
+> live regression passes on indoor herb gardening and unrelated bicycle maintenance.
+> Recovery evidence now induces an actual post-start stage failure and an actual
+> Uvicorn child-process restart; verifier metadata is deterministically restricted to
+> explicit title, publisher, type, or URL relationships.
+> NC-120 and the real course-director pilot remain unstarted.
+
 ## 1. Purpose
 
 This document defines how the next development cycle will be proven complete.

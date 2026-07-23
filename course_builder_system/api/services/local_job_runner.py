@@ -33,6 +33,7 @@ _EVENT_TEXT_FIELDS = frozenset(
         "error_type",
         "strategy",
         "repair_id",
+        "call_role",
     }
 )
 _EVENT_NUMBER_FIELDS = frozenset(

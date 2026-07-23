@@ -14,7 +14,7 @@ import api.services.artifact_repository as repository_module
 import llm
 import steps
 from agents import intake
-from agents.live_stages import LiveStageImplementations
+from agents.live_stages import LiveStageImplementations, _PlannedResearchProvider
 from agents.source_repair import LiveSourceRepairProvider, RepairResearchScope
 from api.main import create_app
 from api.services.content_repair_service import ContentRepairService
@@ -161,6 +161,7 @@ class EvalStructuredProvider:
             subject = payload["brief"]["subject"]
             return validated({
                 "competitor_query": f"{subject} beginner course outline",
+                "competitor_fallback_query": f"{subject} course curriculum modules",
                 "source_query": f"{subject} authoritative practical guidance",
             })
         if stage == "course-model":
@@ -630,7 +631,69 @@ def _record_map(stage: str, artifact: dict[str, Any]) -> dict[str, dict[str, Any
             for session in body["sessions"]
             for cover in session["covers"]
         }
-    raise AssertionError(stage)
+        raise AssertionError(stage)
+
+
+def test_live_research_uses_bounded_fallback_and_ranks_course_results() -> None:
+    class RecordingProvider:
+        def __init__(self) -> None:
+            self.queries: list[str] = []
+
+        def search(self, query: str, *, limit: int) -> list[SearchResult]:
+            self.queries.append(query)
+            if query == "primary":
+                return [
+                    SearchResult(
+                        id=f"guide_{index}",
+                        title=f"Practical guide {index}",
+                        locator=f"https://guides.test/{index}",
+                        snippet="General article",
+                    )
+                    for index in range(limit)
+                ]
+            if query == "fallback":
+                return [
+                    SearchResult(
+                        id=f"course_{index}",
+                        title=f"Public Course Curriculum {index}",
+                        locator=f"https://courses.test/{index}/syllabus",
+                        snippet="Public curriculum",
+                    )
+                    for index in range(3)
+                ]
+            return [
+                SearchResult(
+                    id="source_1",
+                    title="Authoritative practical source",
+                    locator="https://sources.test/1",
+                    snippet="Factual guidance",
+                )
+            ]
+
+        def fetch(self, _locator: str) -> Any:  # pragma: no cover - not used here
+            raise AssertionError("fetch should not be called")
+
+        def extract_competitor_outline(self, _result: SearchResult) -> Any:
+            raise AssertionError("outline extraction should not be called")
+
+    delegate = RecordingProvider()
+    provider = _PlannedResearchProvider(
+        delegate,
+        competitor_query="primary",
+        competitor_fallback_query="fallback",
+        source_query="sources",
+        competitor_seed_locators=["https://operator.test/course/syllabus"],
+    )
+
+    competitors = provider.search("ignored", limit=6)
+    sources = provider.search("ignored", limit=6)
+
+    assert competitors[0].id == "operator_material_1"
+    assert [item.id for item in competitors[1:4]] == ["course_0", "course_1", "course_2"]
+    assert [item.id for item in sources] == ["source_1"]
+    assert delegate.queries == ["primary", "fallback", "sources"]
+    assert provider.search_count == 2
+    assert provider.web_search_count == 3
 
 
 @pytest.mark.parametrize(

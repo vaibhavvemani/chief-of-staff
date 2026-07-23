@@ -206,6 +206,14 @@ def test_structured_assets_have_claim_ledger_output_headroom():
         assert student_content.ASSET_SPECS[asset_type].max_tokens >= minimum
 
 
+def test_resources_prompt_keeps_metadata_and_pedagogy_out_of_claims():
+    prompt = (REPO_ROOT / "prompts" / "resources.md").read_text(encoding="utf-8")
+
+    assert "do not restate that metadata as factual claims" in prompt
+    assert "Do not create claims for URLs" in prompt
+    assert "Do not use\n  `source_id: null`" in prompt
+
+
 @pytest.mark.parametrize(("name", "expected"), LIGHT_ASSET_EXPECTATIONS.items())
 def test_light_asset_specs_and_prompt_contract(name, expected):
     """Blueprint resolution and generic prompts preserve the generation contract."""

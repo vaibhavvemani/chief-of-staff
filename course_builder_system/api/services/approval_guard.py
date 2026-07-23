@@ -545,13 +545,18 @@ class ApprovalGuardService:
         paths = manifest.get("body", {}).get("paths", {})
         rendered = set(paths.get("assets", {})) if isinstance(paths, dict) else set()
         if not selected == generated == rendered:
+            mismatched_asset_ids = (
+                (selected ^ generated)
+                | (selected ^ rendered)
+                | (generated ^ rendered)
+            )
             failures.append(
                 GuardFailure(
                     "package_asset_mismatch",
                     "Selected, generated, and rendered assets do not reconcile.",
                     "package",
                     "render_manifest",
-                    tuple(sorted(str(item) for item in selected ^ generated ^ rendered)),
+                    tuple(sorted(str(item) for item in mismatched_asset_ids)),
                 )
             )
         registry = self.repository.require(course_id, "approved_source_registry")
