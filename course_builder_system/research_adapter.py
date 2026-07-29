@@ -11,7 +11,7 @@ from html.parser import HTMLParser
 from io import BytesIO
 from typing import Protocol
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, quote_plus, unquote, urljoin, urlparse
+from urllib.parse import parse_qs, quote, quote_plus, urljoin, urlparse
 from urllib.request import Request, urlopen
 
 
@@ -111,8 +111,8 @@ class BoundedLiveResearchProvider:
         results: list[SearchResult] = []
         seen: set[str] = set()
         for href, label in links:
-            normalized = _unwrap_result_href(href)
-            if not _is_http_url(normalized) or normalized in seen:
+            normalized = _normalize_http_locator(_unwrap_result_href(href))
+            if normalized is None or normalized in seen:
                 continue
             if _is_search_engine_url(normalized):
                 continue
@@ -174,6 +174,14 @@ class BoundedLiveResearchProvider:
         )
 
     def _fetch(self, locator: str) -> FetchResult:
+        normalized = _normalize_http_locator(locator)
+        if normalized is None:
+            return FetchResult(
+                locator=locator,
+                ok=False,
+                reason="invalid HTTP URL",
+            )
+        locator = normalized
         last_reason = "request did not complete"
         for attempt in range(self.max_retries + 1):
             try:
@@ -801,17 +809,38 @@ def _unwrap_result_href(href: str) -> str:
     params = parse_qs(parsed.query)
     for key in ("uddg", "url", "u"):
         if params.get(key):
-            return unquote(params[key][0])
+            # parse_qs already removes the redirect wrapper's percent encoding.
+            # A second unquote would corrupt valid target escapes such as %20.
+            return params[key][0]
     return href
+
+
+def _normalize_http_locator(value: str) -> str | None:
+    """Return a request-safe HTTP(S) URL without double-decoding target escapes."""
+    candidate = html.unescape(value).strip()
+    if not candidate or any(
+        ord(character) < 0x20 or ord(character) == 0x7F
+        for character in candidate
+    ):
+        return None
+    parsed = urlparse(candidate)
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.netloc
+        or any(character.isspace() for character in parsed.netloc)
+    ):
+        return None
+    return parsed._replace(
+        path=quote(parsed.path, safe="/%:@!$&'()*+,;=-._~"),
+        params=quote(parsed.params, safe="/%:@!$&'()*+,;=-._~"),
+        query=quote(parsed.query, safe="=&%/:;+,.?@!$'()*-_[]~"),
+        fragment=quote(parsed.fragment, safe="%/:;+,.?@!$&'()*=-_[]~"),
+    ).geturl()
 
 
 def _provider_from_locator(locator: str) -> str:
     host = urlparse(locator).netloc
     return host or "Unknown"
-
-
-def _is_http_url(value: str) -> bool:
-    return urlparse(value).scheme in {"http", "https"}
 
 
 def _is_search_engine_url(value: str) -> bool:

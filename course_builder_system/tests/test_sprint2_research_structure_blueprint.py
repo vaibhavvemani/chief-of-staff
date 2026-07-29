@@ -241,6 +241,62 @@ def test_live_provider_ids_are_stable_when_search_order_changes() -> None:
     assert all(value.startswith("live_") and len(value) == 21 for value in first.values())
 
 
+def test_live_provider_preserves_target_url_escapes_from_search_redirects() -> None:
+    fetched_locators: list[str] = []
+    escaped_target = (
+        "https://www.stern.nyu.edu/sites/default/files/2024-01/"
+        "2024%20Spring%20PE%20Finance%20Course%20Outline%20-%20public.pdf"
+    )
+    wrapped_target = (
+        "https://duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.stern.nyu.edu"
+        "%2Fsites%2Fdefault%2Ffiles%2F2024-01%2F2024%2520Spring%2520PE"
+        "%2520Finance%2520Course%2520Outline%2520-%2520public.pdf"
+    )
+
+    def fetch_bytes(locator: str) -> tuple[int, dict[str, str], bytes]:
+        fetched_locators.append(locator)
+        if "search.test" in locator:
+            return (
+                200,
+                {"content-type": "text/html"},
+                f'<a href="{wrapped_target}">Private Equity Course Outline</a>'.encode(),
+            )
+        return 404, {"content-type": "text/plain"}, b"not needed"
+
+    provider = BoundedLiveResearchProvider(
+        search_url_template="https://search.test/?q={query}",
+        fetch_bytes=fetch_bytes,
+    )
+
+    result = provider.search("private equity course outline", limit=1)[0]
+    fetched = provider.fetch(result.locator)
+
+    assert result.locator == escaped_target
+    assert fetched.locator == escaped_target
+    assert fetched.reason == "HTTP 404"
+    assert fetched_locators[-1] == escaped_target
+
+
+def test_live_provider_encodes_raw_url_spaces_and_rejects_control_characters() -> None:
+    fetched_locators: list[str] = []
+
+    def fetch_bytes(locator: str) -> tuple[int, dict[str, str], bytes]:
+        fetched_locators.append(locator)
+        return 404, {"content-type": "text/plain"}, b"not needed"
+
+    provider = BoundedLiveResearchProvider(fetch_bytes=fetch_bytes)
+
+    spaced = provider.fetch("https://course.test/files/Public Course Outline.html")
+    malformed = provider.fetch("https://course.test/files/public\noutline.html")
+
+    assert spaced.locator == "https://course.test/files/Public%20Course%20Outline.html"
+    assert fetched_locators == [
+        "https://course.test/files/Public%20Course%20Outline.html"
+    ]
+    assert malformed.ok is False
+    assert malformed.reason == "invalid HTTP URL"
+
+
 def test_live_provider_retries_transient_http_statuses_for_search_and_fetch() -> None:
     attempts: dict[str, int] = {"search": 0, "page": 0}
 

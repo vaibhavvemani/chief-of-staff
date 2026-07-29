@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./app/App";
 import "./styles/global.css";
+import "./styles/refinement.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,4 +26,3 @@ createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </StrictMode>,
 );
-
