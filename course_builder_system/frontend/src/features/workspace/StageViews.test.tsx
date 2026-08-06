@@ -167,7 +167,7 @@ describe("truthful lifecycle controls", () => {
     expect(queue).toHaveTextContent("Insufficient evidence");
     expect(queue).toHaveTextContent("Human review");
     expect(queue).toHaveTextContent("Awaiting content repair");
-    expect(queue).toHaveTextContent("1 blocking · 1 review");
+    expect(queue).toHaveTextContent("1 blocking · 1 to review");
     expect(screen.getByRole("button", {
       name: "Revise with approved evidence for m1_s4_cc, finding cl2",
     })).toBeInTheDocument();

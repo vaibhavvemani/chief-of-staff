@@ -320,11 +320,28 @@ function normalizeCourse(raw: BackendCourse): CourseSummary {
           : "brief",
     nextAction: raw.next_action ?? "Open workspace",
     updatedAt: raw.last_activity_at ?? new Date().toISOString(),
-    progress: status === "approved" ? 100 : status === "requires_attention" ? 70 : 10,
+    // /api/courses returns no stage counts, so `progress` and `approvedStages`
+    // used to be invented from status alone (100/70/10 and 8/5/0). That put a
+    // filled bar next to the words "0 of 8 stages approved". They are now
+    // derived from `current_stage`, which the backend does assert, and the
+    // dashboard presents them as a position in the sequence rather than as a
+    // count of approvals it cannot know.
+    progress: courseStageProgress(raw.current_stage, status),
     attentionCount: raw.attention_count ?? 0,
-    approvedStages: status === "approved" ? 8 : status === "requires_attention" ? 5 : 0,
-    totalStages: 8,
+    approvedStages: courseStageIndex(raw.current_stage, status),
+    totalStages: allStageSlugs.length,
+    readOnly: raw.read_only ?? false,
   };
+}
+
+function courseStageIndex(currentStage: string | undefined, status: UiStatus): number {
+  if (status === "approved") return allStageSlugs.length;
+  const index = allStageSlugs.indexOf(currentStage as StageSlug);
+  return index < 0 ? 0 : index;
+}
+
+function courseStageProgress(currentStage: string | undefined, status: UiStatus): number {
+  return Math.round((courseStageIndex(currentStage, status) / allStageSlugs.length) * 100);
 }
 
 export async function getCourses(): Promise<{ courses: CourseSummary[]; demoMode: boolean }> {
@@ -1080,6 +1097,33 @@ function normalizeOutputFiles(value: unknown, courseId: string): OutputFile[] {
     source_index: "Source index",
     lesson_plan: "Lesson plan",
   };
+  /**
+   * Rendered folders are named `<subtopicId>_<slug>`. Only hyphens were being
+   * converted, so the tree showed "m1 s1_assess an indoor growing site".
+   */
+  function outputFolderLabel(path: string): string {
+    const name = path.split("/").at(-1) ?? path;
+    const withoutOrder = name.replace(/^\d+_/, "");
+    const slug = withoutOrder.includes("_") ? withoutOrder.slice(withoutOrder.indexOf("_") + 1) : withoutOrder;
+    const words = slug.replaceAll("-", " ").replaceAll("_", " ").trim();
+    return words ? words[0].toUpperCase() + words.slice(1) : name;
+  }
+  /** `m1_s1_cc` -> "Course content"; falls back to the id when unrecognised. */
+  function outputAssetLabel(assetId: string): string {
+    const assetKinds: Record<string, string> = {
+      cc: "Course content",
+      course_content: "Course content",
+      objectives: "Objectives",
+      summary: "Summary",
+      activities: "Activities",
+      case_study: "Case study",
+      case: "Case study",
+      assessment: "Assessment",
+      resources: "Resources",
+    };
+    const suffix = assetId.replace(/^m\d+_s\d+_/, "");
+    return assetKinds[suffix] ?? suffix.replaceAll("_", " ") ?? assetId;
+  }
   const files: OutputFile[] = Object.entries(labels).flatMap(([key, label]) => {
     const path = asString(paths[key]);
     return path ? [{ path: outputRelativePath(path, courseId), label, kind: "markdown" as const }] : [];
@@ -1092,7 +1136,7 @@ function normalizeOutputFiles(value: unknown, courseId: string): OutputFile[] {
     const parts = relative.split("/");
     const folder = parts.length > 1 ? parts.slice(0, -1).join("/") : "modules";
     const children = folders.get(folder) ?? [];
-    children.push({ path: relative, label: assetId, kind: "markdown" });
+    children.push({ path: relative, label: outputAssetLabel(assetId), kind: "markdown" });
     folders.set(folder, children);
   });
   if (folders.size) {
@@ -1102,7 +1146,7 @@ function normalizeOutputFiles(value: unknown, courseId: string): OutputFile[] {
       kind: "folder",
       children: [...folders.entries()].map(([path, children]) => ({
         path,
-        label: path.split("/").at(-1)?.replace(/^\d+_/, "").replaceAll("-", " ") ?? path,
+        label: outputFolderLabel(path),
         kind: "folder" as const,
         children,
       })),

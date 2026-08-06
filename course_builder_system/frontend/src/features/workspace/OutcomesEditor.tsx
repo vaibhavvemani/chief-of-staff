@@ -216,8 +216,8 @@ function OutcomeAdvisories({ advisories, editing }: { advisories: OutcomeAdvisor
       <div className="quality-note outcome-quality-clear">
         <span aria-hidden="true">✓</span>
         <div>
-          <strong>No deterministic advisory flags</strong>
-          <small>These checks support review; they do not judge final pedagogical quality.</small>
+          <strong>No wording problems found</strong>
+          <small>Automatic checks look for vague verbs and weak evidence. They cannot tell you whether these are the right outcomes to teach.</small>
         </div>
       </div>
     );
@@ -544,10 +544,15 @@ export function OutcomesEditor({
             <li key={outcome.id} className="outcome-card">
               <span className="outcome-order">{String(index + 1).padStart(2, "0")}</span>
               <div className="outcome-main">
-                <div className="outcome-meta">
+                {/* Was "core Analyze co1" — three unlabelled values run
+                    together, one of them an internal id. Each now says what it
+                    is, and the id moves to the row's title attribute. */}
+                <div className="outcome-meta" title={`Outcome reference: ${outcome.id}`}>
                   <span className={`priority priority-${outcome.priority}`}>{outcome.priority}</span>
-                  <span>{displayCode(outcome.cognitiveLevel)}</span>
-                  <code>{outcome.id}</code>
+                  <span className="outcome-level">
+                    <small>Thinking level</small>
+                    <span>{displayCode(outcome.cognitiveLevel)}</span>
+                  </span>
                 </div>
                 <h3>{outcome.statement}</h3>
                 <div className="evidence-line"><span>Evidence of learning</span><p>{outcome.evidence}</p></div>

@@ -32,8 +32,8 @@ import {
 } from "../../api/client";
 import { AppBrand } from "../../components/AppBrand";
 import { ErrorState, LoadingState } from "../../components/States";
-import { StatusBadge } from "../../components/StatusBadge";
-import type { BlueprintDecisionDraft, BriefData, BriefQuestionAnswer, BriefUpdates, Claim, ContentAsset, CourseModelOperation, CourseModelPreview, CourseModelValidationIssue, ImpactPreview, LessonPlanDecisionDraft, OutcomeDecisionDraft, OutcomeValidationIssue, SourceRepairEntry, StageAction, StageActionId, StageSlug, UiStatus, Workspace } from "../../types";
+import { StatusBadge, statusGlyph, statusLabel } from "../../components/StatusBadge";
+import type { BlueprintDecisionDraft, BriefData, BriefQuestionAnswer, BriefUpdates, Claim, ContentAsset, CourseModelOperation, CourseModelPreview, CourseModelValidationIssue, ImpactPreview, LessonPlanDecisionDraft, OutcomeDecisionDraft, OutcomeValidationIssue, SourceRepairEntry, StageAction, StageActionId, StageSlug, StageSummary, UiStatus, Workspace } from "../../types";
 import { StageView, stageData, type BriefEditSection } from "./StageViews";
 
 const stageSlugs: StageSlug[] = ["brief", "outcomes", "research", "course-model", "blueprint", "content", "lesson-plan", "package"];
@@ -107,34 +107,133 @@ const stageContext: Record<StageSlug, { why: string; evidence: string }> = {
   },
 };
 
-function WorkflowRail({ workspace, activeStage, activeJobStage, runMode, onOpenActivity }: { workspace: Workspace; activeStage: StageSlug; activeJobStage?: StageSlug | null; runMode: "deterministic" | "live"; onOpenActivity: () => void }) {
+/**
+ * Artifact identifiers as they appear in stage dependency lists, mapped to the
+ * names the operator sees on the workflow rail. Previously these were printed
+ * raw, which produced sentences like "brief, course outcomes must be approved".
+ */
+const artifactDisplayNames: Record<string, string> = {
+  subject_request: "Starting request",
+  brief: "Brief",
+  course_outcomes: "Outcomes",
+  research_dossier: "Research & Sources",
+  source_registry: "Research & Sources",
+  course_model: "Course Model",
+  blueprint: "Blueprint",
+  content_package: "Student Content",
+  content_review: "Student Content",
+  verification_report: "Student Content",
+  lesson_plan: "Lesson Plan",
+  run_summary: "Package",
+};
+
+function artifactDisplayName(artifact: string) {
+  return (
+    artifactDisplayNames[artifact] ??
+    artifact.replaceAll("_", " ").replace(/^./, (character) => character.toUpperCase())
+  );
+}
+
+/**
+ * A locked stage is a dead end, not a headline. The previous treatment gave it
+ * the largest type in the product and a lowercase sentence fragment built by
+ * interpolating raw artifact ids. This states the blocker, names the stages
+ * responsible, and gets the operator back to the one they can actually work on.
+ */
+function LockedStageState({ summary }: { summary: StageSummary }) {
+  const blockers = [...new Set(summary.dependencies.map(artifactDisplayName))];
+  return (
+    <div className="locked-stage-state">
+      <div className="locked-card">
+        <span className="locked-glyph" aria-hidden="true">
+          ·
+        </span>
+        <div>
+          <span className="eyebrow">{summary.label}</span>
+          <h1>Not ready yet</h1>
+          <p>
+            {blockers.length
+              ? `${summary.label} unlocks once ${blockers.length === 1 ? "this stage is" : "these stages are"} approved and current.`
+              : "An earlier step has to finish before this stage can run."}
+          </p>
+          {blockers.length ? (
+            <ul className="locked-blockers">
+              {blockers.map((blocker) => (
+                <li key={blocker}>{blocker}</li>
+              ))}
+            </ul>
+          ) : null}
+          <p className="locked-purpose">
+            <span className="micro-label">What this stage does</span>
+            {stageContext[summary.slug].why}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Stages that are waiting on the operator rather than on the agent or on an
+ * upstream artifact. The rail leads with these: previously the one stage that
+ * needed a human was the dimmest row in the list while seven finished stages
+ * carried the strongest colour.
+ */
+const OPERATOR_OWED: UiStatus[] = ["needs_input", "awaiting_review", "requires_attention", "failed", "stale"];
+
+function WorkflowRail({ workspace, activeStage, activeJobStage, runMode, readOnly, onOpenActivity }: { workspace: Workspace; activeStage: StageSlug; activeJobStage?: StageSlug | null; runMode: "deterministic" | "live"; readOnly?: boolean; onOpenActivity: () => void }) {
+  const approvedCount = workspace.stages.filter((stage) => stage.status === "approved").length;
+  const owed = workspace.stages.filter((stage) => OPERATOR_OWED.includes(stage.status));
   return (
     <aside className="workflow-rail">
-      <div className="rail-heading"><span>Course workflow</span><small>{workspace.stages.filter((stage) => stage.status === "approved").length} / 8 approved</small></div>
+      <div className="rail-heading">
+        <span>Course workflow</span>
+        <small>{approvedCount} of 8 approved</small>
+      </div>
       <nav aria-label="Course stages">
         {workspace.stages.map((stage) => {
           const isActive = activeStage === stage.slug;
           const isLocked = stage.status === "locked";
           const navigationPaused = Boolean(activeJobStage && stage.slug !== activeJobStage);
+          const needsOperator = OPERATOR_OWED.includes(stage.status);
           return (
             <Link
               key={stage.slug}
               to={`/courses/${workspace.course.courseId}/${stage.slug}?mode=${runMode}`}
-              className={`${isActive ? "active" : ""} ${navigationPaused ? "navigation-paused" : ""} rail-status-${stage.status}`}
+              className={`${isActive ? "active" : ""} ${navigationPaused ? "navigation-paused" : ""} ${needsOperator ? "rail-owed" : ""} rail-status-${stage.status}`}
               aria-current={isActive ? "page" : undefined}
               aria-disabled={navigationPaused || undefined}
               onClick={(event) => { if (navigationPaused) event.preventDefault(); }}
               title={navigationPaused ? "Finish the active stage run before moving elsewhere" : isLocked ? "Inspect this locked stage and its requirements" : undefined}
             >
               <span className="rail-number">{stageNumbers[stage.slug]}</span>
-              <span className="rail-stage-copy"><strong>{stage.label}</strong><small>{stage.status.replaceAll("_", " ")}</small></span>
-              <span className="rail-stage-state" aria-hidden="true">{stage.status === "approved" ? "✓" : ["needs_input", "requires_attention", "failed"].includes(stage.status) ? stage.count || "!" : stage.status === "locked" ? "·" : "→"}</span>
+              <span className="rail-stage-copy">
+                <strong>{stage.label}</strong>
+                <small>{statusLabel(stage.status)}</small>
+              </span>
+              <span className={`rail-stage-state rail-glyph-${stage.status}`} aria-hidden="true">
+                {stage.count ? stage.count : statusGlyph(stage.status)}
+              </span>
             </Link>
           );
         })}
       </nav>
+      {owed.length > 0 ? (
+        <p className="rail-owed-summary" role="status">
+          {owed.length === 1
+            ? `${owed[0].label} is waiting on you.`
+            : `${owed.length} stages are waiting on you.`}
+        </p>
+      ) : null}
       <button className="activity-trigger" onClick={onOpenActivity}><span className="activity-bars" aria-hidden="true"><i /><i /><i /></span><span><strong>Activity & runs</strong><small>{workspace.activity.length} recent events</small></span><span aria-hidden="true">›</span></button>
-      <div className="rail-footer"><span className="rail-saved-dot" /><span><strong>Artifacts saved</strong><small>Resume-safe workspace</small></span></div>
+      {readOnly ? (
+        <div className="rail-footer rail-footer-readonly">
+          <span className="rail-readonly-mark" aria-hidden="true">◇</span>
+          <span><strong>Read-only snapshot</strong><small>Nothing here can be changed</small></span>
+        </div>
+      ) : (
+        <div className="rail-footer"><span className="rail-saved-dot" /><span><strong>Artifacts saved</strong><small>Resume-safe workspace</small></span></div>
+      )}
     </aside>
   );
 }
@@ -1338,22 +1437,28 @@ export function WorkspacePage() {
         <AppBrand compact />
         <div className="workspace-course-title"><Link to="/courses">Courses</Link><span aria-hidden="true">/</span><div><strong>{workspace.course.title}</strong><small>{courseId}</small></div></div>
         <div className="workspace-header-actions">
-          {demoMode ? <span className="environment-badge"><i /> Preview data</span> : readOnly ? <span className="environment-badge snapshot"><i /> Archived snapshot</span> : <span className="environment-badge connected"><i /> API connected</span>}
-          <label className="run-mode-selector" title="Choose how stage runs execute"><span>Run mode</span><select aria-describedby={!workspace.providerReadiness.ready ? "live-readiness-message" : undefined} value={runMode} onChange={(event) => changeRunMode(event.target.value as "deterministic" | "live")}><option value="live" disabled={!workspace.providerReadiness.ready}>Live agent</option><option value="deterministic">Deterministic</option></select></label>
-          {!workspace.providerReadiness.ready ? <span id="live-readiness-message" className="provider-readiness provider-unavailable" role="status"><i aria-hidden="true" /> Live unavailable · {workspace.providerReadiness.message}</span> : <span className="provider-readiness provider-ready" title={`${workspace.providerReadiness.provider} · ${workspace.providerReadiness.model}`}><i aria-hidden="true" /> Live ready</span>}
+          {demoMode ? <span className="environment-badge"><i /> Preview data</span> : readOnly ? <span className="environment-badge snapshot"><i /> Read-only snapshot</span> : <span className="environment-badge connected"><i /> API connected</span>}
+          {/* A snapshot cannot be run, so the run-mode picker and provider
+              readiness are hidden rather than left looking operable. */}
+          {!readOnly ? (
+            <>
+              <label className="run-mode-selector" title="Choose how stage runs execute"><span>Run mode</span><select aria-describedby={!workspace.providerReadiness.ready ? "live-readiness-message" : undefined} value={runMode} onChange={(event) => changeRunMode(event.target.value as "deterministic" | "live")}><option value="live" disabled={!workspace.providerReadiness.ready}>Live agent</option><option value="deterministic">Deterministic</option></select></label>
+              {!workspace.providerReadiness.ready ? <span id="live-readiness-message" className="provider-readiness provider-unavailable" role="status"><i aria-hidden="true" /> Live unavailable · {workspace.providerReadiness.message}</span> : <span className="provider-readiness provider-ready" title={`${workspace.providerReadiness.provider} · ${workspace.providerReadiness.model}`}><i aria-hidden="true" /> Live ready</span>}
+            </>
+          ) : null}
           {runProgress ? <span className="environment-badge connected run-progress"><i /> {runProgress.completed != null && runProgress.expected ? `${runProgress.completed}/${runProgress.expected} · ` : ""}{runProgress.message}</span> : null}
-          {workspace.estimatedCost ? <span className="cost-note">${workspace.estimatedCost.toFixed(2)} est.</span> : null}
+          {workspace.estimatedCost ? <span className="cost-note" title="Estimated Anthropic API spend for this course so far">${workspace.estimatedCost.toFixed(2)} est.</span> : null}
           <button className={`context-toggle ${inspectorOpen ? "active" : ""}`} onClick={() => setInspectorOpen((open) => !open)} aria-expanded={inspectorOpen}><span aria-hidden="true">i</span> Context</button>
           <button className="header-icon-button" onClick={() => setActivityOpen(true)} aria-label="Open activity"><span className="activity-bars" aria-hidden="true"><i /><i /><i /></span></button>
         </div>
       </header>
       <div className={`workspace-grid ${inspectorOpen ? "inspector-open" : ""}`}>
-        <WorkflowRail workspace={workspace} activeStage={stage} activeJobStage={activeJobStage} runMode={runMode} onOpenActivity={() => setActivityOpen(true)} />
+        <WorkflowRail workspace={workspace} activeStage={stage} activeJobStage={activeJobStage} runMode={runMode} readOnly={readOnly} onOpenActivity={() => setActivityOpen(true)} />
         <main className="stage-canvas" id="main-content">
           {(activeJobId && activeJobStage === stage) || (mutation.isPending && mutation.variables?.type === "run") ? (
             <AgentRunScreen stage={stage} mode={runMode} progress={runProgress} />
           ) : currentSummary?.status === "locked" && !demoMode ? (
-            <div className="locked-stage-state"><span className="locked-glyph" aria-hidden="true">·</span><span className="eyebrow">{currentSummary.label}</span><h1>This stage is waiting on an upstream decision.</h1><p>{currentSummary.dependencies.length ? `${currentSummary.dependencies.map((item) => item.replaceAll("_", " ")).join(", ")} must be approved and current before this stage can run.` : "A backend prerequisite must be completed before this stage can run."}</p></div>
+            <LockedStageState summary={currentSummary} />
           ) : <StageView
             stage={stage}
             workspace={workspace}

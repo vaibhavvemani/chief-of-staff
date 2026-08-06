@@ -83,6 +83,8 @@ export interface CourseSummary {
   approvedStages: number;
   totalStages: number;
   demo?: boolean;
+  /** Committed example/acceptance snapshots, which cannot be mutated. */
+  readOnly?: boolean;
 }
 
 export type QuestionAnswerType =

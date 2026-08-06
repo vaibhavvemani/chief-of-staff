@@ -66,6 +66,12 @@ function displayCode(value: string): string {
   return normalized ? normalized[0].toUpperCase() + normalized.slice(1) : "Not set";
 }
 
+/** "3", "4", "5" -> "3, 4 and 5" */
+function formatList(values: string[]): string {
+  if (values.length <= 1) return values[0] ?? "";
+  return `${values.slice(0, -1).join(", ")} and ${values[values.length - 1]}`;
+}
+
 function displayAssumptionValue(value: string): string {
   if (value.startsWith("[") && value.endsWith("]")) {
     return value.slice(1, -1).replaceAll("'", "").replaceAll('"', "");
@@ -305,7 +311,11 @@ function ResearchView({
         "Research & Sources",
         "03 · Evidence gate",
         "Competitor pages shape the curriculum. Only separately approved grounding sources may support learner-facing claims.",
-        <div className="research-counts"><span><strong>{selectedIds.length}</strong><small>{approved ? "approved" : "selected"}</small></span><span><strong>{candidateCount}</strong><small>candidates</small></span></div>,
+        // One honest pair of numbers. This header used to read "3 approved /
+        // 0 candidates" beside a tab labelled "Grounding sources 10" and a
+        // tray reading "3 selected / 7 excluded" — three counts of the same
+        // set that appeared to disagree.
+        <div className="research-counts"><span><strong>{selectedIds.length}</strong><small>{approved ? "approved" : "selected"}</small></span><span><strong>{workspace.research.sources.length}</strong><small>found</small></span></div>,
       )}
       <div className="tab-row" role="tablist" aria-label="Research views">
         <button role="tab" aria-selected={tab === "sources"} className={tab === "sources" ? "active" : ""} onClick={() => setTab("sources")}>Grounding sources <span>{workspace.research.sources.length}</span></button>
@@ -324,9 +334,11 @@ function ResearchView({
                 : ["approved", "selected"].includes(source.status) ? "proposed" : source.status;
               return (
               <article className={`source-card source-card-${effectiveStatus}`} key={source.id}>
-                <div className="source-card-header">
+                {/* The internal source id stays available on hover for support
+                    questions but is no longer presented as the card's label —
+                    `live_07bed5a664d90615` means nothing to a course director. */}
+                <div className="source-card-header" title={`Source reference: ${source.id}`}>
                   <div><SourceStatus status={effectiveStatus} /><span className="source-type">{source.sourceType}</span></div>
-                  <code>{source.id}</code>
                 </div>
                 <h3>{source.title}</h3>
                 <p className="source-publisher">{source.publisher} · <span>{source.locator.replace(/^https?:\/\//, "")}</span></p>
@@ -334,7 +346,11 @@ function ResearchView({
                   <div><span>Why it matters</span><p>{source.relevance}</p></div>
                   <div><span>Trust note</span><p>{source.trustNotes}</p></div>
                 </div>
-                {source.quality ? <div className="source-quality"><div className="source-quality-head"><span><strong>{source.quality.overall.toFixed(1)}</strong><small>/ 5 advisory</small></span><div><span className={`quality-recommendation quality-${source.quality.recommendation}`}>{displayCode(source.quality.recommendation)}</span><small>Recommendation is separate from your decision.</small></div></div><dl>{Object.entries(source.quality.dimensions).map(([name, dimension]) => <div key={name}><dt>{displayCode(name)}</dt><dd><strong>{dimension.score}/5</strong><span>{dimension.reason}</span></dd></div>)}</dl>{source.quality.previewSections.length ? <details><summary>Bounded source preview · {source.quality.previewSections.length} relevant section{source.quality.previewSections.length === 1 ? "" : "s"}</summary><div>{source.quality.previewSections.map((section) => <blockquote key={`${section.order}:${section.text}`}>{section.text}</blockquote>)}</div></details> : <p className="source-preview-empty">No extractable content is available yet. Review the metadata before deciding whether to capture this source.</p>}</div> : null}
+                {source.quality ? <div className="source-quality"><div className="source-quality-head"><span><strong>{source.quality.overall.toFixed(1)}</strong><small>/ 5 advisory</small></span><div><span className={`quality-recommendation quality-${source.quality.recommendation}`}>{displayCode(source.quality.recommendation)}</span><small>Recommendation is separate from your decision.</small></div></div>
+                {/* The six per-dimension scores are diagnostics, not a decision
+                    surface. Rendered open on every candidate they made this
+                    page ~6,800px tall and buried the actual Select control. */}
+                <details className="source-score-detail"><summary>Why this score?</summary><dl>{Object.entries(source.quality.dimensions).map(([name, dimension]) => <div key={name}><dt>{displayCode(name)}</dt><dd><strong>{dimension.score}/5</strong><span>{dimension.reason}</span></dd></div>)}</dl></details>{source.quality.previewSections.length ? <details><summary>Bounded source preview · {source.quality.previewSections.length} relevant section{source.quality.previewSections.length === 1 ? "" : "s"}</summary><div>{source.quality.previewSections.map((section) => <blockquote key={`${section.order}:${section.text}`}>{section.text}</blockquote>)}</div></details> : <p className="source-preview-empty">No extractable content is available yet. Review the metadata before deciding whether to capture this source.</p>}</div> : null}
                 <div className="source-footer">
                   <div>{source.assignedNodeIds.length ? <><span className="micro-label">Assigned to</span><TagList values={source.assignedNodeIds} tone="source" /></> : <span className="muted">{isSelected ? "Available for Course Model routing" : "Outside generation context"}</span>}</div>
                   <div className="source-actions"><a target="_blank" rel="noreferrer" href={source.locator}>Preview</a>{isSelected ? <button className="remove-source" disabled={!onSourceDecision} title={!onSourceDecision ? "Source decisions are not available in the current stage state" : undefined} onClick={() => toggle(source.id, false)}>Remove</button> : <button className="select-source" disabled={!onSourceDecision} title={!onSourceDecision ? "Source decisions are not available in the current stage state" : undefined} onClick={() => toggle(source.id, true)}>Select</button>}</div>
@@ -533,7 +549,10 @@ function AssetReader({ asset, selectedClaimId, onSelectClaim }: { asset: Content
   return (
     <section className="asset-reader">
       <header className="reader-header">
-        <div className="reader-title"><span className="micro-label">{displayCode(asset.type)} · {asset.format.toUpperCase()}</span><h2>{asset.title}</h2><code>{asset.id}</code></div>
+        {/* The asset id sits on the title attribute rather than under the
+            heading it duplicates: `m1_s1_cc` is a reference for support
+            questions, not a label for a course director. */}
+        <div className="reader-title" title={`Asset reference: ${asset.id}`}><span className="micro-label">{displayCode(asset.type)} · {asset.format.toUpperCase()}</span><h2>{asset.title}</h2></div>
         <div className="reader-tabs" role="tablist" aria-label="Asset view"><button role="tab" aria-selected={tab === "reader"} className={tab === "reader" ? "active" : ""} onClick={() => setTab("reader")}>Reader</button><button role="tab" aria-selected={tab === "markdown"} className={tab === "markdown" ? "active" : ""} onClick={() => setTab("markdown")}>Markdown</button><button role="tab" aria-selected={tab === "data"} className={tab === "data" ? "active" : ""} onClick={() => setTab("data")}>Data</button></div>
       </header>
       <div className="reader-scroll">
@@ -574,7 +593,14 @@ function ContentRepairQueue({ workspace, busy, canContentRepair, canSourceRepair
     insufficient_evidence: "Insufficient evidence",
     human_review: "Human review",
   };
-  return <section className="content-repair-queue" aria-label="Content repair queue"><header><div><span className="eyebrow">Verifier triage</span><h2>Repair queue</h2><p>Cause labels are advisory. Every action stays bounded to the named asset and current finding.</p></div><span>{workspace.contentRepairs.hardBlockerTotal} blocking · {workspace.contentRepairs.partialTotal} review</span></header><div className="content-repair-groups">{Object.entries(labels).map(([classification, label]) => {
+  // With nothing blocking, this panel only restated the status banner directly
+  // above it ("No blocking verification findings") while pushing the asset
+  // workbench — the actual review surface — most of the way off screen. The
+  // partial findings it listed are already shown against each asset in the
+  // verification pane, and the banner links straight to them.
+  const blocking = workspace.contentRepairs.hardBlockerTotal > 0;
+  if (!blocking) return null;
+  const groups = <div className="content-repair-groups">{Object.entries(labels).map(([classification, label]) => {
     const grouped = findings.filter((finding) => finding.classification === classification);
     if (!grouped.length) return null;
     return <section key={classification} className={`content-repair-group repair-group-${classification}`}><div><strong>{label}</strong><span>{grouped.length}</span></div>{grouped.map((finding) => {
@@ -582,7 +608,9 @@ function ContentRepairQueue({ workspace, busy, canContentRepair, canSourceRepair
       const claim = asset?.claims.find((candidate) => candidate.id === finding.claimId);
       return <article key={finding.id}><div><span className={`repair-state repair-state-${finding.blocking ? "blocking" : "review"}`}>{finding.blocking ? "Blocking" : "Review"}</span><code>{finding.assetId}</code><h3>{finding.text}</h3><p>{finding.classificationReason}</p><small>{displayCode(finding.state)}</small></div>{finding.blocking && asset ? <footer>{canContentRepair ? <button className="button button-secondary" aria-label={`Revise with approved evidence for ${finding.assetId}, finding ${finding.findingId}`} disabled={busy} onClick={() => onAction?.("repair_existing", asset, claim)}>Revise with approved evidence</button> : null}{canSourceRepair && claim ? <button className="button button-quiet" aria-label={`Find better evidence for ${finding.assetId}, finding ${finding.findingId}`} disabled={busy} onClick={() => onAction?.("source_repair", asset, claim)}>Find better evidence</button> : null}</footer> : null}</article>;
     })}</section>;
-  })}</div></section>;
+  })}</div>;
+  const counts = <span>{workspace.contentRepairs.hardBlockerTotal} blocking · {workspace.contentRepairs.partialTotal} to review</span>;
+  return <section className="content-repair-queue" aria-label="Content repair queue"><header><div><span className="eyebrow">Verifier triage</span><h2>Resolve these before release</h2><p>Cause labels are advisory. Every action stays bounded to the named asset and current finding.</p></div>{counts}</header>{groups}</section>;
 }
 
 function SourceRepairQueue({ entries, busy, onDecision, onRoute, onContentRepair }: { entries: SourceRepairEntry[]; busy: boolean; onDecision?: (entry: SourceRepairEntry, candidateId: string) => void; onRoute?: (entry: SourceRepairEntry) => void; onContentRepair?: (entry: SourceRepairEntry) => void }) {
@@ -722,9 +750,9 @@ function LessonPlanView({
             <article className="session-card" key={session.id}>
               <div className="session-marker"><span>{String(index + 1).padStart(2, "0")}</span><i /></div>
               <div className="session-content">
-                <div className="session-head"><div><span className="micro-label">Session {index + 1}</span><h3>{session.title}</h3><code>{session.id}</code></div><div className="duration-pill"><strong>{session.durationMinutes}</strong><span>minutes</span></div></div>
+                <div className="session-head"><div title={`Session reference: ${session.id}`}><span className="micro-label">Session {index + 1}</span><h3>{session.title}</h3></div><div className="duration-pill"><strong>{session.durationMinutes}</strong><span>minutes</span></div></div>
                 <div className="session-meta"><div><span>Segments</span><strong>{session.covers.length}</strong></div><div><span>Delivery</span><strong>{[...new Set(session.covers.map((cover) => cover.mode.replace("_", " ")))].join(" + ")}</strong></div><div><span>Coverage</span><strong>{session.covers.length} of {expected}</strong></div></div>
-                <div className="session-covers">{session.covers.map((cover, coverIndex) => <div className="cover-row" key={cover.subtopicId}><div className="cover-sequence">{index + 1}.{coverIndex + 1}</div><div className="cover-body"><div className="cover-title"><div><span className="micro-label">Course Model subtopic</span><strong>{names.get(cover.subtopicId) ?? cover.subtopicId}</strong></div><span className={`mode mode-${cover.mode}`}>{cover.mode.replace("_", " ")}</span></div><ol className="teaching-sequence">{cover.talkingPoints.map((point, pointIndex) => <li key={point}><span>{String(pointIndex + 1).padStart(2, "0")}</span><p>{point}</p></li>)}</ol><code className="cover-id">{cover.subtopicId}</code></div></div>)}</div>
+                <div className="session-covers">{session.covers.map((cover, coverIndex) => <div className="cover-row" key={cover.subtopicId}><div className="cover-sequence">{index + 1}.{coverIndex + 1}</div><div className="cover-body"><div className="cover-title"><div><span className="micro-label">Course Model subtopic</span><strong>{names.get(cover.subtopicId) ?? cover.subtopicId}</strong></div><span className={`mode mode-${cover.mode}`}>{cover.mode.replace("_", " ")}</span></div><ol className="teaching-sequence">{cover.talkingPoints.map((point, pointIndex) => <li key={point}><span>{String(pointIndex + 1).padStart(2, "0")}</span><p>{point}</p></li>)}</ol></div></div>)}</div>
               </div>
             </article>
           ))}
@@ -734,7 +762,23 @@ function LessonPlanView({
           <dl><DefinitionItem label="Sessions" value={sessionCount} /><DefinitionItem label="Total time" value={`${workspace.lessonPlan.totalDurationMinutes} minutes`} /><DefinitionItem label="Delivery" value={modeLabels.join(" + ") || "Not specified"} /><DefinitionItem label="Breaks" value="As needed" /></dl>
           <div className="coverage-summary"><div className="coverage-summary-head"><div className={exactCoverage ? "coverage-count complete" : "coverage-count"}><strong>{covered}</strong><span>/ {expected}</span></div><div><span className="micro-label">Course Model coverage</span><strong>{exactCoverage ? "Complete coverage" : "Coverage needs review"}</strong></div></div><div className="coverage-track" role="progressbar" aria-label="Course Model coverage" aria-valuemin={0} aria-valuemax={expected} aria-valuenow={covered}><span style={{ width: `${coveragePercent}%` }} /></div></div>
           <div className={`coverage-check ${exactCoverage ? "" : "coverage-warning"}`}><span aria-hidden="true">{exactCoverage ? "✓" : "!"}</span><p>{exactCoverage ? "Every Course Model subtopic appears exactly once in the delivery sequence." : "At least one Course Model subtopic is missing, duplicated, or outside the approved model."}</p></div>
-          {workspace.lessonPlan.affectedSessionIds.length ? <div className="constraint-revision-note"><span aria-hidden="true">↳</span><p>Last decision changed exact sessions: {workspace.lessonPlan.affectedSessionIds.map((sessionId, index) => <span key={sessionId}>{index ? ", " : ""}<code>{sessionId}</code></span>)}</p></div> : null}
+          {/* Session numbers, not raw ids: "sess3, sess4, sess5" told the
+              operator nothing, and the ordinal is what the timeline shows.
+              Ids with no current position belong to sessions the change
+              retired, which is reported as a count rather than as an id. */}
+          {workspace.lessonPlan.affectedSessionIds.length ? (() => {
+            const positions: string[] = [];
+            let retired = 0;
+            for (const sessionId of workspace.lessonPlan.affectedSessionIds) {
+              const position = workspace.lessonPlan.sessions.findIndex((session) => session.id === sessionId);
+              if (position >= 0) positions.push(String(position + 1));
+              else retired += 1;
+            }
+            const parts: string[] = [];
+            if (positions.length) parts.push(`${positions.length === 1 ? "session" : "sessions"} ${formatList(positions)}`);
+            if (retired) parts.push(`removed ${retired} session${retired === 1 ? "" : "s"}`);
+            return <div className="constraint-revision-note"><span aria-hidden="true">↳</span><p>Your last change affected {formatList(parts)}.</p></div>;
+          })() : null}
           <div className="constraint-revision-note"><span aria-hidden="true">↳</span><p>{onStartEdit ? "Use the typed editor to change timing, delivery mode, placement, or sequence." : "Editing is unavailable in the current lifecycle state."}</p></div>
         </aside>
       </div>

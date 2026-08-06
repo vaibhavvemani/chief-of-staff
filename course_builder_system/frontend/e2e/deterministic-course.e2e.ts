@@ -926,11 +926,17 @@ test("completes bounded durable Guided Brief intake and protects approved editin
   await expect(
     page.getByText("Learner explains the key concepts and justifies a starting recipe."),
   ).toBeVisible();
-  await expect(page.locator(".outcome-list > .outcome-card code")).toHaveText([
-    "co1",
-    "co3",
-    "co5",
-    "co4",
+  // Outcome ids moved off the card face and onto the row's title attribute, so
+  // the reorder assertion reads them from there. Same identities, same order.
+  expect(
+    await page
+      .locator(".outcome-list > .outcome-card .outcome-meta")
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("title"))),
+  ).toEqual([
+    "Outcome reference: co1",
+    "Outcome reference: co3",
+    "Outcome reference: co5",
+    "Outcome reference: co4",
   ]);
   await expect(page.getByText("Create", { exact: true })).toBeVisible();
   await expect(page.getByText("optional", { exact: true })).toBeVisible();
@@ -1421,7 +1427,7 @@ test("Scenario D rejects source leakage, blocker approval, read-only writes, and
   await page.goto(
     `/courses/${READ_ONLY_ACCEPTANCE_COURSE_ID}/course-model?mode=deterministic`,
   );
-  await expect(page.getByText("Archived snapshot")).toBeVisible();
+  await expect(page.getByText("Read-only snapshot").first()).toBeVisible();
   await expect(page.getByRole("button", { name: /Reopen Course Model/ })).toHaveCount(0);
   const readOnlyWrite = await request.post(
     `/api/courses/${READ_ONLY_ACCEPTANCE_COURSE_ID}/stages/course-model/run`,
@@ -1671,7 +1677,10 @@ test("Scenario A12 reconciles and approves a typed Lesson Plan", async ({
 
   await expect(page.getByRole("heading", { name: "Lesson Plan" })).toBeVisible();
   await page.reload();
-  await expect(page.getByText("Last decision changed exact sessions:", { exact: false })).toBeVisible();
+  // The affected-session report now names sessions by their position in the
+  // timeline instead of printing raw ids ("sess3, sess4"). Still asserts that
+  // the report is rendered and that it names at least one specific session.
+  await expect(page.getByText(/Your last change affected sessions 1, 2, 3 and 4 and removed 1 session\./)).toBeVisible();
   const saved = await lessonPlanArtifact(request, LESSON_PLAN_EDITOR_COURSE_ID);
   const covered = saved.artifact.body.sessions.flatMap((session) =>
     session.covers.map((cover) => cover.subtopic_id),
@@ -1935,7 +1944,7 @@ test("Scenario A8 keeps source-less and unattributed findings blocking in the br
   await expect(page.getByText("2 blocking verification findings")).toBeVisible();
   const repairQueue = page.getByRole("region", { name: "Content repair queue" });
   await expect(repairQueue).toContainText("Missing attribution");
-  await expect(repairQueue).toContainText("2 blocking · 0 review");
+  await expect(repairQueue).toContainText("2 blocking · 0 to review");
   await expect(
     repairQueue.locator(".repair-group-missing_attribution article"),
   ).toHaveCount(2);
@@ -1983,7 +1992,7 @@ test("Scenarios A9 and A10 repair exact assets and close Content review", async 
   await expect(repairQueue).toContainText("Likely content error");
   await expect(repairQueue).toContainText("Insufficient evidence");
   await expect(repairQueue).toContainText("Human review");
-  await expect(repairQueue).toContainText("2 blocking · 1 review");
+  await expect(repairQueue).toContainText("2 blocking · 1 to review");
 
   const existingEvidenceGroup = repairQueue.locator(
     ".repair-group-likely_content_error",

@@ -26,25 +26,62 @@ function DashboardMetric({ value, label, tone }: { value: number; label: string;
   );
 }
 
+const stageDisplayNames: Record<string, string> = {
+  brief: "Brief",
+  outcomes: "Outcomes",
+  research: "Research & Sources",
+  "course-model": "Course Model",
+  blueprint: "Blueprint",
+  content: "Student Content",
+  "lesson-plan": "Lesson Plan",
+  package: "Package",
+};
+
 function CourseCard({ course }: { course: CourseSummary }) {
-  const stageLabel = course.currentStage.replaceAll("-", " ");
+  const stageLabel = stageDisplayNames[course.currentStage] ?? course.currentStage.replaceAll("-", " ");
+  const position = Math.min(course.approvedStages + 1, course.totalStages);
+  // The card's title is the subject for runtime courses, so repeating it in the
+  // eyebrow just spent a line saying the same thing twice.
+  const showSubject = course.subject && course.subject.toLowerCase() !== course.title.toLowerCase();
   return (
-    <Link to={`/courses/${course.courseId}/${course.currentStage}`} className="course-card">
+    <Link
+      to={`/courses/${course.courseId}/${course.currentStage}`}
+      className={`course-card ${course.readOnly ? "course-card-readonly" : ""}`}
+    >
       <div className="course-card-topline">
         <StatusBadge status={course.status} count={course.attentionCount} />
+        {/* Committed snapshots looked exactly like live courses on this grid,
+            so a director could open one and wonder why nothing was editable. */}
+        {course.readOnly ? <span className="snapshot-tag">◇ Snapshot</span> : null}
         <span className="course-updated">Updated {relativeDate(course.updatedAt)}</span>
       </div>
       <div className="course-card-copy">
-        <span className="eyebrow">{course.subject}</span>
+        {showSubject ? <span className="eyebrow">{course.subject}</span> : null}
         <h3>{course.title}</h3>
         <p>{course.nextAction}</p>
       </div>
-      <div className="course-progress" aria-label={`${course.progress}% complete`}>
+      <div className="course-progress">
         <div className="progress-meta">
           <span>{stageLabel}</span>
-          <span>{course.approvedStages} of {course.totalStages} stages approved</span>
+          <span>
+            {course.status === "approved" ? "Complete" : `Stage ${position} of ${course.totalStages}`}
+          </span>
         </div>
-        <div className="progress-track"><span style={{ width: `${course.progress}%` }} /></div>
+        <ol
+          className="stage-pips"
+          aria-label={
+            course.status === "approved"
+              ? "All 8 stages complete"
+              : `At stage ${position} of ${course.totalStages}: ${stageLabel}`
+          }
+        >
+          {Array.from({ length: course.totalStages }, (_, index) => (
+            <li
+              key={index}
+              className={index < course.approvedStages ? "done" : index === course.approvedStages ? "current" : ""}
+            />
+          ))}
+        </ol>
       </div>
       <div className="course-card-action">
         <span>{course.status === "requires_attention" ? "Open attention queue" : "Open workspace"}</span>
@@ -85,10 +122,19 @@ export function CoursesPage() {
       </header>
 
       <main className="dashboard-main" id="courses">
+        {/* The hero states the queue, not a slogan. The previous headline
+            ("Courses move forward one clear decision at a time.") spent ~350px
+            of a 900px viewport telling the operator nothing about their work. */}
         <section className="dashboard-hero">
           <div>
             <span className="eyebrow">Production overview</span>
-            <h1>Courses move forward<br />one clear decision at a time.</h1>
+            <h1>
+              {attention > 0
+                ? `${attention} course${attention === 1 ? "" : "s"} need${attention === 1 ? "s" : ""} your attention.`
+                : active > 0
+                  ? `${active} course${active === 1 ? "" : "s"} in production.`
+                  : "Nothing is waiting on you."}
+            </h1>
             <p>Review agent proposals, inspect their evidence, and resolve only the items that need your judgment.</p>
           </div>
           <div className="dashboard-metrics" aria-label="Course status summary">
