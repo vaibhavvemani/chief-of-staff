@@ -35,6 +35,32 @@ function hasValue(value: QuestionAnswerValue | undefined): boolean {
   return value !== undefined && value !== null;
 }
 
+type Resolution = "answered" | "default" | "skipped" | "open";
+
+/** A question is resolved only by an explicit answer, accepted default, or skip. */
+function resolutionOf(draft: DraftAnswer): Resolution {
+  if (draft.choice === "default") return "default";
+  if (draft.choice === "skip") return "skipped";
+  if (hasValue(draft.value)) return "answered";
+  return "open";
+}
+
+const RESOLUTION_LABEL: Record<Resolution, string> = {
+  answered: "Answered",
+  default: "Using suggestion",
+  skipped: "Skipped",
+  open: "Not answered",
+};
+
+// Every state carries its own glyph so the chip survives greyscale, matching
+// the status scale note in studio.css.
+const RESOLUTION_GLYPH: Record<Resolution, string> = {
+  answered: "✓",
+  default: "◇",
+  skipped: "→",
+  open: "○",
+};
+
 function QuestionControl({
   question,
   draft,
@@ -63,6 +89,11 @@ function QuestionControl({
               aria-invalid={invalid || undefined}
             />
             <span>{displayOption(option)}</span>
+            {/* Visual only: the accept-default button already names the
+                suggestion in its accessible label. */}
+            {option === question.defaultValue
+              ? <em className="option-suggested" aria-hidden="true">Suggested</em>
+              : null}
           </label>
         ))}
       </div>
@@ -172,6 +203,32 @@ export function BriefQuestionRound({ round, busy, serverError, onSubmit }: Brief
     if (Object.keys(errors).length) errorSummaryRef.current?.focus();
   }, [errors]);
 
+  const resolutions = new Map(
+    questions.map((question) => [question.id, resolutionOf(drafts[question.id] ?? {})]),
+  );
+  const resolvedCount = questions.filter(
+    (question) => resolutions.get(question.id) !== "open",
+  ).length;
+  const pendingDefaults = questions.filter(
+    (question) => question.defaultValue !== undefined
+      && resolutions.get(question.id) === "open",
+  );
+
+  const acceptAllDefaults = () => {
+    setDrafts((current) => {
+      const next = { ...current };
+      pendingDefaults.forEach((question) => {
+        next[question.id] = { choice: "default" };
+      });
+      return next;
+    });
+    setErrors((current) => {
+      const nextErrors = { ...current };
+      pendingDefaults.forEach((question) => delete nextErrors[question.id]);
+      return nextErrors;
+    });
+  };
+
   const updateDraft = (questionId: string, next: DraftAnswer) => {
     setDrafts((current) => ({ ...current, [questionId]: next }));
     setErrors((current) => {
@@ -231,7 +288,12 @@ export function BriefQuestionRound({ round, busy, serverError, onSubmit }: Brief
             ? "These questions come from the current Brief gaps. Your earlier answers remain saved."
             : "Answer this short round. Suggested defaults count only when you explicitly accept them."}</p>
         </div>
-        <span className="question-count">{questions.length} backend-selected question{questions.length === 1 ? "" : "s"}</span>
+        <span
+          className={`question-count ${resolvedCount === questions.length ? "question-count-complete" : ""}`}
+          role="status"
+        >
+          {resolvedCount} of {questions.length} answered
+        </span>
       </div>
 
       {round.gapAnalysis.length ? (
@@ -250,9 +312,22 @@ export function BriefQuestionRound({ round, busy, serverError, onSubmit }: Brief
         ) : null}
         {serverError ? <div className="question-server-error" role="alert"><strong>Answers were not saved.</strong> {serverError}</div> : null}
 
+        {pendingDefaults.length > 1 ? (
+          <div className="intake-bulk-action">
+            <p>
+              {pendingDefaults.length} question{pendingDefaults.length === 1 ? " has" : "s have"} a
+              suggestion you can take as-is.
+            </p>
+            <button type="button" className="button button-quiet" disabled={busy} onClick={acceptAllDefaults}>
+              Accept all {pendingDefaults.length} suggested defaults
+            </button>
+          </div>
+        ) : null}
+
         <div className="question-list">
           {questions.map((question, index) => {
             const draft = drafts[question.id] ?? {};
+            const resolution = resolutions.get(question.id) ?? "open";
             const rationaleId = `${question.id}-rationale`;
             const errorId = `${question.id}-error`;
             const describedBy = errors[question.id] ? `${rationaleId} ${errorId}` : rationaleId;
@@ -263,7 +338,14 @@ export function BriefQuestionRound({ round, busy, serverError, onSubmit }: Brief
                 data-question-id={question.id}
                 disabled={busy}
               >
-                <legend><span>{String(index + 1).padStart(2, "0")}</span>{question.prompt}</legend>
+                <legend>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  {question.prompt}
+                  <span className={`question-status question-status-${resolution}`}>
+                    <span aria-hidden="true">{RESOLUTION_GLYPH[resolution]}</span>
+                    {RESOLUTION_LABEL[resolution]}
+                  </span>
+                </legend>
                 <p className="question-rationale" id={rationaleId}><strong>Why this matters:</strong> {question.rationale}</p>
                 <QuestionControl
                   question={question}
@@ -281,7 +363,7 @@ export function BriefQuestionRound({ round, busy, serverError, onSubmit }: Brief
                       aria-label={`Accept suggested default for ${question.prompt}: ${displayValue(question.defaultValue)}`}
                       onClick={() => updateDraft(question.id, { choice: "default" })}
                     >
-                      <span aria-hidden="true">✓</span>
+                      <span className="resolution-mark" aria-hidden="true">{draft.choice === "default" ? "✓" : ""}</span>
                       <span><strong>Accept suggested default</strong><small>{displayValue(question.defaultValue)}</small></span>
                     </button>
                   ) : null}
@@ -293,7 +375,7 @@ export function BriefQuestionRound({ round, busy, serverError, onSubmit }: Brief
                       aria-label={`Skip ${question.prompt}`}
                       onClick={() => updateDraft(question.id, { choice: "skip" })}
                     >
-                      <span aria-hidden="true">→</span>
+                      <span className="resolution-mark" aria-hidden="true">{draft.choice === "skip" ? "✓" : ""}</span>
                       <span><strong>Skip this optional question</strong><small>No value will be assumed.</small></span>
                     </button>
                   ) : null}

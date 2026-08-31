@@ -789,3 +789,46 @@ def test_http_source_mutations_require_backend_projected_capabilities(
     assert len(
         repository.require("stale-research", "research_dossier")["body"]["source_candidates"]
     ) == len(stale_dossier["body"]["source_candidates"])
+
+
+def test_fit_score_ignores_boilerplate_trust_notes() -> None:
+    """Fit must reflect the source, not the constant prose the agent attaches."""
+    needs = ["bounded search approval of stored source text"]
+    candidate = {
+        "id": "live_1",
+        "title": "Unrelated Bread Baking Times",
+        "publisher": "bread.test",
+        "source_type": "web page",
+        "locator": "https://bread.test/loaves",
+        "trust_notes": (
+            "Candidate discovered through bounded search; human approval is required "
+            "before fetching and storing source text."
+        ),
+        "relevance": "Covers proofing and oven temperature.",
+    }
+
+    quality = project_source_quality(candidate, evidence_needs=needs)
+
+    # Every token of the need appears in the boilerplate trust note. If that text
+    # is scored, an unrelated source looks like a perfect fit.
+    assert quality["dimensions"]["fit"]["score"] <= 1
+
+
+def test_fit_score_still_rewards_a_genuine_snippet_match() -> None:
+    needs = ["private equity fund lifecycle stages"]
+    candidate = {
+        "id": "live_2",
+        "title": "Fund Life Cycle Explained",
+        "publisher": "pe.test",
+        "source_type": "web page",
+        "locator": "https://pe.test/lifecycle",
+        "trust_notes": "Candidate discovered through bounded search.",
+        "relevance": (
+            "Search snippet: explains the private equity fund lifecycle across "
+            "fundraising, deployment, and harvesting stages."
+        ),
+    }
+
+    quality = project_source_quality(candidate, evidence_needs=needs)
+
+    assert quality["dimensions"]["fit"]["score"] >= 4

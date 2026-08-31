@@ -141,7 +141,9 @@ def build_competitor_analysis(findings: list[dict], outcome_ids: list[str]) -> d
 
 def _structure_summary(outline: CompetitorOutline) -> str:
     if not outline.outline_labels:
-        return "No public outline was available."
+        if outline.outline_status == "no_outline_found":
+            return "The page was retrieved, but no course outline could be parsed from it."
+        return "The page could not be retrieved."
     first = outline.outline_labels[0]
     last = outline.outline_labels[-1]
     return (

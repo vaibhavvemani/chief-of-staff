@@ -1,0 +1,248 @@
+- generic [ref=f1e297]:
+  - banner [ref=f1e298]:
+    - link "Course Builder Studio home" [ref=f1e299] [cursor=pointer]:
+      - /url: /courses
+      - strong [ref=f1e302]: Course Builder
+    - generic [ref=f1e303]:
+      - link "Courses" [ref=f1e304] [cursor=pointer]:
+        - /url: /courses
+      - generic [ref=f1e305]: /
+      - generic [ref=f1e306]:
+        - strong [ref=f1e307]: Indoor herb gardening for apartment beginners
+        - generic [ref=f1e308]: studio-live-pilot
+    - generic [ref=f1e309]:
+      - generic [ref=f1e310]: API connected
+      - generic "Choose how stage runs execute" [ref=f1e312]:
+        - generic [ref=f1e313]: Run mode
+        - combobox "Run mode" [ref=f1e314]:
+          - option "Live agent" [selected]
+          - option "Deterministic"
+      - generic "anthropic · claude-opus-4-8" [ref=f1e315]: Live ready
+      - generic "Estimated Anthropic API spend for this course so far" [ref=f1e317]: $5.93 est.
+      - button "Context" [ref=f1e318] [cursor=pointer]:
+        - generic [ref=f1e319]: i
+        - text: Context
+      - button "Open activity" [ref=f1e320] [cursor=pointer]
+  - generic [ref=f1e325]:
+    - complementary [ref=f1e326]:
+      - generic [ref=f1e327]:
+        - generic [ref=f1e328]: Course workflow
+        - generic [ref=f1e329]: 8 of 8 approved
+      - navigation "Course stages" [ref=f1e330]:
+        - link "01 Brief Approved" [ref=f1e331] [cursor=pointer]:
+          - /url: /courses/studio-live-pilot/brief?mode=live
+          - generic [ref=f1e332]: "01"
+          - generic [ref=f1e333]:
+            - strong [ref=f1e334]: Brief
+            - generic [ref=f1e335]: Approved
+          - generic [ref=f1e336]: ✓
+        - link "02 Outcomes Approved" [ref=f1e337] [cursor=pointer]:
+          - /url: /courses/studio-live-pilot/outcomes?mode=live
+          - generic [ref=f1e338]: "02"
+          - generic [ref=f1e339]:
+            - strong [ref=f1e340]: Outcomes
+            - generic [ref=f1e341]: Approved
+          - generic [ref=f1e342]: ✓
+        - link "03 Research & Sources Approved" [ref=f1e343] [cursor=pointer]:
+          - /url: /courses/studio-live-pilot/research?mode=live
+          - generic [ref=f1e344]: "03"
+          - generic [ref=f1e345]:
+            - strong [ref=f1e346]: Research & Sources
+            - generic [ref=f1e347]: Approved
+          - generic [ref=f1e348]: ✓
+        - link "04 Course Model Approved" [ref=f1e349] [cursor=pointer]:
+          - /url: /courses/studio-live-pilot/course-model?mode=live
+          - generic [ref=f1e350]: "04"
+          - generic [ref=f1e351]:
+            - strong [ref=f1e352]: Course Model
+            - generic [ref=f1e353]: Approved
+          - generic [ref=f1e354]: ✓
+        - link "05 Blueprint Approved" [ref=f1e355] [cursor=pointer]:
+          - /url: /courses/studio-live-pilot/blueprint?mode=live
+          - generic [ref=f1e356]: "05"
+          - generic [ref=f1e357]:
+            - strong [ref=f1e358]: Blueprint
+            - generic [ref=f1e359]: Approved
+          - generic [ref=f1e360]: ✓
+        - link "06 Student Content Approved" [ref=f1e361] [cursor=pointer]:
+          - /url: /courses/studio-live-pilot/content?mode=live
+          - generic [ref=f1e362]: "06"
+          - generic [ref=f1e363]:
+            - strong [ref=f1e364]: Student Content
+            - generic [ref=f1e365]: Approved
+          - generic [ref=f1e366]: ✓
+        - link "07 Lesson Plan Approved" [ref=f1e367] [cursor=pointer]:
+          - /url: /courses/studio-live-pilot/lesson-plan?mode=live
+          - generic [ref=f1e368]: "07"
+          - generic [ref=f1e369]:
+            - strong [ref=f1e370]: Lesson Plan
+            - generic [ref=f1e371]: Approved
+          - generic [ref=f1e372]: ✓
+        - link "08 Package Approved" [ref=f1e373] [cursor=pointer]:
+          - /url: /courses/studio-live-pilot/package?mode=live
+          - generic [ref=f1e374]: "08"
+          - generic [ref=f1e375]:
+            - strong [ref=f1e376]: Package
+            - generic [ref=f1e377]: Approved
+          - generic [ref=f1e378]: ✓
+      - button "Activity & runs 100 recent events" [ref=f1e379] [cursor=pointer]:
+        - generic [ref=f1e384]:
+          - strong [ref=f1e385]: Activity & runs
+          - generic [ref=f1e386]: 100 recent events
+        - generic [ref=f1e387]: ›
+      - generic [ref=f1e390]:
+        - strong [ref=f1e391]: Artifacts saved
+        - generic [ref=f1e392]: Resume-safe workspace
+    - main [ref=f1e393]:
+      - generic [ref=f1e394]:
+        - generic [ref=f1e395]:
+          - generic [ref=f1e396]:
+            - generic [ref=f1e397]: 08 · Release gate
+            - heading "Course Package" [level=1] [ref=f1e398]
+            - paragraph [ref=f1e399]: Review the rendered Markdown folder and confirm every release gate before delivery.
+          - generic [ref=f1e401]:
+            - generic [ref=f1e402]: ✓
+            - generic [ref=f1e403]:
+              - generic [ref=f1e404]: Operator status
+              - strong [ref=f1e405]: Ready
+        - generic [ref=f1e406]:
+          - generic [ref=f1e407]:
+            - generic [ref=f1e408]: Release checklist
+            - heading "All gates passed" [level=2] [ref=f1e409]
+            - paragraph [ref=f1e410]: This course is ready for operator delivery.
+          - generic [ref=f1e411]:
+            - generic [ref=f1e412]:
+              - generic [ref=f1e413]: ✓
+              - generic [ref=f1e414]:
+                - strong [ref=f1e415]: Artifact integrity
+                - generic [ref=f1e416]: All downstream references resolve.
+            - generic [ref=f1e417]:
+              - generic [ref=f1e418]: ✓
+              - generic [ref=f1e419]:
+                - strong [ref=f1e420]: Source boundary
+                - generic [ref=f1e421]: Only approved, content-bearing sources are referenced.
+            - generic [ref=f1e422]:
+              - generic [ref=f1e423]: ✓
+              - generic [ref=f1e424]:
+                - strong [ref=f1e425]: Asset reconciliation
+                - generic [ref=f1e426]: Selected, generated, and rendered assets reconcile.
+            - generic [ref=f1e427]:
+              - generic [ref=f1e428]: ✓
+              - generic [ref=f1e429]:
+                - strong [ref=f1e430]: Human content review
+                - generic [ref=f1e431]: Every current learner asset has completed human review.
+        - generic [ref=f1e432]:
+          - complementary [ref=f1e433]:
+            - generic [ref=f1e435]:
+              - generic [ref=f1e436]: Rendered output
+              - strong [ref=f1e437]: 14 Markdown files
+            - list [ref=f1e439]:
+              - listitem [ref=f1e440]:
+                - button "Course index" [ref=f1e441] [cursor=pointer]:
+                  - generic [ref=f1e442]: M
+              - listitem [ref=f1e444]:
+                - button "Course overview" [ref=f1e445] [cursor=pointer]:
+                  - generic [ref=f1e446]: M
+              - listitem [ref=f1e448]:
+                - button "Source index" [ref=f1e449] [cursor=pointer]:
+                  - generic [ref=f1e450]: M
+              - listitem [ref=f1e452]:
+                - button "Lesson plan" [ref=f1e453] [cursor=pointer]:
+                  - generic [ref=f1e454]: M
+              - listitem [ref=f1e456]:
+                - generic [ref=f1e457]:
+                  - generic [ref=f1e458]: ⌄
+                  - generic [ref=f1e459]: Modules
+                - list [ref=f1e460]:
+                  - listitem [ref=f1e461]:
+                    - generic [ref=f1e462]:
+                      - generic [ref=f1e463]: ⌄
+                      - generic [ref=f1e464]: Assess an indoor growing site
+                    - list [ref=f1e465]:
+                      - listitem [ref=f1e466]:
+                        - button "Course content" [ref=f1e467] [cursor=pointer]:
+                          - generic [ref=f1e468]: M
+                      - listitem [ref=f1e470]:
+                        - button "Activities" [ref=f1e471] [cursor=pointer]:
+                          - generic [ref=f1e472]: M
+                  - listitem [ref=f1e474]:
+                    - generic [ref=f1e475]:
+                      - generic [ref=f1e476]: ⌄
+                      - generic [ref=f1e477]: Select herbs containers and growing medium
+                    - list [ref=f1e478]:
+                      - listitem [ref=f1e479]:
+                        - button "Course content" [ref=f1e480] [cursor=pointer]:
+                          - generic [ref=f1e481]: M
+                      - listitem [ref=f1e483]:
+                        - button "Activities" [ref=f1e484] [cursor=pointer]:
+                          - generic [ref=f1e485]: M
+                  - listitem [ref=f1e487]:
+                    - generic [ref=f1e488]:
+                      - generic [ref=f1e489]: ⌄
+                      - generic [ref=f1e490]: Plant herb starters or seeds
+                    - list [ref=f1e491]:
+                      - listitem [ref=f1e492]:
+                        - button "Course content" [ref=f1e493] [cursor=pointer]:
+                          - generic [ref=f1e494]: M
+                      - listitem [ref=f1e496]:
+                        - button "Case study" [ref=f1e497] [cursor=pointer]:
+                          - generic [ref=f1e498]: M
+                  - listitem [ref=f1e500]:
+                    - generic [ref=f1e501]:
+                      - generic [ref=f1e502]: ⌄
+                      - generic [ref=f1e503]: Manage light water feeding and rotation
+                    - list [ref=f1e504]:
+                      - listitem [ref=f1e505]:
+                        - button "Course content" [ref=f1e506] [cursor=pointer]:
+                          - generic [ref=f1e507]: M
+                      - listitem [ref=f1e509]:
+                        - button "assess" [ref=f1e510] [cursor=pointer]:
+                          - generic [ref=f1e511]: M
+                  - listitem [ref=f1e513]:
+                    - generic [ref=f1e514]:
+                      - generic [ref=f1e515]: ⌄
+                      - generic [ref=f1e516]: Harvest herbs and troubleshoot common problems
+                    - list [ref=f1e517]:
+                      - listitem [ref=f1e518]:
+                        - button "Course content" [ref=f1e519] [cursor=pointer]:
+                          - generic [ref=f1e520]: M
+                      - listitem [ref=f1e522]:
+                        - button "Resources" [ref=f1e523] [cursor=pointer]:
+                          - generic [ref=f1e524]: M
+            - generic [ref=f1e526]:
+              - strong [ref=f1e527]: Markdown folder
+              - paragraph [ref=f1e528]: Markdown is the canonical learner-facing format for this release.
+          - generic [ref=f1e529]:
+            - generic [ref=f1e530]:
+              - generic [ref=f1e531]:
+                - generic [ref=f1e532]: Preview
+                - heading "Course index" [level=3] [ref=f1e533]
+                - code [ref=f1e534]: README.md
+              - link "Open raw file" [ref=f1e535] [cursor=pointer]:
+                - /url: /api/courses/studio-live-pilot/outputs/README.md
+            - region "Preview of Course index" [ref=f1e536]:
+              - text: Canonical rendered file
+              - heading "Indoor herb gardening for apartment beginners" [level=1] [ref=f1e537]
+              - heading "Deliverables" [level=2] [ref=f1e538]
+              - list [ref=f1e539]:
+                - listitem [ref=f1e540]:
+                  - link "Course Overview" [ref=f1e541] [cursor=pointer]:
+                    - /url: course_overview.md
+                - listitem [ref=f1e542]:
+                  - link "Source Index" [ref=f1e543] [cursor=pointer]:
+                    - /url: source_index.md
+                - listitem [ref=f1e544]:
+                  - link "Lesson Plan" [ref=f1e545] [cursor=pointer]:
+                    - /url: lesson_plan.md
+              - heading "Generated Assets" [level=2] [ref=f1e546]
+              - list [ref=f1e547]:
+                - listitem [ref=f1e548]: "m1_s1: 2 Markdown assets"
+                - listitem [ref=f1e549]: "m1_s2: 2 Markdown assets"
+                - listitem [ref=f1e550]: "m1_s3: 2 Markdown assets"
+                - listitem [ref=f1e551]: "m1_s4: 2 Markdown assets"
+                - listitem [ref=f1e552]: "m2_s1: 2 Markdown assets"
+    - generic [ref=f1e553]:
+      - generic [ref=f1e556]:
+        - generic [ref=f1e557]: Checkpoint recorded
+        - strong [ref=f1e558]: Package is approved and current
+      - button "Reopen Package" [ref=f1e560] [cursor=pointer]

@@ -51,7 +51,7 @@ describe("BriefQuestionRound", () => {
     );
 
     expect(document.querySelectorAll("[data-question-id]")).toHaveLength(5);
-    expect(screen.getByText("5 backend-selected questions")).toBeVisible();
+    expect(screen.getByText("0 of 5 answered")).toBeVisible();
     expect(screen.getByText("Why audience matters.")).toBeVisible();
 
     await user.type(screen.getByLabelText("Who is this course for?"), "Home coffee beginners");
@@ -107,6 +107,84 @@ describe("BriefQuestionRound", () => {
       { questionId: "brief_tools", skip: true },
       { questionId: "brief_confirm", value: false },
     ]);
+  });
+
+  it("shows every question as unanswered until the person acts", async () => {
+    const user = userEvent.setup();
+    render(
+      <BriefQuestionRound
+        round={round([
+          question({ id: "brief_audience", field: "audience", prompt: "Who is this course for?" }),
+          question({ id: "brief_language", field: "language", prompt: "What language should the course use?", defaultValue: "English" }),
+        ])}
+        busy={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByText("Not answered")).toHaveLength(2);
+    expect(screen.getByText("0 of 2 answered")).toBeVisible();
+
+    const acceptDefault = screen.getByRole("button", { name: /Accept suggested default for What language should the course use\?: English/ });
+    expect(acceptDefault).toHaveAttribute("aria-pressed", "false");
+    expect(acceptDefault.querySelector(".resolution-mark")).toHaveTextContent("");
+
+    await user.click(acceptDefault);
+
+    expect(acceptDefault).toHaveAttribute("aria-pressed", "true");
+    expect(acceptDefault.querySelector(".resolution-mark")).toHaveTextContent("✓");
+    expect(screen.getByText("Using suggestion")).toBeVisible();
+    expect(screen.getByText("1 of 2 answered")).toBeVisible();
+
+    await user.type(screen.getByLabelText("Who is this course for?"), "New hires");
+
+    expect(screen.getByText("Answered")).toBeVisible();
+    expect(screen.getByText("2 of 2 answered")).toBeVisible();
+    expect(screen.queryByText("Not answered")).not.toBeInTheDocument();
+  });
+
+  it("accepts every remaining suggestion in one explicit action", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    render(
+      <BriefQuestionRound
+        round={round([
+          question({ id: "brief_prior", field: "prior_knowledge", prompt: "What should learners already know?", defaultValue: "No prior knowledge assumed." }),
+          question({ id: "brief_level", field: "level", prompt: "What level should the course target?", answerType: "single_choice", options: ["beginner", "advanced"], defaultValue: "beginner" }),
+          question({ id: "brief_duration", field: "duration", prompt: "How large should the course be?", answerType: "duration", defaultValue: "3 hours" }),
+        ])}
+        busy={false}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    // A question the person already answered keeps their answer.
+    await user.type(screen.getByLabelText("What should learners already know?"), "Basic arithmetic");
+
+    await user.click(screen.getByRole("button", { name: "Accept all 2 suggested defaults" }));
+    await user.click(screen.getByRole("button", { name: "Save answers and continue" }));
+
+    expect(onSubmit).toHaveBeenCalledWith([
+      { questionId: "brief_prior", value: "Basic arithmetic" },
+      { questionId: "brief_level", acceptDefault: true },
+      { questionId: "brief_duration", acceptDefault: true },
+    ]);
+  });
+
+  it("marks the suggested option inside a single-choice group without renaming it", () => {
+    render(
+      <BriefQuestionRound
+        round={round([
+          question({ id: "brief_level", field: "level", prompt: "What level should the course target?", answerType: "single_choice", options: ["beginner", "advanced"], defaultValue: "beginner" }),
+        ])}
+        busy={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    // The accessible name stays the plain option; the badge is decorative.
+    expect(screen.getByRole("radio", { name: "Beginner" })).toBeInTheDocument();
+    expect(screen.getByText("Suggested")).toHaveAttribute("aria-hidden", "true");
   });
 
   it("renders a conditional question exactly when the backend includes it", () => {

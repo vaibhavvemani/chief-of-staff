@@ -1,0 +1,78 @@
+- generic [ref=e7]:
+  - banner [ref=e8]:
+    - link "Course Builder Studio home" [ref=e9] [cursor=pointer]:
+      - /url: /courses
+      - generic [ref=e11]:
+        - strong [ref=e12]: Course Builder
+        - generic [ref=e13]: Studio
+    - link "Cancel" [ref=e14] [cursor=pointer]:
+      - /url: /courses
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]: New course
+      - heading "Give the agent a clear starting point." [level=1] [ref=e18]
+      - paragraph [ref=e19]: You do not need a finished specification. A subject is enough to create a durable first Brief; the workspace will then ask only the questions that still matter.
+      - list "Creation steps" [ref=e20]:
+        - listitem [ref=e21]:
+          - generic [ref=e22]: "1"
+          - generic [ref=e23]:
+            - strong [ref=e24]: Starting request
+            - generic [ref=e25]: Subject and useful context
+        - listitem [ref=e26]:
+          - generic [ref=e27]: "2"
+          - generic [ref=e28]:
+            - strong [ref=e29]: Guided Brief
+            - generic [ref=e30]: Answer questions and accept defaults
+        - listitem [ref=e31]:
+          - generic [ref=e32]: "3"
+          - generic [ref=e33]:
+            - strong [ref=e34]: Build the course
+            - generic [ref=e35]: Approve each structured stage
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e38]: "01"
+        - generic [ref=e39]:
+          - heading "Starting request" [level=2] [ref=e40]
+          - paragraph [ref=e41]: Keep it sparse or add the context you already know.
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - text: What should this course teach?
+          - emphasis [ref=e44]: Required
+        - textbox "What should this course teach? Required" [active] [ref=e45]:
+          - /placeholder: e.g. Coffee making for complete beginners
+      - generic [ref=e46]:
+        - generic [ref=e47]: What should the course help learners do?
+        - textbox "What should the course help learners do? Optional. The Brief will make any missing assumptions visible." [ref=e48]:
+          - /placeholder: A short description of the practical result, audience, or business need.
+        - generic [ref=e49]: Optional. The Brief will make any missing assumptions visible.
+      - generic [ref=e50]:
+        - generic [ref=e51]: i
+        - generic [ref=e52]:
+          - strong [ref=e53]: Defaults stay unconfirmed until the next step
+          - paragraph [ref=e54]: The guided Brief will show suggestions such as language and level. You can accept each one explicitly or replace it.
+      - group [ref=e55]:
+        - generic "Add constraints or source links Optional context for the agent" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]:
+            - strong [ref=e58]: Add constraints or source links
+            - generic [ref=e59]: Optional context for the agent
+          - generic [ref=e60]: +
+      - group "Build mode" [ref=e61]:
+        - generic [ref=e63] [cursor=pointer]:
+          - radio "Live agent Recommended Uses configured research and model services. Credentials stay on the server." [checked] [ref=e64]
+          - generic [ref=e65]:
+            - strong [ref=e66]:
+              - text: Live agent
+              - emphasis [ref=e67]: Recommended
+            - generic [ref=e68]: Uses configured research and model services. Credentials stay on the server.
+        - generic [ref=e69] [cursor=pointer]:
+          - radio "Deterministic preview Fast local fixtures for workflow demos and offline testing." [ref=e70]
+          - generic [ref=e71]:
+            - strong [ref=e72]: Deterministic preview
+            - generic [ref=e73]: Fast local fixtures for workflow demos and offline testing.
+      - generic [ref=e74]:
+        - generic [ref=e75]:
+          - generic [ref=e76]: Course ID preview
+          - code [ref=e77]: your-course
+        - button "Create Brief" [disabled] [ref=e78]:
+          - text: Create Brief
+          - generic [ref=e79]: →

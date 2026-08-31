@@ -376,7 +376,7 @@ function ResearchView({
           <div className="competitor-grid">
             {workspace.research.competitors.map((competitor) => (
               <article className="competitor-card" key={competitor.id}>
-                <div className="competitor-head"><span className={`outline-state outline-${competitor.outlineStatus}`}>{competitor.outlineStatus}</span><code>{competitor.id}</code></div>
+                <div className="competitor-head"><span className={`outline-state outline-${competitor.outlineStatus}`}>{outlineStatusLabel(competitor.outlineStatus)}</span><code>{competitor.id}</code></div>
                 <span className="card-kicker">{competitor.provider}</span><h3>{competitor.offering}</h3>
                 <ol>{competitor.outlineSections.map((section) => <li key={section}><span>{section}</span></li>)}</ol>
                 <p>{competitor.structureSummary}</p>
@@ -388,6 +388,20 @@ function ResearchView({
       )}
     </div>
   );
+}
+
+const OUTLINE_STATUS_LABELS: Record<string, string> = {
+  usable: "usable",
+  partial: "partial",
+  // The page was retrieved; our parser just could not find an outline in it.
+  no_outline_found: "no outline parsed",
+  inaccessible: "not retrievable",
+  behind_login: "behind login",
+  stale: "stale",
+};
+
+function outlineStatusLabel(status: string): string {
+  return OUTLINE_STATUS_LABELS[status] ?? status.replace(/_/g, " ");
 }
 
 function ModelDetail({ subtopic }: { subtopic: Subtopic }) {

@@ -2010,12 +2010,41 @@ pre {
 }
 .question-count {
   flex: none;
-  padding: 6px 9px;
+  padding: 6px 10px;
   border-radius: 99px;
+  background: var(--sunk);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.question-count-complete {
   background: var(--green-soft);
   color: var(--green-dark);
-  font-size: 9px;
-  font-weight: 700;
+}
+
+/* One deliberate click resolves every remaining suggestion, so the zero-effort
+   path stays an explicit human action rather than a preselected default. */
+.intake-bulk-action {
+  margin-top: 14px;
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  border: 1px dashed #b9cfc6;
+  border-radius: 10px;
+  background: var(--canvas);
+}
+.intake-bulk-action p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.intake-bulk-action .button {
+  flex: none;
 }
 .gap-analysis-summary {
   margin-top: 14px;
@@ -2051,13 +2080,16 @@ pre {
   padding: 0;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   color: var(--ink);
   font-size: 13px;
   font-weight: 750;
   line-height: 1.45;
 }
-.question-card legend > span {
+/* :first-child scopes this to the sequence marker. Unscoped, it also matched
+   the status chip and clamped it to a 29px square. */
+.question-card legend > span:first-child {
   width: 29px;
   height: 29px;
   flex: none;
@@ -2067,6 +2099,35 @@ pre {
   background: var(--green-soft);
   color: var(--green);
   font: 9px "SFMono-Regular", monospace;
+}
+/* Per-question resolution state. Neutral until the person acts — nothing on
+   this page may look settled before it is. */
+.question-status {
+  flex: none;
+  margin-left: auto;
+  padding: 4px 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 99px;
+  background: var(--sunk);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.question-status-answered {
+  background: var(--green-soft);
+  color: var(--green-dark);
+}
+.question-status-default {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.question-status-skipped {
+  background: var(--slate-soft);
+  color: var(--slate);
 }
 .question-rationale {
   margin: 9px 0 13px 39px;
@@ -2138,9 +2199,29 @@ pre {
   text-align: left;
   cursor: pointer;
 }
-.question-resolution-actions button > span:first-child {
-  color: var(--green);
+/* An empty ring until chosen. The old rule painted this glyph green whether or
+   not the option was selected, so four unanswered questions read as settled. */
+.question-resolution-actions .resolution-mark {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--control-line);
+  border-radius: 99px;
+  background: var(--paper);
+  color: transparent;
+  font-size: 10px;
   font-weight: 800;
+  line-height: 1;
+}
+.question-resolution-actions button:hover .resolution-mark {
+  border-color: var(--green);
+}
+.question-resolution-actions button.selected .resolution-mark {
+  border-color: var(--green);
+  background: var(--green);
+  color: #fff;
 }
 .question-resolution-actions button strong,
 .question-resolution-actions button small {
@@ -2148,17 +2229,34 @@ pre {
 }
 .question-resolution-actions button strong {
   color: var(--ink);
-  font-size: 9px;
+  font-size: 10px;
 }
 .question-resolution-actions button small {
   margin-top: 2px;
-  font-size: 8px;
+  font-size: 9px;
   line-height: 1.35;
 }
 .question-resolution-actions button.selected {
   border-color: #8fbead;
   background: var(--green-soft);
   color: var(--green-dark);
+}
+.question-resolution-actions button.selected strong {
+  color: var(--green-dark);
+}
+
+/* Marks the agent's recommendation where the choice is actually made. */
+.option-suggested {
+  margin-left: 2px;
+  padding: 2px 6px;
+  border-radius: 99px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 .question-card-error {
   border-color: #d9a9a4;

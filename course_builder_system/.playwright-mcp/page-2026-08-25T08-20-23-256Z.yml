@@ -1,0 +1,390 @@
+- generic [ref=f4e7]:
+  - banner [ref=f4e8]:
+    - link "Course Builder Studio home" [ref=f4e9] [cursor=pointer]:
+      - /url: /courses
+      - strong [ref=f4e12]: Course Builder
+    - generic [ref=f4e13]:
+      - link "Courses" [ref=f4e14] [cursor=pointer]:
+        - /url: /courses
+      - generic [ref=f4e15]: /
+      - generic [ref=f4e16]:
+        - strong [ref=f4e17]: Python Programming course for complete beginners
+        - generic [ref=f4e18]: python-programming-course-for-complete-beginners-course
+    - generic [ref=f4e19]:
+      - generic [ref=f4e20]: API connected
+      - generic "Choose how stage runs execute" [ref=f4e22]:
+        - generic [ref=f4e23]: Run mode
+        - combobox "Run mode" [ref=f4e24]:
+          - option "Live agent" [selected]
+          - option "Deterministic"
+      - generic "anthropic · claude-opus-4-8" [ref=f4e25]: Live ready
+      - button "Context" [ref=f4e27] [cursor=pointer]:
+        - generic [ref=f4e28]: i
+        - text: Context
+      - button "Open activity" [ref=f4e29] [cursor=pointer]
+  - generic [ref=f4e34]:
+    - complementary [ref=f4e35]:
+      - generic [ref=f4e36]:
+        - generic [ref=f4e37]: Course workflow
+        - generic [ref=f4e38]: 0 of 8 approved
+      - navigation "Course stages" [ref=f4e39]:
+        - link "01 Brief Needs input" [ref=f4e40] [cursor=pointer]:
+          - /url: /courses/python-programming-course-for-complete-beginners-course/brief?mode=live
+          - generic [ref=f4e41]: "01"
+          - generic [ref=f4e42]:
+            - strong [ref=f4e43]: Brief
+            - generic [ref=f4e44]: Needs input
+          - generic [ref=f4e45]: "?"
+        - link "02 Outcomes Locked" [ref=f4e46] [cursor=pointer]:
+          - /url: /courses/python-programming-course-for-complete-beginners-course/outcomes?mode=live
+          - generic [ref=f4e47]: "02"
+          - generic [ref=f4e48]:
+            - strong [ref=f4e49]: Outcomes
+            - generic [ref=f4e50]: Locked
+          - generic [ref=f4e51]: ·
+        - link "03 Research & Sources Locked" [ref=f4e52] [cursor=pointer]:
+          - /url: /courses/python-programming-course-for-complete-beginners-course/research?mode=live
+          - generic [ref=f4e53]: "03"
+          - generic [ref=f4e54]:
+            - strong [ref=f4e55]: Research & Sources
+            - generic [ref=f4e56]: Locked
+          - generic [ref=f4e57]: ·
+        - link "04 Course Model Locked" [ref=f4e58] [cursor=pointer]:
+          - /url: /courses/python-programming-course-for-complete-beginners-course/course-model?mode=live
+          - generic [ref=f4e59]: "04"
+          - generic [ref=f4e60]:
+            - strong [ref=f4e61]: Course Model
+            - generic [ref=f4e62]: Locked
+          - generic [ref=f4e63]: ·
+        - link "05 Blueprint Locked" [ref=f4e64] [cursor=pointer]:
+          - /url: /courses/python-programming-course-for-complete-beginners-course/blueprint?mode=live
+          - generic [ref=f4e65]: "05"
+          - generic [ref=f4e66]:
+            - strong [ref=f4e67]: Blueprint
+            - generic [ref=f4e68]: Locked
+          - generic [ref=f4e69]: ·
+        - link "06 Student Content Locked" [ref=f4e70] [cursor=pointer]:
+          - /url: /courses/python-programming-course-for-complete-beginners-course/content?mode=live
+          - generic [ref=f4e71]: "06"
+          - generic [ref=f4e72]:
+            - strong [ref=f4e73]: Student Content
+            - generic [ref=f4e74]: Locked
+          - generic [ref=f4e75]: ·
+        - link "07 Lesson Plan Locked" [ref=f4e76] [cursor=pointer]:
+          - /url: /courses/python-programming-course-for-complete-beginners-course/lesson-plan?mode=live
+          - generic [ref=f4e77]: "07"
+          - generic [ref=f4e78]:
+            - strong [ref=f4e79]: Lesson Plan
+            - generic [ref=f4e80]: Locked
+          - generic [ref=f4e81]: ·
+        - link "08 Package Locked" [ref=f4e82] [cursor=pointer]:
+          - /url: /courses/python-programming-course-for-complete-beginners-course/package?mode=live
+          - generic [ref=f4e83]: "08"
+          - generic [ref=f4e84]:
+            - strong [ref=f4e85]: Package
+            - generic [ref=f4e86]: Locked
+          - generic [ref=f4e87]: ·
+      - status [ref=f4e88]: Brief is waiting on you.
+      - button "Activity & runs 0 recent events" [ref=f4e89] [cursor=pointer]:
+        - generic [ref=f4e94]:
+          - strong [ref=f4e95]: Activity & runs
+          - generic [ref=f4e96]: 0 recent events
+        - generic [ref=f4e97]: ›
+      - generic [ref=f4e100]:
+        - strong [ref=f4e101]: Artifacts saved
+        - generic [ref=f4e102]: Resume-safe workspace
+    - main [ref=f4e103]:
+      - generic [ref=f4e104]:
+        - generic [ref=f4e105]:
+          - generic [ref=f4e106]:
+            - generic [ref=f4e107]: 01 · Direction
+            - heading "Course Brief" [level=1] [ref=f4e108]
+            - paragraph [ref=f4e109]: The draft is saved. Complete the relevant questions before reviewing and approving the working agreement.
+          - generic [ref=f4e111]:
+            - generic [ref=f4e112]: Working artifact
+            - strong [ref=f4e113]: Input required
+        - region [ref=f4e114]:
+          - generic [ref=f4e115]:
+            - generic [ref=f4e116]:
+              - generic [ref=f4e117]: Guided Brief intake
+              - heading "Confirm the course direction" [level=2] [ref=f4e118]
+              - paragraph [ref=f4e119]: Answer this short round. Suggested defaults count only when you explicitly accept them.
+            - status [ref=f4e120]: 4 of 5 answered
+          - generic [ref=f4e121]:
+            - generic [ref=f4e125]:
+              - group "01 Who is this course for? Not answered" [ref=f4e126]:
+                - generic [ref=f4e127]:
+                  - generic [ref=f4e128]: "01"
+                  - text: Who is this course for?
+                  - generic [ref=f4e129]:
+                    - generic [ref=f4e130]: ○
+                    - text: Not answered
+                - paragraph [ref=f4e131]:
+                  - strong [ref=f4e132]: "Why this matters:"
+                  - text: Audience determines examples, assumed vocabulary, and practical depth.
+                - textbox "Who is this course for?" [ref=f4e133]
+              - group "02 What should learners already know? Using suggestion" [ref=f4e389]:
+                - generic [ref=f4e135]:
+                  - generic [ref=f4e136]: "02"
+                  - text: What should learners already know?
+                  - generic [ref=f4e137]:
+                    - generic [ref=f4e138]: ◇
+                    - text: Using suggestion
+                - paragraph [ref=f4e139]:
+                  - strong [ref=f4e140]: "Why this matters:"
+                  - text: Prior knowledge prevents the course from overexplaining or skipping foundations.
+                - textbox "What should learners already know?" [ref=f4e141]
+                - 'button "Accept suggested default for What should learners already know?: No prior knowledge assumed." [pressed] [ref=f4e143] [cursor=pointer]':
+                  - generic [ref=f4e144]: ✓
+                  - generic [ref=f4e145]:
+                    - strong [ref=f4e146]: Accept suggested default
+                    - generic [ref=f4e147]: No prior knowledge assumed.
+              - group "03 What level should the course target? Using suggestion" [ref=f4e390]:
+                - generic [ref=f4e149]:
+                  - generic [ref=f4e150]: "03"
+                  - text: What level should the course target?
+                  - generic [ref=f4e151]:
+                    - generic [ref=f4e152]: ◇
+                    - text: Using suggestion
+                - paragraph [ref=f4e153]:
+                  - strong [ref=f4e154]: "Why this matters:"
+                  - text: Level controls depth and the expected sophistication of explanations.
+                - generic [ref=f4e155]:
+                  - generic [ref=f4e156] [cursor=pointer]:
+                    - radio "Introductory" [ref=f4e157]
+                    - generic [ref=f4e158]: Introductory
+                  - generic [ref=f4e159] [cursor=pointer]:
+                    - radio "Beginner" [ref=f4e160]
+                    - generic [ref=f4e161]: Beginner
+                    - emphasis [ref=f4e162]: Suggested
+                  - generic [ref=f4e163] [cursor=pointer]:
+                    - radio "Intermediate" [ref=f4e164]
+                    - generic [ref=f4e165]: Intermediate
+                  - generic [ref=f4e166] [cursor=pointer]:
+                    - radio "Advanced" [ref=f4e167]
+                    - generic [ref=f4e168]: Advanced
+                  - generic [ref=f4e169] [cursor=pointer]:
+                    - radio "Mixed" [ref=f4e170]
+                    - generic [ref=f4e171]: Mixed
+                  - generic [ref=f4e172] [cursor=pointer]:
+                    - radio "Custom" [ref=f4e173]
+                    - generic [ref=f4e174]: Custom
+                - 'button "Accept suggested default for What level should the course target?: beginner" [pressed] [ref=f4e176] [cursor=pointer]':
+                  - generic [ref=f4e177]: ✓
+                  - generic [ref=f4e178]:
+                    - strong [ref=f4e179]: Accept suggested default
+                    - generic [ref=f4e180]: beginner
+              - group "04 How large should the course be? Using suggestion" [ref=f4e391]:
+                - generic [ref=f4e182]:
+                  - generic [ref=f4e183]: "04"
+                  - text: How large should the course be?
+                  - generic [ref=f4e184]:
+                    - generic [ref=f4e185]: ◇
+                    - text: Using suggestion
+                - paragraph [ref=f4e186]:
+                  - strong [ref=f4e187]: "Why this matters:"
+                  - text: Duration constrains structure, source depth, and content volume.
+                - textbox "How large should the course be?" [ref=f4e188]:
+                  - /placeholder: For example, 3 hours
+                - 'button "Accept suggested default for How large should the course be?: 3 hours of self-paced learning" [pressed] [ref=f4e190] [cursor=pointer]':
+                  - generic [ref=f4e191]: ✓
+                  - generic [ref=f4e192]:
+                    - strong [ref=f4e193]: Accept suggested default
+                    - generic [ref=f4e194]: 3 hours of self-paced learning
+              - group "05 How will the course be delivered? Using suggestion" [ref=f4e392]:
+                - generic [ref=f4e196]:
+                  - generic [ref=f4e197]: "05"
+                  - text: How will the course be delivered?
+                  - generic [ref=f4e198]:
+                    - generic [ref=f4e199]: ◇
+                    - text: Using suggestion
+                - paragraph [ref=f4e200]:
+                  - strong [ref=f4e201]: "Why this matters:"
+                  - text: Delivery mode changes asset choices and lesson-plan assumptions.
+                - generic [ref=f4e202]:
+                  - generic [ref=f4e203] [cursor=pointer]:
+                    - radio "Self paced" [ref=f4e204]
+                    - generic [ref=f4e205]: Self paced
+                    - emphasis [ref=f4e206]: Suggested
+                  - generic [ref=f4e207] [cursor=pointer]:
+                    - radio "Live" [ref=f4e208]
+                    - generic [ref=f4e209]: Live
+                  - generic [ref=f4e210] [cursor=pointer]:
+                    - radio "Blended" [ref=f4e211]
+                    - generic [ref=f4e212]: Blended
+                  - generic [ref=f4e213] [cursor=pointer]:
+                    - radio "Workshop" [ref=f4e214]
+                    - generic [ref=f4e215]: Workshop
+                  - generic [ref=f4e216] [cursor=pointer]:
+                    - radio "Custom" [ref=f4e217]
+                    - generic [ref=f4e218]: Custom
+                - 'button "Accept suggested default for How will the course be delivered?: self_paced" [pressed] [ref=f4e220] [cursor=pointer]':
+                  - generic [ref=f4e221]: ✓
+                  - generic [ref=f4e222]:
+                    - strong [ref=f4e223]: Accept suggested default
+                    - generic [ref=f4e224]: self_paced
+            - generic [ref=f4e225]:
+              - paragraph [ref=f4e226]: Answers are saved to the Brief after every round and will survive refresh.
+              - button "Save answers and continue" [ref=f4e227] [cursor=pointer]:
+                - text: Save answers and continue
+                - generic [ref=f4e228]: →
+        - generic [ref=f4e229]:
+          - generic [ref=f4e230]:
+            - generic [ref=f4e231]:
+              - text: Course intent
+              - heading "Python Programming course for complete beginners" [level=2] [ref=f4e232]
+              - paragraph [ref=f4e233]: The audience must be able to learn the basics of programming with python.
+            - button "Adjust course settings in Course Brief" [ref=f4e234] [cursor=pointer]:
+              - generic [ref=f4e235]: Adjust
+              - generic [ref=f4e236]: →
+          - generic [ref=f4e237]:
+            - generic [ref=f4e238]:
+              - term [ref=f4e239]: Level
+              - definition [ref=f4e240]: Beginner
+            - generic [ref=f4e241]:
+              - term [ref=f4e242]: Duration
+              - definition [ref=f4e243]: 3 hours of self-paced learning
+            - generic [ref=f4e244]:
+              - term [ref=f4e245]: Delivery
+              - definition [ref=f4e246]: Self paced
+            - generic [ref=f4e247]:
+              - term [ref=f4e248]: Language
+              - definition [ref=f4e249]: English
+        - generic [ref=f4e250]:
+          - generic [ref=f4e251]:
+            - generic [ref=f4e252]:
+              - generic [ref=f4e253]:
+                - generic [ref=f4e254]: A
+                - heading "Learner and intent" [level=3] [ref=f4e255]
+              - button "Adjust learner and intent in Course Brief" [ref=f4e256] [cursor=pointer]:
+                - generic [ref=f4e257]: Adjust
+                - generic [ref=f4e258]: →
+            - generic [ref=f4e259]:
+              - generic [ref=f4e260]:
+                - term [ref=f4e261]: Audience
+                - definition [ref=f4e262]: General adult learners who are new to the subject.
+              - generic [ref=f4e263]:
+                - term [ref=f4e264]: Prior knowledge
+                - definition [ref=f4e265]: No prior knowledge assumed.
+              - generic [ref=f4e266]:
+                - term [ref=f4e267]: Assessment expectation
+                - definition [ref=f4e268]: Short practical checks and scenario questions.
+          - generic [ref=f4e269]:
+            - generic [ref=f4e270]:
+              - generic [ref=f4e271]:
+                - generic [ref=f4e272]: B
+                - heading "Scope boundary" [level=3] [ref=f4e273]
+              - button "Adjust scope boundary in Course Brief" [ref=f4e274] [cursor=pointer]:
+                - generic [ref=f4e275]: Adjust
+                - generic [ref=f4e276]: →
+            - generic [ref=f4e277]:
+              - generic [ref=f4e278]:
+                - generic [ref=f4e279]: In scope
+                - generic [ref=f4e280]:
+                  - generic [ref=f4e281]: core concepts in Python Programming course for complete beginners
+                  - generic [ref=f4e282]: practical examples
+              - generic [ref=f4e283]:
+                - generic [ref=f4e284]: Out of scope
+                - generic [ref=f4e285]: advanced specialist topics
+          - generic [ref=f4e287]:
+            - generic [ref=f4e288]:
+              - generic [ref=f4e289]:
+                - generic [ref=f4e290]: C
+                - heading "Must-have coverage" [level=3] [ref=f4e291]
+              - button "Adjust must-have coverage in Course Brief" [ref=f4e292] [cursor=pointer]:
+                - generic [ref=f4e293]: Adjust
+                - generic [ref=f4e294]: →
+            - generic [ref=f4e295]: practical examples
+            - generic [ref=f4e297]: Constraints
+            - list
+          - generic [ref=f4e298]:
+            - generic [ref=f4e299]:
+              - generic [ref=f4e300]:
+                - generic [ref=f4e301]: D
+                - heading "Additional requirements and materials" [level=3] [ref=f4e302]
+              - button "Adjust additional requirements and materials in Course Brief" [ref=f4e303] [cursor=pointer]:
+                - generic [ref=f4e304]: Adjust
+                - generic [ref=f4e305]: →
+            - text: No additional requirements recorded
+            - generic [ref=f4e306]: Available materials
+            - text: None recorded
+          - generic [ref=f4e307]:
+            - generic [ref=f4e308]:
+              - generic [ref=f4e309]:
+                - generic [ref=f4e310]: E
+                - heading "Visible assumptions" [level=3] [ref=f4e311]
+              - button "Review visible assumptions in Course Brief" [ref=f4e312] [cursor=pointer]:
+                - generic [ref=f4e313]: Adjust
+                - generic [ref=f4e314]: →
+            - paragraph [ref=f4e315]: Defaults are proposals, not hidden facts. Use Adjust to correct any of them.
+            - generic "Brief answer provenance" [ref=f4e316]:
+              - generic [ref=f4e317]:
+                - strong [ref=f4e318]: "2"
+                - text: provided directly
+              - generic [ref=f4e319]:
+                - strong [ref=f4e320]: "0"
+                - text: defaults accepted
+            - generic [ref=f4e321]:
+              - generic [ref=f4e322]:
+                - generic [ref=f4e323]:
+                  - strong [ref=f4e324]: audience
+                  - generic [ref=f4e325]: General adult learners who are new to the subject.
+                - generic [ref=f4e326]: Suggested default
+              - generic [ref=f4e327]:
+                - generic [ref=f4e328]:
+                  - strong [ref=f4e329]: prior knowledge
+                  - generic [ref=f4e330]: No prior knowledge assumed.
+                - generic [ref=f4e331]: Suggested default
+              - generic [ref=f4e332]:
+                - generic [ref=f4e333]:
+                  - strong [ref=f4e334]: level
+                  - generic [ref=f4e335]: beginner
+                - generic [ref=f4e336]: Suggested default
+              - generic [ref=f4e337]:
+                - generic [ref=f4e338]:
+                  - strong [ref=f4e339]: duration
+                  - generic [ref=f4e340]: 3 hours of self-paced learning
+                - generic [ref=f4e341]: Suggested default
+              - generic [ref=f4e342]:
+                - generic [ref=f4e343]:
+                  - strong [ref=f4e344]: modality
+                  - generic [ref=f4e345]: self_paced
+                - generic [ref=f4e346]: Suggested default
+              - generic [ref=f4e347]:
+                - generic [ref=f4e348]:
+                  - strong [ref=f4e349]: language
+                  - generic [ref=f4e350]: English
+                - generic [ref=f4e351]: Suggested default
+              - generic [ref=f4e352]:
+                - generic [ref=f4e353]:
+                  - strong [ref=f4e354]: in scope
+                  - generic [ref=f4e355]: core concepts in Python Programming course for complete beginners, practical examples
+                - generic [ref=f4e356]: Suggested default
+              - generic [ref=f4e357]:
+                - generic [ref=f4e358]:
+                  - strong [ref=f4e359]: out of scope
+                  - generic [ref=f4e360]: advanced specialist topics
+                - generic [ref=f4e361]: Suggested default
+              - generic [ref=f4e362]:
+                - generic [ref=f4e363]:
+                  - strong [ref=f4e364]: must have topics
+                  - generic [ref=f4e365]: practical examples
+                - generic [ref=f4e366]: Suggested default
+              - generic [ref=f4e367]:
+                - generic [ref=f4e368]:
+                  - strong [ref=f4e369]: assessment expectations
+                  - generic [ref=f4e370]: Short practical checks and scenario questions.
+                - generic [ref=f4e371]: Suggested default
+              - generic [ref=f4e372]:
+                - strong [ref=f4e374]: constraints
+                - generic [ref=f4e375]: Suggested default
+              - generic [ref=f4e376]:
+                - strong [ref=f4e378]: available materials
+                - generic [ref=f4e379]: Suggested default
+    - generic [ref=f4e380]:
+      - generic [ref=f4e383]:
+        - generic [ref=f4e384]: Required input missing
+        - strong [ref=f4e385]: Complete Brief before continuing
+      - button "Provide required input" [ref=f4e387] [cursor=pointer]:
+        - text: Provide required input
+        - generic [ref=f4e388]: →

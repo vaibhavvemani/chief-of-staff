@@ -97,7 +97,6 @@ def build_research_dossier_body(
     analysis = build_competitor_analysis(competitor_findings, outcome_ids)
     source_candidates, source_gaps = propose_source_candidates(
         subject,
-        brief,
         provider=provider,
         manual_sources=manual_sources,
         limit=config.source_limit,
@@ -144,7 +143,6 @@ def scan_competitors(
 
 def propose_source_candidates(
     subject: str,
-    brief: dict,
     *,
     provider: ResearchProvider,
     manual_sources: Iterable[ManualSource | dict[str, Any]] = (),
@@ -162,7 +160,7 @@ def propose_source_candidates(
         if source_id in seen:
             continue
         seen.add(source_id)
-        candidates.append(_candidate_from_result(result, brief, source_id=source_id))
+        candidates.append(_candidate_from_result(result, source_id=source_id))
 
     for manual in manual_sources:
         candidate = _candidate_from_manual(manual)
@@ -186,7 +184,7 @@ def propose_source_candidates(
     return candidates, failures
 
 
-def _candidate_from_result(result: SearchResult, brief: dict, *, source_id: str) -> dict:
+def _candidate_from_result(result: SearchResult, *, source_id: str) -> dict:
     status = "rejected" if _looks_untrustworthy(result) else "proposed"
     rationale = (
         "Rejected before ingestion because authorship or scope looked weak."
@@ -202,7 +200,7 @@ def _candidate_from_result(result: SearchResult, brief: dict, *, source_id: str)
         "content_ref": None,
         "status": status,
         "trust_notes": _trust_notes(result),
-        "relevance": _relevance_notes(result, brief),
+        "relevance": _relevance_notes(result),
         "assigned_node_ids": [],
         "decision_rationale": rationale,
     }
@@ -253,12 +251,16 @@ def _trust_notes(result: SearchResult) -> str:
     )
 
 
-def _relevance_notes(result: SearchResult, brief: dict) -> str:
-    scope = ", ".join(brief["body"].get("in_scope", [])[:4])
+def _relevance_notes(result: SearchResult) -> str:
+    """Report what the search page said about this candidate.
+
+    The Brief's own scope is deliberately not echoed here. Relevance is scored
+    against stated evidence needs, so interpolating those needs into the text
+    being scored would make every candidate confirm itself.
+    """
     if result.snippet:
-        subject = scope or brief["body"]["subject"]
-        return f"Search snippet suggests relevance to {subject}: {result.snippet}"
-    return f"Potentially relevant to {scope or brief['body']['subject']}."
+        return f"Search snippet: {result.snippet}"
+    return "No search snippet was available; relevance is unverified until the source is fetched."
 
 
 def _publisher_from_locator(locator: str) -> str:

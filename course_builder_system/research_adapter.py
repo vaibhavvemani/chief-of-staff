@@ -14,6 +14,9 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, quote, quote_plus, urljoin, urlparse
 from urllib.request import Request, urlopen
 
+# Search abstracts stay bounded for the same reason source excerpts do.
+MAX_SNIPPET_CHARS = 400
+
 
 @dataclass(frozen=True)
 class SearchResult:
@@ -110,7 +113,7 @@ class BoundedLiveResearchProvider:
         links = _extract_links(raw_html, base_url=locator)
         results: list[SearchResult] = []
         seen: set[str] = set()
-        for href, label in links:
+        for href, label, snippet in links:
             normalized = _normalize_http_locator(_unwrap_result_href(href))
             if normalized is None or normalized in seen:
                 continue
@@ -125,7 +128,10 @@ class BoundedLiveResearchProvider:
                     id=_live_result_id(normalized),
                     title=title[:180],
                     locator=normalized,
-                    snippet=f"Live search result for: {query}",
+                    # The page abstract is the only per-result evidence available
+                    # before a source is approved for fetching.
+                    snippet=(snippet or "")[:MAX_SNIPPET_CHARS]
+                    or f"Live search result for: {query}",
                 )
             )
             if len(results) >= limit:
@@ -158,7 +164,9 @@ class BoundedLiveResearchProvider:
                 result.title,
             )
         )
-        status = "usable" if len(labels) >= 3 else "partial" if labels else "inaccessible"
+        # The page was retrieved. If nothing outline-like parsed out, say that
+        # rather than claiming the page could not be reached.
+        status = "usable" if len(labels) >= 3 else "partial" if labels else "no_outline_found"
         return CompetitorOutline(
             id=result.id,
             provider=_provider_from_locator(result.locator),
@@ -481,22 +489,41 @@ class _TextHTMLParser(HTMLParser):
 
 
 class _LinkHTMLParser(HTMLParser):
+    """Collect result links plus the abstract cell that follows each one.
+
+    Search pages render a result as an anchor followed by a sibling cell holding
+    that result's abstract. Keeping the two together preserves the only
+    per-result evidence the search page offers.
+    """
+
     def __init__(self, base_url: str) -> None:
         super().__init__()
         self.base_url = base_url
         self.links: list[tuple[str, str]] = []
+        self.snippets: list[str | None] = []
         self._href_stack: list[str | None] = []
         self._text_stack: list[list[str]] = []
+        self._snippet_depth = 0
+        self._snippet_parts: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attrs_dict = dict(attrs)
+        if self._snippet_depth or _is_snippet_container(tag, attrs_dict):
+            self._snippet_depth += 1
+            return
         if tag != "a":
             return
-        attrs_dict = dict(attrs)
         href = attrs_dict.get("href")
         self._href_stack.append(urljoin(self.base_url, href) if href else None)
         self._text_stack.append([])
 
     def handle_endtag(self, tag: str) -> None:
+        if self._snippet_depth:
+            self._snippet_depth -= 1
+            if self._snippet_depth == 0:
+                self._attach_snippet(_squash_ws(" ".join(self._snippet_parts)))
+                self._snippet_parts = []
+            return
         if tag != "a" or not self._href_stack:
             return
         href = self._href_stack.pop()
@@ -504,10 +531,25 @@ class _LinkHTMLParser(HTMLParser):
         label = _squash_ws(" ".join(text_parts))
         if href and label:
             self.links.append((href, label))
+            self.snippets.append(None)
 
     def handle_data(self, data: str) -> None:
-        if self._text_stack:
+        if self._snippet_depth:
+            self._snippet_parts.append(data)
+        elif self._text_stack:
             self._text_stack[-1].append(data)
+
+    def _attach_snippet(self, snippet: str) -> None:
+        """Attach an abstract to the result link it belongs to."""
+        if snippet and self.snippets and self.snippets[-1] is None:
+            self.snippets[-1] = snippet
+
+
+def _is_snippet_container(tag: str, attrs: dict[str, str | None]) -> bool:
+    if tag not in {"td", "div", "span", "p"}:
+        return False
+    classes = (attrs.get("class") or "").lower().split()
+    return any("snippet" in name or "abstract" in name for name in classes)
 
 
 def _extract_text(payload: bytes, locator: str, content_type: str) -> tuple[str, str | None]:
@@ -528,11 +570,15 @@ def _extract_visible_html_text(raw_html: str) -> str:
     return _squash_multiline(html.unescape(" ".join(parser.parts)))
 
 
-def _extract_links(raw_html: str, *, base_url: str) -> list[tuple[str, str]]:
+def _extract_links(raw_html: str, *, base_url: str) -> list[tuple[str, str, str | None]]:
+    """Return ``(href, label, snippet)`` for each result link in document order."""
     parser = _LinkHTMLParser(base_url)
     parser.feed(raw_html)
     parser.close()
-    return parser.links
+    return [
+        (href, label, snippet)
+        for (href, label), snippet in zip(parser.links, parser.snippets, strict=True)
+    ]
 
 
 def _extract_pdf_text(payload: bytes) -> str:
@@ -569,7 +615,25 @@ def _extract_outline_labels(text: str) -> list[str]:
         labels.extend(_outline_labels_from_window(lines[index + 1 : index + 40]))
         if len(labels) >= 12:
             break
-    return _dedupe(labels)
+    return _drop_navigation_labels(_dedupe(labels))
+
+
+def _drop_navigation_labels(labels: list[str]) -> list[str]:
+    """Discard site navigation menus that read like a list of course headings.
+
+    A catalogue nav ("All Courses", "AI Courses", "Data Science Courses") shares
+    one generic trailing word across many entries. Real curriculum sections
+    describe distinct topics and rarely repeat a generic noun that way.
+    """
+    tails: dict[str, int] = {}
+    for label in labels:
+        tail = label.lower().split()[-1]
+        if tail in GENERIC_OFFERING_TOKENS or f"{tail[:-1]}" in GENERIC_OFFERING_TOKENS:
+            tails[tail] = tails.get(tail, 0) + 1
+    repeated = {tail for tail, count in tails.items() if count >= 3}
+    if not repeated:
+        return labels
+    return [label for label in labels if label.lower().split()[-1] not in repeated]
 
 
 def _outline_labels_from_window(lines: list[str]) -> list[str]:
@@ -591,12 +655,49 @@ def _looks_like_outline_label(label: str) -> bool:
     words = label.split()
     if not 2 <= len(words) <= 14:
         return False
-    lower = label.lower()
-    return any(marker in lower for marker in OUTLINE_TOPIC_MARKERS) or _looks_like_title(label)
+    if _looks_like_wrapped_prose(label):
+        return False
+    # A line that announces an outline ("Course Objectives", "What you'll learn")
+    # is never itself a section of that outline.
+    lowered = label.lower()
+    if any(marker in lowered for marker in OUTLINE_START_MARKERS):
+        return False
+    return _has_structural_marker(label) or _looks_like_title(label)
+
+
+def _looks_like_wrapped_prose(label: str) -> bool:
+    """Reject body-text lines that a page or PDF wrapped mid-sentence.
+
+    Extraction is line-based, so a paragraph arrives as several lines. Those
+    continuation lines are not headings, and letting them through both pollutes
+    the outline and leaks sentence fragments into downstream topic labels.
+    """
+    if label[:1].islower():
+        return True
+    # A sentence boundary inside the line means this is prose, not a heading.
+    if re.search(r"[.!?]\s+[A-Z]", label):
+        return True
+    # Headings do not dangle on a joining word.
+    return label.split()[-1].lower() in _DANGLING_TAIL_WORDS
+
+
+def _has_structural_marker(label: str) -> bool:
+    """Match outline vocabulary as whole words at the start of the label.
+
+    Substring matching anywhere in the line was the reason prose such as
+    "...towards identifying assets" scored as a heading via "identify".
+    """
+    leading = " ".join(label.lower().split()[:3])
+    return any(
+        re.match(rf"\b{re.escape(marker)}\w*\b", leading) for marker in OUTLINE_TOPIC_MARKERS
+    )
 
 
 def _clean_outline_line(line: str) -> str:
-    label = re.sub(r"^\s*(?:\d+[\.)]|[-*•])\s*", "", line).strip()
+    # PDF bullets arrive as private-use glyphs (for example U+F0B7) rather than
+    # as any of the usual bullet characters.
+    label = re.sub("[\\uf000-\\uf0ff\\u2022\\u25cf\\u25aa]", " ", line)
+    label = re.sub(r"^\s*(?:\d+[\.)]|[-*•])\s*", "", label).strip()
     label = _squash_ws(label)
     if ":" in label:
         before_colon, after_colon = label.split(":", 1)
@@ -645,12 +746,11 @@ def _filter_outline_labels_for_offering(labels: list[str], offering_title: str) 
         return labels
     if any(_tokens(label) & offering_tokens for label in labels):
         return labels
-    topicish = [
-        label
-        for label in labels
-        if any(marker in label.lower() for marker in OUTLINE_TOPIC_MARKERS)
-    ]
-    return labels if len(topicish) >= 3 else []
+    # Section headings often share no vocabulary with the offering title, so a
+    # lack of overlap is not evidence of a mismatch. Navigation menus - the case
+    # this guard exists for - are removed upstream, so fall back to a structural
+    # test: a run of heading-like labels is an outline regardless of subject.
+    return labels if len(labels) >= 3 else []
 
 
 OUTLINE_START_MARKERS = (
@@ -674,6 +774,15 @@ OUTLINE_START_MARKERS = (
 )
 
 OUTLINE_STOP_MARKERS = (
+    # Marketing tag blocks list skills, not curriculum sections, and they read as
+    # title-case headings. Stop before them rather than trying to classify each tag.
+    "skills you'll gain",
+    "skills you’ll gain",
+    "skills you will gain",
+    "what's included",
+    "what’s included",
+    "who it's for",
+    "who it’s for",
     "who should attend",
     "course details",
     "after training",
@@ -688,9 +797,18 @@ OUTLINE_STOP_MARKERS = (
     "footer",
 )
 
+# Structural and learning-outcome vocabulary only. Subject vocabulary belongs in
+# the Brief, Course Outcomes, and sources - never in a reusable extractor, which
+# would otherwise behave differently depending on the course subject.
 OUTLINE_TOPIC_MARKERS = (
     "module",
     "lesson",
+    "unit",
+    "week",
+    "session",
+    "chapter",
+    "part",
+    "section",
     "topic",
     "introduction",
     "overview",
@@ -700,23 +818,8 @@ OUTLINE_TOPIC_MARKERS = (
     "practice",
     "workflow",
     "troubleshooting",
-    "recipe",
     "methods",
     "tools",
-    "skills",
-    "history",
-    "origin",
-    "species",
-    "processing",
-    "coffee",
-    "barista",
-    "espresso",
-    "sensory",
-    "roasting",
-    "brewing",
-    "milk",
-    "grind",
-    "water",
     "apply",
     "create",
     "demonstrate",
@@ -728,6 +831,28 @@ OUTLINE_TOPIC_MARKERS = (
     "select",
     "understand",
 )
+
+# A heading never ends on one of these; a wrapped body line frequently does.
+_DANGLING_TAIL_WORDS = {
+    "a",
+    "an",
+    "and",
+    "as",
+    "at",
+    "but",
+    "by",
+    "for",
+    "from",
+    "in",
+    "into",
+    "of",
+    "on",
+    "or",
+    "the",
+    "their",
+    "to",
+    "with",
+}
 
 OUTLINE_SKIP_EXACT = {
     "about us",

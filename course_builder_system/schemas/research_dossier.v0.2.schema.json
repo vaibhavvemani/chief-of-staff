@@ -100,7 +100,7 @@
         "delivery_format": { "$ref": "#/$defs/locator" },
         "assessment_approach": { "$ref": "#/$defs/locator" },
         "outline_status": {
-          "enum": ["usable", "partial", "inaccessible", "behind_login", "stale"]
+          "enum": ["usable", "partial", "no_outline_found", "inaccessible", "behind_login", "stale"]
         },
         "outline_sections": {
           "type": "array",

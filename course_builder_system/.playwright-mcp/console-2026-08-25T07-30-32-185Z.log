@@ -1,0 +1,17 @@
+[      61ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=38702913:20100
+[ 2748751ms] ReferenceError: resolution is not defined
+    at http://localhost:5173/src/features/workspace/BriefQuestionRound.tsx?t=1787645780871:469:96
+    at Array.map (<anonymous>)
+    at BriefQuestionRound (http://localhost:5173/src/features/workspace/BriefQuestionRound.tsx?t=1787645780871:450:87)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=38702913:18507:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=38702913:5652:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=38702913:7473:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=38702913:8523:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=38702913:995:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=38702913:12559:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=38702913:12422:43)
+[ 2748751ms] [WARNING] %s
+
+%s
+ An error occurred in the <BriefQuestionRound> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=38702913:6963

@@ -117,9 +117,12 @@ def project_source_quality(
     fetch_reason: str | None = None,
 ) -> dict[str, Any]:
     """Return advisory scoring, bounded preview sections, and need coverage."""
+    # `trust_notes` is process boilerplate, not a claim about the subject. Scoring
+    # fit against it lets an unrelated source match any evidence need whose wording
+    # happens to overlap that fixed sentence.
     text = " ".join(
         str(candidate.get(key) or "")
-        for key in ("title", "publisher", "source_type", "locator", "trust_notes", "relevance")
+        for key in ("title", "publisher", "source_type", "locator", "relevance")
     )
     sections = capture_relevant_sections(content or "", evidence_needs=evidence_needs)
     preview_text = " ".join(section["text"] for section in sections)

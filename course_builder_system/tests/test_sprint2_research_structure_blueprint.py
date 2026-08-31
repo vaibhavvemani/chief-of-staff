@@ -771,3 +771,176 @@ def test_resume_reruns_stale_downstream_without_losing_upstream_approval(
     assert counts["one"] == 1
     assert counts["two"] == 2
     assert orchestrator.load_artifact("resume-demo", "one")["status"] == "approved"
+
+
+def test_live_provider_captures_per_result_snippets_from_search_html() -> None:
+    def fetch_bytes(_locator: str) -> tuple[int, dict[str, str], bytes]:
+        return (
+            200,
+            {"content-type": "text/html"},
+            b"""
+            <html><body><table>
+              <tr><td><a href="https://a.test/one">Deal Structure Guide</a></td></tr>
+              <tr><td class='result-snippet'>
+                Covers <b>sourcing</b>, due diligence, and hold period with worked examples.
+              </td></tr>
+              <tr><td><a href="https://b.test/two">Fund Life Cycle Explained</a></td></tr>
+              <tr><td class='result-snippet'>
+                Explains fundraising, deployment, harvesting across four named stages.
+              </td></tr>
+              <tr><td><a href="https://c.test/three">No Abstract Here</a></td></tr>
+            </table></body></html>
+            """,
+        )
+
+    provider = BoundedLiveResearchProvider(
+        search_url_template="https://search.test/?q={query}",
+        fetch_bytes=fetch_bytes,
+    )
+
+    results = provider.search("private equity lifecycle", limit=3)
+
+    assert [result.locator for result in results] == [
+        "https://a.test/one",
+        "https://b.test/two",
+        "https://c.test/three",
+    ]
+    assert "due diligence" in results[0].snippet
+    assert "harvesting" in results[1].snippet
+    # Distinct pages must not collapse onto one templated snippet.
+    assert results[0].snippet != results[1].snippet
+    # A result with no abstract still falls back to the query-derived note.
+    assert results[2].snippet == "Live search result for: private equity lifecycle"
+
+
+def test_relevance_notes_report_the_snippet_without_echoing_brief_scope() -> None:
+    result = research.SearchResult(
+        id="live_1",
+        title="Deal Structure Guide",
+        locator="https://a.test/one",
+        snippet="Covers sourcing, due diligence, and hold period.",
+    )
+
+    notes = research._relevance_notes(result)
+
+    assert "due diligence" in notes
+    # The brief's own scope must not be echoed back as if it were evidence.
+    assert "fund structuring" not in notes
+    assert "exit strategies" not in notes
+
+
+def test_pdf_text_extraction_dependency_is_installed() -> None:
+    """Without pypdf the adapter silently falls back to scraping PDF internals."""
+    import pypdf  # noqa: F401
+
+
+def test_outline_extraction_rejects_wrapped_prose_and_pdf_bullets() -> None:
+    from research_adapter import _extract_outline_labels
+
+    text = "\n".join(
+        [
+            "Course Outline",
+            "Introduction to Private Equity",
+            " To understand the role of leadership, management, and governance in private equity",
+            "Private Equity Landscape and Varying Winning Strategies",
+            "strategies and approaches towards identifying assets and creating value",
+            "Private Equity Deal Lifecycle and Sector Scans",
+            "level with few specific real-world examples. We will also cover how to identify",
+            "Deal Sourcing / Angles",
+        ]
+    )
+
+    labels = _extract_outline_labels(text)
+
+    assert "Introduction to Private Equity" in labels
+    assert "Private Equity Deal Lifecycle and Sector Scans" in labels
+    assert "Deal Sourcing / Angles" in labels
+    # Wrapped body lines are not section headings.
+    for label in labels:
+        assert not label.startswith("strategies and approaches")
+        assert not label.startswith("level with few")
+        assert "" not in label
+        assert not label.lower().startswith("to understand the role")
+
+
+def test_outline_extraction_drops_repeated_site_navigation() -> None:
+    from research_adapter import _extract_outline_labels
+
+    text = "\n".join(
+        [
+            "Course Syllabus",
+            "All Courses",
+            "AI Courses",
+            "Data Science Courses",
+            "Python Courses",
+            "Machine Learning Courses",
+            "Cybersecurity Courses",
+        ]
+    )
+
+    labels = _extract_outline_labels(text)
+
+    assert labels == []
+
+
+def test_topic_markers_stay_domain_neutral() -> None:
+    from research_adapter import OUTLINE_TOPIC_MARKERS
+
+    leaked = {"coffee", "barista", "espresso", "roasting", "brewing", "grind", "milk"}
+    assert leaked.isdisjoint(set(OUTLINE_TOPIC_MARKERS))
+
+
+def test_fetched_page_without_an_outline_is_not_reported_as_inaccessible() -> None:
+    def fetch_bytes(locator: str) -> tuple[int, dict[str, str], bytes]:
+        if "unreachable" in locator:
+            return (404, {"content-type": "text/html"}, b"")
+        return (
+            200,
+            {"content-type": "text/html"},
+            b"<html><body><p>Marketing page with no curriculum at all.</p></body></html>",
+        )
+
+    provider = BoundedLiveResearchProvider(fetch_bytes=fetch_bytes)
+
+    parsed = provider.extract_competitor_outline(
+        research.SearchResult(id="a", title="Some Course", locator="https://ok.test/x", snippet="")
+    )
+    unreachable = provider.extract_competitor_outline(
+        research.SearchResult(
+            id="b", title="Some Course", locator="https://unreachable.test/x", snippet=""
+        )
+    )
+
+    # Fetched fine, but nothing outline-like was parsed.
+    assert parsed.outline_status == "no_outline_found"
+    # Genuinely could not be retrieved.
+    assert unreachable.outline_status == "inaccessible"
+
+
+def test_outline_extraction_excludes_headers_and_marketing_tag_lists() -> None:
+    from research_adapter import _extract_outline_labels
+
+    text = "\n".join(
+        [
+            "Course Objectives:",
+            "Introduction to Private Equity",
+            "Private Equity Deal Lifecycle",
+            "Deal Sourcing and Screening",
+            "Skills you'll gain",
+            "Corporate Finance",
+            "Financial Modeling",
+            "Investment Banking",
+        ]
+    )
+
+    labels = _extract_outline_labels(text)
+
+    assert "Introduction to Private Equity" in labels
+    assert "Deal Sourcing and Screening" in labels
+    # The line that announces the outline is not itself a section.
+    assert "Course Objectives" not in labels
+    assert "Course Objectives:" not in labels
+    # Marketing skill tags are not curriculum sections.
+    assert "Corporate Finance" not in labels
+    assert "Financial Modeling" not in labels
+    assert "Investment Banking" not in labels
